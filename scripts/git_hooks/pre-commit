@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+# Call black and flake before each commit.
+# The command "git commit" with no argument will trigger this script.
+#
+# To enable this hook, cp this file to .git/hooks/.
+
+# If any command fails, exit immediately with that command's exit status
+set -eo pipefail
+
+# Run black against all code in the `source_code` directory
+black . --check
+echo "-------> Black passed!"
+
+# Run flake8 against all code in the `source_code` directory
+flake8 .
+echo "-------> Flake8 passed!"
+
+# Run mypy against all code in the `source_code` directory
+mypy .
+echo "-------> Mypy passed!"
+
