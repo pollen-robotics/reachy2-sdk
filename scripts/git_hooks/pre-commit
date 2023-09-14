@@ -9,7 +9,7 @@
 set -eo pipefail
 
 # Run black against all code in the `source_code` directory
-black . --check
+black . --line-length 128 --check
 echo "-------> Black passed!"
 
 # Run flake8 against all code in the `source_code` directory
