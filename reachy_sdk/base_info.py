@@ -1,16 +1,17 @@
-# from reachy_sdk import ReachySDK
-# from reachy_sdk_api.config_pb2 import ConfigReachy
+from reachy_v2_sdk_api.config_pb2 import ConfigReachy
 
 
-# class BaseInfo():
-#     def __init__(reachy: ReachySDK, config_msg: ConfigReachy) -> None:
-#         pass
-#         # self.reachy = reachy
-#         # self.grpc_config_msg = config
+class BaseInfo:
+    def __init__(self, host: str, config_msg: ConfigReachy) -> None:
+        self.ip_address = host
 
-#     def get_base_info(self):
-#         self.reachy.base_info.ip_address = ''
-#         self.reachy.base_info.robot_serial_number = self.grpc_config_msg.robot_serial_number
-#         self.reachy.base_info.robot_serial_number = self.grpc_config_msg.mobile_base_serial_number
-#         self.reachy.base_info.config = self.grpc_config_msg.config
-#         # self.reachy.base_info = self.grpc_config_msg.
+        self.config = config_msg.config
+        self.with_mobile_base = config_msg.with_mobile_base
+
+        self.enabled_parts = config_msg.enabled_parts
+        self.disabled_parts = config_msg.disabled_parts
+
+        self.core_software_version = config_msg.core_software_version
+
+        self.robot_serial_number = config_msg.robot_serial_number
+        self.mobile_base_serial_number = config_msg.mobile_base_serial_number

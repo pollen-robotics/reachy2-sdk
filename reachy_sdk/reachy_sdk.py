@@ -21,7 +21,8 @@ import grpc
 # from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
 
-from reachy_sdk_api import config_pb2_grpc
+from reachy_v2_sdk_api import config_pb2_grpc
+from .base_info import BaseInfo
 
 
 class ReachyParts(Enum):
@@ -72,7 +73,7 @@ class ReachySDK:
 
     def _get_config(self) -> None:
         config_stub = config_pb2_grpc.ConfigServiceStub(self._grpc_channel)
-        self._config = config_stub.GetReachyConfig(Empty()).config
+        self.base_info = BaseInfo(self._host, config_stub.GetReachyConfig(Empty()).config)
 
     def _start_sync_in_bg(self) -> None:
         # loop = asyncio.new_event_loop()
