@@ -1,13 +1,13 @@
-# from abc import ABC
+from abc import ABC
 
-# from .actuator import Actuator
-
-
-# class Gripper(Actuator, ABC):
-#     def __init__(self) -> None:
-#         super().__init__()
+from .actuator import Actuator
 
 
-# class BasicGripper(Gripper):
-#     def __init__(self) -> None:
-#         super().__init__()
+class Gripper(Actuator, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class BasicGripper(Gripper):
+    def __init__(self) -> None:
+        super().__init__()
