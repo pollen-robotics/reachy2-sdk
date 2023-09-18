@@ -63,7 +63,7 @@ class ReachySDK:
 
         self._get_config()
 
-        self._ready.wait()
+        # self._ready.wait()
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
@@ -75,7 +75,7 @@ class ReachySDK:
 
     def _get_config(self) -> None:
         config_stub = config_pb2_grpc.ConfigServiceStub(self._grpc_channel)
-        self.base_info = BaseInfo(self._host, config_stub.GetReachyConfig(Empty()).config)
+        self.base_info = BaseInfo(self._host, config_stub.GetReachyConfig(Empty()))
 
     def _start_sync_in_bg(self) -> None:
         # loop = asyncio.new_event_loop()
