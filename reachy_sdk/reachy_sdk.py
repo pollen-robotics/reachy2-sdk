@@ -21,19 +21,13 @@ import grpc
 # from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
 
-from reachy_sdk_api import config_pb2_grpc
+from reachy_sdk_api_v2 import reachy_pb2_grpc
 
 # from reachy_v2_sdk_api import config_pb2_grpc
-from .base_info import BaseInfo
-
-
-class ReachyParts(Enum):
-    """Reachy parts options."""
-
-    REACHY = 1
-    L_ARM = 2
-    R_ARM = 3
-    HEAD = 4
+from .reachy import ReachyInfo, get_config
+from .arm import Arm
+from .head import Head
+from .hand import Hand
 
 
 class ReachySDK:
@@ -61,7 +55,7 @@ class ReachySDK:
 
         self._ready = threading.Event()
 
-        self._get_config()
+        self._get_info()
 
         # self._ready.wait()
 
@@ -73,9 +67,35 @@ class ReachySDK:
         #     s
         # }\n>'''
 
-    def _get_config(self) -> None:
-        config_stub = config_pb2_grpc.ConfigServiceStub(self._grpc_channel)
-        self.base_info = BaseInfo(self._host, config_stub.GetReachyConfig(Empty()))
+    def _get_info(self) -> None:
+        config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
+        self.reachys = config_stub.GetListOfReachy(Empty())
+        self.info = ReachyInfo(self._host, self.reachys[0].info)
+        self.config = get_config(self.reachys[0])
+
+    def _setup_parts(self) -> None:
+        if self.reachys[0].HasField('l_arm'):
+            left_arm = Arm(self._grpc_channel, self.reachys[0].l_arm)
+            setattr(self, 'l_arm', left_arm)
+        
+        if self.reachys[0].HasField('l_hand'):
+            left_hand = Hand(self._grpc_channel, self.reachys[0].l_hand)
+            setattr(self, 'l_gripper', left_hand)
+
+        if self.reachys[0].HasField('r_arm'):
+            right_arm = Arm(self._grpc_channel, self.reachys[0].r_arm)
+            setattr(self, 'r_arm', right_arm)
+
+        if self.reachys[0].HasField('r_hand'):
+            right_hand = Hand(self._grpc_channel, self.reachys[0].r_hand)
+            setattr(self, 'r_gripper', right_hand)
+        
+        if self.reachys[0].HasField('head'):
+            head = Head(self._grpc_channel, self.reachys[0].head)
+            setattr(self, 'head', head)
+        
+        if self.reachys[0].HasField('mobile_base'):
+            pass
 
     def _start_sync_in_bg(self) -> None:
         # loop = asyncio.new_event_loop()
