@@ -62,7 +62,7 @@ class ReachySDK:
         self._get_info()
 
         self._setup_actuators()
-        self._setup_parts()
+        # self._setup_parts()
 
         self.l_arm: Optional[Arm] = None
         self.r_arm: Optional[Arm] = None
@@ -86,8 +86,8 @@ class ReachySDK:
         self.config = get_config(self._robot)
 
     def _setup_actuators(self) -> None:
-        self._orbita2d_holder = Orbita2DSDK(self._host)
-        self._orbita3d_holder = Orbita3DSDK(self._host)
+        self._orbita2d_holder = Orbita2DSDK(self._grpc_channel)
+        self._orbita3d_holder = Orbita3DSDK(self._grpc_channel)
 
         self._actuators_list = self._orbita2d_holder.get_list() + self._orbita3d_holder.get_list()
 
