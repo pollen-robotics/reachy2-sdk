@@ -9,7 +9,7 @@ from typing import List
 
 import grpc
 
-from reachy_sdk_api_v2.arm_pb2_grpc import ArmStub
+from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
 from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto, ArmPosition
 from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal
 from reachy_sdk_api_v2.arm_pb2 import JointsLimits, ArmTemperatures
@@ -26,7 +26,7 @@ class Arm:
 
     def __init__(self, arm: Arm_proto, grpc_channel: grpc.Channel) -> None:
         """Set up the arm with its kinematics."""
-        self._arm_stub = ArmStub(grpc_channel)
+        self._arm_stub = ArmServiceStub(grpc_channel)
         self.part_id = PartId(id=arm.part_id)
 
         self._joint_list = [

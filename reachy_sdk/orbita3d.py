@@ -11,13 +11,13 @@ from google.protobuf.empty_pb2 import Empty
 
 import grpc
 
-from reachy_sdk_api import orbita3d_pb2, orbita3d_pb2_grpc
+from reachy_sdk_api_v2 import orbita3d_pb2, orbita3d_pb2_grpc
 
 from reachy_sdk_api_v2.component_pb2 import ComponentId
 
 
 class Orbita3D:
-    def __init__(self, orbita: orbita3d_pb2.Orbita3D, stub: orbita3d_pb2_grpc.Orbita3DServiceStub) -> None:
+    def __init__(self, orbita: orbita3d_pb2.Orbita3DInfo, stub: orbita3d_pb2_grpc.Orbita3DServiceStub) -> None:
         """Set up the arm with its kinematics."""
         self.id = ComponentId(id=orbita.id)
 

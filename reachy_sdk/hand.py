@@ -6,7 +6,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 """
 import grpc
 
-from reachy_sdk_api_v2.hand_pb2_grpc import HandStub
+from reachy_sdk_api_v2.hand_pb2_grpc import HandServiceStub
 from reachy_sdk_api_v2.hand_pb2 import Hand as Hand_proto
 from reachy_sdk_api_v2.part_pb2 import PartId
 
@@ -21,7 +21,7 @@ class Hand:
 
     def __init__(self, hand: Hand_proto, grpc_channel: grpc.Channel) -> None:
         """Set up the arm with its kinematics."""
-        self._hand_stub = HandStub(grpc_channel)
+        self._hand_stub = HandServiceStub(grpc_channel)
         self.part_id = PartId(id=hand.part_id)
 
     def open(self) -> None:
