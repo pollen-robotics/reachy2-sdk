@@ -41,7 +41,9 @@ class Orbita2DSDK:
         for orbita in orbitas.info:
             orbita2d = Orbita2D(orbita, self._stub)
             self._orbita2d_list.append(orbita2d)
-            self._orbita2d_id_to_component = dict(zip([orbita2d.id for orbita2d in self._orbita2d_list], self._orbita2d_list))
+            self._orbita2d_id_to_component = dict(
+                zip([orbita2d.id.id for orbita2d in self._orbita2d_list], self._orbita2d_list)
+            )
 
     def get_list(self) -> List[Orbita2D]:
         return self._orbita2d_list

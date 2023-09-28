@@ -19,7 +19,7 @@ from reachy_sdk_api_v2.component_pb2 import ComponentId
 class Orbita3D:
     def __init__(self, orbita: orbita3d_pb2.Orbita3DInfo, stub: orbita3d_pb2_grpc.Orbita3DServiceStub) -> None:
         """Set up the arm with its kinematics."""
-        self.id = ComponentId(id=orbita.id)
+        self.id = ComponentId(id=orbita.id.id)
 
 
 class Orbita3DSDK:
@@ -42,7 +42,9 @@ class Orbita3DSDK:
         for orbita in orbitas.info:
             orbita3d = Orbita3D(orbita, self._stub)
             self._orbita3d_list.append(orbita3d)
-            self._orbita3d_id_to_component = dict(zip([orbita3d.id for orbita3d in self._orbita3d_list], self._orbita3d_list))
+            self._orbita3d_id_to_component = dict(
+                zip([orbita3d.id.id for orbita3d in self._orbita3d_list], self._orbita3d_list)
+            )
 
     def get_list(self) -> List[Orbita3D]:
         return self._orbita3d_list

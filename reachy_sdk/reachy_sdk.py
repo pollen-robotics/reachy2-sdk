@@ -91,7 +91,7 @@ class ReachySDK:
 
         self._actuators_list = self._orbita2d_holder.get_list() + self._orbita3d_holder.get_list()
 
-        self._actuators_dict = dict(zip([actuator.id for actuator in self._actuators_list], self._actuators_list))
+        self._actuators_dict = dict(zip([actuator.id.id for actuator in self._actuators_list], self._actuators_list))
 
     def _setup_parts(self) -> None:
         if self._robot.HasField("l_arm"):
