@@ -30,13 +30,9 @@ class Orbita3DSDK:
     - you can compute the forward and inverse kinematics
     """
 
-    def __init__(self, host: str, orbita3d_port: int = 50071) -> None:
+    def __init__(self, grpc_channel: grpc.Channel) -> None:
         """Set up the connection with the mobile base."""
-        self._host = host
-        self._orbita3d_port = orbita3d_port
-        self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._orbita3d_port}")
-
-        self._stub = orbita3d_pb2_grpc.Orbita3DServiceStub(self._grpc_channel)
+        self._stub = orbita3d_pb2_grpc.Orbita3DServiceStub(grpc_channel)
 
         self._orbita3d_list: List[Orbita3D] = []
         self._get_all_orbita3d()

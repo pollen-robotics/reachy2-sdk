@@ -81,9 +81,9 @@ class ReachySDK:
 
     def _get_info(self) -> None:
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
-        self.reachys = config_stub.GetListOfReachy(Empty())
-        self.info = ReachyInfo(self._host, self.reachys[0].info)
-        self.config = get_config(self.reachys[0])
+        self._robot = config_stub.GetReachy(Empty())
+        self.info = ReachyInfo(self._host, self._robot.info)
+        self.config = get_config(self._robot)
 
     def _setup_actuators(self) -> None:
         self._orbita2d_holder = Orbita2DSDK(self._host)
@@ -94,30 +94,30 @@ class ReachySDK:
         self._actuators_dict = dict(zip([actuator.id for actuator in self._actuators_list], self._actuators_list))
 
     def _setup_parts(self) -> None:
-        if self.reachys[0].HasField("l_arm"):
-            self.l_arm = Arm(self._grpc_channel, self.reachys[0].l_arm)
-            for articulation in self.reachys[0].l_arm.DESCRIPTOR.fields:
-                actuator = getattr(self.reachys[0].l_arm, articulation.name)
+        if self._robot.HasField("l_arm"):
+            self.l_arm = Arm(self._grpc_channel, self._robot.l_arm)
+            for articulation in self._robot.l_arm.DESCRIPTOR.fields:
+                actuator = getattr(self._robot.l_arm, articulation.name)
                 setattr(self.l_arm, articulation.name, self._actuators_dict[actuator.info.id])
 
-            if self.reachys[0].HasField("l_hand"):
-                left_hand = Hand(self._grpc_channel, self.reachys[0].l_hand)
+            if self._robot.HasField("l_hand"):
+                left_hand = Hand(self._grpc_channel, self._robot.l_hand)
                 setattr(self.l_arm, "gripper", left_hand)
 
-        if self.reachys[0].HasField("r_arm"):
-            self.r_arm = Arm(self._grpc_channel, self.reachys[0].r_arm)
-            for articulation in self.reachys[0].l_arm.DESCRIPTOR.fields:
-                actuator = getattr(self.reachys[0].l_arm, articulation.name)
+        if self._robot.HasField("r_arm"):
+            self.r_arm = Arm(self._grpc_channel, self._robot.r_arm)
+            for articulation in self._robot.l_arm.DESCRIPTOR.fields:
+                actuator = getattr(self._robot.l_arm, articulation.name)
                 setattr(self.l_arm, articulation.name, self._actuators_dict[actuator.info.id])
 
-            if self.reachys[0].HasField("r_hand"):
-                right_hand = Hand(self._grpc_channel, self.reachys[0].r_hand)
+            if self._robot.HasField("r_hand"):
+                right_hand = Hand(self._grpc_channel, self._robot.r_hand)
                 setattr(self.r_arm, "gripper", right_hand)
 
-        if self.reachys[0].HasField("head"):
-            self.head = Head(self._grpc_channel, self.reachys[0].head)
+        if self._robot.HasField("head"):
+            self.head = Head(self._grpc_channel, self._robot.head)
 
-        if self.reachys[0].HasField("mobile_base"):
+        if self._robot.HasField("mobile_base"):
             pass
 
     def _start_sync_in_bg(self) -> None:

@@ -29,13 +29,9 @@ class Orbita2DSDK:
     - you can compute the forward and inverse kinematics
     """
 
-    def __init__(self, host: str, orbita2d_port: int = 50070) -> None:
+    def __init__(self, grpc_channel: grpc.Channel) -> None:
         """Set up the connection with the mobile base."""
-        self._host = host
-        self._orbita2d_port = orbita2d_port
-        self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._orbita2d_port}")
-
-        self._stub = orbita2d_pb2_grpc.Orbita2DServiceStub(self._grpc_channel)
+        self._stub = orbita2d_pb2_grpc.Orbita2DServiceStub(grpc_channel)
 
         self._orbita2d_list: List[Orbita2D] = []
         self._get_all_orbita2d()
