@@ -13,10 +13,11 @@ import threading
 
 # import time
 # from typing import List
-from enum import Enum
 from logging import getLogger
 
 import grpc
+
+from typing import Optional
 
 # from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
@@ -63,6 +64,8 @@ class ReachySDK:
         self._setup_actuators()
         self._setup_parts()
 
+        self.l_arm: Optional[Arm] = None
+
         # self._ready.wait()
 
     def __repr__(self) -> str:
@@ -78,56 +81,50 @@ class ReachySDK:
         self.reachys = config_stub.GetListOfReachy(Empty())
         self.info = ReachyInfo(self._host, self.reachys[0].info)
         self.config = get_config(self.reachys[0])
-    
-    def _setup_actuators(self):
+
+    def _setup_actuators(self) -> None:
         self._orbita2d_holder = Orbita2DSDK(self._host)
         self._orbita3d_holder = Orbita3DSDK(self._host)
 
-        self._actuators_list = [*self._orbita2d_holder, *self._orbita3d_holder]
-        
-        self._actuators_dict = dict(
-                zip([actuator.id for actuator in self._actuators_list],
-                    self._actuators_list)
-                    )
+        self._actuators_list = self._orbita2d_holder.get_list() + self._orbita3d_holder.get_list()
+
+        self._actuators_dict = dict(zip([actuator.id for actuator in self._actuators_list], self._actuators_list))
 
     def _setup_parts(self) -> None:
-        if self.reachys[0].HasField('l_arm'):
-            left_arm = Arm(self._grpc_channel, self.reachys[0].l_arm)
-            setattr(self, 'l_arm', left_arm)
+        if self.reachys[0].HasField("l_arm"):
+            self.l_arm = Arm(self._grpc_channel, self.reachys[0].l_arm)
             for articulation in self.reachys[0].l_arm.DESCRIPTOR.fields:
                 actuator = getattr(self.reachys[0].l_arm, articulation.name)
                 setattr(self.l_arm, articulation.name, self._actuators_dict[actuator.info.id])
-        
-        if self.reachys[0].HasField('l_hand'):
+
+        if self.reachys[0].HasField("l_hand"):
             left_hand = Hand(self._grpc_channel, self.reachys[0].l_hand)
-            setattr(self, 'l_gripper', left_hand)
+            setattr(self, "l_gripper", left_hand)
 
-        if self.reachys[0].HasField('r_arm'):
+        if self.reachys[0].HasField("r_arm"):
             right_arm = Arm(self._grpc_channel, self.reachys[0].r_arm)
-            setattr(self, 'r_arm', right_arm)
+            setattr(self, "r_arm", right_arm)
 
-        if self.reachys[0].HasField('r_hand'):
+        if self.reachys[0].HasField("r_hand"):
             right_hand = Hand(self._grpc_channel, self.reachys[0].r_hand)
-            setattr(self, 'r_gripper', right_hand)
-        
-        if self.reachys[0].HasField('head'):
+            setattr(self, "r_gripper", right_hand)
+
+        if self.reachys[0].HasField("head"):
             head = Head(self._grpc_channel, self.reachys[0].head)
-            setattr(self, 'head', head)
-        
-        if self.reachys[0].HasField('mobile_base'):
+            setattr(self, "head", head)
+
+        if self.reachys[0].HasField("mobile_base"):
             pass
-    
-    
 
     def _start_sync_in_bg(self) -> None:
         # loop = asyncio.new_event_loop()
         # loop.run_until_complete(self._sync_loop())
         pass
 
-    def turn_on(self):
+    def turn_on(self) -> None:
         pass
 
-    def turn_off(self):
+    def turn_off(self) -> None:
         pass
 
 

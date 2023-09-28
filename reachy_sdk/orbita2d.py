@@ -8,14 +8,20 @@ import grpc
 
 from google.protobuf.empty_pb2 import Empty
 
-from typing import List
+from typing import List, Any
 
 from reachy_sdk_api import orbita2d_pb2, orbita2d_pb2_grpc
 
 from reachy_sdk_api_v2.component_pb2 import ComponentId
 
 
-class Orbita2DSDK():
+class Orbita2D:
+    def __init__(self, orbita: orbita2d_pb2.Orbita2D, stub: orbita2d_pb2_grpc.Orbita2DServiceStub) -> None:
+        """Set up the arm with its kinematics."""
+        self.id = ComponentId(id=orbita.id)
+
+
+class Orbita2DSDK:
     """Arm abstract class used for both left/right arms.
 
     It exposes the kinematics of the arm:
@@ -27,32 +33,22 @@ class Orbita2DSDK():
         """Set up the connection with the mobile base."""
         self._host = host
         self._orbita2d_port = orbita2d_port
-        self._grpc_channel = grpc.insecure_channel(
-            f'{self._host}:{self._orbita2d_port}')
+        self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._orbita2d_port}")
 
         self._stub = orbita2d_pb2_grpc.Orbita2DServiceStub(self._grpc_channel)
 
         self._orbita2d_list: List[Orbita2D] = []
         self._get_all_orbita2d()
 
-    def _get_all_orbita2d(self):
+    def _get_all_orbita2d(self) -> None:
         orbitas = self._stub.GetAllOrbita2D(Empty())
         for orbita in orbitas.info:
             orbita2d = Orbita2D(orbita, self._stub)
             self._orbita2d_list.append(orbita2d)
-            self._orbita2d_id_to_component = dict(
-                zip([orbita2d.id for orbita2d in self._orbita2d_list],
-                    self._orbita2d_list)
-                    )
+            self._orbita2d_id_to_component = dict(zip([orbita2d.id for orbita2d in self._orbita2d_list], self._orbita2d_list))
 
-    def get_list(self):
+    def get_list(self) -> List[Orbita2D]:
         return self._orbita2d_list
 
-    def __getitem__(self, id):
+    def __getitem__(self, id: str) -> Any:
         return self._orbita2d_id_to_component[id]
-
-
-class Orbita2D():
-    def __init__(self, orbita: orbita2d_pb2.Orbita2D, stub) -> None:
-        """Set up the arm with its kinematics."""
-        self.id = ComponentId(id=orbita.id)

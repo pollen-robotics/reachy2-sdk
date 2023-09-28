@@ -6,16 +6,12 @@ Handles all specific method to an Arm (left and/or right) especially:
 """
 import grpc
 
-from typing import List, Optional, Set
-
 from reachy_sdk_api_v2.hand_pb2_grpc import HandStub
-from reachy_sdk_api_v2.hand_pb2 import Hand
+from reachy_sdk_api_v2.hand_pb2 import Hand as Hand_proto
 from reachy_sdk_api_v2.part_pb2 import PartId
 
-import numpy as np
 
-
-class Hand():
+class Hand:
     """Arm abstract class used for both left/right arms.
 
     It exposes the kinematics of the arm:
@@ -23,19 +19,19 @@ class Hand():
     - you can compute the forward and inverse kinematics
     """
 
-    def __init__(self, hand: Hand, grpc_channel: grpc.Channel) -> None:
+    def __init__(self, hand: Hand_proto, grpc_channel: grpc.Channel) -> None:
         """Set up the arm with its kinematics."""
         self._hand_stub = HandStub(grpc_channel)
         self.part_id = PartId(id=hand.part_id)
 
-    def open(self):
+    def open(self) -> None:
         self._hand_stub.OpenHand(self.part_id)
 
-    def close(self):
+    def close(self) -> None:
         self._hand_stub.CloseHand(self.part_id)
 
-    def turn_on(self):
+    def turn_on(self) -> None:
         self._hand_stub.TurnOn(self.part_id)
-    
-    def turn_off(self):
+
+    def turn_off(self) -> None:
         self._hand_stub.TurnOff(self.part_id)
