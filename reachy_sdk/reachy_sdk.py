@@ -49,7 +49,7 @@ class ReachySDK:
     def __init__(
         self,
         host: str,
-        sdk_port: int = 50055,
+        sdk_port: int = 50051,
     ) -> None:
         """Set up the connection with the robot."""
         self._logger = getLogger()
