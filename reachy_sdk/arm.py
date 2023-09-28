@@ -13,6 +13,8 @@ from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal, ArmCartesianGoal
 from reachy_sdk_api_v2.arm_pb2 import SpeedLimitRequest
 from reachy_sdk_api_v2.part_pb2 import PartId
 
+from .orbita2d import Orbita2DSDK
+
 import numpy as np
 
 

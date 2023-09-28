@@ -29,6 +29,9 @@ from .arm import Arm
 from .head import Head
 from .hand import Hand
 
+from .orbita2d import Orbita2DSDK
+from .orbita3d import Orbita3DSDK
+
 
 class ReachySDK:
     """The ReachySDK class handles the connection with your robot.
@@ -57,6 +60,9 @@ class ReachySDK:
 
         self._get_info()
 
+        self._setup_actuators()
+        self._setup_parts()
+
         # self._ready.wait()
 
     def __repr__(self) -> str:
@@ -72,11 +78,25 @@ class ReachySDK:
         self.reachys = config_stub.GetListOfReachy(Empty())
         self.info = ReachyInfo(self._host, self.reachys[0].info)
         self.config = get_config(self.reachys[0])
+    
+    def _setup_actuators(self):
+        self._orbita2d_holder = Orbita2DSDK(self._host)
+        self._orbita3d_holder = Orbita3DSDK(self._host)
+
+        self._actuators_list = [*self._orbita2d_holder, *self._orbita3d_holder]
+        
+        self._actuators_dict = dict(
+                zip([actuator.id for actuator in self._actuators_list],
+                    self._actuators_list)
+                    )
 
     def _setup_parts(self) -> None:
         if self.reachys[0].HasField('l_arm'):
             left_arm = Arm(self._grpc_channel, self.reachys[0].l_arm)
             setattr(self, 'l_arm', left_arm)
+            for articulation in self.reachys[0].l_arm.DESCRIPTOR.fields:
+                actuator = getattr(self.reachys[0].l_arm, articulation.name)
+                setattr(self.l_arm, articulation.name, self._actuators_dict[actuator.info.id])
         
         if self.reachys[0].HasField('l_hand'):
             left_hand = Hand(self._grpc_channel, self.reachys[0].l_hand)
@@ -96,10 +116,18 @@ class ReachySDK:
         
         if self.reachys[0].HasField('mobile_base'):
             pass
+    
+    
 
     def _start_sync_in_bg(self) -> None:
         # loop = asyncio.new_event_loop()
         # loop.run_until_complete(self._sync_loop())
+        pass
+
+    def turn_on(self):
+        pass
+
+    def turn_off(self):
         pass
 
 

@@ -7,12 +7,18 @@ Handles all specific method to an Arm (left and/or right) especially:
 
 from typing import List, Optional, Set
 
-from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3D
+from google.protobuf.empty_pb2 import Empty
+
+import grpc
+
+from reachy_sdk_api import orbita3d_pb2, orbita3d_pb2_grpc
+
+from reachy_sdk_api_v2.component_pb2 import ComponentId
 
 import numpy as np
 
 
-class Orbita3D():
+class Orbita3DSDK():
     """Arm abstract class used for both left/right arms.
 
     It exposes the kinematics of the arm:
@@ -20,6 +26,36 @@ class Orbita3D():
     - you can compute the forward and inverse kinematics
     """
 
-    def __init__(self, part: Orbita3D, grpc_channel) -> None:
-        """Set up the arm with its kinematics."""
+    def __init__(self, host: str, orbita3d_port: int = 50071) -> None:
+        """Set up the connection with the mobile base."""
+        self._host = host
+        self._orbita3d_port = orbita3d_port
+        self._grpc_channel = grpc.insecure_channel(
+            f'{self._host}:{self._orbita3d_port}')
 
+        self._stub = orbita3d_pb2_grpc.Orbita3DServiceStub(self._grpc_channel)
+    
+        self._orbita3d_list: List[Orbita3D] = []
+        self._get_all_orbita3d()
+
+    def _get_all_orbita3d(self):
+        orbitas = self._stub.GetAllOrbita3D(Empty())
+        for orbita in orbitas.info:
+            orbita3d = Orbita3D(orbita, self._stub)
+            self._orbita3d_list.append(orbita3d)
+            self._orbita3d_id_to_component = dict(
+                zip([orbita3d.id for orbita3d in self._orbita3d_list],
+                    self._orbita3d_list)
+                    )
+
+    def get_list(self):
+        return self._orbita3d_list
+
+    def __getitem__(self, id):
+        return self._orbita3d_id_to_component[id]
+
+
+class Orbita3D():
+    def __init__(self, orbita: orbita3d_pb2.Orbita3D, stub) -> None:
+        """Set up the arm with its kinematics."""
+        self.id = ComponentId(id=orbita.id)
