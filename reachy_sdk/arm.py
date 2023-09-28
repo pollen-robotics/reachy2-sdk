@@ -49,15 +49,13 @@ class Arm:
     #                position_tol: List[float], orientation_tol: List[float], duration: float) -> None:
     #     goal = ArmCartesianGoal(duration=duration)
 
-    def goto_joints(self, joints: List[float], duration: float) -> None:
+    def goto_joints(self, positions: List[float], duration: float) -> None:
         arm_pos = ArmPosition()
-        arm_pos.shoulder_pitch = joints[0]
-        arm_pos.shoulder_roll = joints[1]
-        arm_pos.elbow_yaw = joints[2]
-        arm_pos.elbow_pitch = joints[3]
-        arm_pos.wrist_roll = joints[4]
-        arm_pos.wrist_pitch = joints[5]
-        arm_pos.wrist_yaw = joints[6]
+
+        joints = [field.name for field in ArmPosition.DESCRIPTOR.fields]
+        for joint, position in zip(joints, positions):
+            setattr(arm_pos, joint, position)
+
         goal = ArmJointGoal(id=self.part_id, position=arm_pos, duration=duration)
         self._arm_stub.GoToJointPosition(goal)
 

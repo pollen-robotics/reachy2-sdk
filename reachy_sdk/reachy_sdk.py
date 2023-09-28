@@ -65,6 +65,9 @@ class ReachySDK:
         self._setup_parts()
 
         self.l_arm: Optional[Arm] = None
+        self.r_arm: Optional[Arm] = None
+        self.head: Optional[Head] = None
+        # self.mobile_base: Optional[MobileBase] = None
 
         # self._ready.wait()
 
@@ -97,21 +100,22 @@ class ReachySDK:
                 actuator = getattr(self.reachys[0].l_arm, articulation.name)
                 setattr(self.l_arm, articulation.name, self._actuators_dict[actuator.info.id])
 
-        if self.reachys[0].HasField("l_hand"):
-            left_hand = Hand(self._grpc_channel, self.reachys[0].l_hand)
-            setattr(self, "l_gripper", left_hand)
+            if self.reachys[0].HasField("l_hand"):
+                left_hand = Hand(self._grpc_channel, self.reachys[0].l_hand)
+                setattr(self.l_arm, "gripper", left_hand)
 
         if self.reachys[0].HasField("r_arm"):
-            right_arm = Arm(self._grpc_channel, self.reachys[0].r_arm)
-            setattr(self, "r_arm", right_arm)
+            self.r_arm = Arm(self._grpc_channel, self.reachys[0].r_arm)
+            for articulation in self.reachys[0].l_arm.DESCRIPTOR.fields:
+                actuator = getattr(self.reachys[0].l_arm, articulation.name)
+                setattr(self.l_arm, articulation.name, self._actuators_dict[actuator.info.id])
 
-        if self.reachys[0].HasField("r_hand"):
-            right_hand = Hand(self._grpc_channel, self.reachys[0].r_hand)
-            setattr(self, "r_gripper", right_hand)
+            if self.reachys[0].HasField("r_hand"):
+                right_hand = Hand(self._grpc_channel, self.reachys[0].r_hand)
+                setattr(self.r_arm, "gripper", right_hand)
 
         if self.reachys[0].HasField("head"):
-            head = Head(self._grpc_channel, self.reachys[0].head)
-            setattr(self, "head", head)
+            self.head = Head(self._grpc_channel, self.reachys[0].head)
 
         if self.reachys[0].HasField("mobile_base"):
             pass
