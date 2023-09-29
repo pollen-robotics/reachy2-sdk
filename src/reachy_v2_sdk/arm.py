@@ -1,10 +1,3 @@
-"""Reachy Arm module.
-
-Handles all specific method to an Arm (left and/or right) especially:
-- the forward kinematics
-- the inverse kinematics
-"""
-
 from typing import List
 
 import grpc
@@ -15,29 +8,36 @@ from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal
 from reachy_sdk_api_v2.arm_pb2 import JointsLimits, ArmTemperatures
 from reachy_sdk_api_v2.part_pb2 import PartId
 
+from .orbita2d import Orbita2d
+from .orbita3d import Orbita3d
+
 
 class Arm:
-    """Arm abstract class used for both left/right arms.
-
-    It exposes the kinematics of the arm:
-    - you can access the joints actually used in the kinematic chain,
-    - you can compute the forward and inverse kinematics
-    """
-
-    def __init__(self, arm: Arm_proto, grpc_channel: grpc.Channel) -> None:
-        """Set up the arm with its kinematics."""
+    def __init__(self, arm_msg: Arm_proto, grpc_channel: grpc.Channel) -> None:
+        self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
-        self.part_id = PartId(id=arm.part_id)
+        self.part_id = PartId(id=arm_msg.part_id.name)
 
-        self._joint_list = [
-            "shoulder_pitch",
-            "shoulder_roll",
-            "elbow_yaw",
-            "elbow_pitch",
-            "wrist_roll",
-            "wrist_pitch",
-            "wrist_yaw",
-        ]
+        self._setup_arm(arm_msg)
+
+    def _setup_arm(self, arm: Arm_proto) -> None:
+        description = arm.description
+        self.shoulder = Orbita2d(
+            name=description.shoulder.id.id,
+            axis1=description.shoulder.axis_1,
+            axis2=description.shoulder.axis_2,
+            grpc_channel=self._grpc_channel,
+        )
+        self.elbow = Orbita2d(
+            name=description.elbow.id.id,
+            axis1=description.elbow.axis_1,
+            axis2=description.elbow.axis_2,
+            grpc_channel=self._grpc_channel,
+        )
+        self.wrist = Orbita3d(
+            name=description.wrist.id.id,
+            grpc_channel=self._grpc_channel,
+        )
 
     def turn_on(self) -> None:
         self._arm_stub.TurnOn(self.part_id)
