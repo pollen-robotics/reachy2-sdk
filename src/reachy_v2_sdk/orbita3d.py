@@ -93,3 +93,5 @@ class Orbita3d:
         self.roll._torque_limit = new_state.torque_limit.roll
         self.pitch._torque_limit = new_state.torque_limit.pitch
         self.yaw._torque_limit = new_state.present_position.yaw
+
+        self.compliant = new_state.compliant.value

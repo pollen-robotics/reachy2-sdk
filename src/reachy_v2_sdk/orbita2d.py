@@ -91,3 +91,5 @@ class Orbita2d:
 
         axis1_attr._torque_limit = new_state.torque_limit.axis_1
         axis2_attr._torque_limit = new_state.torque_limit.axis_2
+
+        self.compliant = new_state.compliant.value
