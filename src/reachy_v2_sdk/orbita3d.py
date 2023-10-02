@@ -6,6 +6,7 @@ from reachy_sdk_api_v2.orbita3d_pb2 import (
 
 from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
+from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DState
 from .orbita_utils import OrbitaAxis
 
 
@@ -61,3 +62,9 @@ class Orbita3d:
         self.roll._torque_limit = resp.torque_limit.roll
         self.pitch._torque_limit = resp.torque_limit.pitch
         self.yaw._torque_limit = resp.present_position.yaw
+
+    def _update_with(self, new_state: Orbita3DState) -> None:
+        """Update the orbita with a newly received (partial) state received from the gRPC server."""
+        self.roll._temperature = new_state.temperature.roll
+        self.pitch._temperature = new_state.temperature.pitch
+        self.yaw._temperature = new_state.temperature.yaw

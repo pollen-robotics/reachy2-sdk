@@ -72,3 +72,5 @@ class Arm:
     def _update_with(self, new_state: ArmState) -> None:
         """Update the arm with a newly received (partial) state received from the gRPC server."""
         self.shoulder._update_with(new_state.shoulder_state)
+        self.elbow._update_with(new_state.elbow_state)
+        self.wrist._update_with(new_state.wrist_state)
