@@ -16,7 +16,7 @@ class Arm:
     def __init__(self, arm_msg: Arm_proto, grpc_channel: grpc.Channel) -> None:
         self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
-        self.part_id = PartId(id=arm_msg.part_id.name)
+        self.part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
 
         self._setup_arm(arm_msg)
 
