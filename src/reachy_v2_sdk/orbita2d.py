@@ -4,6 +4,7 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
     Axis,
     Orbita2DField,
     Orbita2DStateRequest,
+    Orbita2DState,
 )
 
 from reachy_sdk_api_v2.component_pb2 import ComponentId
@@ -64,3 +65,10 @@ class Orbita2d:
 
         axis1_attr._torque_limit = resp.torque_limit.axis_1
         axis2_attr._torque_limit = resp.torque_limit.axis_2
+
+    def _update_with(self, new_state: Orbita2DState) -> None:
+        """Update the orbita with a newly received (partial) state received from the gRPC server."""
+        axis1_attr = getattr(self, self._axis1)
+        axis2_attr = getattr(self, self._axis2)
+        axis1_attr._temperature = new_state.temperature.axis_1
+        axis2_attr._temperature = new_state.temperature.axis_2

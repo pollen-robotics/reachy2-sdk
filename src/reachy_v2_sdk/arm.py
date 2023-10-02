@@ -4,7 +4,7 @@ import grpc
 
 from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
 from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto, ArmPosition
-from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal
+from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal, ArmState
 from reachy_sdk_api_v2.arm_pb2 import JointsLimits, ArmTemperatures
 from reachy_sdk_api_v2.part_pb2 import PartId
 
@@ -68,3 +68,7 @@ class Arm:
     def temperatures(self) -> ArmTemperatures:
         temperatures = self._arm_stub.GetTemperatures(self.part_id)
         return temperatures
+
+    def _update_with(self, new_state: ArmState) -> None:
+        """Update the arm with a newly received (partial) state received from the gRPC server."""
+        self.shoulder._update_with(new_state.shoulder_state)
