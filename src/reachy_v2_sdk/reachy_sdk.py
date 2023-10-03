@@ -18,7 +18,7 @@ from logging import getLogger
 
 import grpc
 
-from typing import Optional
+# from typing import Optional
 
 # from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
@@ -28,6 +28,7 @@ from reachy_sdk_api_v2 import reachy_pb2_grpc
 # from reachy_v2_sdk_api import config_pb2_grpc
 from .reachy import ReachyInfo, get_config
 from .arm import Arm
+from .head import Head
 
 
 class ReachySDK:
@@ -53,8 +54,8 @@ class ReachySDK:
         self._sdk_port = sdk_port
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
 
-        self.l_arm: Optional[Arm] = None
-        self.r_arm: Optional[Arm] = None
+        # self.l_arm: Optional[Arm] = None
+        # self.r_arm: Optional[Arm] = None
         # self.head: Optional[Head] = None
         # self.mobile_base: Optional[MobileBase] = None
 
@@ -88,8 +89,9 @@ class ReachySDK:
         #         left_hand = Hand(self._grpc_channel, self._robot.l_hand)
         #         setattr(self.l_arm, "gripper", left_hand)
 
-        # if self._robot.HasField("head"):
-        #     self.head = Head(self._grpc_channel, self._robot.head)
+        if self._robot.HasField("head"):
+            head = Head(self._robot.head, self._grpc_channel)
+            setattr(self, "head", head)
 
         # if self._robot.HasField("mobile_base"):
         #     pass
