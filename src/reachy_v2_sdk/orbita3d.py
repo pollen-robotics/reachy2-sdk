@@ -7,8 +7,9 @@ from grpc import Channel
 
 # from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
+
 from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DState
-from .orbita_utils import OrbitaAxis
+from .orbita_utils import OrbitaAxis, OrbitaJoint
 
 
 class Orbita3d:
@@ -16,9 +17,19 @@ class Orbita3d:
         self.name = name
         self._stub = Orbita3DServiceStub(grpc_channel)
 
-        self.roll = OrbitaAxis("roll")
-        self.pitch = OrbitaAxis("pitch")
-        self.yaw = OrbitaAxis("yaw")
+        init_state = {
+            "present_position": 20.0,
+            "present_speed": 0.0,
+            "present_load": 0.0,
+            "temperature": 0.0,
+            "goal_position": 100.0,
+            "speed_limit": 0.0,
+            "torque_limit": 0.0,
+        }
+
+        self.roll = OrbitaJoint(initial_state=init_state.copy(), axis_type="roll")
+        self.pitch = OrbitaJoint(initial_state=init_state.copy(), axis_type="pitch")
+        self.yaw = OrbitaJoint(initial_state=init_state.copy(), axis_type="yaw")
 
         self.compliant = False
 
@@ -39,7 +50,6 @@ class Orbita3d:
     #             ],
     #         )
     #     )
-
     #     self.roll._present_position = resp.present_position.roll
     #     self.pitch._present_position = resp.present_position.pitch
     #     self.yaw._present_position = resp.present_position.yaw
