@@ -9,7 +9,7 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
 from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 
-from .orbita_utils import OrbitaAxis
+from .orbita_utils import OrbitaJoint
 
 
 class Orbita2d:
@@ -22,8 +22,20 @@ class Orbita2d:
 
         self._axis1 = axis1_name
         self._axis2 = axis2_name
-        setattr(self, axis1_name, OrbitaAxis(axis1))
-        setattr(self, axis2_name, OrbitaAxis(axis2))
+
+        init_state = {
+            "present_position": 20.0,
+            "present_speed": 0.0,
+            "present_load": 0.0,
+            "temperature": 0.0,
+            "goal_position": 100.0,
+            "speed_limit": 0.0,
+            "torque_limit": 0.0,
+        }
+
+        # TODO get initial state from grpc server
+        setattr(self, axis1_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis1))
+        setattr(self, axis2_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis2))
 
         self.compliant = False
 
