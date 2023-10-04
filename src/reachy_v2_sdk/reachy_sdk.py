@@ -7,10 +7,10 @@ You can also send joint commands, compute forward or inverse kinematics.
 
 """
 
-# import asyncio
+import asyncio
 import atexit
 
-# import threading
+import threading
 
 # import time
 # from typing import List
@@ -23,7 +23,7 @@ import grpc
 # from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
 
-from reachy_sdk_api_v2 import reachy_pb2_grpc
+from reachy_sdk_api_v2 import reachy_pb2, reachy_pb2_grpc
 
 # from reachy_v2_sdk_api import config_pb2_grpc
 from .reachy import ReachyInfo, get_config
@@ -62,6 +62,10 @@ class ReachySDK:
         self._get_info()
         self._setup_parts()
 
+        self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
+        self._sync_thread.daemon = True
+        self._sync_thread.start()
+
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
         return f'<Reachy host="{self._host}">'
@@ -77,7 +81,8 @@ class ReachySDK:
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
         if self._robot.HasField("r_arm"):
-            self.r_arm = Arm(self._robot.r_arm, self._grpc_channel)
+            r_arm = Arm(self._robot.r_arm, self._grpc_channel)
+            setattr(self, "r_arm", r_arm)
             # if self._robot.HasField("r_hand"):
             #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)
             #     setattr(self.r_arm, "gripper", right_hand)
@@ -98,6 +103,32 @@ class ReachySDK:
 
         # if self._robot.HasField("mobile_base"):
         #     pass
+
+    def _start_sync_in_bg(self) -> None:
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self._sync_loop())
+
+    async def _sync_loop(self) -> None:
+        async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
+        reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
+
+        await self._get_stream_update_loop(reachy_stub, freq=100)
+
+    async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
+        stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
+        async for state_update in reachy_stub.StreamReachyState(stream_req):
+            if hasattr(self, "l_arm"):
+                self.l_arm._update_with(state_update.l_arm_state)
+                # if (hasattr(self.l_arm, 'l_hand')):
+                #     self.l_arm.gripper._update_with(state_update.l_hand_state)
+            if hasattr(self, "r_arm"):
+                self.r_arm._update_with(state_update.r_arm_state)
+                if hasattr(self, "r_hand"):
+                    self.r_arm.gripper._update_with(state_update.r_hand_state)
+            if hasattr(self, "head"):
+                self.head._update_with(state_update.head_state)
+            # if (hasattr(self, 'mobile_base')):
+            # self.mobile_base._update_with(state_update.mobile_base_state)
 
 
 def flush_communication() -> None:
