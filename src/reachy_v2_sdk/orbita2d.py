@@ -46,8 +46,6 @@ class Orbita2d:
         setattr(self, axis1_name, OrbitaJoint(initial_state=init_state["axis_1"], axis_type=axis1))
         setattr(self, axis2_name, OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2))
 
-        self.compliant = False
-
     def _update_with(self, new_state: Orbita2DState) -> None:
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
         for field, value in new_state.ListFields():
