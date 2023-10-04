@@ -30,21 +30,21 @@ class Orbita2d:
 
         self._axis_to_name: Dict[str, str] = {"axis_1": self._axis1, "axis_2": self._axis2}
 
-        init_state = {
-            "present_position": 20.0,
-            "present_speed": 0.0,
-            "present_load": 0.0,
-            "temperature": 0.0,
-            "goal_position": 100.0,
-            "speed_limit": 0.0,
-            "torque_limit": 0.0,
-        }
-
         self._state: Dict[str, bool] = {}
+        init_state: Dict[str, Dict[str, float]] = {}
 
-        # TODO get initial state from grpc server
-        setattr(self, axis1_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis1))
-        setattr(self, axis2_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis2))
+        for field, value in initial_state.ListFields():
+            if field.name == "compliant":
+                self._state[field.name] = value.value
+            else:
+                if isinstance(value, Float2D):
+                    for axis, val in value.ListFields():
+                        if axis.name not in init_state:
+                            init_state[axis.name] = {}
+                        init_state[axis.name][field.name] = val
+
+        setattr(self, axis1_name, OrbitaJoint(initial_state=init_state["axis_1"], axis_type=axis1))
+        setattr(self, axis2_name, OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2))
 
         self.compliant = False
 
