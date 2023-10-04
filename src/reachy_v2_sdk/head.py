@@ -9,7 +9,7 @@ import grpc
 from pyquaternion import Quaternion
 
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
-from reachy_sdk_api_v2.head_pb2 import Head as Head_proto
+from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
 from reachy_sdk_api_v2.part_pb2 import PartId
 
 from .orbita3d import Orbita3d
@@ -24,15 +24,15 @@ class Head:
     expressed in Reachy's coordinate system.
     """
 
-    def __init__(self, head_msg: Head_proto, grpc_channel: grpc.Channel) -> None:
+    def __init__(self, head_msg: Head_proto, initial_state: HeadState, grpc_channel: grpc.Channel) -> None:
         """Set up the head."""
         self._grpc_channel = grpc_channel
         self._head_stub = HeadServiceStub(grpc_channel)
         self.part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
 
-        self._setup_head(head_msg)
+        self._setup_head(head_msg, initial_state)
 
-    def _setup_head(self, head: Head_proto) -> None:
+    def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
         description = head.description
         self.neck = Orbita3d(
             name=description.neck.id.id,
@@ -40,10 +40,12 @@ class Head:
         )
         self.l_antenna = DynamixelMotor(
             name=description.l_antenna.id.id,
+            initial_state=initial_state.l_antenna_state,
             grpc_channel=self._grpc_channel,
         )
         self.r_antenna = DynamixelMotor(
             name=description.r_antenna.id.id,
+            initial_state=initial_state.r_antenna_state,
             grpc_channel=self._grpc_channel,
         )
 

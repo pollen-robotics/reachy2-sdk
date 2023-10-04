@@ -73,6 +73,9 @@ class ReachySDK:
         self.config = get_config(self._robot)
 
     def _setup_parts(self) -> None:
+        setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
+        initial_state = setup_stub.GetReachyState(self._robot.id)
+
         if self._robot.HasField("r_arm"):
             self.r_arm = Arm(self._robot.r_arm, self._grpc_channel)
             # if self._robot.HasField("r_hand"):
@@ -90,7 +93,7 @@ class ReachySDK:
         #         setattr(self.l_arm, "gripper", left_hand)
 
         if self._robot.HasField("head"):
-            head = Head(self._robot.head, self._grpc_channel)
+            head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
             setattr(self, "head", head)
 
         # if self._robot.HasField("mobile_base"):
