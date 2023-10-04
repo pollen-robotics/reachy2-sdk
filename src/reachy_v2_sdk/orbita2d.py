@@ -18,7 +18,7 @@ from .orbita_utils import OrbitaJoint
 class Orbita2d:
     compliant = Register(readonly=False, label="compliant")
 
-    def __init__(self, name: str, axis1: Axis, axis2: Axis, grpc_channel: Channel):
+    def __init__(self, name: str, axis1: Axis, axis2: Axis, initial_state: Orbita2DState, grpc_channel: Channel):
         self.name = name
         self._stub = Orbita2DServiceStub(grpc_channel)
 
@@ -30,23 +30,21 @@ class Orbita2d:
 
         self._axis_to_name: Dict[str, str] = {"axis_1": self._axis1, "axis_2": self._axis2}
 
-        init_state = {
-            "present_position": 20.0,
-            "present_speed": 0.0,
-            "present_load": 0.0,
-            "temperature": 0.0,
-            "goal_position": 100.0,
-            "speed_limit": 0.0,
-            "torque_limit": 0.0,
-        }
-
         self._state: Dict[str, bool] = {}
+        init_state: Dict[str, Dict[str, float]] = {}
 
-        # TODO get initial state from grpc server
-        setattr(self, axis1_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis1))
-        setattr(self, axis2_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis2))
+        for field, value in initial_state.ListFields():
+            if field.name == "compliant":
+                self._state[field.name] = value.value
+            else:
+                if isinstance(value, Float2D):
+                    for axis, val in value.ListFields():
+                        if axis.name not in init_state:
+                            init_state[axis.name] = {}
+                        init_state[axis.name][field.name] = val
 
-        self.compliant = False
+        setattr(self, axis1_name, OrbitaJoint(initial_state=init_state["axis_1"], axis_type=axis1))
+        setattr(self, axis2_name, OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2))
 
     def _update_with(self, new_state: Orbita2DState) -> None:
         """Update the orbita with a newly received (partial) state received from the gRPC server."""

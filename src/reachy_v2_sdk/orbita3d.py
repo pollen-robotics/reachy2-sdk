@@ -13,27 +13,26 @@ from .orbita_utils import OrbitaJoint
 class Orbita3d:
     compliant = Register(readonly=False, label="compliant")
 
-    def __init__(self, name: str, grpc_channel: Channel):
+    def __init__(self, name: str, initial_state: Orbita3DState, grpc_channel: Channel):
         self.name = name
         self._stub = Orbita3DServiceStub(grpc_channel)
 
-        init_state = {
-            "present_position": 20.0,
-            "present_speed": 0.0,
-            "present_load": 0.0,
-            "temperature": 0.0,
-            "goal_position": 100.0,
-            "speed_limit": 0.0,
-            "torque_limit": 0.0,
-        }
-
         self._state: Dict[str, bool] = {}
+        init_state: Dict[str, Dict[str, float]] = {}
 
-        self.roll = OrbitaJoint(initial_state=init_state.copy(), axis_type="roll")
-        self.pitch = OrbitaJoint(initial_state=init_state.copy(), axis_type="pitch")
-        self.yaw = OrbitaJoint(initial_state=init_state.copy(), axis_type="yaw")
+        for field, value in initial_state.ListFields():
+            if field.name == "compliant":
+                self._state[field.name] = value.value
+            else:
+                if isinstance(value, Float3D):
+                    for axis, val in value.ListFields():
+                        if axis.name not in init_state:
+                            init_state[axis.name] = {}
+                        init_state[axis.name][field.name] = val
 
-        self.compliant = False
+        self.roll = OrbitaJoint(initial_state=init_state["roll"], axis_type="roll")
+        self.pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch")
+        self.yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw")
 
     def _update_with(self, new_state: Orbita3DState) -> None:
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
