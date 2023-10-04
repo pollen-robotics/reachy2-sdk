@@ -4,20 +4,22 @@ from typing import Any, Dict
 
 from .register import Register
 
+from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
+
 # from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 from reachy_sdk_api_v2.dynamixel_motor_pb2 import DynamixelMotorState
 
 
 class DynamixelMotor:
-    compliant = Register(readonly=False, label="compliant")
-    present_position = Register(readonly=True, label="present_position")
-    present_speed = Register(readonly=True, label="present_speed")
-    present_load = Register(readonly=True, label="present_load")
-    temperature = Register(readonly=True, label="temperature")
-    goal_position = Register(readonly=False, label="goal_position")
-    speed_limit = Register(readonly=False, label="speed_limit")
-    torque_limit = Register(readonly=False, label="torque_limit")
+    compliant = Register(readonly=False, type=BoolValue, label="compliant")
+    present_position = Register(readonly=True, type=FloatValue, label="present_position")
+    present_speed = Register(readonly=True, type=FloatValue, label="present_speed")
+    present_load = Register(readonly=True, type=FloatValue, label="present_load")
+    temperature = Register(readonly=True, type=FloatValue, label="temperature")
+    goal_position = Register(readonly=False, type=FloatValue, label="goal_position")
+    speed_limit = Register(readonly=False, type=FloatValue, label="speed_limit")
+    torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
 
     def __init__(self, name: str, initial_state: DynamixelMotorState, grpc_channel: Channel):
         self.name = name
