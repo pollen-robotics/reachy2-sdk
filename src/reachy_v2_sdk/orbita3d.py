@@ -1,63 +1,47 @@
 from grpc import Channel
-from reachy_sdk_api_v2.orbita3d_pb2 import (
-    Orbita3DField,
-    Orbita3DStateRequest,
-)
 
-from reachy_sdk_api_v2.component_pb2 import ComponentId
+from .register import Register
+
+from typing import Dict
+
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
-from .orbita_utils import OrbitaAxis
+
+from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DState, Float3D
+from .orbita_utils import OrbitaJoint
 
 
 class Orbita3d:
+    compliant = Register(readonly=False, label="compliant")
+
     def __init__(self, name: str, grpc_channel: Channel):
         self.name = name
         self._stub = Orbita3DServiceStub(grpc_channel)
 
-        self.roll = OrbitaAxis("roll")
-        self.pitch = OrbitaAxis("pitch")
-        self.yaw = OrbitaAxis("yaw")
+        init_state = {
+            "present_position": 20.0,
+            "present_speed": 0.0,
+            "present_load": 0.0,
+            "temperature": 0.0,
+            "goal_position": 100.0,
+            "speed_limit": 0.0,
+            "torque_limit": 0.0,
+        }
+
+        self._state: Dict[str, bool] = {}
+
+        self.roll = OrbitaJoint(initial_state=init_state.copy(), axis_type="roll")
+        self.pitch = OrbitaJoint(initial_state=init_state.copy(), axis_type="pitch")
+        self.yaw = OrbitaJoint(initial_state=init_state.copy(), axis_type="yaw")
 
         self.compliant = False
 
-    # TODO: perform the update in a thread
-    # TODO: find a smarter way to do this
-    def update_3dstate(self) -> None:
-        resp = self._stub.GetState(
-            Orbita3DStateRequest(
-                id=ComponentId(id=self.name),
-                fields=[
-                    Orbita3DField.PRESENT_POSITION,
-                    Orbita3DField.PRESENT_SPEED,
-                    Orbita3DField.PRESENT_LOAD,
-                    Orbita3DField.TEMPERATURE,
-                    Orbita3DField.GOAL_POSITION,
-                    Orbita3DField.SPEED_LIMIT,
-                    Orbita3DField.TORQUE_LIMIT,
-                ],
-            )
-        )
-
-        self.roll._present_position = resp.present_position.roll
-        self.pitch._present_position = resp.present_position.pitch
-        self.yaw._present_position = resp.present_position.yaw
-
-        self.roll._present_speed = resp.present_speed.roll
-        self.pitch._present_speed = resp.present_speed.pitch
-        self.yaw._present_speed = resp.present_speed.yaw
-
-        self.roll._present_load = resp.present_load.roll
-        self.pitch._present_load = resp.present_load.pitch
-        self.yaw._present_load = resp.present_load.yaw
-
-        self.roll._goal_position = resp.goal_position.roll
-        self.pitch._goal_position = resp.goal_position.pitch
-        self.yaw._goal_position = resp.goal_position.yaw
-
-        self.roll._speed_limit = resp.speed_limit.roll
-        self.pitch._speed_limit = resp.speed_limit.pitch
-        self.yaw._speed_limit = resp.speed_limit.yaw
-
-        self.roll._torque_limit = resp.torque_limit.roll
-        self.pitch._torque_limit = resp.torque_limit.pitch
-        self.yaw._torque_limit = resp.present_position.yaw
+    def _update_with(self, new_state: Orbita3DState) -> None:
+        """Update the orbita with a newly received (partial) state received from the gRPC server."""
+        for field, value in new_state.ListFields():
+            if field.name == "compliant":
+                self._state[field.name] = value.value
+            else:
+                if isinstance(value, Float3D):
+                    for axis, val in value.ListFields():
+                        joint = getattr(self, axis.name)
+                        joint._state[field.name] = val

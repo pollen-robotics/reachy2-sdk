@@ -1,18 +1,23 @@
 from grpc import Channel
 
+from .register import Register
+
+from typing import Dict
+
 from reachy_sdk_api_v2.orbita2d_pb2 import (
     Axis,
-    Orbita2DField,
-    Orbita2DStateRequest,
+    Orbita2DState,
+    Float2D,
 )
 
-from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 
-from .orbita_utils import OrbitaAxis
+from .orbita_utils import OrbitaJoint
 
 
 class Orbita2d:
+    compliant = Register(readonly=False, label="compliant")
+
     def __init__(self, name: str, axis1: Axis, axis2: Axis, grpc_channel: Channel):
         self.name = name
         self._stub = Orbita2DServiceStub(grpc_channel)
@@ -22,45 +27,34 @@ class Orbita2d:
 
         self._axis1 = axis1_name
         self._axis2 = axis2_name
-        setattr(self, axis1_name, OrbitaAxis(axis1))
-        setattr(self, axis2_name, OrbitaAxis(axis2))
+
+        self._axis_to_name: Dict[str, str] = {"axis_1": self._axis1, "axis_2": self._axis2}
+
+        init_state = {
+            "present_position": 20.0,
+            "present_speed": 0.0,
+            "present_load": 0.0,
+            "temperature": 0.0,
+            "goal_position": 100.0,
+            "speed_limit": 0.0,
+            "torque_limit": 0.0,
+        }
+
+        self._state: Dict[str, bool] = {}
+
+        # TODO get initial state from grpc server
+        setattr(self, axis1_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis1))
+        setattr(self, axis2_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis2))
 
         self.compliant = False
 
-    # TODO: perform the update in a thread
-    # TODO: find a smarter way to do this
-    def update_2dstate(self) -> None:
-        resp = self._stub.GetState(
-            Orbita2DStateRequest(
-                id=ComponentId(id=self.name),
-                fields=[
-                    Orbita2DField.PRESENT_POSITION,
-                    Orbita2DField.PRESENT_SPEED,
-                    Orbita2DField.PRESENT_LOAD,
-                    Orbita2DField.TEMPERATURE,
-                    Orbita2DField.GOAL_POSITION,
-                    Orbita2DField.SPEED_LIMIT,
-                    Orbita2DField.TORQUE_LIMIT,
-                ],
-            )
-        )
-        axis1_attr = getattr(self, self._axis1)
-        axis2_attr = getattr(self, self._axis2)
-
-        axis1_attr._present_position = resp.present_position.axis_1
-        axis2_attr._present_position = resp.present_position.axis_2
-
-        axis1_attr._present_speed = resp.present_speed.axis_1
-        axis2_attr._present_speed = resp.present_speed.axis_2
-
-        axis1_attr._present_load = resp.present_load.axis_1
-        axis2_attr._present_load = resp.present_load.axis_2
-
-        axis1_attr._goal_position = resp.goal_position.axis_1
-        axis2_attr._goal_position = resp.goal_position.axis_2
-
-        axis1_attr._speed_limit = resp.speed_limit.axis_1
-        axis2_attr._speed_limit = resp.speed_limit.axis_2
-
-        axis1_attr._torque_limit = resp.torque_limit.axis_1
-        axis2_attr._torque_limit = resp.torque_limit.axis_2
+    def _update_with(self, new_state: Orbita2DState) -> None:
+        """Update the orbita with a newly received (partial) state received from the gRPC server."""
+        for field, value in new_state.ListFields():
+            if field.name == "compliant":
+                self._state[field.name] = value.value
+            else:
+                if isinstance(value, Float2D):
+                    for axis, val in value.ListFields():
+                        joint = getattr(self, self._axis_to_name[axis.name])
+                        joint._state[field.name] = val
