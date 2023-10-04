@@ -5,7 +5,7 @@ import grpc
 from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
 from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto, ArmPosition
 from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal, ArmState
-from reachy_sdk_api_v2.arm_pb2 import JointsLimits, ArmTemperatures
+from reachy_sdk_api_v2.arm_pb2 import ArmLimits, ArmTemperatures
 from reachy_sdk_api_v2.part_pb2 import PartId
 
 from .orbita2d import Orbita2d
@@ -63,7 +63,7 @@ class Arm:
         self._arm_stub.GoToJointPosition(goal)
 
     @property
-    def joints_limits(self) -> JointsLimits:
+    def joints_limits(self) -> ArmLimits:
         limits = self._arm_stub.GetJointLimit(self.part_id)
         return limits
 
