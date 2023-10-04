@@ -6,7 +6,7 @@ from reachy_sdk_api_v2.orbita3d_pb2 import (
 
 from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
-from .orbita_utils import OrbitaAxis
+from .orbita_utils import OrbitaJoint
 
 
 class Orbita3d:
@@ -14,9 +14,19 @@ class Orbita3d:
         self.name = name
         self._stub = Orbita3DServiceStub(grpc_channel)
 
-        self.roll = OrbitaAxis("roll")
-        self.pitch = OrbitaAxis("pitch")
-        self.yaw = OrbitaAxis("yaw")
+        init_state = {
+            "present_position": 20.0,
+            "present_speed": 0.0,
+            "present_load": 0.0,
+            "temperature": 0.0,
+            "goal_position": 100.0,
+            "speed_limit": 0.0,
+            "torque_limit": 0.0,
+        }
+
+        self.roll = OrbitaJoint(initial_state=init_state.copy(), axis_type="roll")
+        self.pitch = OrbitaJoint(initial_state=init_state.copy(), axis_type="pitch")
+        self.yaw = OrbitaJoint(initial_state=init_state.copy(), axis_type="yaw")
 
         self.compliant = False
 
@@ -38,26 +48,26 @@ class Orbita3d:
             )
         )
 
-        self.roll._present_position = resp.present_position.roll
-        self.pitch._present_position = resp.present_position.pitch
-        self.yaw._present_position = resp.present_position.yaw
+        self.roll.present_position = resp.present_position.roll
+        self.pitch.present_position = resp.present_position.pitch
+        self.yaw.present_position = resp.present_position.yaw
 
-        self.roll._present_speed = resp.present_speed.roll
-        self.pitch._present_speed = resp.present_speed.pitch
-        self.yaw._present_speed = resp.present_speed.yaw
+        self.roll.present_speed = resp.present_speed.roll
+        self.pitch.present_speed = resp.present_speed.pitch
+        self.yaw.present_speed = resp.present_speed.yaw
 
-        self.roll._present_load = resp.present_load.roll
-        self.pitch._present_load = resp.present_load.pitch
-        self.yaw._present_load = resp.present_load.yaw
+        self.roll.present_load = resp.present_load.roll
+        self.pitch.present_load = resp.present_load.pitch
+        self.yaw.present_load = resp.present_load.yaw
 
-        self.roll._goal_position = resp.goal_position.roll
-        self.pitch._goal_position = resp.goal_position.pitch
-        self.yaw._goal_position = resp.goal_position.yaw
+        self.roll.goal_position = resp.goal_position.roll
+        self.pitch.goal_position = resp.goal_position.pitch
+        self.yaw.goal_position = resp.goal_position.yaw
 
-        self.roll._speed_limit = resp.speed_limit.roll
-        self.pitch._speed_limit = resp.speed_limit.pitch
-        self.yaw._speed_limit = resp.speed_limit.yaw
+        self.roll.speed_limit = resp.speed_limit.roll
+        self.pitch.speed_limit = resp.speed_limit.pitch
+        self.yaw.speed_limit = resp.speed_limit.yaw
 
-        self.roll._torque_limit = resp.torque_limit.roll
-        self.pitch._torque_limit = resp.torque_limit.pitch
-        self.yaw._torque_limit = resp.present_position.yaw
+        self.roll.torque_limit = resp.torque_limit.roll
+        self.pitch.torque_limit = resp.torque_limit.pitch
+        self.yaw.torque_limit = resp.present_position.yaw
