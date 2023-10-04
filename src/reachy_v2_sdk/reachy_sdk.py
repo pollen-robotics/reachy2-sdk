@@ -81,7 +81,7 @@ class ReachySDK:
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
         if self._robot.HasField("r_arm"):
-            r_arm = Arm(self._robot.r_arm, self._grpc_channel)
+            r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
             setattr(self, "r_arm", r_arm)
             # if self._robot.HasField("r_hand"):
             #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)

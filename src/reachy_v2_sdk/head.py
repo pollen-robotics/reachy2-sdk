@@ -36,6 +36,7 @@ class Head:
         description = head.description
         self.neck = Orbita3d(
             name=description.neck.id.id,
+            initial_state=initial_state.neck_state,
             grpc_channel=self._grpc_channel,
         )
         self.l_antenna = DynamixelMotor(

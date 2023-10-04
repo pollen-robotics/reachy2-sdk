@@ -13,29 +13,32 @@ from .orbita3d import Orbita3d
 
 
 class Arm:
-    def __init__(self, arm_msg: Arm_proto, grpc_channel: grpc.Channel) -> None:
+    def __init__(self, arm_msg: Arm_proto, initial_state: ArmState, grpc_channel: grpc.Channel) -> None:
         self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
         self.part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
 
-        self._setup_arm(arm_msg)
+        self._setup_arm(arm_msg, initial_state)
 
-    def _setup_arm(self, arm: Arm_proto) -> None:
+    def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
         description = arm.description
         self.shoulder = Orbita2d(
             name=description.shoulder.id.id,
             axis1=description.shoulder.axis_1,
             axis2=description.shoulder.axis_2,
+            initial_state=initial_state.shoulder_state,
             grpc_channel=self._grpc_channel,
         )
         self.elbow = Orbita2d(
             name=description.elbow.id.id,
             axis1=description.elbow.axis_1,
             axis2=description.elbow.axis_2,
+            initial_state=initial_state.elbow_state,
             grpc_channel=self._grpc_channel,
         )
         self.wrist = Orbita3d(
             name=description.wrist.id.id,
+            initial_state=initial_state.wrist_state,
             grpc_channel=self._grpc_channel,
         )
 
