@@ -19,7 +19,8 @@ class DynamixelMotor:
     speed_limit = Register(readonly=False, label="speed_limit")
     torque_limit = Register(readonly=False, label="torque_limit")
 
-    def __init__(self, name: str, initial_state: DynamixelMotorState, grpc_channel: Channel):
+    def __init__(self, uid: int, name: str, initial_state: DynamixelMotorState, grpc_channel: Channel):
+        self.id = uid
         self.name = name
         self._stub = DynamixelMotorServiceStub(grpc_channel)
 
