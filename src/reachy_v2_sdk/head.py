@@ -63,3 +63,9 @@ class Head:
 
     def turn_off(self) -> None:
         self._head_stub.TurnOff(self.part_id)
+
+    def _update_with(self, new_state: HeadState) -> None:
+        """Update the head with a newly received (partial) state received from the gRPC server."""
+        self.neck._update_with(new_state.neck_state)
+        self.l_antenna._update_with(new_state.l_antenna_state)
+        self.r_antenna._update_with(new_state.r_antenna_state)
