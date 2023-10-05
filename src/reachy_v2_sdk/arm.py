@@ -5,6 +5,8 @@ import grpc
 import numpy as np
 import numpy.typing as npt
 
+from pyquaternion import Quaternion as pyQuat
+
 from google.protobuf.wrappers_pb2 import FloatValue
 
 from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
@@ -135,7 +137,7 @@ class Arm:
             )
         self._arm_stub.GoToCartesianPosition(target)
 
-    def goto_joints(self, positions: List[float], duration: float) -> None:
+    def goto_joints(self, positions: List[float], duration: float = 0) -> None:
         arm_pos = self._list_to_arm_position(positions)
         goal = ArmJointGoal(id=self.part_id, position=arm_pos, duration=FloatValue(value=duration))
         self._arm_stub.GoToJointPosition(goal)
