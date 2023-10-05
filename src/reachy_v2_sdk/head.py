@@ -8,8 +8,6 @@ import grpc
 
 from pyquaternion import Quaternion as Quat
 
-from typing import Tuple
-
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
 from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
 from reachy_sdk_api_v2.head_pb2 import HeadTargetPoint, NeckGoal
@@ -62,8 +60,8 @@ class Head:
         req = NeckGoal(id=self.part_id, rotation=Rotation3D(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)), duration=duration)
         self._head_stub.GoToOrientation(req)
 
-    def rotate_to(self, position: Tuple[float, float, float], duration: float) -> None:
-        # quat = self.inverse_kinematics(position)
+    def rotate_to(self, roll: float, pitch: float, yaw: float, duration: float) -> None:
+        # quat = self.inverse_kinematics((roll, pitch, yaw))
         # self.orient(quat, duration)
         pass
 
