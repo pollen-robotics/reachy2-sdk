@@ -6,7 +6,7 @@ Handles all specific method to an Head:
 """
 import grpc
 
-from pyquaternion import Quaternion as Quat
+from pyquaternion import Quaternion as pyQuat
 
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
 from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
@@ -56,7 +56,7 @@ class Head:
         req = HeadTargetPoint(id=self.part_id, point=Point(x=x, y=y, z=z))
         self._head_stub.LookAt(req)
 
-    def orient(self, q: Quat, duration: float) -> None:
+    def orient(self, q: pyQuat, duration: float) -> None:
         req = NeckGoal(id=self.part_id, rotation=Rotation3D(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)), duration=duration)
         self._head_stub.GoToOrientation(req)
 
