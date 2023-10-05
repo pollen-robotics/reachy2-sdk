@@ -13,7 +13,7 @@ import atexit
 import threading
 
 # import time
-# from typing import List
+from typing import List
 from logging import getLogger
 
 import grpc
@@ -54,6 +54,9 @@ class ReachySDK:
         self._sdk_port = sdk_port
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
 
+        self._enabled_parts: List[str] = []
+        self._disabled_parts: List[str] = []
+
         # self.l_arm: Optional[Arm] = None
         # self.r_arm: Optional[Arm] = None
         # self.head: Optional[Head] = None
@@ -69,6 +72,14 @@ class ReachySDK:
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
         return f'<Reachy host="{self._host}">'
+
+    @property
+    def enabled_parts(self) -> List[str]:
+        return self._enabled_parts
+
+    @property
+    def disabled_parts(self) -> List[str]:
+        return self._disabled_parts
 
     def _get_info(self) -> None:
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
