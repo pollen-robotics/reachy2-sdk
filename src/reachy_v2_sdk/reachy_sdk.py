@@ -91,12 +91,16 @@ class ReachySDK:
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
-        if self._robot.HasField("r_arm"):
-            r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
-            setattr(self, "r_arm", r_arm)
-            # if self._robot.HasField("r_hand"):
-            #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)
-            #     setattr(self.r_arm, "gripper", right_hand)
+        if self._robot.HasField("r_arm") and initial_state.r_arm_state.activated:
+            if initial_state.r_arm_state.activated:
+                r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
+                setattr(self, "r_arm", r_arm)
+                self._enabled_parts.append("r_arm")
+                # if self._robot.HasField("r_hand"):
+                #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)
+                #     setattr(self.r_arm, "gripper", right_hand)
+            else:
+                self._disabled_parts.append("r_arm")
 
         # if self._robot.HasField("l_arm"):
         #     self.l_arm = Arm(self._grpc_channel, self._robot.l_arm)
@@ -109,8 +113,12 @@ class ReachySDK:
         #         setattr(self.l_arm, "gripper", left_hand)
 
         if self._robot.HasField("head"):
-            head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
-            setattr(self, "head", head)
+            if initial_state.head_state.activated:
+                head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
+                setattr(self, "head", head)
+                self._enabled_parts.append("head")
+            else:
+                self._disabled_parts.append("head")
 
         # if self._robot.HasField("mobile_base"):
         #     pass
