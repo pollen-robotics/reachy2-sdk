@@ -8,11 +8,13 @@ import grpc
 
 from pyquaternion import Quaternion as pyQuat
 
+from google.protobuf.wrappers_pb2 import FloatValue
+
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
 from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
-from reachy_sdk_api_v2.head_pb2 import HeadTargetPoint, NeckGoal
+from reachy_sdk_api_v2.head_pb2 import HeadLookAtGoal, NeckGoal
 from reachy_sdk_api_v2.part_pb2 import PartId
-from reachy_sdk_api_v2.kinematics_pb2 import Point, Rotation3D, Quaternion, EulerAngles
+from reachy_sdk_api_v2.kinematics_pb2 import Point, Rotation3D, Quaternion, ExtEulerAngles
 
 from .orbita3d import Orbita3d
 from .dynamixel_motor import DynamixelMotor
@@ -53,7 +55,7 @@ class Head:
         )
 
     def look_at(self, x: float, y: float, z: float, duration: float) -> None:
-        req = HeadTargetPoint(id=self.part_id, point=Point(x=x, y=y, z=z))
+        req = HeadLookAtGoal(id=self.part_id, point=Point(x=x, y=y, z=z), duration=FloatValue(value=duration))
         self._head_stub.LookAt(req)
 
     def orient(self, q: pyQuat, duration: float) -> None:
@@ -62,7 +64,7 @@ class Head:
 
     def rotate_to(self, roll: float, pitch: float, yaw: float, duration: float) -> None:
         req = NeckGoal(
-            id=self.part_id, rotation=Rotation3D(rpy=EulerAngles(roll=roll, pitch=pitch, yaw=yaw)), duration=duration
+            id=self.part_id, rotation=Rotation3D(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)), duration=duration
         )
         self._head_stub.GoToOrientation(req)
 
