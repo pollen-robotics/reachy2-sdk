@@ -1,5 +1,10 @@
+import asyncio
 from grpc import Channel
+from google.protobuf.wrappers_pb2 import BoolValue
+
 from reachy_sdk_api_v2.orbita3d_pb2 import (
+    Float3D,
+    Orbita3DCommand,
     Orbita3DField,
     Orbita3DStateRequest,
 )
@@ -24,11 +29,56 @@ class Orbita3d:
             "torque_limit": 0.0,
         }
 
-        self.roll = OrbitaJoint(initial_state=init_state.copy(), axis_type="roll")
-        self.pitch = OrbitaJoint(initial_state=init_state.copy(), axis_type="pitch")
-        self.yaw = OrbitaJoint(initial_state=init_state.copy(), axis_type="yaw")
+        # Should set this as @property?
+        self.roll = OrbitaJoint(initial_state=init_state.copy(), axis_type="roll", actuator=self)
+        self.pitch = OrbitaJoint(initial_state=init_state.copy(), axis_type="pitch", actuator=self)
+        self.yaw = OrbitaJoint(initial_state=init_state.copy(), axis_type="yaw", actuator=self)
 
         self.compliant = False
+
+        self._setup_sync_loop()
+
+    def _build_3d_float_msg(self, field: str) -> Float3D:
+        return Float3D(
+            roll=getattr(self.roll, field),
+            pitch=getattr(self.pitch, field),
+            yaw=getattr(self.yaw, field),
+        )
+
+    def _setup_sync_loop(self) -> None:
+        """Set up the async synchronisation loop.
+
+        The setup is done separately, as the async Event should be created in the same EventLoop than it will be used.
+
+        The _need_sync Event is used to inform the robot that some data need to be pushed to the real robot.
+        The _register_needing_sync stores a list of the register that need to be synced.
+        """
+        self._need_sync = asyncio.Event()
+        self._loop = asyncio.get_running_loop()
+
+    def _pop_command(self) -> Orbita3DCommand:
+        """Create a gRPC command from the registers that need to be synced."""
+        values = {
+            "id": ComponentId(id=self.name),
+        }
+
+        set_reg_roll = set(self.roll._register_needing_sync)
+        set_reg_pitch = set(self.pitch._register_needing_sync)
+        set_reg_yaw = set(self.yaw._register_needing_sync)
+
+        for reg in set_reg_roll.union(set_reg_pitch).union(set_reg_yaw):
+            if reg == "compliant":
+                values["compliant"] = BoolValue(value=self.compliant)
+            else:
+                values[reg] = self._build_3d_float_msg(reg)
+        command = Orbita3DCommand(**values)
+
+        self.roll._register_needing_sync.clear()
+        self.pitch._register_needing_sync.clear()
+        self.yaw._register_needing_sync.clear()
+        self._need_sync.clear()
+
+        return command
 
     # TODO: perform the update in a thread
     # TODO: find a smarter way to do this

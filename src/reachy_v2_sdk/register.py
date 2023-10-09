@@ -12,4 +12,5 @@ class Register:
     def __set__(self, instance, value):  # type: ignore
         if self.readonly:
             raise AttributeError("can't set attribute")
+        instance._register_needing_sync.append(self.label)
         instance._state[self.label] = value

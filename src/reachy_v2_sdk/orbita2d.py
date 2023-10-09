@@ -1,7 +1,12 @@
+import asyncio
 from grpc import Channel
+
+from google.protobuf.wrappers_pb2 import BoolValue
 
 from reachy_sdk_api_v2.orbita2d_pb2 import (
     Axis,
+    Float2D,
+    Orbita2DCommand,
     Orbita2DField,
     Orbita2DStateRequest,
 )
@@ -34,10 +39,55 @@ class Orbita2d:
         }
 
         # TODO get initial state from grpc server
-        setattr(self, axis1_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis1))
-        setattr(self, axis2_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis2))
+        # Should set this as @property?
+        setattr(self, axis1_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis1, actuator=self))
+        setattr(self, axis2_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis2, actuator=self))
 
         self.compliant = False
+
+        self._setup_sync_loop()
+
+    def _build_2d_float_msg(self, field: str) -> Float2D:
+        axis1_attr = getattr(self, self._axis1)
+        axis2_attr = getattr(self, self._axis2)
+
+        return Float2D(
+            axis_1=getattr(axis1_attr, field),
+            axis_2=getattr(axis2_attr, field),
+        )
+
+    def _setup_sync_loop(self) -> None:
+        """Set up the async synchronisation loop.
+
+        The setup is done separately, as the async Event should be created in the same EventLoop than it will be used.
+
+        The _need_sync Event is used to inform the robot that some data need to be pushed to the real robot.
+        The _register_needing_sync stores a list of the register that need to be synced.
+        """
+        self._need_sync = asyncio.Event()
+        self._loop = asyncio.get_running_loop()
+
+    def _pop_command(self) -> Orbita2DCommand:
+        """Create a gRPC command from the registers that need to be synced."""
+        values = {
+            "id": ComponentId(id=self.name),
+        }
+
+        reg_to_update_1 = getattr(self, self._axis1)._register_needing_sync
+        reg_to_update_2 = getattr(self, self._axis2)._register_needing_sync
+
+        for reg in set(reg_to_update_1).union(set(reg_to_update_2)):
+            if reg == "compliant":
+                values["compliant"] = BoolValue(value=self.compliant)
+            else:
+                values[reg] = self._build_2d_float_msg(reg)
+        command = Orbita2DCommand(**values)
+
+        reg_to_update_1.clear()
+        reg_to_update_2.clear()
+        self._need_sync.clear()
+
+        return command
 
     # TODO: perform the update in a thread
     # TODO: find a smarter way to do this

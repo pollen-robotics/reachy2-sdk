@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict, List
 
 from .register import Register
 
@@ -12,7 +12,8 @@ class OrbitaJoint:
     speed_limit = Register(readonly=False, label="speed_limit")
     torque_limit = Register(readonly=False, label="torque_limit")
 
-    def __init__(self, initial_state: Dict[str, float], axis_type: str) -> None:
+    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator) -> None:
+        self._actuator = actuator
         self.axis_type = axis_type
         self.pid = PID(p=0.0, i=0.0, d=0.0)
 
@@ -23,11 +24,14 @@ class OrbitaJoint:
             if isinstance(value, Register):
                 value.label = field
 
-    def __getitem__(self, field: str) -> float:
-        return self._state[field]
+        self._register_needing_sync: List[str] = []
 
-    def __setitem__(self, field: str, value: float) -> None:
-        self._state[field] = value
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        if __name in ["goal_position", "speed_limit", "torque_limit"]:
+            self._register_needing_sync.append(__name)
+            self._state[__name] = __value
+            self._actuator._need_sync.set()
+        super().__setattr__(__name, __value)
 
 
 class PID:

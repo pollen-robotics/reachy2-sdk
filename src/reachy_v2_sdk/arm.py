@@ -19,6 +19,11 @@ class Arm:
         self.part_id = PartId(id=arm_msg.part_id.name)
 
         self._setup_arm(arm_msg)
+        self._actutators = {
+            self.shoulder: "orbita2d",
+            self.elbow: "orbita2d",
+            self.wrist: "orbita3d",
+        }
 
     def _setup_arm(self, arm: Arm_proto) -> None:
         description = arm.description
