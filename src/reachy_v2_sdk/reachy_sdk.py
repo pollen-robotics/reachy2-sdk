@@ -13,12 +13,12 @@ import atexit
 import threading
 
 # import time
-# from typing import List
+from typing import List
 from logging import getLogger
 
 import grpc
 
-# from typing import Optional
+from typing import Dict, Any
 
 # from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
@@ -54,10 +54,8 @@ class ReachySDK:
         self._sdk_port = sdk_port
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
 
-        # self.l_arm: Optional[Arm] = None
-        # self.r_arm: Optional[Arm] = None
-        # self.head: Optional[Head] = None
-        # self.mobile_base: Optional[MobileBase] = None
+        self._enabled_parts: Dict[str, Any] = {}
+        self._disabled_parts: List[str] = []
 
         self._get_info()
         self._setup_parts()
@@ -70,6 +68,14 @@ class ReachySDK:
         """Clean representation of a Reachy."""
         return f'<Reachy host="{self._host}">'
 
+    @property
+    def enabled_parts(self) -> List[str]:
+        return list(self._enabled_parts.keys())
+
+    @property
+    def disabled_parts(self) -> List[str]:
+        return self._disabled_parts
+
     def _get_info(self) -> None:
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         self._robot = config_stub.GetReachy(Empty())
@@ -81,11 +87,15 @@ class ReachySDK:
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
         if self._robot.HasField("r_arm"):
-            r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
-            setattr(self, "r_arm", r_arm)
-            # if self._robot.HasField("r_hand"):
-            #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)
-            #     setattr(self.r_arm, "gripper", right_hand)
+            if initial_state.r_arm_state.activated:
+                r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
+                setattr(self, "r_arm", r_arm)
+                self._enabled_parts["r_arm"] = getattr(self, "r_arm")
+                # if self._robot.HasField("r_hand"):
+                #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)
+                #     setattr(self.r_arm, "gripper", right_hand)
+            else:
+                self._disabled_parts.append("r_arm")
 
         # if self._robot.HasField("l_arm"):
         #     self.l_arm = Arm(self._grpc_channel, self._robot.l_arm)
@@ -98,8 +108,12 @@ class ReachySDK:
         #         setattr(self.l_arm, "gripper", left_hand)
 
         if self._robot.HasField("head"):
-            head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
-            setattr(self, "head", head)
+            if initial_state.head_state.activated:
+                head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
+                setattr(self, "head", head)
+                self._enabled_parts["head"] = getattr(self, "head")
+            else:
+                self._disabled_parts.append("head")
 
         # if self._robot.HasField("mobile_base"):
         #     pass
@@ -129,6 +143,14 @@ class ReachySDK:
                 self.head._update_with(state_update.head_state)
             # if (hasattr(self, 'mobile_base')):
             # self.mobile_base._update_with(state_update.mobile_base_state)
+
+    def turn_on(self) -> None:
+        for part in self._enabled_parts.values():
+            part.turn_on()
+
+    def turn_off(self) -> None:
+        for part in self._enabled_parts.values():
+            part.turn_off()
 
 
 def flush_communication() -> None:

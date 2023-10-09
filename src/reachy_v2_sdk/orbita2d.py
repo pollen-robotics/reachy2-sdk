@@ -1,5 +1,7 @@
 from grpc import Channel
 
+from google.protobuf.wrappers_pb2 import BoolValue
+
 from .register import Register
 
 from typing import Dict
@@ -16,10 +18,11 @@ from .orbita_utils import OrbitaJoint
 
 
 class Orbita2d:
-    compliant = Register(readonly=False, label="compliant")
+    compliant = Register(readonly=False, type=BoolValue, label="compliant")
 
-    def __init__(self, name: str, axis1: Axis, axis2: Axis, initial_state: Orbita2DState, grpc_channel: Channel):
+    def __init__(self, uid: int, name: str, axis1: Axis, axis2: Axis, initial_state: Orbita2DState, grpc_channel: Channel):
         self.name = name
+        self.id = uid
         self._stub = Orbita2DServiceStub(grpc_channel)
 
         axis1_name = Axis.DESCRIPTOR.values_by_number[axis1].name.lower()
@@ -50,7 +53,7 @@ class Orbita2d:
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
         for field, value in new_state.ListFields():
             if field.name == "compliant":
-                self._state[field.name] = value.value
+                self._state[field.name] = value
             else:
                 if isinstance(value, Float2D):
                     for axis, val in value.ListFields():
