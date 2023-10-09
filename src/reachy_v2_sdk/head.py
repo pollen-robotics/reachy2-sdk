@@ -61,11 +61,11 @@ class Head:
             grpc_channel=self._grpc_channel,
         )
 
-    def get_orientation(self) -> Quat:
+    def get_orientation(self) -> pyQuat:
         quat = self._head_stub.GetOrientation(self.part_id)
-        return Quat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
+        return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
-    def forward_kinematics(self, rpy_position: Optional[Tuple[float, float, float]] = None) -> Quat:
+    def forward_kinematics(self, rpy_position: Optional[Tuple[float, float, float]] = None) -> pyQuat:
         if rpy_position is None:
             self.get_orientation()
         else:
@@ -76,10 +76,10 @@ class Head:
                 ),
             )
             quat = self._head_stub.ComputeNeckFK(req)
-            return Quat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
+            return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def inverse_kinematics(
-        self, orientation: Optional[Quat] = None, rpy_q0: Optional[Tuple[float, float, float]] = None
+        self, orientation: Optional[pyQuat] = None, rpy_q0: Optional[Tuple[float, float, float]] = None
     ) -> Tuple[float, float, float]:
         req = NeckIKRequest(
             id=self.part_id,
