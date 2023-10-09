@@ -86,7 +86,7 @@ class ReachySDK:
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
-        if self._robot.HasField("r_arm") and initial_state.r_arm_state.activated:
+        if self._robot.HasField("r_arm"):
             if initial_state.r_arm_state.activated:
                 r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
                 setattr(self, "r_arm", r_arm)
