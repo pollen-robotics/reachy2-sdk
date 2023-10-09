@@ -15,8 +15,8 @@ from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal, ArmState, ArmCartesianGoal
 from reachy_sdk_api_v2.arm_pb2 import ArmLimits, ArmTemperatures
 from reachy_sdk_api_v2.arm_pb2 import ArmFKRequest, ArmIKRequest, ArmEndEffector
 from reachy_sdk_api_v2.part_pb2 import PartId
-from reachy_sdk_api_v2.kinematics_pb2 import Matrix4x4, Point, Rotation3D, EulerAngles, Matrix3x3, Quaternion
-from reachy_sdk_api_v2.kinematics_pb2 import PointDistanceTolerances, EulerAnglesTolerances
+from reachy_sdk_api_v2.kinematics_pb2 import Matrix4x4, Point, Rotation3D, ExtEulerAngles, Matrix3x3, Quaternion
+from reachy_sdk_api_v2.kinematics_pb2 import PointDistanceTolerances, ExtEulerAnglesTolerances
 
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
@@ -144,7 +144,7 @@ class Arm:
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3D(rpy=EulerAngles(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
+            target_orientation=Rotation3D(rpy=ExtEulerAngles(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
             duration=FloatValue(value=duration),
         )
         if position_tol is not None:
@@ -152,7 +152,7 @@ class Arm:
                 x_tol=position_tol[0], y_tol=position_tol[1], z_tol=position_tol[2]
             )
         if orientation_tol is not None:
-            target.orientation_tolerance = EulerAnglesTolerances(
+            target.orientation_tolerance = ExtEulerAnglesTolerances(
                 x_tol=orientation_tol[0], y_tol=orientation_tol[1], z_tol=orientation_tol[2]
             )
         self._arm_stub.GoToCartesianPosition(target)
