@@ -4,6 +4,8 @@ from .register import Register
 
 from typing import Dict
 
+from google.protobuf.wrappers_pb2 import BoolValue
+
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 
 from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DState, Float3D
@@ -11,7 +13,7 @@ from .orbita_utils import OrbitaJoint
 
 
 class Orbita3d:
-    compliant = Register(readonly=False, label="compliant")
+    compliant = Register(readonly=False, type=BoolValue, label="compliant")
 
     def __init__(self, uid: int, name: str, initial_state: Orbita3DState, grpc_channel: Channel):
         self.name = name
@@ -39,7 +41,7 @@ class Orbita3d:
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
         for field, value in new_state.ListFields():
             if field.name == "compliant":
-                self._state[field.name] = value.value
+                self._state[field.name] = value
             else:
                 if isinstance(value, Float3D):
                     for axis, val in value.ListFields():

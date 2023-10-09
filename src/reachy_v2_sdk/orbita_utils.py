@@ -4,13 +4,13 @@ from .register import Register
 
 
 class OrbitaJoint:
-    present_position = Register(readonly=True, label="present_position")
-    present_speed = Register(readonly=True, label="present_speed")
-    present_load = Register(readonly=True, label="present_load")
-    temperature = Register(readonly=True, label="temperature")
-    goal_position = Register(readonly=False, label="goal_position")
-    speed_limit = Register(readonly=False, label="speed_limit")
-    torque_limit = Register(readonly=False, label="torque_limit")
+    present_position = Register(readonly=True, type=float, label="present_position")
+    present_speed = Register(readonly=True, type=float, label="present_speed")
+    present_load = Register(readonly=True, type=float, label="present_load")
+    temperature = Register(readonly=True, type=float, label="temperature")
+    goal_position = Register(readonly=False, type=float, label="goal_position")
+    speed_limit = Register(readonly=False, type=float, label="speed_limit")
+    torque_limit = Register(readonly=False, type=float, label="torque_limit")
 
     def __init__(self, initial_state: Dict[str, float], axis_type: str) -> None:
         self.axis_type = axis_type
