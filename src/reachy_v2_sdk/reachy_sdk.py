@@ -18,7 +18,7 @@ from logging import getLogger
 
 import grpc
 
-# from typing import Optional
+from typing import Dict, Any
 
 # from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
@@ -54,10 +54,7 @@ class ReachySDK:
         self._sdk_port = sdk_port
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
 
-        # self.l_arm: Optional[Arm] = None
-        # self.r_arm: Optional[Arm] = None
-        # self.head: Optional[Head] = None
-        # self.mobile_base: Optional[MobileBase] = None
+        self.enabled_parts: Dict[str, Any] = {}
 
         self._get_info()
         self._setup_parts()
@@ -83,6 +80,7 @@ class ReachySDK:
         if self._robot.HasField("r_arm"):
             r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
             setattr(self, "r_arm", r_arm)
+            self.enabled_parts["r_arm"] = getattr(self, "r_arm")
             # if self._robot.HasField("r_hand"):
             #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)
             #     setattr(self.r_arm, "gripper", right_hand)
@@ -100,6 +98,7 @@ class ReachySDK:
         if self._robot.HasField("head"):
             head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
             setattr(self, "head", head)
+            self.enabled_parts["head"] = getattr(self, "head")
 
         # if self._robot.HasField("mobile_base"):
         #     pass
@@ -129,6 +128,14 @@ class ReachySDK:
                 self.head._update_with(state_update.head_state)
             # if (hasattr(self, 'mobile_base')):
             # self.mobile_base._update_with(state_update.mobile_base_state)
+
+    def turn_on(self) -> None:
+        for part in self.enabled_parts.values():
+            part.turn_on()
+
+    def turn_off(self) -> None:
+        for part in self.enabled_parts.values():
+            part.turn_off()
 
 
 def flush_communication() -> None:
