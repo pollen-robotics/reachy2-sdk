@@ -6,16 +6,19 @@ Handles all specific method to an Head:
 """
 import grpc
 
-from pyquaternion import Quaternion as Quat
+from pyquaternion import Quaternion as pyQuat
+
+from google.protobuf.wrappers_pb2 import FloatValue
 
 from typing import Optional, Tuple
 
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
 from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
+from reachy_sdk_api_v2.head_pb2 import HeadLookAtGoal, NeckGoal
 from reachy_sdk_api_v2.head_pb2 import HeadPosition, NeckPosition, NeckOrientation
 from reachy_sdk_api_v2.head_pb2 import NeckFKRequest, NeckIKRequest
 from reachy_sdk_api_v2.part_pb2 import PartId
-from reachy_sdk_api_v2.kinematics_pb2 import Quaternion
+from reachy_sdk_api_v2.kinematics_pb2 import Point, Rotation3D, Quaternion, ExtEulerAngles
 
 from .orbita3d import Orbita3d
 from .dynamixel_motor import DynamixelMotor
@@ -96,13 +99,18 @@ class Head:
         return (rpy_pos.position.neck_roll, rpy_pos.position.neck_pitch, rpy_pos.position.neck_yaw)
 
     def look_at(self, x: float, y: float, z: float, duration: float) -> None:
-        pass
+        req = HeadLookAtGoal(id=self.part_id, point=Point(x=x, y=y, z=z), duration=FloatValue(value=duration))
+        self._head_stub.LookAt(req)
 
-    def orient(self, q: Quaternion, duration: float) -> None:
-        pass
+    def orient(self, q: pyQuat, duration: float) -> None:
+        req = NeckGoal(id=self.part_id, rotation=Rotation3D(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)), duration=duration)
+        self._head_stub.GoToOrientation(req)
 
     def rotate_to(self, roll: float, pitch: float, yaw: float, duration: float) -> None:
-        pass
+        req = NeckGoal(
+            id=self.part_id, rotation=Rotation3D(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)), duration=duration
+        )
+        self._head_stub.GoToOrientation(req)
 
     def turn_on(self) -> None:
         self._head_stub.TurnOn(self.part_id)
