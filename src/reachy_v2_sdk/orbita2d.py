@@ -18,8 +18,9 @@ from .orbita_utils import OrbitaJoint
 class Orbita2d:
     compliant = Register(readonly=False, label="compliant")
 
-    def __init__(self, name: str, axis1: Axis, axis2: Axis, initial_state: Orbita2DState, grpc_channel: Channel):
+    def __init__(self, uid: int, name: str, axis1: Axis, axis2: Axis, initial_state: Orbita2DState, grpc_channel: Channel):
         self.name = name
+        self.id = uid
         self._stub = Orbita2DServiceStub(grpc_channel)
 
         axis1_name = Axis.DESCRIPTOR.values_by_number[axis1].name.lower()

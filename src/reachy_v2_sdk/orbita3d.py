@@ -13,8 +13,9 @@ from .orbita_utils import OrbitaJoint
 class Orbita3d:
     compliant = Register(readonly=False, label="compliant")
 
-    def __init__(self, name: str, initial_state: Orbita3DState, grpc_channel: Channel):
+    def __init__(self, uid: int, name: str, initial_state: Orbita3DState, grpc_channel: Channel):
         self.name = name
+        self.id = uid
         self._stub = Orbita3DServiceStub(grpc_channel)
 
         self._state: Dict[str, bool] = {}

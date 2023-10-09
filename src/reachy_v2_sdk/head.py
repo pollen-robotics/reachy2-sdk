@@ -35,17 +35,20 @@ class Head:
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
         description = head.description
         self.neck = Orbita3d(
-            name=description.neck.id.id,
+            uid=description.neck.id.id,
+            name=description.neck.id.name,
             initial_state=initial_state.neck_state,
             grpc_channel=self._grpc_channel,
         )
         self.l_antenna = DynamixelMotor(
-            name=description.l_antenna.id.id,
+            uid=description.l_antenna.id.id,
+            name=description.l_antenna.id.name,
             initial_state=initial_state.l_antenna_state,
             grpc_channel=self._grpc_channel,
         )
         self.r_antenna = DynamixelMotor(
-            name=description.r_antenna.id.id,
+            uid=description.r_antenna.id.id,
+            name=description.r_antenna.id.name,
             initial_state=initial_state.r_antenna_state,
             grpc_channel=self._grpc_channel,
         )

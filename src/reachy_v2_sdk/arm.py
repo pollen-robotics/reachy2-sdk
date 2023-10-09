@@ -23,21 +23,24 @@ class Arm:
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
         description = arm.description
         self.shoulder = Orbita2d(
-            name=description.shoulder.id.id,
+            uid=description.shoulder.id.id,
+            name=description.shoulder.id.name,
             axis1=description.shoulder.axis_1,
             axis2=description.shoulder.axis_2,
             initial_state=initial_state.shoulder_state,
             grpc_channel=self._grpc_channel,
         )
         self.elbow = Orbita2d(
-            name=description.elbow.id.id,
+            uid=description.elbow.id.id,
+            name=description.elbow.id.name,
             axis1=description.elbow.axis_1,
             axis2=description.elbow.axis_2,
             initial_state=initial_state.elbow_state,
             grpc_channel=self._grpc_channel,
         )
         self.wrist = Orbita3d(
-            name=description.wrist.id.id,
+            uid=description.wrist.id.id,
+            name=description.wrist.id.name,
             initial_state=initial_state.wrist_state,
             grpc_channel=self._grpc_channel,
         )
