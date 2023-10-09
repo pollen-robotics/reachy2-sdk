@@ -29,8 +29,7 @@ class OrbitaMotor:
     speed_limit = Register(readonly=False, type=float, label="speed_limit")
     torque_limit = Register(readonly=False, type=float, label="torque_limit")
 
-    def __init__(self, initial_state: Dict[str, float], axis_type: str) -> None:
-        self.axis_type = axis_type
+    def __init__(self, initial_state: Dict[str, float]) -> None:
         self.pid = PID(p=0.0, i=0.0, d=0.0)
 
         self._state = initial_state
@@ -51,9 +50,7 @@ class OrbitaAxis:
     present_speed = Register(readonly=True, type=float, label="present_speed")
     present_load = Register(readonly=True, type=float, label="present_load")
 
-    def __init__(self, initial_state: Dict[str, float], axis_type: str) -> None:
-        self.axis_type = axis_type
-
+    def __init__(self, initial_state: Dict[str, float]) -> None:
         self._state = initial_state
 
         for field in dir(self):

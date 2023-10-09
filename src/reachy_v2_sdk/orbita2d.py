@@ -10,17 +10,21 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
     Axis,
     Orbita2DState,
     Float2D,
+    Pose2D,
+    Vector2D,
 )
 
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 
-from .orbita_utils import OrbitaJoint
+from .orbita_utils import OrbitaJoint, OrbitaMotor, OrbitaAxis
 
 
 class Orbita2d:
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
 
-    def __init__(self, uid: int, name: str, axis1: Axis, axis2: Axis, initial_state: Orbita2DState, grpc_channel: Channel):
+    def __init__(  # noqa: C901
+        self, uid: int, name: str, axis1: Axis, axis2: Axis, initial_state: Orbita2DState, grpc_channel: Channel
+    ):
         self.name = name
         self.id = uid
         self._stub = Orbita2DServiceStub(grpc_channel)
@@ -41,6 +45,16 @@ class Orbita2d:
                 self._state[field.name] = value.value
             else:
                 if isinstance(value, Float2D):
+                    for motor, val in value.ListFields():
+                        if motor.name not in init_state:
+                            init_state[motor.name] = {}
+                        init_state[motor.name][field.name] = val
+                if isinstance(value, Pose2D):
+                    for axis, val in value.ListFields():
+                        if axis.name not in init_state:
+                            init_state[axis.name] = {}
+                        init_state[axis.name][field.name] = val
+                if isinstance(value, Vector2D):
                     for axis, val in value.ListFields():
                         if axis.name not in init_state:
                             init_state[axis.name] = {}
@@ -48,6 +62,12 @@ class Orbita2d:
 
         setattr(self, axis1_name, OrbitaJoint(initial_state=init_state["axis_1"], axis_type=axis1))
         setattr(self, axis2_name, OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2))
+
+        setattr(self, "_motor_1", OrbitaMotor(initial_state=init_state["motor_1"]))
+        setattr(self, "_motor_2", OrbitaMotor(initial_state=init_state["motor_2"]))
+
+        setattr(self, "_axis_x", OrbitaAxis(initial_state=init_state["x"]))
+        setattr(self, "_axis_y", OrbitaAxis(initial_state=init_state["y"]))
 
     def _update_with(self, new_state: Orbita2DState) -> None:
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
