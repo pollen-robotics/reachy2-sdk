@@ -4,7 +4,8 @@ from typing import Any, Dict
 
 from .register import Register
 
-# from reachy_sdk_api_v2.component_pb2 import ComponentId
+from google.protobuf.wrappers_pb2 import FloatValue
+
 from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 from reachy_sdk_api_v2.dynamixel_motor_pb2 import DynamixelMotorState
 
@@ -37,3 +38,6 @@ class DynamixelMotor:
     def _update_with(self, new_state: DynamixelMotorState) -> None:
         for field, value in new_state.ListFields():
             self._state[field.name] = value
+
+    def set_position(self, goal_position: float, duration: float) -> None:
+        self._stub.SetPosition(id=self.id, goal_position=goal_position, duration=FloatValue(value=duration))
