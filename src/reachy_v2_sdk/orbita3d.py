@@ -32,7 +32,6 @@ class Orbita3d:
                 if isinstance(value, Rotation3D):
                     for _, rpy in value.ListFields():
                         for axis, val in rpy.ListFields():
-                            print(f"{axis.name}: {val}")
                             if axis.name not in init_state:
                                 init_state[axis.name] = {}
                             init_state[axis.name][field.name] = val
@@ -51,17 +50,21 @@ class Orbita3d:
         self.pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch")
         self.yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw")
 
-        self._motor1 = OrbitaMotor(initial_state=init_state["motor_1"])
-        self._motor2 = OrbitaMotor(initial_state=init_state["motor_2"])
-        self._motor3 = OrbitaMotor(initial_state=init_state["motor_3"])
+        self._motor_1 = OrbitaMotor(initial_state=init_state["motor_1"])
+        self._motor_2 = OrbitaMotor(initial_state=init_state["motor_2"])
+        self._motor_3 = OrbitaMotor(initial_state=init_state["motor_3"])
 
-        self._axis_x = OrbitaAxis(initial_state=init_state["x"])
-        self._axis_y = OrbitaAxis(initial_state=init_state["y"])
-        self._axis_z = OrbitaAxis(initial_state=init_state["z"])
+        self._x = OrbitaAxis(initial_state=init_state["x"])
+        self._y = OrbitaAxis(initial_state=init_state["y"])
+        self._z = OrbitaAxis(initial_state=init_state["z"])
 
     @property
-    def temperatures(self) -> Dict[str, float]:
-        return {"motor_1": self._motor1.temperature, "motor_2": self._motor2.temperature, "motor_3": self._motor3.temperature}
+    def temperatures(self) -> Dict[str, Register]:
+        return {
+            "motor_1": self._motor_1.temperature,
+            "motor_2": self._motor_2.temperature,
+            "motor_3": self._motor_3.temperature,
+        }
 
     def _update_with(self, new_state: Orbita3DState) -> None:
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
@@ -69,7 +72,16 @@ class Orbita3d:
             if field.name == "compliant":
                 self._state[field.name] = value
             else:
+                if isinstance(value, Rotation3D):
+                    for _, rpy in value.ListFields():
+                        for joint, val in rpy.ListFields():
+                            j = getattr(self, joint.name)
+                            j._state[field.name] = val
                 if isinstance(value, Float3D):
+                    for motor, val in value.ListFields():
+                        m = getattr(self, "_" + motor.name)
+                        m._state[field.name] = val
+                if isinstance(value, Vector3D):
                     for axis, val in value.ListFields():
-                        joint = getattr(self, axis.name)
-                        joint._state[field.name] = val
+                        a = getattr(self, "_" + axis.name)
+                        a._state[field.name] = val
