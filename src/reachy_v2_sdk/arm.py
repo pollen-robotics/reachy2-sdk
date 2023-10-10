@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 from enum import Enum
 
 import grpc
@@ -206,7 +206,6 @@ class RelativePose:
     """RelativePose enables to calculate new arm target position."""
 
     def __init__(self, arm: Arm, pose: Optional[npt.NDArray[np.float64]] = None) -> None:
-        self.pose: npt.NDArray[np.float64]
         self.pose = pose
         self._arm = arm
         if pose is None:
@@ -216,7 +215,8 @@ class RelativePose:
         if frame not in [f.name.lower() for f in Frame]:
             raise ValueError("Frame must be either 'reachy' or 'end_effector'.")
         if frame == "reachy":
-            self.pose[:3, 3] += position
+            if self.pose is not None:
+                self.pose[:3, 3] += position
         if frame == "end_effector":
             # TODO: implement translate_pose_by
             pass
@@ -227,5 +227,5 @@ class RelativePose:
         # TODO: implement rotate_pose_by
 
     @property
-    def reference(self):
+    def reference(self) -> Any:
         return self._arm.part_id.name
