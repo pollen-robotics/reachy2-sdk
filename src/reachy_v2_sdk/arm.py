@@ -1,4 +1,5 @@
 from typing import List, Optional, Tuple
+from enum import Enum
 
 import grpc
 
@@ -20,6 +21,13 @@ from reachy_sdk_api_v2.kinematics_pb2 import PointDistanceTolerances, ExtEulerAn
 
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
+
+
+class Frame(Enum):
+    """Reachy parts options."""
+
+    REACHY = 1
+    END_EFFECTOR = 2
 
 
 class Arm:
@@ -160,6 +168,16 @@ class Arm:
             )
         self._arm_stub.GoToCartesianPosition(target)
 
+    def move_by(self, position: Tuple[float, float, float], frame: str) -> None:
+        if frame not in [f.name.lower() for f in Frame]:
+            raise ValueError("Frame must be either 'reachy' or 'end_effector'.")
+        pass
+
+    def rotate_by(self, rotation: Tuple[float, float, float], frame: str) -> None:
+        if frame not in [f.name.lower() for f in Frame]:
+            raise ValueError("Frame must be either 'reachy' or 'end_effector'.")
+        pass
+
     def goto_joints(self, positions: List[float], duration: float = 0) -> None:
         arm_pos = self._list_to_arm_position(positions)
         goal = ArmJointGoal(id=self.part_id, position=arm_pos, duration=FloatValue(value=duration))
@@ -180,3 +198,26 @@ class Arm:
         self.shoulder._update_with(new_state.shoulder_state)
         self.elbow._update_with(new_state.elbow_state)
         self.wrist._update_with(new_state.wrist_state)
+
+
+class RelativePose:
+    def __init__(self, arm: Arm, pose: Optional[npt.NDArray[np.float64]] = None) -> None:
+        self.pose: npt.NDArray[np.float64]
+        self.pose = pose
+        self._arm = arm
+        if pose is None:
+            self.pose = arm.forward_kinematics()
+
+    def translate_pose_by(self, position: Tuple[float, float, float], frame: str) -> None:
+        if frame not in [f.name.lower() for f in Frame]:
+            raise ValueError("Frame must be either 'reachy' or 'end_effector'.")
+        if frame == "reachy":
+            self.pose[:3, 3] += position
+
+    def rotate_pose_by(self, rotation: Tuple[float, float, float], frame: str) -> None:
+        if frame not in [f.name.lower() for f in Frame]:
+            raise ValueError("Frame must be either 'reachy' or 'end_effector'.")
+
+    @property
+    def reference(self):
+        return self._arm.part_id.name
