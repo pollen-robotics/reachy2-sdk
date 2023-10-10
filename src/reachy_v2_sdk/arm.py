@@ -24,13 +24,15 @@ from .orbita3d import Orbita3d
 
 
 class Frame(Enum):
-    """Reachy parts options."""
+    """Relative pose frames options."""
 
     REACHY = 1
     END_EFFECTOR = 2
 
 
 class Arm:
+    """Define Arm part of Reachy"""
+
     def __init__(self, arm_msg: Arm_proto, initial_state: ArmState, grpc_channel: grpc.Channel) -> None:
         self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
@@ -201,6 +203,8 @@ class Arm:
 
 
 class RelativePose:
+    """RelativePose enables to calculate new arm target position."""
+
     def __init__(self, arm: Arm, pose: Optional[npt.NDArray[np.float64]] = None) -> None:
         self.pose: npt.NDArray[np.float64]
         self.pose = pose
@@ -213,10 +217,14 @@ class RelativePose:
             raise ValueError("Frame must be either 'reachy' or 'end_effector'.")
         if frame == "reachy":
             self.pose[:3, 3] += position
+        if frame == "end_effector":
+            # TODO: implement translate_pose_by
+            pass
 
     def rotate_pose_by(self, rotation: Tuple[float, float, float], frame: str) -> None:
         if frame not in [f.name.lower() for f in Frame]:
             raise ValueError("Frame must be either 'reachy' or 'end_effector'.")
+        # TODO: implement rotate_pose_by
 
     @property
     def reference(self):
