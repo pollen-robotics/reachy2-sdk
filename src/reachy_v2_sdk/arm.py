@@ -9,11 +9,14 @@ from pyquaternion import Quaternion as pyQuat
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
+from google.protobuf.descriptor import FieldDescriptor
+
 from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
 from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto, ArmPosition
 from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal, ArmState, ArmCartesianGoal
 from reachy_sdk_api_v2.arm_pb2 import ArmLimits, ArmTemperatures
 from reachy_sdk_api_v2.arm_pb2 import ArmFKRequest, ArmIKRequest, ArmEndEffector
+from reachy_sdk_api_v2.orbita2d_pb2 import Pose2D
 from reachy_sdk_api_v2.part_pb2 import PartId
 from reachy_sdk_api_v2.kinematics_pb2 import Matrix4x4, Point, Rotation3D, ExtEulerAngles, Matrix3x3, Quaternion
 from reachy_sdk_api_v2.kinematics_pb2 import PointDistanceTolerances, ExtEulerAnglesTolerances
@@ -103,16 +106,25 @@ class Arm:
     def _list_to_arm_position(self, positions: List[float]) -> ArmPosition:
         arm_pos = ArmPosition()
 
-        joints = [field.name for field in ArmPosition.DESCRIPTOR.fields]
-        for joint, position in zip(joints, positions):
-            setattr(arm_pos, joint, position)
+        arm_pos.shoulder_position = Pose2D(axis_1=positions[0], axis_2=positions[1])
+        arm_pos.elbow_position = Pose2D(axis_1=positions[2], axis_2=positions[3])
+        arm_pos.wrist_position = Rotation3D(rpy=ExtEulerAngles(roll=positions[4], pitch=positions[5], yaw=positions[6]))
 
         return arm_pos
 
     def _arm_position_to_list(self, arm_pos: ArmPosition) -> List[float]:
         positions = []
-        for _, value in arm_pos.ListFields():
-            positions.append(value)
+
+        for field, value in arm_pos.ListFields():
+            if field.type == FieldDescriptor.TYPE_FLOAT:
+                positions.append(value)
+            elif field.type == FieldDescriptor.TYPE_MESSAGE:
+                if hasattr(value, "ListFields"):
+                    positions.extend(self._arm_position_to_list(value))
+                elif hasattr(value, "WhichOneof") and value.WhichOneof("rotation"):  # Handling oneof fields
+                    oneof_field = value.WhichOneof("rotation")
+                    oneof_value = getattr(value, oneof_field)
+                    positions.extend(self._arm_position_to_list(oneof_value))
 
         return positions
 
