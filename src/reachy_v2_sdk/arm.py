@@ -63,11 +63,14 @@ class Arm:
         self._arm_stub.TurnOff(self.part_id)
 
     def forward_kinematics(self, joints_positions: Optional[List[float]] = None) -> npt.NDArray[np.float64]:
-        req = ArmFKRequest(id=self.part_id)
+        req_params = {
+            "id": self.part_id,
+        }
         if joints_positions is not None:
             if len(joints_positions) != 7:
                 raise ValueError(f"joints_positions should be length 7 (got {len(joints_positions)} instead)!")
-            req.position = self._list_to_arm_position(joints_positions)
+            req_params["position"] = self._list_to_arm_position(joints_positions)
+        req = ArmFKRequest(**req_params)
         resp = self._arm_stub.ComputeArmFK(req)
         if not resp.success:
             raise ValueError(f"No solution found for the given joints ({joints_positions})!")
@@ -102,11 +105,11 @@ class Arm:
         return self._arm_position_to_list(resp.arm_position)
 
     def _list_to_arm_position(self, positions: List[float]) -> ArmPosition:
-        arm_pos = ArmPosition()
-
-        arm_pos.shoulder_position = Pose2D(axis_1=positions[0], axis_2=positions[1])
-        arm_pos.elbow_position = Pose2D(axis_1=positions[2], axis_2=positions[3])
-        arm_pos.wrist_position = Rotation3D(rpy=ExtEulerAngles(roll=positions[4], pitch=positions[5], yaw=positions[6]))
+        arm_pos = ArmPosition(
+            shoulder_position=Pose2D(axis_1=positions[0], axis_2=positions[1]),
+            elbow_position=Pose2D(axis_1=positions[2], axis_2=positions[3]),
+            wrist_position=Rotation3D(rpy=ExtEulerAngles(roll=positions[4], pitch=positions[5], yaw=positions[6])),
+        )
 
         return arm_pos
 
