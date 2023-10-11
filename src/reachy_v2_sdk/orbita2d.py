@@ -7,6 +7,7 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
     Axis,
     Float2D,
     Orbita2DCommand,
+    Orbita2DsCommand,
     Orbita2DField,
     Orbita2DStateRequest,
 )
@@ -44,8 +45,6 @@ class Orbita2d:
         setattr(self, axis2_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis2, actuator=self))
 
         self.compliant = False
-
-        self._setup_sync_loop()
 
     def _build_2d_float_msg(self, field: str) -> Float2D:
         axis1_attr = getattr(self, self._axis1)

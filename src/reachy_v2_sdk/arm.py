@@ -5,7 +5,7 @@ import grpc
 from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
 from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto, ArmPosition
 from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal
-from reachy_sdk_api_v2.arm_pb2 import JointsLimits, ArmTemperatures
+from reachy_sdk_api_v2.arm_pb2 import JointLimits, ArmTemperatures
 from reachy_sdk_api_v2.part_pb2 import PartId
 
 from .orbita2d import Orbita2d
@@ -16,10 +16,10 @@ class Arm:
     def __init__(self, arm_msg: Arm_proto, grpc_channel: grpc.Channel) -> None:
         self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
-        self.part_id = PartId(id=arm_msg.part_id.name)
+        self.part_id = PartId(id=arm_msg.part_id.id)
 
         self._setup_arm(arm_msg)
-        self._actutators = {
+        self._actuators = {
             self.shoulder: "orbita2d",
             self.elbow: "orbita2d",
             self.wrist: "orbita3d",
@@ -65,7 +65,7 @@ class Arm:
         self._arm_stub.GoToJointPosition(goal)
 
     @property
-    def joints_limits(self) -> JointsLimits:
+    def joints_limits(self) -> JointLimits:
         limits = self._arm_stub.GetJointLimit(self.part_id)
         return limits
 

@@ -10,6 +10,7 @@ from reachy_sdk_api_v2.orbita3d_pb2 import (
 )
 
 from reachy_sdk_api_v2.component_pb2 import ComponentId
+from reachy_sdk_api_v2.kinematics_pb2 import Quaternion
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 from .orbita_utils import OrbitaJoint
 
@@ -36,9 +37,14 @@ class Orbita3d:
 
         self.compliant = False
 
-        self._setup_sync_loop()
-
-    def _build_3d_float_msg(self, field: str) -> Float3D:
+    def _build_3d_msg(self, field: str) -> Float3D:
+        if field == 'goal_position':
+            return Quaternion(
+                x=1.0,
+                y=1.0,
+                z=1.0,
+                w=1.0,
+            )
         return Float3D(
             roll=getattr(self.roll, field),
             pitch=getattr(self.pitch, field),
@@ -70,7 +76,7 @@ class Orbita3d:
             if reg == "compliant":
                 values["compliant"] = BoolValue(value=self.compliant)
             else:
-                values[reg] = self._build_3d_float_msg(reg)
+                values[reg] = self._build_3d_msg(reg)
         command = Orbita3DCommand(**values)
 
         self.roll._register_needing_sync.clear()

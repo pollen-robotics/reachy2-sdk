@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Dict, List
 
 from .register import Register
@@ -28,9 +29,12 @@ class OrbitaJoint:
 
     def __setattr__(self, __name: str, __value: Any) -> None:
         if __name in ["goal_position", "speed_limit", "torque_limit"]:
-            self._register_needing_sync.append(__name)
             self._state[__name] = __value
-            self._actuator._need_sync.set()
+            async def set_in_loop():
+                self._register_needing_sync.append(__name)
+                self._actuator._need_sync.set()
+            fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._actuator._loop)
+            fut.result()
         super().__setattr__(__name, __value)
 
 
