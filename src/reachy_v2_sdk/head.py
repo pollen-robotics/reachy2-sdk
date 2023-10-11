@@ -79,17 +79,16 @@ class Head:
             )
             res = self._head_stub.ComputeNeckFK(req)
             quat = res.orientation.q
-            print(quat)
             return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def inverse_kinematics(
         self, orientation: Optional[pyQuat] = None, rpy_q0: Optional[Tuple[float, float, float]] = None
     ) -> Tuple[float, float, float]:
-        req = NeckIKRequest(
-            id=self.part_id,
-        )
+        req_params = {
+            "id": self.part_id,
+        }
         if orientation is not None:
-            req.target = NeckOrientation(
+            req_params["target"] = NeckOrientation(
                 q=Quaternion(
                     w=orientation.w,
                     x=orientation.x,
@@ -98,9 +97,10 @@ class Head:
                 )
             )
         if rpy_q0 is not None:
-            req.q0 = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
+            req_params["q0"] = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
+        req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
-        return (rpy_pos.position.neck_roll, rpy_pos.position.neck_pitch, rpy_pos.position.neck_yaw)
+        return (rpy_pos.position.rpy.roll, rpy_pos.position.rpy.pitch, rpy_pos.position.rpy.yaw)
 
     def look_at(self, x: float, y: float, z: float, duration: float) -> None:
         req = HeadLookAtGoal(id=self.part_id, point=Point(x=x, y=y, z=z), duration=FloatValue(value=duration))
