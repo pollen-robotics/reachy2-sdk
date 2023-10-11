@@ -67,7 +67,7 @@ class Head:
 
     def forward_kinematics(self, rpy_position: Optional[Tuple[float, float, float]] = None) -> pyQuat:
         if rpy_position is None:
-            self.get_orientation()
+            return self.get_orientation()
         else:
             req = NeckFKRequest(
                 id=self.part_id,
@@ -77,7 +77,9 @@ class Head:
                     )
                 ),
             )
-            quat = self._head_stub.ComputeNeckFK(req)
+            res = self._head_stub.ComputeNeckFK(req)
+            quat = res.orientation.q
+            print(quat)
             return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def inverse_kinematics(
