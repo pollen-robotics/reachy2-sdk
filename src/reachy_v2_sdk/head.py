@@ -15,7 +15,7 @@ from typing import Optional, Tuple
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
 from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
 from reachy_sdk_api_v2.head_pb2 import HeadLookAtGoal, NeckGoal
-from reachy_sdk_api_v2.head_pb2 import HeadPosition, NeckPosition, NeckOrientation
+from reachy_sdk_api_v2.head_pb2 import HeadPosition, NeckOrientation
 from reachy_sdk_api_v2.head_pb2 import NeckFKRequest, NeckIKRequest
 from reachy_sdk_api_v2.part_pb2 import PartId
 from reachy_sdk_api_v2.kinematics_pb2 import Point, Rotation3D, Quaternion, ExtEulerAngles
@@ -72,7 +72,9 @@ class Head:
             req = NeckFKRequest(
                 id=self.part_id,
                 position=HeadPosition(
-                    neck_position=NeckPosition(neck_roll=rpy_position[0], neck_pitch=rpy_position[1], neck_yaw=rpy_position[2])
+                    neck_position=Rotation3D(
+                        rpy=ExtEulerAngles(roll=rpy_position[0], pitch=rpy_position[1], yaw=rpy_position[2])
+                    )
                 ),
             )
             quat = self._head_stub.ComputeNeckFK(req)
@@ -94,7 +96,7 @@ class Head:
                 )
             )
         if rpy_q0 is not None:
-            req.q0 = NeckPosition(neck_roll=rpy_q0[0], neck_pitch=rpy_q0[1], neck_yaw=rpy_q0[2])
+            req.q0 = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
         rpy_pos = self._head_stub.ComputeNeckIK(req)
         return (rpy_pos.position.neck_roll, rpy_pos.position.neck_pitch, rpy_pos.position.neck_yaw)
 
