@@ -9,8 +9,6 @@ from pyquaternion import Quaternion as pyQuat
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
-from google.protobuf.descriptor import FieldDescriptor
-
 from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
 from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto, ArmPosition
 from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal, ArmState, ArmCartesianGoal
@@ -115,16 +113,12 @@ class Arm:
     def _arm_position_to_list(self, arm_pos: ArmPosition) -> List[float]:
         positions = []
 
-        for field, value in arm_pos.ListFields():
-            if field.type == FieldDescriptor.TYPE_FLOAT:
-                positions.append(value)
-            elif field.type == FieldDescriptor.TYPE_MESSAGE:
-                if hasattr(value, "ListFields"):
-                    positions.extend(self._arm_position_to_list(value))
-                elif hasattr(value, "WhichOneof") and value.WhichOneof("rotation"):  # Handling oneof fields
-                    oneof_field = value.WhichOneof("rotation")
-                    oneof_value = getattr(value, oneof_field)
-                    positions.extend(self._arm_position_to_list(oneof_value))
+        for _, value in arm_pos.shoulder_position.ListFields():
+            positions.append(value)
+        for _, value in arm_pos.elbow_position.ListFields():
+            positions.append(value)
+        for _, value in arm_pos.wrist_position.rpy.ListFields():
+            positions.append(value)
 
         return positions
 
