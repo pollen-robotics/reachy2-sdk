@@ -51,8 +51,8 @@ class Orbita2d:
         axis2_attr = getattr(self, self._axis2)
 
         return Float2D(
-            axis_1=getattr(axis1_attr, field),
-            axis_2=getattr(axis2_attr, field),
+            motor_1=getattr(axis1_attr, field),
+            motor_2=getattr(axis2_attr, field),
         )
 
     def _setup_sync_loop(self) -> None:
