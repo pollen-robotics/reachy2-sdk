@@ -1,4 +1,8 @@
+import asyncio
 from grpc import Channel
+from typing import Dict
+
+from google.protobuf.wrappers_pb2 import BoolValue
 
 from google.protobuf.wrappers_pb2 import BoolValue
 
@@ -6,10 +10,12 @@ from .register import Register
 
 from typing import Dict
 
+from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.orbita2d_pb2 import (
     Axis,
-    Orbita2DState,
     Float2D,
+    Orbita2DCommand,
+    Orbita2DState,
     Pose2D,
     Vector2D,
 )
@@ -17,6 +23,7 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 
 from .orbita_utils import OrbitaJoint, OrbitaMotor, OrbitaAxis
+from .register import Register
 
 
 class Orbita2d:
@@ -72,12 +79,12 @@ class Orbita2d:
         setattr(
             self,
             axis1_name,
-            OrbitaJoint(initial_state=init_state["axis_1"], axis_type=axis1),
+            OrbitaJoint(initial_state=init_state["axis_1"], axis_type=axis1, actuator=self),
         )
         setattr(
             self,
             axis2_name,
-            OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2),
+            OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2, actuator=self),
         )
 
         setattr(self, "_motor_1", OrbitaMotor(initial_state=init_state["motor_1"]))
@@ -85,6 +92,48 @@ class Orbita2d:
 
         setattr(self, "_x", OrbitaAxis(initial_state=init_state["x"]))
         setattr(self, "_y", OrbitaAxis(initial_state=init_state["y"]))
+
+    def _build_2d_float_msg(self, field: str) -> Pose2D:
+        axis1_attr = getattr(self, self._axis1)
+        axis2_attr = getattr(self, self._axis2)
+
+        return Pose2D(
+            axis_1=getattr(axis1_attr, field),
+            axis_2=getattr(axis2_attr, field),
+        )
+
+    def _setup_sync_loop(self) -> None:
+        """Set up the async synchronisation loop.
+
+        The setup is done separately, as the async Event should be created in the same EventLoop than it will be used.
+
+        The _need_sync Event is used to inform the robot that some data need to be pushed to the real robot.
+        The _register_needing_sync stores a list of the register that need to be synced.
+        """
+        self._need_sync = asyncio.Event()
+        self._loop = asyncio.get_running_loop()
+
+    def _pop_command(self) -> Orbita2DCommand:
+        """Create a gRPC command from the registers that need to be synced."""
+        values = {
+            "id": ComponentId(id=self.id),
+        }
+
+        reg_to_update_1 = getattr(self, self._axis1)._register_needing_sync
+        reg_to_update_2 = getattr(self, self._axis2)._register_needing_sync
+
+        for reg in set(reg_to_update_1).union(set(reg_to_update_2)):
+            if reg == "compliant":
+                values["compliant"] = BoolValue(value=self.compliant)
+            else:
+                values[reg] = self._build_2d_float_msg(reg)
+        command = Orbita2DCommand(**values)
+
+        reg_to_update_1.clear()
+        reg_to_update_2.clear()
+        self._need_sync.clear()
+
+        return command
 
     def _update_with(self, new_state: Orbita2DState) -> None:
         """Update the orbita with a newly received (partial) state received from the gRPC server."""

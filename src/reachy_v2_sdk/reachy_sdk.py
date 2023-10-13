@@ -12,7 +12,8 @@ import atexit
 
 import threading
 
-# import time
+import time
+
 from typing import List
 from logging import getLogger
 
@@ -24,6 +25,11 @@ from typing import Dict, Any
 from google.protobuf.empty_pb2 import Empty
 
 from reachy_sdk_api_v2 import reachy_pb2, reachy_pb2_grpc
+from reachy_sdk_api_v2.orbita2d_pb2 import Orbita2DsCommand
+from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DsCommand
+from reachy_sdk_api_v2.component_pb2 import ComponentId
+from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
+from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 
 # from reachy_v2_sdk_api import config_pb2_grpc
 from .reachy import ReachyInfo, get_config
@@ -57,6 +63,11 @@ class ReachySDK:
         self._enabled_parts: Dict[str, Any] = {}
         self._disabled_parts: List[str] = []
 
+        self._ready = threading.Event()
+        self._pushed_2dcommand = threading.Event()
+        self._pushed_3dcommand = threading.Event()
+
+        self._available_parts = []
         self._get_info()
         self._setup_parts()
 
@@ -107,42 +118,138 @@ class ReachySDK:
         #         left_hand = Hand(self._grpc_channel, self._robot.l_hand)
         #         setattr(self.l_arm, "gripper", left_hand)
 
-        if self._robot.HasField("head"):
-            if initial_state.head_state.activated:
-                head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
-                setattr(self, "head", head)
-                self._enabled_parts["head"] = getattr(self, "head")
-            else:
-                self._disabled_parts.append("head")
+        # if self._robot.HasField("head"):
+        #     if initial_state.head_state.activated:
+        #         head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
+        #         setattr(self, "head", head)
+        #         self._enabled_parts["head"] = getattr(self, "head")
+        #     else:
+        #         self._disabled_parts.append("head")
 
         # if self._robot.HasField("mobile_base"):
         #     pass
 
+    async def _poll_waiting_2dcommands(self):
+        tasks = []
+
+        for part in self._enabled_parts.values():
+            for actuator, act_type in part._actuators.items():
+                if act_type == "orbita2d":
+                    tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
+
+        await asyncio.wait(
+            tasks,
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        commands = []
+
+        for part in self._enabled_parts.values():
+            for actuator, act_type in part._actuators.items():
+                if act_type == "orbita2d" and actuator._need_sync.is_set():
+                    commands.append(actuator._pop_command())
+
+        return Orbita2DsCommand(cmd=commands)
+
+    async def _poll_waiting_3dcommands(self):
+        tasks = []
+
+        for part in self._enabled_parts.values():
+            for actuator, act_type in part._actuators.items():
+                if act_type == "orbita3d":
+                    tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
+
+        await asyncio.wait(
+            tasks,
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        commands = []
+
+        for part in self._enabled_parts.values():
+            for actuator, act_type in part._actuators.items():
+                if act_type == "orbita3d" and actuator._need_sync.is_set():
+                    commands.append(actuator._pop_command())
+        return Orbita3DsCommand(cmd=commands)
+
     def _start_sync_in_bg(self) -> None:
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(self._sync_loop())
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_until_complete(self._sync_loop())
 
     async def _sync_loop(self) -> None:
+        for actuator in self.r_arm._actuators.keys():
+            actuator._setup_sync_loop()
+
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
         reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
+        orbita2d_stub = Orbita2DServiceStub(async_channel)
+        orbita3d_stub = Orbita3DServiceStub(async_channel)
 
-        await self._get_stream_update_loop(reachy_stub, freq=100)
+        # await self._stream_orbita2d_commands_loop(orbita2d_stub, freq=0.1)
+        # await self._stream_orbita3d_commands_loop(orbita3d_stub, freq=0.1)
+
+        # await self._poll_waiting_2dcommands()
+
+        # await self._get_stream_update_loop(reachy_stub, freq=100)
+
+        await asyncio.gather(
+            self._stream_orbita2d_commands_loop(orbita2d_stub, freq=100),
+            self._stream_orbita3d_commands_loop(orbita3d_stub, freq=100),
+            self._get_stream_update_loop(reachy_stub, freq=100),
+        )
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         async for state_update in reachy_stub.StreamReachyState(stream_req):
-            if hasattr(self, "l_arm"):
-                self.l_arm._update_with(state_update.l_arm_state)
+            # if hasattr(self, "l_arm"):
+            #     self.l_arm._update_with(state_update.l_arm_state)
                 # if (hasattr(self.l_arm, 'l_hand')):
                 #     self.l_arm.gripper._update_with(state_update.l_hand_state)
             if hasattr(self, "r_arm"):
                 self.r_arm._update_with(state_update.r_arm_state)
-                if hasattr(self, "r_hand"):
-                    self.r_arm.gripper._update_with(state_update.r_hand_state)
-            if hasattr(self, "head"):
-                self.head._update_with(state_update.head_state)
+            #     if hasattr(self, "r_hand"):
+            #         self.r_arm.gripper._update_with(state_update.r_hand_state)
+            # if hasattr(self, "head"):
+            #     self.head._update_with(state_update.head_state)
             # if (hasattr(self, 'mobile_base')):
             # self.mobile_base._update_with(state_update.mobile_base_state)
+
+    async def _stream_orbita2d_commands_loop(self, orbita2d_stub, freq: float):
+        async def command_poll_2d():
+            last_pub = 0.0
+            dt = 1.0 / freq
+
+            while True:
+                elapsed_time = time.time() - last_pub
+                if elapsed_time < dt:
+                    await asyncio.sleep(dt - elapsed_time)
+
+                commands = await self._poll_waiting_2dcommands()
+                yield commands
+                self._pushed_2dcommand.set()
+                self._pushed_2dcommand.clear()
+                last_pub = time.time()
+
+        await orbita2d_stub.StreamCommand(command_poll_2d())
+
+    async def _stream_orbita3d_commands_loop(self, orbita3d_stub, freq: float):
+        async def command_poll_3d():
+            last_pub = 0.0
+            dt = 1.0 / freq
+
+            while True:
+                elapsed_time = time.time() - last_pub
+                if elapsed_time < dt:
+                    await asyncio.sleep(dt - elapsed_time)
+
+                commands = await self._poll_waiting_3dcommands()
+                yield commands
+                self._pushed_3dcommand.set()
+                self._pushed_3dcommand.clear()
+                last_pub = time.time()
+
+        await orbita3d_stub.StreamCommand(command_poll_3d())
 
     def turn_on(self) -> None:
         for part in self._enabled_parts.values():
