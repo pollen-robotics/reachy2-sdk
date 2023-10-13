@@ -24,7 +24,7 @@ from typing import Optional
 # from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
 
-from reachy_sdk_api_v2 import reachy_pb2_grpc
+from reachy_sdk_api_v2 import reachy_pb2, reachy_pb2_grpc
 from reachy_sdk_api_v2.orbita2d_pb2 import Orbita2DsCommand
 from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DsCommand
 from reachy_sdk_api_v2.component_pb2 import ComponentId
@@ -87,8 +87,11 @@ class ReachySDK:
         self.config = get_config(self._robot)
 
     def _setup_parts(self) -> None:
+        setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
+        initial_state = setup_stub.GetReachyState(self._robot.id)
+
         if self._robot.HasField("r_arm"):
-            self.r_arm = Arm(self._robot.r_arm, self._grpc_channel)
+            self.r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
             self._available_parts.append(self.r_arm)
             # if self._robot.HasField("r_hand"):
             #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)
@@ -157,13 +160,13 @@ class ReachySDK:
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.loop.run_until_complete(self._sync_loop())
-        print("Sync loop completed")
 
     async def _sync_loop(self) -> None:
         for actuator in self.r_arm._actuators.keys():
             actuator._setup_sync_loop()
 
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
+        reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
         orbita2d_stub = Orbita2DServiceStub(async_channel)
         orbita3d_stub = Orbita3DServiceStub(async_channel)
 
@@ -172,10 +175,29 @@ class ReachySDK:
 
         # await self._poll_waiting_2dcommands()
 
+        # await self._get_stream_update_loop(reachy_stub, freq=100)
+
         await asyncio.gather(
             self._stream_orbita2d_commands_loop(orbita2d_stub, freq=100),
             self._stream_orbita3d_commands_loop(orbita3d_stub, freq=100),
+            self._get_stream_update_loop(reachy_stub, freq=100),
         )
+
+    async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
+        stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
+        async for state_update in reachy_stub.StreamReachyState(stream_req):
+            # if hasattr(self, "l_arm"):
+            #     self.l_arm._update_with(state_update.l_arm_state)
+                # if (hasattr(self.l_arm, 'l_hand')):
+                #     self.l_arm.gripper._update_with(state_update.l_hand_state)
+            if hasattr(self, "r_arm"):
+                self.r_arm._update_with(state_update.r_arm_state)
+            #     if hasattr(self, "r_hand"):
+            #         self.r_arm.gripper._update_with(state_update.r_hand_state)
+            # if hasattr(self, "head"):
+            #     self.head._update_with(state_update.head_state)
+            # if (hasattr(self, 'mobile_base')):
+            # self.mobile_base._update_with(state_update.mobile_base_state)
 
     async def _stream_orbita2d_commands_loop(self, orbita2d_stub, freq: float):
         async def command_poll_2d():

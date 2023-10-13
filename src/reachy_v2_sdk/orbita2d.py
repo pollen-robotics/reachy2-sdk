@@ -1,5 +1,6 @@
 import asyncio
 from grpc import Channel
+from typing import Dict
 
 from google.protobuf.wrappers_pb2 import BoolValue
 
@@ -7,20 +8,32 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
     Axis,
     Float2D,
     Orbita2DCommand,
-    Orbita2DsCommand,
-    Orbita2DField,
-    Orbita2DStateRequest,
+    Orbita2DState,
+    Pose2D,
+    Vector2D,
 )
 
 from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 
-from .orbita_utils import OrbitaJoint
+from .orbita_utils import OrbitaJoint, OrbitaMotor, OrbitaAxis
+from .register import Register
 
 
 class Orbita2d:
-    def __init__(self, name: str, axis1: Axis, axis2: Axis, grpc_channel: Channel):
+    compliant = Register(readonly=False, type=BoolValue, label="compliant")
+
+    def __init__(  # noqa: C901
+        self,
+        uid: int,
+        name: str,
+        axis1: Axis,
+        axis2: Axis,
+        initial_state: Orbita2DState,
+        grpc_channel: Channel,
+    ):
         self.name = name
+        self.id = uid
         self._stub = Orbita2DServiceStub(grpc_channel)
 
         axis1_name = Axis.DESCRIPTOR.values_by_number[axis1].name.lower()
@@ -29,30 +42,58 @@ class Orbita2d:
         self._axis1 = axis1_name
         self._axis2 = axis2_name
 
-        init_state = {
-            "present_position": 20.0,
-            "present_speed": 0.0,
-            "present_load": 0.0,
-            "temperature": 0.0,
-            "goal_position": 100.0,
-            "speed_limit": 0.0,
-            "torque_limit": 0.0,
+        self._axis_to_name: Dict[str, str] = {
+            "axis_1": self._axis1,
+            "axis_2": self._axis2,
         }
 
-        # TODO get initial state from grpc server
-        # Should set this as @property?
-        setattr(self, axis1_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis1, actuator=self))
-        setattr(self, axis2_name, OrbitaJoint(initial_state=init_state.copy(), axis_type=axis2, actuator=self))
+        self._state: Dict[str, bool] = {}
+        init_state: Dict[str, Dict[str, float]] = {}
 
-        self.compliant = False
+        for field, value in initial_state.ListFields():
+            if field.name == "compliant":
+                self._state[field.name] = value
+            else:
+                if isinstance(value, Pose2D):
+                    for axis, val in value.ListFields():
+                        if axis.name not in init_state:
+                            init_state[axis.name] = {}
+                        init_state[axis.name][field.name] = val
+                if isinstance(value, Float2D):
+                    for motor, val in value.ListFields():
+                        if motor.name not in init_state:
+                            init_state[motor.name] = {}
+                        init_state[motor.name][field.name] = val
+                if isinstance(value, Vector2D):
+                    for axis, val in value.ListFields():
+                        if axis.name not in init_state:
+                            init_state[axis.name] = {}
+                        init_state[axis.name][field.name] = val
 
-    def _build_2d_float_msg(self, field: str) -> Float2D:
+        setattr(
+            self,
+            axis1_name,
+            OrbitaJoint(initial_state=init_state["axis_1"], axis_type=axis1, actuator=self),
+        )
+        setattr(
+            self,
+            axis2_name,
+            OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2, actuator=self),
+        )
+
+        setattr(self, "_motor_1", OrbitaMotor(initial_state=init_state["motor_1"]))
+        setattr(self, "_motor_2", OrbitaMotor(initial_state=init_state["motor_2"]))
+
+        setattr(self, "_x", OrbitaAxis(initial_state=init_state["x"]))
+        setattr(self, "_y", OrbitaAxis(initial_state=init_state["y"]))
+
+    def _build_2d_float_msg(self, field: str) -> Pose2D:
         axis1_attr = getattr(self, self._axis1)
         axis2_attr = getattr(self, self._axis2)
 
-        return Float2D(
-            motor_1=getattr(axis1_attr, field),
-            motor_2=getattr(axis2_attr, field),
+        return Pose2D(
+            axis_1=getattr(axis1_attr, field),
+            axis_2=getattr(axis2_attr, field),
         )
 
     def _setup_sync_loop(self) -> None:
@@ -69,7 +110,7 @@ class Orbita2d:
     def _pop_command(self) -> Orbita2DCommand:
         """Create a gRPC command from the registers that need to be synced."""
         values = {
-            "id": ComponentId(id=self.name),
+            "id": ComponentId(id=self.id),
         }
 
         reg_to_update_1 = getattr(self, self._axis1)._register_needing_sync
@@ -88,40 +129,21 @@ class Orbita2d:
 
         return command
 
-    # TODO: perform the update in a thread
-    # TODO: find a smarter way to do this
-    def update_2dstate(self) -> None:
-        resp = self._stub.GetState(
-            Orbita2DStateRequest(
-                id=ComponentId(id=self.name),
-                fields=[
-                    Orbita2DField.PRESENT_POSITION,
-                    Orbita2DField.PRESENT_SPEED,
-                    Orbita2DField.PRESENT_LOAD,
-                    Orbita2DField.TEMPERATURE,
-                    Orbita2DField.GOAL_POSITION,
-                    Orbita2DField.SPEED_LIMIT,
-                    Orbita2DField.TORQUE_LIMIT,
-                ],
-            )
-        )
-        axis1_attr = getattr(self, self._axis1)
-        axis2_attr = getattr(self, self._axis2)
-
-        axis1_attr._present_position = resp.present_position.axis_1
-        axis2_attr._present_position = resp.present_position.axis_2
-
-        axis1_attr._present_speed = resp.present_speed.axis_1
-        axis2_attr._present_speed = resp.present_speed.axis_2
-
-        axis1_attr._present_load = resp.present_load.axis_1
-        axis2_attr._present_load = resp.present_load.axis_2
-
-        axis1_attr._goal_position = resp.goal_position.axis_1
-        axis2_attr._goal_position = resp.goal_position.axis_2
-
-        axis1_attr._speed_limit = resp.speed_limit.axis_1
-        axis2_attr._speed_limit = resp.speed_limit.axis_2
-
-        axis1_attr._torque_limit = resp.torque_limit.axis_1
-        axis2_attr._torque_limit = resp.torque_limit.axis_2
+    def _update_with(self, new_state: Orbita2DState) -> None:
+        """Update the orbita with a newly received (partial) state received from the gRPC server."""
+        for field, value in new_state.ListFields():
+            if field.name == "compliant":
+                self._state[field.name] = value
+            else:
+                if isinstance(value, Pose2D):
+                    for joint, val in value.ListFields():
+                        j = getattr(self, self._axis_to_name[joint.name])
+                        j._state[field.name] = val
+                if isinstance(value, Float2D):
+                    for motor, val in value.ListFields():
+                        m = getattr(self, "_" + motor.name)
+                        m._state[field.name] = val
+                if isinstance(value, Vector2D):
+                    for axis, val in value.ListFields():
+                        a = getattr(self, "_" + axis.name)
+                        a._state[field.name] = val

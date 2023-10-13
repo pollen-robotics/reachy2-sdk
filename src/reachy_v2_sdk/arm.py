@@ -4,7 +4,7 @@ import grpc
 
 from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
 from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto, ArmPosition
-from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal
+from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal, ArmState
 from reachy_sdk_api_v2.arm_pb2 import JointLimits, ArmTemperatures
 from reachy_sdk_api_v2.part_pb2 import PartId
 
@@ -13,34 +13,40 @@ from .orbita3d import Orbita3d
 
 
 class Arm:
-    def __init__(self, arm_msg: Arm_proto, grpc_channel: grpc.Channel) -> None:
+    def __init__(self, arm_msg: Arm_proto, initial_state: ArmState, grpc_channel: grpc.Channel) -> None:
         self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
         self.part_id = PartId(id=arm_msg.part_id.id)
 
-        self._setup_arm(arm_msg)
+        self._setup_arm(arm_msg, initial_state)
         self._actuators = {
             self.shoulder: "orbita2d",
             self.elbow: "orbita2d",
             self.wrist: "orbita3d",
         }
 
-    def _setup_arm(self, arm: Arm_proto) -> None:
+    def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
         description = arm.description
         self.shoulder = Orbita2d(
-            name=description.shoulder.id.id,
+            uid=description.shoulder.id.id,
+            name=description.shoulder.id.name,
             axis1=description.shoulder.axis_1,
             axis2=description.shoulder.axis_2,
+            initial_state=initial_state.shoulder_state,
             grpc_channel=self._grpc_channel,
         )
         self.elbow = Orbita2d(
-            name=description.elbow.id.id,
+            uid=description.elbow.id.id,
+            name=description.elbow.id.name,
             axis1=description.elbow.axis_1,
             axis2=description.elbow.axis_2,
+            initial_state=initial_state.elbow_state,
             grpc_channel=self._grpc_channel,
         )
         self.wrist = Orbita3d(
-            name=description.wrist.id.id,
+            uid=description.wrist.id.id,
+            name=description.wrist.id.name,
+            initial_state=initial_state.wrist_state,
             grpc_channel=self._grpc_channel,
         )
 
@@ -73,3 +79,9 @@ class Arm:
     def temperatures(self) -> ArmTemperatures:
         temperatures = self._arm_stub.GetTemperatures(self.part_id)
         return temperatures
+
+    def _update_with(self, new_state: ArmState) -> None:
+        """Update the arm with a newly received (partial) state received from the gRPC server."""
+        self.shoulder._update_with(new_state.shoulder_state)
+        self.elbow._update_with(new_state.elbow_state)
+        self.wrist._update_with(new_state.wrist_state)
