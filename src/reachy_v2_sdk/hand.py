@@ -7,7 +7,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 import grpc
 
 from reachy_sdk_api_v2.hand_pb2_grpc import HandServiceStub
-from reachy_sdk_api_v2.hand_pb2 import Hand as Hand_proto
+from reachy_sdk_api_v2.hand_pb2 import Hand as Hand_proto, HandState
 from reachy_sdk_api_v2.part_pb2 import PartId
 
 
@@ -35,3 +35,7 @@ class Hand:
 
     def turn_off(self) -> None:
         self._hand_stub.TurnOff(self.part_id)
+
+    def _update_with(self, new_state: HandState) -> None:
+        """Update the orbita with a newly received (partial) state received from the gRPC server."""
+        pass

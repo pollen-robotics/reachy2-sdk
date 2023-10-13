@@ -14,12 +14,12 @@ import threading
 
 import time
 
-# from typing import List
+from typing import List
 from logging import getLogger
 
 import grpc
 
-from typing import Optional
+from typing import Dict, Any
 
 # from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
@@ -34,6 +34,7 @@ from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 # from reachy_v2_sdk_api import config_pb2_grpc
 from .reachy import ReachyInfo, get_config
 from .arm import Arm
+from .head import Head
 
 
 class ReachySDK:
@@ -59,10 +60,8 @@ class ReachySDK:
         self._sdk_port = sdk_port
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
 
-        self.l_arm: Optional[Arm] = None
-        self.r_arm: Optional[Arm] = None
-        # self.head: Optional[Head] = None
-        # self.mobile_base: Optional[MobileBase] = None
+        self._enabled_parts: Dict[str, Any] = {}
+        self._disabled_parts: List[str] = []
 
         self._ready = threading.Event()
         self._pushed_2dcommand = threading.Event()
@@ -80,6 +79,14 @@ class ReachySDK:
         """Clean representation of a Reachy."""
         return f'<Reachy host="{self._host}">'
 
+    @property
+    def enabled_parts(self) -> List[str]:
+        return list(self._enabled_parts.keys())
+
+    @property
+    def disabled_parts(self) -> List[str]:
+        return self._disabled_parts
+
     def _get_info(self) -> None:
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         self._robot = config_stub.GetReachy(Empty())
@@ -91,11 +98,15 @@ class ReachySDK:
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
         if self._robot.HasField("r_arm"):
-            self.r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
-            self._available_parts.append(self.r_arm)
-            # if self._robot.HasField("r_hand"):
-            #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)
-            #     setattr(self.r_arm, "gripper", right_hand)
+            if initial_state.r_arm_state.activated:
+                r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
+                setattr(self, "r_arm", r_arm)
+                self._enabled_parts["r_arm"] = getattr(self, "r_arm")
+                # if self._robot.HasField("r_hand"):
+                #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)
+                #     setattr(self.r_arm, "gripper", right_hand)
+            else:
+                self._disabled_parts.append("r_arm")
 
         # if self._robot.HasField("l_arm"):
         #     self.l_arm = Arm(self._grpc_channel, self._robot.l_arm)
@@ -108,7 +119,12 @@ class ReachySDK:
         #         setattr(self.l_arm, "gripper", left_hand)
 
         # if self._robot.HasField("head"):
-        #     self.head = Head(self._grpc_channel, self._robot.head)
+        #     if initial_state.head_state.activated:
+        #         head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
+        #         setattr(self, "head", head)
+        #         self._enabled_parts["head"] = getattr(self, "head")
+        #     else:
+        #         self._disabled_parts.append("head")
 
         # if self._robot.HasField("mobile_base"):
         #     pass
@@ -116,7 +132,7 @@ class ReachySDK:
     async def _poll_waiting_2dcommands(self):
         tasks = []
 
-        for part in self._available_parts:
+        for part in self._enabled_parts.values():
             for actuator, act_type in part._actuators.items():
                 if act_type == "orbita2d":
                     tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
@@ -128,7 +144,7 @@ class ReachySDK:
 
         commands = []
 
-        for part in self._available_parts:
+        for part in self._enabled_parts.values():
             for actuator, act_type in part._actuators.items():
                 if act_type == "orbita2d" and actuator._need_sync.is_set():
                     commands.append(actuator._pop_command())
@@ -138,7 +154,7 @@ class ReachySDK:
     async def _poll_waiting_3dcommands(self):
         tasks = []
 
-        for part in self._available_parts:
+        for part in self._enabled_parts.values():
             for actuator, act_type in part._actuators.items():
                 if act_type == "orbita3d":
                     tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
@@ -150,7 +166,7 @@ class ReachySDK:
 
         commands = []
 
-        for part in self._available_parts:
+        for part in self._enabled_parts.values():
             for actuator, act_type in part._actuators.items():
                 if act_type == "orbita3d" and actuator._need_sync.is_set():
                     commands.append(actuator._pop_command())
@@ -234,6 +250,14 @@ class ReachySDK:
                 last_pub = time.time()
 
         await orbita3d_stub.StreamCommand(command_poll_3d())
+
+    def turn_on(self) -> None:
+        for part in self._enabled_parts.values():
+            part.turn_on()
+
+    def turn_off(self) -> None:
+        for part in self._enabled_parts.values():
+            part.turn_off()
 
 
 def flush_communication() -> None:

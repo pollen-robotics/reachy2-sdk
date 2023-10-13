@@ -33,6 +33,12 @@ class OrbitaJoint:
             fut.result()
         super().__setattr__(__name, __value)
 
+    def __getitem__(self, field: str) -> float:
+        return self._state[field]
+
+    # def __setitem__(self, field: str, value: float) -> None:
+    #     self._state[field] = value
+
 
 class OrbitaMotor:
     temperature = Register(readonly=True, type=float, label="temperature")

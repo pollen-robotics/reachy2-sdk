@@ -4,6 +4,13 @@ from typing import Dict
 
 from google.protobuf.wrappers_pb2 import BoolValue
 
+from google.protobuf.wrappers_pb2 import BoolValue
+
+from .register import Register
+
+from typing import Dict
+
+from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.orbita2d_pb2 import (
     Axis,
     Float2D,
@@ -13,7 +20,6 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
     Vector2D,
 )
 
-from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 
 from .orbita_utils import OrbitaJoint, OrbitaMotor, OrbitaAxis
