@@ -27,14 +27,13 @@ from google.protobuf.empty_pb2 import Empty
 from reachy_sdk_api_v2 import reachy_pb2, reachy_pb2_grpc
 from reachy_sdk_api_v2.orbita2d_pb2 import Orbita2DsCommand
 from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DsCommand
-from reachy_sdk_api_v2.component_pb2 import ComponentId
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 
-# from reachy_v2_sdk_api import config_pb2_grpc
 from .reachy import ReachyInfo, get_config
 from .arm import Arm
-from .head import Head
+
+# from .head import Head
 
 
 class ReachySDK:
@@ -67,7 +66,6 @@ class ReachySDK:
         self._pushed_2dcommand = threading.Event()
         self._pushed_3dcommand = threading.Event()
 
-        self._available_parts = []
         self._get_info()
         self._setup_parts()
 
@@ -129,7 +127,7 @@ class ReachySDK:
         # if self._robot.HasField("mobile_base"):
         #     pass
 
-    async def _poll_waiting_2dcommands(self):
+    async def _poll_waiting_2dcommands(self) -> Orbita2DsCommand:
         tasks = []
 
         for part in self._enabled_parts.values():
@@ -151,7 +149,7 @@ class ReachySDK:
 
         return Orbita2DsCommand(cmd=commands)
 
-    async def _poll_waiting_3dcommands(self):
+    async def _poll_waiting_3dcommands(self) -> Orbita3DsCommand:
         tasks = []
 
         for part in self._enabled_parts.values():
@@ -178,8 +176,9 @@ class ReachySDK:
         self.loop.run_until_complete(self._sync_loop())
 
     async def _sync_loop(self) -> None:
-        for actuator in self.r_arm._actuators.keys():
-            actuator._setup_sync_loop()
+        if hasattr(self, "r_arm"):
+            for actuator in self.r_arm._actuators.keys():
+                actuator._setup_sync_loop()
 
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
         reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
@@ -202,21 +201,21 @@ class ReachySDK:
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         async for state_update in reachy_stub.StreamReachyState(stream_req):
-            # if hasattr(self, "l_arm"):
-            #     self.l_arm._update_with(state_update.l_arm_state)
-                # if (hasattr(self.l_arm, 'l_hand')):
-                #     self.l_arm.gripper._update_with(state_update.l_hand_state)
+            if hasattr(self, "l_arm"):
+                self.l_arm._update_with(state_update.l_arm_state)
+                if hasattr(self.l_arm, "l_hand"):
+                    self.l_arm.gripper._update_with(state_update.l_hand_state)
             if hasattr(self, "r_arm"):
                 self.r_arm._update_with(state_update.r_arm_state)
-            #     if hasattr(self, "r_hand"):
-            #         self.r_arm.gripper._update_with(state_update.r_hand_state)
-            # if hasattr(self, "head"):
-            #     self.head._update_with(state_update.head_state)
-            # if (hasattr(self, 'mobile_base')):
-            # self.mobile_base._update_with(state_update.mobile_base_state)
+                if hasattr(self, "r_hand"):
+                    self.r_arm.gripper._update_with(state_update.r_hand_state)
+            if hasattr(self, "head"):
+                self.head._update_with(state_update.head_state)
+            if hasattr(self, "mobile_base"):
+                self.mobile_base._update_with(state_update.mobile_base_state)
 
-    async def _stream_orbita2d_commands_loop(self, orbita2d_stub, freq: float):
-        async def command_poll_2d():
+    async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2DServiceStub, freq: float) -> None:
+        async def command_poll_2d() -> Orbita2DsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
 
@@ -233,8 +232,8 @@ class ReachySDK:
 
         await orbita2d_stub.StreamCommand(command_poll_2d())
 
-    async def _stream_orbita3d_commands_loop(self, orbita3d_stub, freq: float):
-        async def command_poll_3d():
+    async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3DServiceStub, freq: float) -> None:
+        async def command_poll_3d() -> Orbita3DsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
 

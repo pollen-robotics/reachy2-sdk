@@ -3,12 +3,15 @@ from typing import Any, Dict, List
 
 from .register import Register
 
+from .orbita2d import Orbita2d
+from .orbita3d import Orbita3d
+
 
 class OrbitaJoint:
     present_position = Register(readonly=True, type=float, label="present_position")
     goal_position = Register(readonly=False, type=float, label="goal_position")
 
-    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator) -> None:
+    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Orbita2d | Orbita3d) -> None:
         self._actuator = actuator
         self.axis_type = axis_type
 

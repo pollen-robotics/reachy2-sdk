@@ -92,7 +92,7 @@ class Orbita3d:
                         a._state[field.name] = val
 
     def _build_3d_msg(self, field: str) -> Float3D:
-        if field == 'goal_position':
+        if field == "goal_position":
             return Rotation3D(
                 q=Quaternion(
                     x=1.0,
