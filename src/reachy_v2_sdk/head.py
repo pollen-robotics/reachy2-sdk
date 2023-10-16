@@ -15,7 +15,7 @@ from typing import Optional, Tuple
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
 from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
 from reachy_sdk_api_v2.head_pb2 import HeadLookAtGoal, NeckGoal
-from reachy_sdk_api_v2.head_pb2 import HeadPosition, NeckPosition, NeckOrientation
+from reachy_sdk_api_v2.head_pb2 import HeadPosition, NeckOrientation
 from reachy_sdk_api_v2.head_pb2 import NeckFKRequest, NeckIKRequest
 from reachy_sdk_api_v2.part_pb2 import PartId
 from reachy_sdk_api_v2.kinematics_pb2 import Point, Rotation3D, Quaternion, ExtEulerAngles
@@ -67,25 +67,28 @@ class Head:
 
     def forward_kinematics(self, rpy_position: Optional[Tuple[float, float, float]] = None) -> pyQuat:
         if rpy_position is None:
-            self.get_orientation()
+            return self.get_orientation()
         else:
             req = NeckFKRequest(
                 id=self.part_id,
                 position=HeadPosition(
-                    neck_position=NeckPosition(neck_roll=rpy_position[0], neck_pitch=rpy_position[1], neck_yaw=rpy_position[2])
+                    neck_position=Rotation3D(
+                        rpy=ExtEulerAngles(roll=rpy_position[0], pitch=rpy_position[1], yaw=rpy_position[2])
+                    )
                 ),
             )
-            quat = self._head_stub.ComputeNeckFK(req)
+            res = self._head_stub.ComputeNeckFK(req)
+            quat = res.orientation.q
             return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def inverse_kinematics(
         self, orientation: Optional[pyQuat] = None, rpy_q0: Optional[Tuple[float, float, float]] = None
     ) -> Tuple[float, float, float]:
-        req = NeckIKRequest(
-            id=self.part_id,
-        )
+        req_params = {
+            "id": self.part_id,
+        }
         if orientation is not None:
-            req.target = NeckOrientation(
+            req_params["target"] = NeckOrientation(
                 q=Quaternion(
                     w=orientation.w,
                     x=orientation.x,
@@ -94,9 +97,10 @@ class Head:
                 )
             )
         if rpy_q0 is not None:
-            req.q0 = NeckPosition(neck_roll=rpy_q0[0], neck_pitch=rpy_q0[1], neck_yaw=rpy_q0[2])
+            req_params["q0"] = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
+        req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
-        return (rpy_pos.position.neck_roll, rpy_pos.position.neck_pitch, rpy_pos.position.neck_yaw)
+        return (rpy_pos.position.rpy.roll, rpy_pos.position.rpy.pitch, rpy_pos.position.rpy.yaw)
 
     def look_at(self, x: float, y: float, z: float, duration: float) -> None:
         req = HeadLookAtGoal(id=self.part_id, point=Point(x=x, y=y, z=z), duration=FloatValue(value=duration))
