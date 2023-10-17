@@ -1,7 +1,7 @@
 import asyncio
 from grpc import Channel
 from google.protobuf.wrappers_pb2 import BoolValue
-from typing import Dict
+from typing import Dict, List, Any
 
 from reachy_sdk_api_v2.orbita3d_pb2 import (
     Float3D,
@@ -27,6 +27,8 @@ class Orbita3d:
 
         self._state: Dict[str, bool] = {}
         init_state: Dict[str, Dict[str, float]] = {}
+
+        self._register_needing_sync: List[str] = []
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
@@ -104,6 +106,20 @@ class Orbita3d:
             motor_3=getattr(self._motor_3, field),
         )
 
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        if __name == "compliant":
+            self._state[__name] = __value
+            # self._motor_1._state[__name] = __value
+            # self._motor_2._state[__name] = __value
+
+            async def set_in_loop() -> None:
+                self._register_needing_sync.append(__name)
+                self._need_sync.set()
+
+            fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
+            fut.result()
+        super().__setattr__(__name, __value)
+
     def _setup_sync_loop(self) -> None:
         """Set up the async synchronisation loop.
 
@@ -124,10 +140,11 @@ class Orbita3d:
         set_reg_roll = set(self.roll._register_needing_sync)
         set_reg_pitch = set(self.pitch._register_needing_sync)
         set_reg_yaw = set(self.yaw._register_needing_sync)
+        reg_to_update = self._register_needing_sync
 
-        for reg in set_reg_roll.union(set_reg_pitch).union(set_reg_yaw):
+        for reg in set_reg_roll.union(set_reg_pitch).union(set_reg_yaw).union(set(reg_to_update)):
             if reg == "compliant":
-                values["compliant"] = BoolValue(value=self.compliant)
+                values["compliant"] = BoolValue(value=self._state["compliant"])
             else:
                 values[reg] = self._build_grpc_cmd_msg(reg)
         command = Orbita3DCommand(**values)
@@ -135,6 +152,7 @@ class Orbita3d:
         self.roll._register_needing_sync.clear()
         self.pitch._register_needing_sync.clear()
         self.yaw._register_needing_sync.clear()
+        reg_to_update.clear()
         self._need_sync.clear()
 
         return command
