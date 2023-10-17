@@ -39,6 +39,11 @@ class Head:
         self.part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
 
         self._setup_head(head_msg, initial_state)
+        self._actuators = {
+            self.neck: "orbita3d",
+            self.l_antenna: "dynamixel_motor",
+            # self.r_antenna: "dynamixel_motor",
+        }
 
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
         description = head.description

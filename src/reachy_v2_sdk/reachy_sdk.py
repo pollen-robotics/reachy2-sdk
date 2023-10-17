@@ -33,7 +33,7 @@ from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 from .reachy import ReachyInfo, get_config
 from .arm import Arm
 
-# from .head import Head
+from .head import Head
 
 
 class ReachySDK:
@@ -116,13 +116,13 @@ class ReachySDK:
         #         left_hand = Hand(self._grpc_channel, self._robot.l_hand)
         #         setattr(self.l_arm, "gripper", left_hand)
 
-        # if self._robot.HasField("head"):
-        #     if initial_state.head_state.activated:
-        #         head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
-        #         setattr(self, "head", head)
-        #         self._enabled_parts["head"] = getattr(self, "head")
-        #     else:
-        #         self._disabled_parts.append("head")
+        if self._robot.HasField("head"):
+            if initial_state.head_state.activated:
+                head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
+                setattr(self, "head", head)
+                self._enabled_parts["head"] = getattr(self, "head")
+            else:
+                self._disabled_parts.append("head")
 
         # if self._robot.HasField("mobile_base"):
         #     pass
@@ -152,10 +152,18 @@ class ReachySDK:
     async def _poll_waiting_3dcommands(self) -> Orbita3DsCommand:
         tasks = []
 
-        for part in self._enabled_parts.values():
+        print("_poll_waiting_3dcommands")
+        for name, part in self._enabled_parts.items():
+            print(f"Part: {name}")
+
             for actuator, act_type in part._actuators.items():
-                if act_type == "orbita3d":
+                print(f"actuator: {actuator}, {act_type}")
+
+                if act_type == "orbita3d" and name != "r_arm":
+                    print(f"It is an orbita3D : {actuator.name}")
+
                     tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
+                    print("tasks.append")
 
         await asyncio.wait(
             tasks,
@@ -180,17 +188,14 @@ class ReachySDK:
             for actuator in self.r_arm._actuators.keys():
                 actuator._setup_sync_loop()
 
+        if hasattr(self, "head"):
+            for actuator in self.head._actuators.keys():
+                actuator._setup_sync_loop()
+
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
         reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
         orbita2d_stub = Orbita2DServiceStub(async_channel)
         orbita3d_stub = Orbita3DServiceStub(async_channel)
-
-        # await self._stream_orbita2d_commands_loop(orbita2d_stub, freq=0.1)
-        # await self._stream_orbita3d_commands_loop(orbita3d_stub, freq=0.1)
-
-        # await self._poll_waiting_2dcommands()
-
-        # await self._get_stream_update_loop(reachy_stub, freq=100)
 
         await asyncio.gather(
             self._stream_orbita2d_commands_loop(orbita2d_stub, freq=100),
