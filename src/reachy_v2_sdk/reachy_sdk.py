@@ -135,48 +135,49 @@ class ReachySDK:
                 if act_type == "orbita2d":
                     tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
 
-        await asyncio.wait(
-            tasks,
-            return_when=asyncio.FIRST_COMPLETED,
-        )
+        if len(tasks) > 0:
+            await asyncio.wait(
+                tasks,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
 
-        commands = []
+            commands = []
 
-        for part in self._enabled_parts.values():
-            for actuator, act_type in part._actuators.items():
-                if act_type == "orbita2d" and actuator._need_sync.is_set():
-                    commands.append(actuator._pop_command())
+            for part in self._enabled_parts.values():
+                for actuator, act_type in part._actuators.items():
+                    if act_type == "orbita2d" and actuator._need_sync.is_set():
+                        commands.append(actuator._pop_command())
 
-        return Orbita2DsCommand(cmd=commands)
+            return Orbita2DsCommand(cmd=commands)
+
+        else:
+            pass
 
     async def _poll_waiting_3dcommands(self) -> Orbita3DsCommand:
         tasks = []
 
-        print("_poll_waiting_3dcommands")
         for name, part in self._enabled_parts.items():
-            print(f"Part: {name}")
-
             for actuator, act_type in part._actuators.items():
-                print(f"actuator: {actuator}, {act_type}")
-
                 if act_type == "orbita3d" and name != "r_arm":
-                    print(f"It is an orbita3D : {actuator.name}")
-
                     tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
-                    print("tasks.append")
 
-        await asyncio.wait(
-            tasks,
-            return_when=asyncio.FIRST_COMPLETED,
-        )
+        if len(tasks) > 0:
+            await asyncio.wait(
+                tasks,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
 
-        commands = []
+            commands = []
 
-        for part in self._enabled_parts.values():
-            for actuator, act_type in part._actuators.items():
-                if act_type == "orbita3d" and actuator._need_sync.is_set():
-                    commands.append(actuator._pop_command())
-        return Orbita3DsCommand(cmd=commands)
+            for part in self._enabled_parts.values():
+                for actuator, act_type in part._actuators.items():
+                    if act_type == "orbita3d" and actuator._need_sync.is_set():
+                        commands.append(actuator._pop_command())
+
+            return Orbita3DsCommand(cmd=commands)
+
+        else:
+            pass
 
     def _start_sync_in_bg(self) -> None:
         self.loop = asyncio.new_event_loop()
