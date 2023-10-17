@@ -1,6 +1,6 @@
 import asyncio
 from grpc import Channel
-from typing import Dict
+from typing import Dict, Any, List
 
 from google.protobuf.wrappers_pb2 import BoolValue
 
@@ -43,6 +43,9 @@ class Orbita2d:
         self._axis1 = axis1_name
         self._axis2 = axis2_name
 
+        self._motor_1 = None
+        self._motor_2 = None
+
         self._axis_to_name: Dict[str, str] = {
             "axis_1": self._axis1,
             "axis_2": self._axis2,
@@ -50,6 +53,8 @@ class Orbita2d:
 
         self._state: Dict[str, bool] = {}
         init_state: Dict[str, Dict[str, float]] = {}
+
+        self._register_needing_sync: List[str] = []
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
@@ -88,13 +93,18 @@ class Orbita2d:
         setattr(self, "_x", OrbitaAxis(initial_state=init_state["x"]))
         setattr(self, "_y", OrbitaAxis(initial_state=init_state["y"]))
 
-    def _build_2d_float_msg(self, field: str) -> Pose2D:
-        axis1_attr = getattr(self, self._axis1)
-        axis2_attr = getattr(self, self._axis2)
+    def _build_grpc_cmd_msg(self, field: str) -> Pose2D | Float2D:
+        if field == "goal_position":
+            axis1_attr = getattr(self, self._axis1)
+            axis2_attr = getattr(self, self._axis2)
+            return Pose2D(
+                axis_1=getattr(axis1_attr, field),
+                axis_2=getattr(axis2_attr, field),
+            )
 
-        return Pose2D(
-            axis_1=getattr(axis1_attr, field),
-            axis_2=getattr(axis2_attr, field),
+        return Float2D(
+            motor_1=getattr(self._motor_1, field),
+            motor_2=getattr(self._motor_2, field),
         )
 
     def _setup_sync_loop(self) -> None:
@@ -108,6 +118,20 @@ class Orbita2d:
         self._need_sync = asyncio.Event()
         self._loop = asyncio.get_running_loop()
 
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        if __name == "compliant":
+            self._state[__name] = __value
+            # self._motor_1._state[__name] = __value
+            # self._motor_2._state[__name] = __value
+
+            async def set_in_loop() -> None:
+                self._register_needing_sync.append(__name)
+                self._need_sync.set()
+
+            fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
+            fut.result()
+        super().__setattr__(__name, __value)
+
     def _pop_command(self) -> Orbita2DCommand:
         """Create a gRPC command from the registers that need to be synced."""
         values = {
@@ -116,16 +140,18 @@ class Orbita2d:
 
         reg_to_update_1 = getattr(self, self._axis1)._register_needing_sync
         reg_to_update_2 = getattr(self, self._axis2)._register_needing_sync
+        reg_to_update_3 = self._register_needing_sync
 
-        for reg in set(reg_to_update_1).union(set(reg_to_update_2)):
+        for reg in set(reg_to_update_1).union(set(reg_to_update_2)).union(set(reg_to_update_3)):
             if reg == "compliant":
-                values["compliant"] = BoolValue(value=self.compliant)
+                values["compliant"] = BoolValue(value=self._state["compliant"])
             else:
-                values[reg] = self._build_2d_float_msg(reg)
+                values[reg] = self._build_grpc_cmd_msg(reg)
         command = Orbita2DCommand(**values)
 
         reg_to_update_1.clear()
         reg_to_update_2.clear()
+        reg_to_update_3.clear()
         self._need_sync.clear()
 
         return command
