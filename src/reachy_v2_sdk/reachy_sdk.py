@@ -158,7 +158,7 @@ class ReachySDK:
 
         for name, part in self._enabled_parts.items():
             for actuator, act_type in part._actuators.items():
-                if act_type == "orbita3d" and name != "r_arm":
+                if act_type == "orbita3d":
                     tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
 
         if len(tasks) > 0:

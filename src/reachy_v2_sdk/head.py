@@ -42,7 +42,7 @@ class Head:
         self._actuators = {
             self.neck: "orbita3d",
             self.l_antenna: "dynamixel_motor",
-            # self.r_antenna: "dynamixel_motor",
+            self.r_antenna: "dynamixel_motor",
         }
 
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
