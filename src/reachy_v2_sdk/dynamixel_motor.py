@@ -34,7 +34,7 @@ class DynamixelMotor:
         self._update_with(initial_state)
 
     def __setattr__(self, __name: str, __value: Any) -> None:
-        if __name in ["goal_position", "speed_limit", "torque_limit"]:
+        if __name in ["goal_position", "speed_limit", "torque_limit", "compliant"]:
             self._state[__name] = __value
 
             async def set_in_loop() -> None:
