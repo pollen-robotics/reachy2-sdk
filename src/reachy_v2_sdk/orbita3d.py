@@ -13,7 +13,7 @@ from reachy_sdk_api_v2.orbita3d_pb2 import (
 )
 
 from reachy_sdk_api_v2.component_pb2 import ComponentId
-from reachy_sdk_api_v2.kinematics_pb2 import Quaternion, Rotation3D
+from reachy_sdk_api_v2.kinematics_pb2 import ExtEulerAngles, Rotation3D
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 from .orbita_utils import OrbitaJoint, OrbitaMotor, OrbitaAxis
 from .register import Register
@@ -91,20 +91,19 @@ class Orbita3d:
                         a = getattr(self, "_" + axis.name)
                         a._state[field.name] = val
 
-    def _build_3d_msg(self, field: str) -> Float3D:
+    def _build_grpc_cmd_msg(self, field: str) -> Float3D:
         if field == "goal_position":
             return Rotation3D(
-                q=Quaternion(
-                    x=1.0,
-                    y=1.0,
-                    z=1.0,
-                    w=1.0,
+                rpy=ExtEulerAngles(
+                    roll=getattr(self.roll, field),
+                    pitch=getattr(self.pitch, field),
+                    yaw=getattr(self.yaw, field),
                 )
             )
         return Float3D(
-            motor_1=getattr(self.roll, field),
-            motor_2=getattr(self.pitch, field),
-            motor_3=getattr(self.yaw, field),
+            motor_1=getattr(self._motor_1, field),
+            motor_2=getattr(self._motor_2, field),
+            motor_3=getattr(self._motor_3, field),
         )
 
     def _setup_sync_loop(self) -> None:
@@ -132,7 +131,7 @@ class Orbita3d:
             if reg == "compliant":
                 values["compliant"] = BoolValue(value=self.compliant)
             else:
-                values[reg] = self._build_3d_msg(reg)
+                values[reg] = self._build_grpc_cmd_msg(reg)
         command = Orbita3DCommand(**values)
 
         self.roll._register_needing_sync.clear()
