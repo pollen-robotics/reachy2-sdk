@@ -89,7 +89,6 @@ class Orbita2d:
         setattr(self, "_y", OrbitaAxis(initial_state=init_state["y"]))
 
     def _build_grpc_cmd_msg(self, field: str) -> Pose2D | Float2D:
-
         if field == "goal_position":
             axis1_attr = getattr(self, self._axis1)
             axis2_attr = getattr(self, self._axis2)
