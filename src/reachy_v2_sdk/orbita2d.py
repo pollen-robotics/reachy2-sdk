@@ -43,6 +43,9 @@ class Orbita2d:
         self._axis1 = axis1_name
         self._axis2 = axis2_name
 
+        self._motor_1 = None
+        self._motor_2 = None
+
         self._axis_to_name: Dict[str, str] = {
             "axis_1": self._axis1,
             "axis_2": self._axis2,
