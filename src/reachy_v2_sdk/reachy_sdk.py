@@ -156,7 +156,7 @@ class ReachySDK:
     async def _poll_waiting_3dcommands(self) -> Orbita3DsCommand:
         tasks = []
 
-        for name, part in self._enabled_parts.items():
+        for part in self._enabled_parts.values():
             for actuator, act_type in part._actuators.items():
                 if act_type == "orbita3d":
                     tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
