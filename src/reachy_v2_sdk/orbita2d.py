@@ -43,6 +43,9 @@ class Orbita2d:
         self._axis1 = axis1_name
         self._axis2 = axis2_name
 
+        self._motor_1 = None
+        self._motor_2 = None
+
         self._axis_to_name: Dict[str, str] = {
             "axis_1": self._axis1,
             "axis_2": self._axis2,
@@ -88,13 +91,18 @@ class Orbita2d:
         setattr(self, "_x", OrbitaAxis(initial_state=init_state["x"]))
         setattr(self, "_y", OrbitaAxis(initial_state=init_state["y"]))
 
-    def _build_2d_float_msg(self, field: str) -> Pose2D:
-        axis1_attr = getattr(self, self._axis1)
-        axis2_attr = getattr(self, self._axis2)
+    def _build_grpc_cmd_msg(self, field: str) -> Pose2D | Float2D:
+        if field == "goal_position":
+            axis1_attr = getattr(self, self._axis1)
+            axis2_attr = getattr(self, self._axis2)
+            return Pose2D(
+                axis_1=getattr(axis1_attr, field),
+                axis_2=getattr(axis2_attr, field),
+            )
 
-        return Pose2D(
-            axis_1=getattr(axis1_attr, field),
-            axis_2=getattr(axis2_attr, field),
+        return Float2D(
+            motor_1=getattr(self._motor_1, field),
+            motor_2=getattr(self._motor_2, field),
         )
 
     def _setup_sync_loop(self) -> None:
@@ -121,7 +129,7 @@ class Orbita2d:
             if reg == "compliant":
                 values["compliant"] = BoolValue(value=self.compliant)
             else:
-                values[reg] = self._build_2d_float_msg(reg)
+                values[reg] = self._build_grpc_cmd_msg(reg)
         command = Orbita2DCommand(**values)
 
         reg_to_update_1.clear()
