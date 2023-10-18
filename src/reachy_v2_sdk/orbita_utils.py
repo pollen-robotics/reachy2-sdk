@@ -45,7 +45,8 @@ class OrbitaMotor:
     speed_limit = Register(readonly=False, type=float, label="speed_limit")
     torque_limit = Register(readonly=False, type=float, label="torque_limit")
 
-    def __init__(self, initial_state: Dict[str, float]) -> None:
+    def __init__(self, initial_state: Dict[str, float], actuator: Any) -> None:
+        self._actuator = actuator
         self.pid = PID(p=0.0, i=0.0, d=0.0)
 
         self._state = initial_state

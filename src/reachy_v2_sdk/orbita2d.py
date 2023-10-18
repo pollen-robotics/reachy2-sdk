@@ -87,8 +87,8 @@ class Orbita2d:
             OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2, actuator=self),
         )
 
-        setattr(self, "_motor_1", OrbitaMotor(initial_state=init_state["motor_1"]))
-        setattr(self, "_motor_2", OrbitaMotor(initial_state=init_state["motor_2"]))
+        setattr(self, "_motor_1", OrbitaMotor(initial_state=init_state["motor_1"], actuator=self))
+        setattr(self, "_motor_2", OrbitaMotor(initial_state=init_state["motor_2"], actuator=self))
 
         setattr(self, "_x", OrbitaAxis(initial_state=init_state["x"]))
         setattr(self, "_y", OrbitaAxis(initial_state=init_state["y"]))
