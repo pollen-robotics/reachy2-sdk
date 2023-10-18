@@ -181,7 +181,7 @@ class Arm:
 
     @property
     def joints_limits(self) -> ArmLimits:
-        limits = self._arm_stub.GetJointLimit(self.part_id)
+        limits = self._arm_stub.GetJointsLimits(self.part_id)
         return limits
 
     @property
