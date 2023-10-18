@@ -88,12 +88,15 @@ class Orbita2d:
             axis2_name,
             OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2, actuator=self),
         )
+        self.__joints = [getattr(self, axis1_name), getattr(self, axis2_name)]
 
-        setattr(self, "_motor_1", OrbitaMotor(initial_state=init_state["motor_1"], actuator=self))
-        setattr(self, "_motor_2", OrbitaMotor(initial_state=init_state["motor_2"], actuator=self))
+        self._motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
+        self._motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
+        self.__motors = [self._motor_1, self._motor_2]
 
-        setattr(self, "_x", OrbitaAxis(initial_state=init_state["x"]))
-        setattr(self, "_y", OrbitaAxis(initial_state=init_state["y"]))
+        self._x = OrbitaAxis(initial_state=init_state["x"])
+        self._y = OrbitaAxis(initial_state=init_state["y"])
+        self.__axis = [self._x, self._y]
 
     def set_speed_limit(self, speed_limit: float) -> None:
         self._set_motors_fields("speed_limit", speed_limit)
@@ -139,8 +142,8 @@ class Orbita2d:
         super().__setattr__(__name, __value)
 
     def _set_motors_fields(self, field: str, value: float) -> None:
-        getattr(self, "_motor_1")._state[field] = value
-        getattr(self, "_motor_2")._state[field] = value
+        for m in self.__motors:
+            m._state[field] = value
 
         async def set_in_loop() -> None:
             self._register_needing_sync.append(field)
@@ -155,28 +158,19 @@ class Orbita2d:
             "id": ComponentId(id=self.id),
         }
 
-        reg_to_update_1 = getattr(self, self._axis1)._register_needing_sync
-        reg_to_update_2 = getattr(self, self._axis2)._register_needing_sync
-        reg_to_update_3 = self._register_needing_sync
-        reg_to_update_4 = getattr(self, "_motor_1")._register_needing_sync
-        reg_to_update_5 = getattr(self, "_motor_2")._register_needing_sync
+        set_reg_to_update = set(self._register_needing_sync)
+        for obj in self.__joints + self.__motors:
+            set_reg_to_update = set_reg_to_update.union(set(obj._register_needing_sync))
 
-        for reg in (
-            set(reg_to_update_1)
-            .union(set(reg_to_update_2))
-            .union(set(reg_to_update_3))
-            .union(set(reg_to_update_4))
-            .union(set(reg_to_update_5))
-        ):
+        for reg in set_reg_to_update:
             if reg == "compliant":
                 values["compliant"] = BoolValue(value=self._state["compliant"])
             else:
                 values[reg] = self._build_grpc_cmd_msg(reg)
         command = Orbita2DCommand(**values)
 
-        reg_to_update_1.clear()
-        reg_to_update_2.clear()
-        reg_to_update_3.clear()
+        for obj in self.__joints + self.__motors:
+            obj._register_needing_sync.clear()
         self._need_sync.clear()
 
         return command
@@ -186,8 +180,8 @@ class Orbita2d:
         for field, value in new_state.ListFields():
             if field.name == "compliant":
                 self._state[field.name] = value
-                getattr(self, "_motor_1")._state[field.name] = value
-                getattr(self, "_motor_2")._state[field.name] = value
+                for m in self.__motors:
+                    m._state[field.name] = value
             else:
                 if isinstance(value, Pose2D):
                     for joint, val in value.ListFields():

@@ -57,14 +57,17 @@ class Orbita3d:
         self.roll = OrbitaJoint(initial_state=init_state["roll"], axis_type="roll", actuator=self)
         self.pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
         self.yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
+        self.__joints = [self.roll, self.pitch, self.yaw]
 
         self._motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
         self._motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
         self._motor_3 = OrbitaMotor(initial_state=init_state["motor_3"], actuator=self)
+        self.__motors = [self._motor_1, self._motor_2, self._motor_3]
 
         self._x = OrbitaAxis(initial_state=init_state["x"])
         self._y = OrbitaAxis(initial_state=init_state["y"])
         self._z = OrbitaAxis(initial_state=init_state["z"])
+        self.__axis = [self._x, self._y, self._z]
 
     def set_speed_limit(self, speed_limit: float) -> None:
         self._set_motors_fields("speed_limit", speed_limit)
@@ -80,14 +83,13 @@ class Orbita3d:
             "motor_3": self._motor_3.temperature,
         }
 
-    def _update_with(self, new_state: Orbita3DState) -> None:
+    def _update_with(self, new_state: Orbita3DState) -> None:  # noqa: C901
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
         for field, value in new_state.ListFields():
             if field.name == "compliant":
                 self._state[field.name] = value
-                getattr(self, "_motor_1")._state[field.name] = value
-                getattr(self, "_motor_2")._state[field.name] = value
-                getattr(self, "_motor_3")._state[field.name] = value
+                for m in self.__motors:
+                    m._state[field.name] = value
             else:
                 if isinstance(value, Rotation3D):
                     for _, rpy in value.ListFields():
@@ -121,8 +123,6 @@ class Orbita3d:
     def __setattr__(self, __name: str, __value: Any) -> None:
         if __name == "compliant":
             self._state[__name] = __value
-            # self._motor_1._state[__name] = __value
-            # self._motor_2._state[__name] = __value
 
             async def set_in_loop() -> None:
                 self._register_needing_sync.append(__name)
@@ -144,8 +144,8 @@ class Orbita3d:
         self._loop = asyncio.get_running_loop()
 
     def _set_motors_fields(self, field: str, value: float) -> None:
-        getattr(self, "_motor_1")._state[field] = value
-        getattr(self, "_motor_2")._state[field] = value
+        for m in self.__motors:
+            m._state[field] = value
 
         async def set_in_loop() -> None:
             self._register_needing_sync.append(field)
@@ -160,32 +160,19 @@ class Orbita3d:
             "id": ComponentId(id=self.id),
         }
 
-        set_reg_roll = set(self.roll._register_needing_sync)
-        set_reg_pitch = set(self.pitch._register_needing_sync)
-        set_reg_yaw = set(self.yaw._register_needing_sync)
-        reg_to_update = self._register_needing_sync
-        set_reg_motor_1 = set(self._motor_1._register_needing_sync)
-        set_reg_motor_2 = set(self._motor_2._register_needing_sync)
-        set_reg_motor_3 = set(self._motor_3._register_needing_sync)
+        set_reg_to_update = set(self._register_needing_sync)
+        for obj in self.__joints + self.__motors:
+            set_reg_to_update = set_reg_to_update.union(set(obj._register_needing_sync))
 
-        for reg in (
-            set_reg_roll.union(set_reg_pitch)
-            .union(set_reg_yaw)
-            .union(set(reg_to_update))
-            .union(set_reg_motor_1)
-            .union(set_reg_motor_2)
-            .union(set_reg_motor_3)
-        ):
+        for reg in set_reg_to_update:
             if reg == "compliant":
                 values["compliant"] = BoolValue(value=self._state["compliant"])
             else:
                 values[reg] = self._build_grpc_cmd_msg(reg)
         command = Orbita3DCommand(**values)
 
-        self.roll._register_needing_sync.clear()
-        self.pitch._register_needing_sync.clear()
-        self.yaw._register_needing_sync.clear()
-        reg_to_update.clear()
+        for obj in self.__joints + self.__motors:
+            obj._register_needing_sync.clear()
         self._need_sync.clear()
 
         return command
