@@ -66,6 +66,12 @@ class Orbita3d:
         self._y = OrbitaAxis(initial_state=init_state["y"])
         self._z = OrbitaAxis(initial_state=init_state["z"])
 
+    def set_speed_limit(self, speed_limit: float) -> None:
+        self._set_motors_fields("speed_limit", speed_limit)
+
+    def set_torque_limit(self, torque_limit: float) -> None:
+        self._set_motors_fields("torque_limit", torque_limit)
+
     @property
     def temperatures(self) -> Dict[str, Register]:
         return {
@@ -136,6 +142,17 @@ class Orbita3d:
         """
         self._need_sync = asyncio.Event()
         self._loop = asyncio.get_running_loop()
+
+    def _set_motors_fields(self, field: str, value: float) -> None:
+        getattr(self, "_motor_1")._state[field] = value
+        getattr(self, "_motor_2")._state[field] = value
+
+        async def set_in_loop() -> None:
+            self._register_needing_sync.append(field)
+            self._need_sync.set()
+
+        fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
+        fut.result()
 
     def _pop_command(self) -> Orbita3DCommand:
         """Create a gRPC command from the registers that need to be synced."""

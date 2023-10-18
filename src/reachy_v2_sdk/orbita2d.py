@@ -95,6 +95,12 @@ class Orbita2d:
         setattr(self, "_x", OrbitaAxis(initial_state=init_state["x"]))
         setattr(self, "_y", OrbitaAxis(initial_state=init_state["y"]))
 
+    def set_speed_limit(self, speed_limit: float) -> None:
+        self._set_motors_fields("speed_limit", speed_limit)
+
+    def set_torque_limit(self, torque_limit: float) -> None:
+        self._set_motors_fields("torque_limit", torque_limit)
+
     def _build_grpc_cmd_msg(self, field: str) -> Pose2D | Float2D:
         if field == "goal_position":
             axis1_attr = getattr(self, self._axis1)
@@ -131,9 +137,6 @@ class Orbita2d:
             fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
             fut.result()
         super().__setattr__(__name, __value)
-
-    def set_speed_limit(self, speed_limit: float) -> None:
-        self._set_motors_fields("speed_limit", speed_limit)
 
     def _set_motors_fields(self, field: str, value: float) -> None:
         getattr(self, "_motor_1")._state[field] = value
