@@ -22,7 +22,7 @@ class OrbitaJoint:
         self._register_needing_sync: List[str] = []
 
     def __setattr__(self, __name: str, __value: Any) -> None:
-        if __name in ["goal_position", "speed_limit", "torque_limit"]:
+        if __name in ["goal_position"]:
             self._state[__name] = __value
 
             async def set_in_loop() -> None:
