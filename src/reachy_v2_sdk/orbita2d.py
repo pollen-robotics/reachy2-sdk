@@ -132,6 +132,20 @@ class Orbita2d:
             fut.result()
         super().__setattr__(__name, __value)
 
+    def set_speed_limit(self, speed_limit: float) -> None:
+        self._set_motors_fields("speed_limit", speed_limit)
+
+    def _set_motors_fields(self, field: str, value: float) -> None:
+        getattr(self, "_motor_1")._state[field] = value
+        getattr(self, "_motor_2")._state[field] = value
+
+        async def set_in_loop() -> None:
+            self._register_needing_sync.append(field)
+            self._need_sync.set()
+
+        fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
+        fut.result()
+
     def _pop_command(self) -> Orbita2DCommand:
         """Create a gRPC command from the registers that need to be synced."""
         values = {
