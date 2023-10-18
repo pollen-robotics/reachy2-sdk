@@ -104,6 +104,12 @@ class Orbita2d:
     def set_torque_limit(self, torque_limit: float) -> None:
         self._set_motors_fields("torque_limit", torque_limit)
 
+    def get_speed_limit(self) -> Dict[str, float]:
+        return {"motor_1": getattr(self, "_motor_1").speed_limit, "motor_2": getattr(self, "_motor_2").speed_limit}
+
+    def get_torque_limit(self) -> Dict[str, float]:
+        return {"motor_1": getattr(self, "_motor_1").torque_limit, "motor_2": getattr(self, "_motor_2").torque_limit}
+
     def _build_grpc_cmd_msg(self, field: str) -> Pose2D | Float2D:
         if field == "goal_position":
             axis1_attr = getattr(self, self._axis1)

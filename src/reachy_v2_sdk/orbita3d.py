@@ -75,6 +75,20 @@ class Orbita3d:
     def set_torque_limit(self, torque_limit: float) -> None:
         self._set_motors_fields("torque_limit", torque_limit)
 
+    def get_speed_limit(self) -> Dict[str, float]:
+        return {
+            "motor_1": getattr(self, "_motor_1").speed_limit,
+            "motor_2": getattr(self, "_motor_2").speed_limit,
+            "motor_3": getattr(self, "_motor_3").speed_limit,
+        }
+
+    def get_torque_limit(self) -> Dict[str, float]:
+        return {
+            "motor_1": getattr(self, "_motor_1").torque_limit,
+            "motor_2": getattr(self, "_motor_2").torque_limit,
+            "motor_3": getattr(self, "_motor_3").torque_limit,
+        }
+
     @property
     def temperatures(self) -> Dict[str, Register]:
         return {
