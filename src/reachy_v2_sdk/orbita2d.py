@@ -155,8 +155,16 @@ class Orbita2d:
         reg_to_update_1 = getattr(self, self._axis1)._register_needing_sync
         reg_to_update_2 = getattr(self, self._axis2)._register_needing_sync
         reg_to_update_3 = self._register_needing_sync
+        reg_to_update_4 = getattr(self, "_motor_1")._register_needing_sync
+        reg_to_update_5 = getattr(self, "_motor_2")._register_needing_sync
 
-        for reg in set(reg_to_update_1).union(set(reg_to_update_2)).union(set(reg_to_update_3)):
+        for reg in (
+            set(reg_to_update_1)
+            .union(set(reg_to_update_2))
+            .union(set(reg_to_update_3))
+            .union(set(reg_to_update_4))
+            .union(set(reg_to_update_5))
+        ):
             if reg == "compliant":
                 values["compliant"] = BoolValue(value=self._state["compliant"])
             else:

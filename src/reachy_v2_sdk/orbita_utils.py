@@ -59,11 +59,25 @@ class OrbitaMotor:
             if isinstance(value, Register):
                 value.label = field
 
+        self._register_needing_sync: List[str] = []
+
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        if __name in ["speed_limit", "torque_limit"]:
+            self._state[__name] = __value
+
+            async def set_in_loop() -> None:
+                self._register_needing_sync.append(__name)
+                self._actuator._need_sync.set()
+
+            fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._actuator._loop)
+            fut.result()
+        super().__setattr__(__name, __value)
+
     def __getitem__(self, field: str) -> float:
         return self._state[field]
 
-    def __setitem__(self, field: str, value: float) -> None:
-        self._state[field] = value
+    # def __setitem__(self, field: str, value: float) -> None:
+    #     self._state[field] = value
 
 
 class OrbitaAxis:

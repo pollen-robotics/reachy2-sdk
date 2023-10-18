@@ -147,8 +147,18 @@ class Orbita3d:
         set_reg_pitch = set(self.pitch._register_needing_sync)
         set_reg_yaw = set(self.yaw._register_needing_sync)
         reg_to_update = self._register_needing_sync
+        set_reg_motor_1 = set(self._motor_1._register_needing_sync)
+        set_reg_motor_2 = set(self._motor_2._register_needing_sync)
+        set_reg_motor_3 = set(self._motor_3._register_needing_sync)
 
-        for reg in set_reg_roll.union(set_reg_pitch).union(set_reg_yaw).union(set(reg_to_update)):
+        for reg in (
+            set_reg_roll.union(set_reg_pitch)
+            .union(set_reg_yaw)
+            .union(set(reg_to_update))
+            .union(set_reg_motor_1)
+            .union(set_reg_motor_2)
+            .union(set_reg_motor_3)
+        ):
             if reg == "compliant":
                 values["compliant"] = BoolValue(value=self._state["compliant"])
             else:
