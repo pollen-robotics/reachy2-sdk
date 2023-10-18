@@ -203,8 +203,6 @@ class ReachySDK:
                     if act_type == "dynamixel_motor" and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
 
-            print(commands)
-
             return DynamixelMotorsCommand(cmd=commands)
 
         else:
