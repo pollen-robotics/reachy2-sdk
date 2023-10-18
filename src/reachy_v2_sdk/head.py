@@ -67,7 +67,7 @@ class Head:
         )
 
     def get_orientation(self) -> pyQuat:
-        quat = self._head_stub.GetOrientation(self.part_id)
+        quat = self._head_stub.GetOrientation(self.part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def forward_kinematics(self, rpy_position: Optional[Tuple[float, float, float]] = None) -> pyQuat:
