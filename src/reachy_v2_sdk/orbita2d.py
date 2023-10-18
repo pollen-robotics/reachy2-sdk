@@ -59,6 +59,8 @@ class Orbita2d:
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
                 self._state[field.name] = value
+                init_state["motor_1"][field.name] = value
+                init_state["motor_2"][field.name] = value
             else:
                 if isinstance(value, Pose2D):
                     for axis, val in value.ListFields():
@@ -121,8 +123,6 @@ class Orbita2d:
     def __setattr__(self, __name: str, __value: Any) -> None:
         if __name == "compliant":
             self._state[__name] = __value
-            # self._motor_1._state[__name] = __value
-            # self._motor_2._state[__name] = __value
 
             async def set_in_loop() -> None:
                 self._register_needing_sync.append(__name)
@@ -175,6 +175,8 @@ class Orbita2d:
         for field, value in new_state.ListFields():
             if field.name == "compliant":
                 self._state[field.name] = value
+                getattr(self, "_motor_1")._state[field.name] = value
+                getattr(self, "_motor_2")._state[field.name] = value
             else:
                 if isinstance(value, Pose2D):
                     for joint, val in value.ListFields():

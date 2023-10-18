@@ -32,7 +32,10 @@ class Orbita3d:
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
-                self._state[field.name] = value.value
+                self._state[field.name] = value
+                init_state["motor_1"][field.name] = value
+                init_state["motor_2"][field.name] = value
+                init_state["motor_3"][field.name] = value
             else:
                 if isinstance(value, Rotation3D):
                     for _, rpy in value.ListFields():
@@ -76,6 +79,9 @@ class Orbita3d:
         for field, value in new_state.ListFields():
             if field.name == "compliant":
                 self._state[field.name] = value
+                getattr(self, "_motor_1")._state[field.name] = value
+                getattr(self, "_motor_2")._state[field.name] = value
+                getattr(self, "_motor_3")._state[field.name] = value
             else:
                 if isinstance(value, Rotation3D):
                     for _, rpy in value.ListFields():

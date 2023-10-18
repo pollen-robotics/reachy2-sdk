@@ -3,6 +3,8 @@ from typing import Any, Dict, List
 
 from .register import Register
 
+from google.protobuf.wrappers_pb2 import BoolValue
+
 
 class OrbitaJoint:
     present_position = Register(readonly=True, type=float, label="present_position")
@@ -44,6 +46,7 @@ class OrbitaMotor:
     temperature = Register(readonly=True, type=float, label="temperature")
     speed_limit = Register(readonly=False, type=float, label="speed_limit")
     torque_limit = Register(readonly=False, type=float, label="torque_limit")
+    compliant = Register(readonly=True, type=BoolValue, label="compliant")
 
     def __init__(self, initial_state: Dict[str, float], actuator: Any) -> None:
         self._actuator = actuator
