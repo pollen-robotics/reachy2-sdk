@@ -79,7 +79,11 @@ class Head:
                 id=self.part_id,
                 position=HeadPosition(
                     neck_position=Rotation3D(
-                        rpy=ExtEulerAngles(roll=rpy_position[0], pitch=rpy_position[1], yaw=rpy_position[2])
+                        rpy=ExtEulerAngles(
+                            roll=FloatValue(value=rpy_position[0]),
+                            pitch=FloatValue(value=rpy_position[1]),
+                            yaw=FloatValue(value=rpy_position[2]),
+                        )
                     )
                 ),
             )
@@ -103,7 +107,11 @@ class Head:
                 )
             )
         if rpy_q0 is not None:
-            req_params["q0"] = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
+            req_params["q0"] = Rotation3D(
+                rpy=ExtEulerAngles(
+                    roll=FloatValue(value=rpy_q0[0]), pitch=FloatValue(value=rpy_q0[1]), yaw=FloatValue(value=rpy_q0[2])
+                )
+            )
         req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
         return (rpy_pos.position.rpy.roll, rpy_pos.position.rpy.pitch, rpy_pos.position.rpy.yaw)
@@ -113,12 +121,18 @@ class Head:
         self._head_stub.LookAt(req)
 
     def orient(self, q: pyQuat, duration: float) -> None:
-        req = NeckGoal(id=self.part_id, rotation=Rotation3D(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)), duration=duration)
+        req = NeckGoal(
+            id=self.part_id, rotation=Rotation3D(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)), duration=FloatValue(value=duration)
+        )
         self._head_stub.GoToOrientation(req)
 
     def rotate_to(self, roll: float, pitch: float, yaw: float, duration: float) -> None:
         req = NeckGoal(
-            id=self.part_id, rotation=Rotation3D(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)), duration=duration
+            id=self.part_id,
+            rotation=Rotation3D(
+                rpy=ExtEulerAngles(roll=FloatValue(value=roll), pitch=FloatValue(value=pitch), yaw=FloatValue(value=yaw))
+            ),
+            duration=FloatValue(value=duration),
         )
         self._head_stub.GoToOrientation(req)
 
