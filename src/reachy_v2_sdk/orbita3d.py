@@ -1,6 +1,6 @@
 import asyncio
 from grpc import Channel
-from google.protobuf.wrappers_pb2 import BoolValue
+from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from typing import Dict, List, Any
 
 from reachy_sdk_api_v2.orbita3d_pb2 import (
@@ -123,15 +123,15 @@ class Orbita3d:
         if field == "goal_position":
             return Rotation3D(
                 rpy=ExtEulerAngles(
-                    roll=getattr(self.roll, field),
-                    pitch=getattr(self.pitch, field),
-                    yaw=getattr(self.yaw, field),
+                    roll=FloatValue(value=getattr(self.roll, field)),
+                    pitch=FloatValue(value=getattr(self.pitch, field)),
+                    yaw=FloatValue(value=getattr(self.yaw, field)),
                 )
             )
         return Float3D(
-            motor_1=getattr(self._motor_1, field),
-            motor_2=getattr(self._motor_2, field),
-            motor_3=getattr(self._motor_3, field),
+            motor_1=FloatValue(value=getattr(self._motor_1, field)),
+            motor_2=FloatValue(value=getattr(self._motor_2, field)),
+            motor_3=FloatValue(value=getattr(self._motor_3, field)),
         )
 
     def __setattr__(self, __name: str, __value: Any) -> None:
