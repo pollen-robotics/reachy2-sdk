@@ -1,4 +1,4 @@
-import asyncio
+# import asyncio
 from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
@@ -25,23 +25,28 @@ class OrbitaJoint:
 
         self._register_needing_sync: List[str] = []
 
-    def __setattr__(self, __name: str, __value: Any) -> None:
-        if __name in ["goal_position"]:
-            self._state[__name] = __value
+    # def __setattr__(self, __name: str, __value: Any) -> None:
+    #     print("[orbita_utils] __setattr__")
+    #     if __name in ["goal_position"]:
+    #         print("--------")
+    #         self._state[__name] = __value
+    #         print("--------")
+    #         async def set_in_loop() -> None:
+    #             self._register_needing_sync.append(__name)
+    #             self._actuator._need_sync.set()
 
-            async def set_in_loop() -> None:
-                self._register_needing_sync.append(__name)
-                self._actuator._need_sync.set()
+    #         fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._actuator._loop)
+    #         fut.result()
+    #     super().__setattr__(__name, __value)
 
-            fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._actuator._loop)
-            fut.result()
-        super().__setattr__(__name, __value)
-
-    def __getitem__(self, field: str) -> float:
-        return self._state[field]
+    # def __getitem__(self, field: str) -> float:
+    #     print("__getitem__")
+    #     return self._state[field]
 
     # def __setitem__(self, field: str, value: float) -> None:
+    #     print("--------")
     #     self._state[field] = value
+    #     print("--------")
 
 
 class OrbitaMotor:
@@ -63,20 +68,20 @@ class OrbitaMotor:
 
         self._register_needing_sync: List[str] = []
 
-    def __setattr__(self, __name: str, __value: Any) -> None:
-        if __name in ["speed_limit", "torque_limit"]:
-            self._state[__name] = __value
+    # def __setattr__(self, __name: str, __value: Any) -> None:
+    #     if __name in ["speed_limit", "torque_limit"]:
+    #         self._state[__name] = __value
 
-            async def set_in_loop() -> None:
-                self._register_needing_sync.append(__name)
-                self._actuator._need_sync.set()
+    #         async def set_in_loop() -> None:
+    #             self._register_needing_sync.append(__name)
+    #             self._actuator._need_sync.set()
 
-            fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._actuator._loop)
-            fut.result()
-        super().__setattr__(__name, __value)
+    #         fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._actuator._loop)
+    #         fut.result()
+    #     super().__setattr__(__name, __value)
 
-    def __getitem__(self, field: str) -> float:
-        return self._state[field]
+    # def __getitem__(self, field: str) -> float:
+    #     return self._state[field]
 
     # def __setitem__(self, field: str, value: float) -> None:
     #     self._state[field] = value
