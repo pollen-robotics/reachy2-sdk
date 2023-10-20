@@ -1,14 +1,16 @@
 import asyncio
 from typing import Any, Dict, List
 
+from google.protobuf.wrappers_pb2 import FloatValue
+
 from .register import Register
 
 from google.protobuf.wrappers_pb2 import BoolValue
 
 
 class OrbitaJoint:
-    present_position = Register(readonly=True, type=float, label="present_position")
-    goal_position = Register(readonly=False, type=float, label="goal_position")
+    present_position = Register(readonly=True, type=FloatValue, label="present_position")
+    goal_position = Register(readonly=False, type=FloatValue, label="goal_position")
 
     def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
@@ -43,9 +45,9 @@ class OrbitaJoint:
 
 
 class OrbitaMotor:
-    temperature = Register(readonly=True, type=float, label="temperature")
-    speed_limit = Register(readonly=False, type=float, label="speed_limit")
-    torque_limit = Register(readonly=False, type=float, label="torque_limit")
+    temperature = Register(readonly=True, type=FloatValue, label="temperature")
+    speed_limit = Register(readonly=False, type=FloatValue, label="speed_limit")
+    torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
     compliant = Register(readonly=True, type=BoolValue, label="compliant")
 
     def __init__(self, initial_state: Dict[str, float], actuator: Any) -> None:
@@ -81,8 +83,8 @@ class OrbitaMotor:
 
 
 class OrbitaAxis:
-    present_speed = Register(readonly=True, type=float, label="present_speed")
-    present_load = Register(readonly=True, type=float, label="present_load")
+    present_speed = Register(readonly=True, type=FloatValue, label="present_speed")
+    present_load = Register(readonly=True, type=FloatValue, label="present_load")
 
     def __init__(self, initial_state: Dict[str, float]) -> None:
         self._state = initial_state
