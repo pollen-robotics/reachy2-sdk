@@ -21,6 +21,14 @@ class DynamixelMotor:
     goal_position = Register(readonly=False, type=FloatValue, label="goal_position")
     speed_limit = Register(readonly=False, type=FloatValue, label="speed_limit")
     torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
+    temperature = Register(readonly=True, label="temperature", type=FloatValue)
+    goal_position = Register(
+        readonly=False, label="goal_position", type=FloatValue, conversion=(_to_internal_position, _to_position)
+    )
+    speed_limit = Register(
+        readonly=False, label="speed_limit", type=FloatValue, conversion=(_to_internal_position, _to_position)
+    )
+    torque_limit = Register(readonly=False, label="torque_limit", type=FloatValue)
 
     def __init__(self, uid: int, name: str, initial_state: DynamixelMotorState, grpc_channel: Channel):
         self.id = uid

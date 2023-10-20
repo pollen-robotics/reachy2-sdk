@@ -17,10 +17,17 @@ class Register:
     def __set__(self, instance, value):  # type: ignore
         if self.readonly:
             raise AttributeError("can't set attribute")
-        instance._state[self.label] = value
+        instance._state[self.label] = self.wrapped_value(value)
 
     def unwrapped_value(self, value: Any) -> Any:
         """Unwrap the internal value to a more simple one."""
         if self.internal_class in (BoolValue, FloatValue, UInt32Value):
             return value.value
+        return value
+
+    def wrapped_value(self, value: Any) -> Any:
+        """Wrap the simple Python value to the corresponding gRPC one."""
+        if self.internal_class in (BoolValue, FloatValue, UInt32Value):
+            return self.internal_class(value=value)
+
         return value
