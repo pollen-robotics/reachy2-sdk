@@ -2,7 +2,7 @@ import asyncio
 from grpc import Channel
 from typing import Dict, Any, List
 
-from google.protobuf.wrappers_pb2 import BoolValue
+from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 
 from .register import Register
 
@@ -115,13 +115,13 @@ class Orbita2d:
             axis1_attr = getattr(self, self._axis1)
             axis2_attr = getattr(self, self._axis2)
             return Pose2D(
-                axis_1=getattr(axis1_attr, field),
-                axis_2=getattr(axis2_attr, field),
+                axis_1=FloatValue(value=getattr(axis1_attr, field)),
+                axis_2=FloatValue(value=getattr(axis2_attr, field)),
             )
 
         return Float2D(
-            motor_1=getattr(self._motor_1, field),
-            motor_2=getattr(self._motor_2, field),
+            motor_1=FloatValue(value=getattr(self._motor_1, field)),
+            motor_2=FloatValue(value=getattr(self._motor_2, field)),
         )
 
     def _setup_sync_loop(self) -> None:
