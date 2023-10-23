@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
@@ -39,6 +39,7 @@ class OrbitaMotor:
 
         self._state = initial_state
         self._tmp_fields: Dict[str, float | None] = {}
+        self._tmp_pid: Tuple[float, float, float]
 
         for field in dir(self):
             value = getattr(self, field)
