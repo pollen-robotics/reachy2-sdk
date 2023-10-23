@@ -1,6 +1,7 @@
 from typing import Type, Any
 import asyncio
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue, UInt32Value
+from reachy_sdk_api_v2.component_pb2 import PIDGains
 
 
 class Register:
@@ -31,7 +32,7 @@ class Register:
         """Unwrap the internal value to a more simple one."""
         if self.internal_class in (BoolValue, FloatValue, UInt32Value):
             return value.value
-        if self.internal_class.__name__ == "PIDGains":
+        elif self.internal_class.__name__ == "PIDGains":
             return (value.pid.p, value.pid.i, value.pid.d)
         return value
 
@@ -39,5 +40,7 @@ class Register:
         """Wrap the simple Python value to the corresponding gRPC one."""
         if self.internal_class in (BoolValue, FloatValue, UInt32Value):
             return self.internal_class(value=value)
+        elif self.internal_class.__name__ == "PIDGains":
+            return self.internal_class(pid=PIDGains(p=value[0], i=value[1], d=value[2]))
 
         return value
