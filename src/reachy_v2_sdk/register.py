@@ -1,7 +1,6 @@
 from typing import Type, Any
 import asyncio
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue, UInt32Value
-from reachy_sdk_api_v2.component_pb2 import PIDGains
 
 
 class Register:
@@ -33,7 +32,7 @@ class Register:
         if self.internal_class in (BoolValue, FloatValue, UInt32Value):
             return value.value
         elif self.internal_class.__name__ == "PIDGains":
-            return (value.pid.p, value.pid.i, value.pid.d)
+            return (value.p.value, value.i.value, value.d.value)
         return value
 
     def wrapped_value(self, value: Any) -> Any:
@@ -41,6 +40,6 @@ class Register:
         if self.internal_class in (BoolValue, FloatValue, UInt32Value):
             return self.internal_class(value=value)
         elif self.internal_class.__name__ == "PIDGains":
-            return self.internal_class(pid=PIDGains(p=value[0], i=value[1], d=value[2]))
+            return self.internal_class(p=FloatValue(value=value[0]), i=FloatValue(value=value[1]), d=FloatValue(value=value[2]))
 
         return value
