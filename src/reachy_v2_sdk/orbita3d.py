@@ -135,11 +135,10 @@ class Orbita3d:
         )
 
     def _build_grpc_cmd_msg_actuator(self, field: str) -> Float3D:
-        value = self.__motors[0]._tmp_fields[field]
         return Float3D(
-            motor_1=FloatValue(value=value),
-            motor_2=FloatValue(value=value),
-            motor_3=FloatValue(value=value),
+            motor_1=FloatValue(value=self.__motors[0]._tmp_fields[field]),
+            motor_2=FloatValue(value=self.__motors[1]._tmp_fields[field]),
+            motor_3=FloatValue(value=self.__motors[2]._tmp_fields[field]),
         )
 
     def __setattr__(self, __name: str, __value: Any) -> None:
@@ -193,7 +192,7 @@ class Orbita3d:
         for obj in self.__joints + self.__motors:
             set_reg_to_update = set_reg_to_update.union(set(obj._register_needing_sync))
         for reg in set_reg_to_update:
-            values[reg] = self._build_grpc_cmd_msg_actuator(reg)
+            values[reg] = self._build_grpc_cmd_msg(reg)
 
         command = Orbita3DCommand(**values)
 
