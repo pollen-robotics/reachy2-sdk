@@ -62,12 +62,6 @@ class OrbitaAxis:
             if isinstance(value, Register):
                 value.label = field
 
-    def __getitem__(self, field: str) -> float:
-        return self._state[field]
-
-    def __setitem__(self, field: str, value: float) -> None:
-        self._state[field] = value
-
 
 # class PID:
 #     def __init__(self, p: float, i: float, d: float) -> None:
