@@ -10,15 +10,12 @@ class Register:
         self.label = label
 
     def __get__(self, instance, owner):  # type: ignore
-        print("[register] __get__")
         if instance is None:
             return self
         value = self.unwrapped_value(instance._state[self.label])
         return value
 
     def __set__(self, instance, value):  # type: ignore
-        print("[register] __set__")
-        print(f"instance {instance}")
         if self.readonly:
             raise AttributeError("can't set attribute")
         instance._state[self.label] = self.wrapped_value(value)
