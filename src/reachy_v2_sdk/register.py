@@ -1,4 +1,5 @@
 from typing import Type, Any
+import asyncio
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue, UInt32Value
 
 
@@ -9,15 +10,25 @@ class Register:
         self.label = label
 
     def __get__(self, instance, owner):  # type: ignore
+        print("[register] __get__")
         if instance is None:
             return self
         value = self.unwrapped_value(instance._state[self.label])
         return value
 
     def __set__(self, instance, value):  # type: ignore
+        print("[register] __set__")
+        print(f"instance {instance}")
         if self.readonly:
             raise AttributeError("can't set attribute")
         instance._state[self.label] = self.wrapped_value(value)
+
+        async def set_in_loop() -> None:
+            instance._register_needing_sync.append(self.label)
+            instance._actuator._need_sync.set()
+
+        fut = asyncio.run_coroutine_threadsafe(set_in_loop(), instance._actuator._loop)
+        fut.result()
 
     def unwrapped_value(self, value: Any) -> Any:
         """Unwrap the internal value to a more simple one."""
