@@ -27,10 +27,12 @@ from google.protobuf.empty_pb2 import Empty
 from reachy_sdk_api_v2 import reachy_pb2, reachy_pb2_grpc
 from reachy_sdk_api_v2.orbita2d_pb2 import Orbita2DsCommand
 from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DsCommand
-from reachy_sdk_api_v2.dynamixel_motor_pb2 import DynamixelMotorsCommand
+
+# from reachy_sdk_api_v2.dynamixel_motor_pb2 import DynamixelMotorsCommand
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
-from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
+
+# from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 
 from .reachy import ReachyInfo, get_config
 from .arm import Arm
@@ -67,7 +69,7 @@ class ReachySDK:
         self._ready = threading.Event()
         self._pushed_2dcommand = threading.Event()
         self._pushed_3dcommand = threading.Event()
-        self._pushed_dmcommand = threading.Event()
+        # self._pushed_dmcommand = threading.Event()
 
         self._get_info()
         self._setup_parts()
@@ -182,31 +184,31 @@ class ReachySDK:
         else:
             pass
 
-    async def _poll_waiting_dmcommands(self) -> DynamixelMotorsCommand:
-        tasks = []
+    # async def _poll_waiting_dmcommands(self) -> DynamixelMotorsCommand:
+    #     tasks = []
 
-        for part in self._enabled_parts.values():
-            for actuator, act_type in part._actuators.items():
-                if act_type == "dynamixel_motor":
-                    tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
+    #     for part in self._enabled_parts.values():
+    #         for actuator, act_type in part._actuators.items():
+    #             if act_type == "dynamixel_motor":
+    #                 tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
 
-        if len(tasks) > 0:
-            await asyncio.wait(
-                tasks,
-                return_when=asyncio.FIRST_COMPLETED,
-            )
+    #     if len(tasks) > 0:
+    #         await asyncio.wait(
+    #             tasks,
+    #             return_when=asyncio.FIRST_COMPLETED,
+    #         )
 
-            commands = []
+    #         commands = []
 
-            for part in self._enabled_parts.values():
-                for actuator, act_type in part._actuators.items():
-                    if act_type == "dynamixel_motor" and actuator._need_sync.is_set():
-                        commands.append(actuator._pop_command())
+    #         for part in self._enabled_parts.values():
+    #             for actuator, act_type in part._actuators.items():
+    #                 if act_type == "dynamixel_motor" and actuator._need_sync.is_set():
+    #                     commands.append(actuator._pop_command())
 
-            return DynamixelMotorsCommand(cmd=commands)
+    #         return DynamixelMotorsCommand(cmd=commands)
 
-        else:
-            pass
+    #     else:
+    #         pass
 
     def _start_sync_in_bg(self) -> None:
         self.loop = asyncio.new_event_loop()
@@ -226,12 +228,12 @@ class ReachySDK:
         reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
         orbita2d_stub = Orbita2DServiceStub(async_channel)
         orbita3d_stub = Orbita3DServiceStub(async_channel)
-        dynamixel_motor_stub = DynamixelMotorServiceStub(async_channel)
+        # dynamixel_motor_stub = DynamixelMotorServiceStub(async_channel)
 
         await asyncio.gather(
             self._stream_orbita2d_commands_loop(orbita2d_stub, freq=100),
             self._stream_orbita3d_commands_loop(orbita3d_stub, freq=100),
-            self._stream_dynamixel_motor_commands_loop(dynamixel_motor_stub, freq=100),
+            # self._stream_dynamixel_motor_commands_loop(dynamixel_motor_stub, freq=100),
             self._get_stream_update_loop(reachy_stub, freq=100),
         )
 
@@ -287,23 +289,23 @@ class ReachySDK:
 
         await orbita3d_stub.StreamCommand(command_poll_3d())
 
-    async def _stream_dynamixel_motor_commands_loop(self, dynamixel_motor_stub: DynamixelMotorServiceStub, freq: float) -> None:
-        async def command_poll_dm() -> DynamixelMotorsCommand:
-            last_pub = 0.0
-            dt = 1.0 / freq
+    # async def _stream_dynamixel_motor_commands_loop(self, dynamixel_motor_stub: DynamixelMotorServiceStub, freq: float) -> None:  # noqa: E501
+    #     async def command_poll_dm() -> DynamixelMotorsCommand:
+    #         last_pub = 0.0
+    #         dt = 1.0 / freq
 
-            while True:
-                elapsed_time = time.time() - last_pub
-                if elapsed_time < dt:
-                    await asyncio.sleep(dt - elapsed_time)
+    #         while True:
+    #             elapsed_time = time.time() - last_pub
+    #             if elapsed_time < dt:
+    #                 await asyncio.sleep(dt - elapsed_time)
 
-                commands = await self._poll_waiting_dmcommands()
-                yield commands
-                self._pushed_dmcommand.set()
-                self._pushed_dmcommand.clear()
-                last_pub = time.time()
+    #             commands = await self._poll_waiting_dmcommands()
+    #             yield commands
+    #             self._pushed_dmcommand.set()
+    #             self._pushed_dmcommand.clear()
+    #             last_pub = time.time()
 
-        await dynamixel_motor_stub.StreamCommand(command_poll_dm())
+    #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
     def turn_on(self) -> None:
         for part in self._enabled_parts.values():

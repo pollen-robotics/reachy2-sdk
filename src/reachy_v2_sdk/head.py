@@ -21,7 +21,8 @@ from reachy_sdk_api_v2.part_pb2 import PartId
 from reachy_sdk_api_v2.kinematics_pb2 import Point, Rotation3D, Quaternion, ExtEulerAngles
 
 from .orbita3d import Orbita3d
-from .dynamixel_motor import DynamixelMotor
+
+# from .dynamixel_motor import DynamixelMotor
 
 
 class Head:
@@ -41,8 +42,8 @@ class Head:
         self._setup_head(head_msg, initial_state)
         self._actuators = {
             self.neck: "orbita3d",
-            self.l_antenna: "dynamixel_motor",
-            self.r_antenna: "dynamixel_motor",
+            # self.l_antenna: "dynamixel_motor",
+            # self.r_antenna: "dynamixel_motor",
         }
 
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
@@ -53,18 +54,18 @@ class Head:
             initial_state=initial_state.neck_state,
             grpc_channel=self._grpc_channel,
         )
-        self.l_antenna = DynamixelMotor(
-            uid=description.l_antenna.id.id,
-            name=description.l_antenna.id.name,
-            initial_state=initial_state.l_antenna_state,
-            grpc_channel=self._grpc_channel,
-        )
-        self.r_antenna = DynamixelMotor(
-            uid=description.r_antenna.id.id,
-            name=description.r_antenna.id.name,
-            initial_state=initial_state.r_antenna_state,
-            grpc_channel=self._grpc_channel,
-        )
+        # self.l_antenna = DynamixelMotor(
+        #     uid=description.l_antenna.id.id,
+        #     name=description.l_antenna.id.name,
+        #     initial_state=initial_state.l_antenna_state,
+        #     grpc_channel=self._grpc_channel,
+        # )
+        # self.r_antenna = DynamixelMotor(
+        #     uid=description.r_antenna.id.id,
+        #     name=description.r_antenna.id.name,
+        #     initial_state=initial_state.r_antenna_state,
+        #     grpc_channel=self._grpc_channel,
+        # )
 
     def get_orientation(self) -> pyQuat:
         quat = self._head_stub.GetOrientation(self.part_id).q
@@ -78,7 +79,11 @@ class Head:
                 id=self.part_id,
                 position=HeadPosition(
                     neck_position=Rotation3D(
-                        rpy=ExtEulerAngles(roll=rpy_position[0], pitch=rpy_position[1], yaw=rpy_position[2])
+                        rpy=ExtEulerAngles(
+                            roll=FloatValue(value=rpy_position[0]),
+                            pitch=FloatValue(value=rpy_position[1]),
+                            yaw=FloatValue(value=rpy_position[2]),
+                        )
                     )
                 ),
             )
@@ -102,7 +107,11 @@ class Head:
                 )
             )
         if rpy_q0 is not None:
-            req_params["q0"] = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
+            req_params["q0"] = Rotation3D(
+                rpy=ExtEulerAngles(
+                    roll=FloatValue(value=rpy_q0[0]), pitch=FloatValue(value=rpy_q0[1]), yaw=FloatValue(value=rpy_q0[2])
+                )
+            )
         req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
         return (rpy_pos.position.rpy.roll, rpy_pos.position.rpy.pitch, rpy_pos.position.rpy.yaw)
@@ -112,12 +121,18 @@ class Head:
         self._head_stub.LookAt(req)
 
     def orient(self, q: pyQuat, duration: float) -> None:
-        req = NeckGoal(id=self.part_id, rotation=Rotation3D(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)), duration=duration)
+        req = NeckGoal(
+            id=self.part_id, rotation=Rotation3D(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)), duration=FloatValue(value=duration)
+        )
         self._head_stub.GoToOrientation(req)
 
     def rotate_to(self, roll: float, pitch: float, yaw: float, duration: float) -> None:
         req = NeckGoal(
-            id=self.part_id, rotation=Rotation3D(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)), duration=duration
+            id=self.part_id,
+            rotation=Rotation3D(
+                rpy=ExtEulerAngles(roll=FloatValue(value=roll), pitch=FloatValue(value=pitch), yaw=FloatValue(value=yaw))
+            ),
+            duration=FloatValue(value=duration),
         )
         self._head_stub.GoToOrientation(req)
 
@@ -130,5 +145,5 @@ class Head:
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state received from the gRPC server."""
         self.neck._update_with(new_state.neck_state)
-        self.l_antenna._update_with(new_state.l_antenna_state)
-        self.r_antenna._update_with(new_state.r_antenna_state)
+        # self.l_antenna._update_with(new_state.l_antenna_state)
+        # self.r_antenna._update_with(new_state.r_antenna_state)

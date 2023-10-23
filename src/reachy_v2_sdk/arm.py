@@ -111,9 +111,15 @@ class Arm:
 
     def _list_to_arm_position(self, positions: List[float]) -> ArmPosition:
         arm_pos = ArmPosition(
-            shoulder_position=Pose2D(axis_1=positions[0], axis_2=positions[1]),
-            elbow_position=Pose2D(axis_1=positions[2], axis_2=positions[3]),
-            wrist_position=Rotation3D(rpy=ExtEulerAngles(roll=positions[4], pitch=positions[5], yaw=positions[6])),
+            shoulder_position=Pose2D(axis_1=FloatValue(value=positions[0]), axis_2=FloatValue(value=positions[1])),
+            elbow_position=Pose2D(axis_1=FloatValue(value=positions[2]), axis_2=FloatValue(value=positions[3])),
+            wrist_position=Rotation3D(
+                rpy=ExtEulerAngles(
+                    roll=FloatValue(value=positions[4]),
+                    pitch=FloatValue(value=positions[5]),
+                    yaw=FloatValue(value=positions[6]),
+                )
+            ),
         )
 
         return arm_pos
@@ -122,11 +128,11 @@ class Arm:
         positions = []
 
         for _, value in arm_pos.shoulder_position.ListFields():
-            positions.append(value)
+            positions.append(value.value)
         for _, value in arm_pos.elbow_position.ListFields():
-            positions.append(value)
+            positions.append(value.value)
         for _, value in arm_pos.wrist_position.rpy.ListFields():
-            positions.append(value)
+            positions.append(value.value)
 
         return positions
 
