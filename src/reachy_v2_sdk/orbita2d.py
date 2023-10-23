@@ -6,7 +6,7 @@ from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 
 from .register import Register
 
-from reachy_sdk_api_v2.component_pb2 import ComponentId
+from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
 from reachy_sdk_api_v2.orbita2d_pb2 import (
     Axis,
     Float2D,
@@ -14,6 +14,7 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
     Orbita2DState,
     Pose2D,
     Vector2D,
+    PID2D,
 )
 
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
@@ -67,7 +68,7 @@ class Orbita2d:
                         if axis.name not in init_state:
                             init_state[axis.name] = {}
                         init_state[axis.name][field.name] = val
-                if isinstance(value, Float2D):
+                if isinstance(value, Float2D | PID2D):
                     for motor, val in value.ListFields():
                         if motor.name not in init_state:
                             init_state[motor.name] = {}
@@ -110,13 +111,29 @@ class Orbita2d:
     def get_torque_limit(self) -> Dict[str, float]:
         return {"motor_1": getattr(self, "_motor_1").torque_limit, "motor_2": getattr(self, "_motor_2").torque_limit}
 
-    def _build_grpc_cmd_msg(self, field: str) -> Pose2D | Float2D:
+    def _build_grpc_cmd_msg(self, field: str) -> Pose2D | PID2D | Float2D:
         if field == "goal_position":
             axis1_attr = getattr(self, self._axis1)
             axis2_attr = getattr(self, self._axis2)
             return Pose2D(
                 axis_1=FloatValue(value=getattr(axis1_attr, field)),
                 axis_2=FloatValue(value=getattr(axis2_attr, field)),
+            )
+
+        elif field == "pid":
+            motor_1_gains = getattr(self._motor_1, field)
+            motor_2_gains = getattr(self._motor_2, field)
+            return PID2D(
+                motor_1=PIDGains(
+                    p=FloatValue(value=motor_1_gains[0]),
+                    i=FloatValue(value=motor_1_gains[1]),
+                    d=FloatValue(value=motor_1_gains[2]),
+                ),
+                motor_2=PIDGains(
+                    p=FloatValue(value=motor_2_gains[0]),
+                    i=FloatValue(value=motor_2_gains[1]),
+                    d=FloatValue(value=motor_2_gains[2]),
+                ),
             )
 
         return Float2D(

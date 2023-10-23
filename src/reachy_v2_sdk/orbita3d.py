@@ -8,9 +8,10 @@ from reachy_sdk_api_v2.orbita3d_pb2 import (
     Orbita3DCommand,
     Orbita3DState,
     Vector3D,
+    PID3D,
 )
 
-from reachy_sdk_api_v2.component_pb2 import ComponentId
+from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
 from reachy_sdk_api_v2.kinematics_pb2 import ExtEulerAngles, Rotation3D
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 from .orbita_utils import OrbitaJoint, OrbitaMotor, OrbitaAxis
@@ -43,7 +44,7 @@ class Orbita3d:
                             if axis.name not in init_state:
                                 init_state[axis.name] = {}
                             init_state[axis.name][field.name] = val
-                if isinstance(value, Float3D):
+                if isinstance(value, Float3D | PID3D):
                     for motor, val in value.ListFields():
                         if motor.name not in init_state:
                             init_state[motor.name] = {}
@@ -128,6 +129,29 @@ class Orbita3d:
                     yaw=FloatValue(value=getattr(self.yaw, field)),
                 )
             )
+
+        elif field == "pid":
+            motor_1_gains = getattr(self._motor_1, field)
+            motor_2_gains = getattr(self._motor_2, field)
+            motor_3_gains = getattr(self._motor_3, field)
+            return PID3D(
+                motor_1=PIDGains(
+                    p=FloatValue(value=motor_1_gains[0]),
+                    i=FloatValue(value=motor_1_gains[1]),
+                    d=FloatValue(value=motor_1_gains[2]),
+                ),
+                motor_2=PIDGains(
+                    p=FloatValue(value=motor_2_gains[0]),
+                    i=FloatValue(value=motor_2_gains[1]),
+                    d=FloatValue(value=motor_2_gains[2]),
+                ),
+                motor_3=PIDGains(
+                    p=FloatValue(value=motor_3_gains[0]),
+                    i=FloatValue(value=motor_3_gains[1]),
+                    d=FloatValue(value=motor_3_gains[2]),
+                ),
+            )
+
         return Float3D(
             motor_1=FloatValue(value=getattr(self._motor_1, field)),
             motor_2=FloatValue(value=getattr(self._motor_2, field)),
