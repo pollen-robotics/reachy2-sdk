@@ -1,7 +1,7 @@
 import asyncio
 from grpc import Channel
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 
 from reachy_sdk_api_v2.orbita3d_pb2 import (
     Float3D,
@@ -75,6 +75,14 @@ class Orbita3d:
 
     def set_torque_limit(self, torque_limit: float) -> None:
         self._set_motors_fields("torque_limit", torque_limit)
+
+    def set_pid(self, pid: Tuple[float, float, float]) -> None:
+        if isinstance(pid, tuple) and len(pid) == 3:
+            for m in self.__motors:
+                m._tmp_pid = pid
+            self._update_loop("pid")
+        else:
+            raise ValueError("pid should be of type Tuple[float, float, float]")
 
     def get_speed_limit(self) -> Dict[str, float]:
         return {
@@ -159,10 +167,36 @@ class Orbita3d:
         )
 
     def _build_grpc_cmd_msg_actuator(self, field: str) -> Float3D:
+        if field == "pid":
+            motor_1_gains = self.__motors[0]._tmp_pid
+            motor_2_gains = self.__motors[1]._tmp_pid
+            motor_3_gains = self.__motors[1]._tmp_pid
+            if type(motor_1_gains) is tuple and type(motor_2_gains) is tuple and type(motor_3_gains) is tuple:
+                return PID3D(
+                    motor_1=PIDGains(
+                        p=FloatValue(value=motor_1_gains[0]),
+                        i=FloatValue(value=motor_1_gains[1]),
+                        d=FloatValue(value=motor_1_gains[2]),
+                    ),
+                    motor_2=PIDGains(
+                        p=FloatValue(value=motor_2_gains[0]),
+                        i=FloatValue(value=motor_2_gains[1]),
+                        d=FloatValue(value=motor_2_gains[2]),
+                    ),
+                    motor_3=PIDGains(
+                        p=FloatValue(value=motor_3_gains[0]),
+                        i=FloatValue(value=motor_3_gains[1]),
+                        d=FloatValue(value=motor_3_gains[2]),
+                    ),
+                )
+
+        motor_1_value = self.__motors[0]._tmp_fields[field]
+        motor_2_value = self.__motors[1]._tmp_fields[field]
+        motor_3_value = self.__motors[1]._tmp_fields[field]
         return Float3D(
-            motor_1=FloatValue(value=self.__motors[0]._tmp_fields[field]),
-            motor_2=FloatValue(value=self.__motors[1]._tmp_fields[field]),
-            motor_3=FloatValue(value=self.__motors[2]._tmp_fields[field]),
+            motor_1=FloatValue(value=motor_1_value),
+            motor_2=FloatValue(value=motor_2_value),
+            motor_3=FloatValue(value=motor_3_value),
         )
 
     def __setattr__(self, __name: str, __value: Any) -> None:
@@ -192,6 +226,9 @@ class Orbita3d:
         for m in self.__motors:
             m._tmp_fields[field] = value
 
+        self._update_loop(field)
+
+    def _update_loop(self, field: str) -> None:
         async def set_in_loop() -> None:
             self._register_needing_sync.append(field)
             self._need_sync.set()
