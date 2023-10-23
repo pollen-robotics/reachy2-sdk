@@ -1,6 +1,6 @@
 import asyncio
 from grpc import Channel
-from google.protobuf.wrappers_pb2 import BoolValue
+from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from typing import Dict, List, Any
 
 from reachy_sdk_api_v2.orbita3d_pb2 import (
@@ -32,7 +32,10 @@ class Orbita3d:
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
-                self._state[field.name] = value.value
+                self._state[field.name] = value
+                init_state["motor_1"][field.name] = value
+                init_state["motor_2"][field.name] = value
+                init_state["motor_3"][field.name] = value
             else:
                 if isinstance(value, Rotation3D):
                     for _, rpy in value.ListFields():
@@ -54,14 +57,37 @@ class Orbita3d:
         self.roll = OrbitaJoint(initial_state=init_state["roll"], axis_type="roll", actuator=self)
         self.pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
         self.yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
+        self.__joints = [self.roll, self.pitch, self.yaw]
 
-        self._motor_1 = OrbitaMotor(initial_state=init_state["motor_1"])
-        self._motor_2 = OrbitaMotor(initial_state=init_state["motor_2"])
-        self._motor_3 = OrbitaMotor(initial_state=init_state["motor_3"])
+        self._motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
+        self._motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
+        self._motor_3 = OrbitaMotor(initial_state=init_state["motor_3"], actuator=self)
+        self.__motors = [self._motor_1, self._motor_2, self._motor_3]
 
         self._x = OrbitaAxis(initial_state=init_state["x"])
         self._y = OrbitaAxis(initial_state=init_state["y"])
         self._z = OrbitaAxis(initial_state=init_state["z"])
+        self.__axis = [self._x, self._y, self._z]
+
+    def set_speed_limit(self, speed_limit: float) -> None:
+        self._set_motors_fields("speed_limit", speed_limit)
+
+    def set_torque_limit(self, torque_limit: float) -> None:
+        self._set_motors_fields("torque_limit", torque_limit)
+
+    def get_speed_limit(self) -> Dict[str, float]:
+        return {
+            "motor_1": getattr(self, "_motor_1").speed_limit,
+            "motor_2": getattr(self, "_motor_2").speed_limit,
+            "motor_3": getattr(self, "_motor_3").speed_limit,
+        }
+
+    def get_torque_limit(self) -> Dict[str, float]:
+        return {
+            "motor_1": getattr(self, "_motor_1").torque_limit,
+            "motor_2": getattr(self, "_motor_2").torque_limit,
+            "motor_3": getattr(self, "_motor_3").torque_limit,
+        }
 
     @property
     def temperatures(self) -> Dict[str, Register]:
@@ -71,11 +97,13 @@ class Orbita3d:
             "motor_3": self._motor_3.temperature,
         }
 
-    def _update_with(self, new_state: Orbita3DState) -> None:
+    def _update_with(self, new_state: Orbita3DState) -> None:  # noqa: C901
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
         for field, value in new_state.ListFields():
             if field.name == "compliant":
                 self._state[field.name] = value
+                for m in self.__motors:
+                    m._state[field.name] = value
             else:
                 if isinstance(value, Rotation3D):
                     for _, rpy in value.ListFields():
@@ -95,22 +123,27 @@ class Orbita3d:
         if field == "goal_position":
             return Rotation3D(
                 rpy=ExtEulerAngles(
-                    roll=getattr(self.roll, field),
-                    pitch=getattr(self.pitch, field),
-                    yaw=getattr(self.yaw, field),
+                    roll=FloatValue(value=getattr(self.roll, field)),
+                    pitch=FloatValue(value=getattr(self.pitch, field)),
+                    yaw=FloatValue(value=getattr(self.yaw, field)),
                 )
             )
         return Float3D(
-            motor_1=getattr(self._motor_1, field),
-            motor_2=getattr(self._motor_2, field),
-            motor_3=getattr(self._motor_3, field),
+            motor_1=FloatValue(value=getattr(self._motor_1, field)),
+            motor_2=FloatValue(value=getattr(self._motor_2, field)),
+            motor_3=FloatValue(value=getattr(self._motor_3, field)),
+        )
+
+    def _build_grpc_cmd_msg_actuator(self, field: str) -> Float3D:
+        return Float3D(
+            motor_1=FloatValue(value=self.__motors[0]._tmp_fields[field]),
+            motor_2=FloatValue(value=self.__motors[1]._tmp_fields[field]),
+            motor_3=FloatValue(value=self.__motors[2]._tmp_fields[field]),
         )
 
     def __setattr__(self, __name: str, __value: Any) -> None:
         if __name == "compliant":
             self._state[__name] = __value
-            # self._motor_1._state[__name] = __value
-            # self._motor_2._state[__name] = __value
 
             async def set_in_loop() -> None:
                 self._register_needing_sync.append(__name)
@@ -131,28 +164,41 @@ class Orbita3d:
         self._need_sync = asyncio.Event()
         self._loop = asyncio.get_running_loop()
 
+    def _set_motors_fields(self, field: str, value: float) -> None:
+        for m in self.__motors:
+            m._tmp_fields[field] = value
+
+        async def set_in_loop() -> None:
+            self._register_needing_sync.append(field)
+            self._need_sync.set()
+
+        fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
+        fut.result()
+
     def _pop_command(self) -> Orbita3DCommand:
         """Create a gRPC command from the registers that need to be synced."""
         values = {
             "id": ComponentId(id=self.id),
         }
 
-        set_reg_roll = set(self.roll._register_needing_sync)
-        set_reg_pitch = set(self.pitch._register_needing_sync)
-        set_reg_yaw = set(self.yaw._register_needing_sync)
-        reg_to_update = self._register_needing_sync
-
-        for reg in set_reg_roll.union(set_reg_pitch).union(set_reg_yaw).union(set(reg_to_update)):
+        set_reg_to_update = set(self._register_needing_sync)
+        for reg in set_reg_to_update:
             if reg == "compliant":
                 values["compliant"] = BoolValue(value=self._state["compliant"])
             else:
-                values[reg] = self._build_grpc_cmd_msg(reg)
+                values[reg] = self._build_grpc_cmd_msg_actuator(reg)
+
+        set_reg_to_update = set()
+        for obj in self.__joints + self.__motors:
+            set_reg_to_update = set_reg_to_update.union(set(obj._register_needing_sync))
+        for reg in set_reg_to_update:
+            values[reg] = self._build_grpc_cmd_msg(reg)
+
         command = Orbita3DCommand(**values)
 
-        self.roll._register_needing_sync.clear()
-        self.pitch._register_needing_sync.clear()
-        self.yaw._register_needing_sync.clear()
-        reg_to_update.clear()
+        self._register_needing_sync.clear()
+        for obj in self.__joints + self.__motors:
+            obj._register_needing_sync.clear()
         self._need_sync.clear()
 
         return command
