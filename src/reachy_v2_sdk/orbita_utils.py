@@ -60,11 +60,14 @@ class OrbitaMotor:
         self.pid = PID(p=0.0, i=0.0, d=0.0)
 
         self._state = initial_state
+        self._tmp_fields: Dict[str, float | None] = {}
 
         for field in dir(self):
             value = getattr(self, field)
             if isinstance(value, Register):
                 value.label = field
+                if not value.readonly:
+                    self._tmp_fields[field] = None
 
         self._register_needing_sync: List[str] = []
 

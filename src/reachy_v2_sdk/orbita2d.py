@@ -124,6 +124,12 @@ class Orbita2d:
             motor_2=FloatValue(value=getattr(self._motor_2, field)),
         )
 
+    def _build_grpc_cmd_msg_actuator(self, field: str) -> Float2D:
+        return Float2D(
+            motor_1=FloatValue(value=self.__motors[0]._tmp_fields[field]),
+            motor_2=FloatValue(value=self.__motors[1]._tmp_fields[field]),
+        )
+
     def _setup_sync_loop(self) -> None:
         """Set up the async synchronisation loop.
 
@@ -149,7 +155,7 @@ class Orbita2d:
 
     def _set_motors_fields(self, field: str, value: float) -> None:
         for m in self.__motors:
-            m._state[field] = value
+            m._tmp_fields[field] = value
 
         async def set_in_loop() -> None:
             self._register_needing_sync.append(field)
@@ -165,16 +171,21 @@ class Orbita2d:
         }
 
         set_reg_to_update = set(self._register_needing_sync)
-        for obj in self.__joints + self.__motors:
-            set_reg_to_update = set_reg_to_update.union(set(obj._register_needing_sync))
-
         for reg in set_reg_to_update:
             if reg == "compliant":
                 values["compliant"] = BoolValue(value=self._state["compliant"])
             else:
-                values[reg] = self._build_grpc_cmd_msg(reg)
+                values[reg] = self._build_grpc_cmd_msg_actuator(reg)
+
+        set_reg_to_update = set()
+        for obj in self.__joints + self.__motors:
+            set_reg_to_update = set_reg_to_update.union(set(obj._register_needing_sync))
+        for reg in set_reg_to_update:
+            values[reg] = self._build_grpc_cmd_msg(reg)
+
         command = Orbita2DCommand(**values)
 
+        self._register_needing_sync.clear()
         for obj in self.__joints + self.__motors:
             obj._register_needing_sync.clear()
         self._need_sync.clear()
