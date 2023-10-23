@@ -23,4 +23,6 @@ class Register:
         """Unwrap the internal value to a more simple one."""
         if self.internal_class in (BoolValue, FloatValue, UInt32Value):
             return value.value
+        if self.internal_class.__name__ == "PIDGains":
+            return (value.pid.p, value.pid.i, value.pid.d)
         return value

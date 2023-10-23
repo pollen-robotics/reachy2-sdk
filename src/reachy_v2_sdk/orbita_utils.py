@@ -5,6 +5,8 @@ from google.protobuf.wrappers_pb2 import FloatValue
 
 from .register import Register
 
+from reachy_sdk_api_v2.component_pb2 import PIDGains
+
 
 class OrbitaJoint:
     present_position = Register(readonly=True, type=FloatValue, label="present_position")
@@ -47,8 +49,10 @@ class OrbitaMotor:
     speed_limit = Register(readonly=False, type=FloatValue, label="speed_limit")
     torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
 
+    pid = Register(readonly=False, type=PIDGains, label="pid")
+
     def __init__(self, initial_state: Dict[str, float]) -> None:
-        self.pid = PID(p=0.0, i=0.0, d=0.0)
+        # self.pid = PID(p=0.0, i=0.0, d=0.0)
 
         self._state = initial_state
 
@@ -83,11 +87,11 @@ class OrbitaAxis:
         self._state[field] = value
 
 
-class PID:
-    def __init__(self, p: float, i: float, d: float) -> None:
-        self.p = p
-        self.i = i
-        self.d = d
+# class PID:
+#     def __init__(self, p: float, i: float, d: float) -> None:
+#         self.p = p
+#         self.i = i
+#         self.d = d
 
-    def __repr__(self) -> str:
-        return f"PID(p={self.p}, i={self.i}, d={self.d})"
+#     def __repr__(self) -> str:
+#         return f"PID(p={self.p}, i={self.i}, d={self.d})"
