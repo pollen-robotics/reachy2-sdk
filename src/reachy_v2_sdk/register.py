@@ -1,23 +1,38 @@
-from typing import Type, Any
+from typing import Type, Any, Optional, Tuple, Callable
 import asyncio
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue, UInt32Value
 
 
 class Register:
-    def __init__(self, readonly: bool, type: Type[Any], label: str) -> None:
+    def __init__(
+        self,
+        readonly: bool,
+        type: Type[Any],
+        label: str,
+        conversion: Optional[Tuple[Callable[[Any], Any], Callable[[Any], Any]]] = None,
+    ) -> None:
         self.readonly = readonly
         self.internal_class = type
         self.label = label
+
+        self.cvt_to_internal: Optional[Callable[[Any], Any]] = None
+        self.cvt_to_external: Optional[Callable[[Any], Any]] = None
+        if conversion is not None:
+            self.cvt_to_internal, self.cvt_to_external = conversion
 
     def __get__(self, instance, owner):  # type: ignore
         if instance is None:
             return self
         value = self.unwrapped_value(instance._state[self.label])
+        if self.cvt_to_external is not None:
+            value = self.cvt_to_external(value)
         return value
 
     def __set__(self, instance, value):  # type: ignore
         if self.readonly:
             raise AttributeError("can't set attribute")
+        if self.cvt_to_internal is not None:
+            value = self.cvt_to_internal(value)
         instance._state[self.label] = self.wrapped_value(value)
 
         async def set_in_loop() -> None:
