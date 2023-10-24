@@ -19,7 +19,9 @@ def _to_internal_position(pos: float) -> Any:
 
 
 class OrbitaJoint:
-    present_position = Register(readonly=True, type=FloatValue, label="present_position")
+    present_position = Register(
+        readonly=True, type=FloatValue, label="present_position", conversion=(_to_internal_position, _to_position)
+    )
     goal_position = Register(
         readonly=False, type=FloatValue, label="goal_position", conversion=(_to_internal_position, _to_position)
     )
