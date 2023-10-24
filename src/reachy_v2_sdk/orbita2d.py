@@ -44,9 +44,6 @@ class Orbita2d:
         self._axis1 = axis1_name
         self._axis2 = axis2_name
 
-        self._motor_1 = None
-        self._motor_2 = None
-
         self._axis_to_name: Dict[str, str] = {
             "axis_1": self._axis1,
             "axis_2": self._axis2,
@@ -145,8 +142,8 @@ class Orbita2d:
             )
 
         return Float2D(
-            motor_1=FloatValue(value=getattr(self._motor_1, field)),
-            motor_2=FloatValue(value=getattr(self._motor_2, field)),
+            motor_1=self._motor_1._state[field],
+            motor_2=self._motor_2._state[field],
         )
 
     def _build_grpc_cmd_msg_actuator(self, field: str) -> Float2D:

@@ -42,7 +42,9 @@ class OrbitaJoint:
 
 class OrbitaMotor:
     temperature = Register(readonly=True, type=FloatValue, label="temperature")
-    speed_limit = Register(readonly=False, type=FloatValue, label="speed_limit")
+    speed_limit = Register(
+        readonly=False, type=FloatValue, label="speed_limit", conversion=(_to_internal_position, _to_position)
+    )
     torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
     compliant = Register(readonly=True, type=BoolValue, label="compliant")
 
@@ -66,7 +68,9 @@ class OrbitaMotor:
 
 
 class OrbitaAxis:
-    present_speed = Register(readonly=True, type=FloatValue, label="present_speed")
+    present_speed = Register(
+        readonly=True, type=FloatValue, label="present_speed", conversion=(_to_internal_position, _to_position)
+    )
     present_load = Register(readonly=True, type=FloatValue, label="present_load")
 
     def __init__(self, initial_state: Dict[str, float]) -> None:
