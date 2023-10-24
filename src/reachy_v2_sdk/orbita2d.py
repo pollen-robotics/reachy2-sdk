@@ -100,9 +100,13 @@ class Orbita2d:
         self.__axis = [self._x, self._y]
 
     def set_speed_limit(self, speed_limit: float) -> None:
+        if not isinstance(speed_limit, float | int):
+            raise ValueError("Expecting a float or int value as speed_limit")
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:
+        if not isinstance(torque_limit, float | int):
+            raise ValueError("Expecting a float or int value as torque_limit")
         self._set_motors_fields("torque_limit", torque_limit)
 
     def set_pid(self, pid: Tuple[float, float, float]) -> None:
@@ -111,7 +115,7 @@ class Orbita2d:
                 m._tmp_pid = pid
             self._update_loop("pid")
         else:
-            raise ValueError("pid should be of type Tuple[float, float, float]")
+            raise ValueError("pid should be a tuple of length 3, e.g (1.0, 2.0, 1.0)")
 
     def get_speed_limit(self) -> Dict[str, float]:
         return {"motor_1": getattr(self, "_motor_1").speed_limit, "motor_2": getattr(self, "_motor_2").speed_limit}
