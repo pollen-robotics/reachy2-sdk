@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 import grpc
 
@@ -200,3 +200,14 @@ class Arm:
         self.shoulder._update_with(new_state.shoulder_state)
         self.elbow._update_with(new_state.elbow_state)
         self.wrist._update_with(new_state.wrist_state)
+
+    @property
+    def compliant(self) -> Dict[str, bool]:
+        return {"shoulder": self.shoulder.compliant, "elbow": self.elbow.compliant, "wrist": self.wrist.compliant}
+
+    @compliant.setter
+    def compliant(self, value: bool) -> None:
+        if value:
+            self._arm_stub.TurnOff(self.part_id)
+        else:
+            self._arm_stub.TurnOn(self.part_id)
