@@ -132,9 +132,9 @@ class Orbita3d:
         if field == "goal_position":
             return Rotation3D(
                 rpy=ExtEulerAngles(
-                    roll=FloatValue(value=getattr(self.roll, field)),
-                    pitch=FloatValue(value=getattr(self.pitch, field)),
-                    yaw=FloatValue(value=getattr(self.yaw, field)),
+                    roll=self.roll._state[field],
+                    pitch=self.pitch._state[field],
+                    yaw=self.yaw._state[field],
                 )
             )
 
@@ -161,9 +161,9 @@ class Orbita3d:
             )
 
         return Float3D(
-            motor_1=FloatValue(value=getattr(self._motor_1, field)),
-            motor_2=FloatValue(value=getattr(self._motor_2, field)),
-            motor_3=FloatValue(value=getattr(self._motor_3, field)),
+            motor_1=self._motor_1._state[field],
+            motor_2=self._motor_2._state[field],
+            motor_3=self._motor_3._state[field],
         )
 
     def _build_grpc_cmd_msg_actuator(self, field: str) -> Float3D:
