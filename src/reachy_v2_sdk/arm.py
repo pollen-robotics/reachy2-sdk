@@ -115,7 +115,7 @@ class Arm:
 
     def _list_to_arm_position(self, positions: List[float], degrees: bool = True) -> ArmPosition:
         if degrees:
-            self._convert_to_radians(positions)
+            positions = self._convert_to_radians(positions)
         arm_pos = ArmPosition(
             shoulder_position=Pose2D(axis_1=FloatValue(value=positions[0]), axis_2=FloatValue(value=positions[1])),
             elbow_position=Pose2D(axis_1=FloatValue(value=positions[2]), axis_2=FloatValue(value=positions[3])),
