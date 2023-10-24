@@ -139,24 +139,21 @@ class Orbita3d:
             )
 
         elif field == "pid":
-            motor_1_gains = getattr(self._motor_1, field)
-            motor_2_gains = getattr(self._motor_2, field)
-            motor_3_gains = getattr(self._motor_3, field)
             return PID3D(
                 motor_1=PIDGains(
-                    p=FloatValue(value=motor_1_gains[0]),
-                    i=FloatValue(value=motor_1_gains[1]),
-                    d=FloatValue(value=motor_1_gains[2]),
+                    p=self._motor_1._state[field].p,
+                    i=self._motor_1._state[field].i,
+                    d=self._motor_1._state[field].d,
                 ),
                 motor_2=PIDGains(
-                    p=FloatValue(value=motor_2_gains[0]),
-                    i=FloatValue(value=motor_2_gains[1]),
-                    d=FloatValue(value=motor_2_gains[2]),
+                    p=self._motor_2._state[field].p,
+                    i=self._motor_2._state[field].i,
+                    d=self._motor_2._state[field].d,
                 ),
                 motor_3=PIDGains(
-                    p=FloatValue(value=motor_3_gains[0]),
-                    i=FloatValue(value=motor_3_gains[1]),
-                    d=FloatValue(value=motor_3_gains[2]),
+                    p=self._motor_3._state[field].p,
+                    i=self._motor_3._state[field].i,
+                    d=self._motor_3._state[field].d,
                 ),
             )
 
