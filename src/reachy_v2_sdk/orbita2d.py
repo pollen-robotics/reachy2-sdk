@@ -19,7 +19,7 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
 
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 
-from .orbita_utils import OrbitaJoint, OrbitaMotor, OrbitaAxis
+from .orbita_utils import OrbitaJoint, OrbitaMotor, OrbitaAxis, _to_internal_position
 
 
 class Orbita2d:
@@ -97,6 +97,7 @@ class Orbita2d:
         self.__axis = [self._x, self._y]
 
     def set_speed_limit(self, speed_limit: float) -> None:
+        speed_limit = _to_internal_position(speed_limit)
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:

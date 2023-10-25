@@ -55,16 +55,7 @@ class OrbitaMotor:
 
         self._state = initial_state
 
-        class ConvertedDict(Dict[str, float | None]):
-            def __init__(self, *args: Tuple[Any], **kwargs: Any) -> None:
-                super().__init__(*args, **kwargs)
-
-            def __setitem__(self, key: str, value: Any) -> None:
-                if key in ["speed_limit"]:
-                    value = _to_internal_position(value)
-                super().__setitem__(key, value)
-
-        self._tmp_fields = ConvertedDict()
+        self._tmp_fields: Dict[str, float | None] = {}
         self._tmp_pid: Tuple[float, float, float]
 
         for field in dir(self):
