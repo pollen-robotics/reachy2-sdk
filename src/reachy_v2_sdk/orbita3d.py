@@ -39,7 +39,7 @@ class Orbita3d:
                 init_state["motor_3"][field.name] = value
             else:
                 if isinstance(value, Rotation3D):
-                    for axis in ['roll', 'pitch', 'yaw']:
+                    for axis in ["roll", "pitch", "yaw"]:
                         if axis not in init_state:
                             init_state[axis] = {}
                         init_state[axis][field.name] = getattr(value.rpy, axis)

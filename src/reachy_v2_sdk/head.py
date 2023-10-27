@@ -107,11 +107,7 @@ class Head:
                 )
             )
         if rpy_q0 is not None:
-            req_params["q0"] = Rotation3D(
-                rpy=ExtEulerAngles(
-                    roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]
-                )
-            )
+            req_params["q0"] = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
         req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
         return (rpy_pos.position.rpy.roll, rpy_pos.position.rpy.pitch, rpy_pos.position.rpy.yaw)
@@ -129,9 +125,7 @@ class Head:
     def rotate_to(self, roll: float, pitch: float, yaw: float, duration: float) -> None:
         req = NeckGoal(
             id=self.part_id,
-            rotation=Rotation3D(
-                rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)
-            ),
+            rotation=Rotation3D(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)),
             duration=FloatValue(value=duration),
         )
         self._head_stub.GoToOrientation(req)
