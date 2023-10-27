@@ -14,7 +14,7 @@ from reachy_sdk_api_v2.orbita3d_pb2 import (
 from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
 from reachy_sdk_api_v2.kinematics_pb2 import ExtEulerAngles, Rotation3D
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
-from .orbita_utils import OrbitaJoint, OrbitaMotor, OrbitaAxis
+from .orbita_utils import OrbitaJoint3D, OrbitaMotor, OrbitaAxis
 from .register import Register
 
 
@@ -39,11 +39,10 @@ class Orbita3d:
                 init_state["motor_3"][field.name] = value
             else:
                 if isinstance(value, Rotation3D):
-                    for _, rpy in value.ListFields():
-                        for axis, val in rpy.ListFields():
-                            if axis.name not in init_state:
-                                init_state[axis.name] = {}
-                            init_state[axis.name][field.name] = val
+                    for axis in ['roll', 'pitch', 'yaw']:
+                        if axis not in init_state:
+                            init_state[axis] = {}
+                        init_state[axis][field.name] = getattr(value.rpy, axis)
                 if isinstance(value, Float3D | PID3D):
                     for motor, val in value.ListFields():
                         if motor.name not in init_state:
@@ -55,9 +54,9 @@ class Orbita3d:
                             init_state[axis.name] = {}
                         init_state[axis.name][field.name] = val
 
-        self.roll = OrbitaJoint(initial_state=init_state["roll"], axis_type="roll", actuator=self)
-        self.pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
-        self.yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
+        self.roll = OrbitaJoint3D(initial_state=init_state["roll"], axis_type="roll", actuator=self)
+        self.pitch = OrbitaJoint3D(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
+        self.yaw = OrbitaJoint3D(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
         self.__joints = [self.roll, self.pitch, self.yaw]
 
         self._motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
@@ -132,9 +131,9 @@ class Orbita3d:
         if field == "goal_position":
             return Rotation3D(
                 rpy=ExtEulerAngles(
-                    roll=FloatValue(value=getattr(self.roll, field)),
-                    pitch=FloatValue(value=getattr(self.pitch, field)),
-                    yaw=FloatValue(value=getattr(self.yaw, field)),
+                    roll=getattr(self.roll, field),
+                    pitch=getattr(self.pitch, field),
+                    yaw=getattr(self.yaw, field),
                 )
             )
 

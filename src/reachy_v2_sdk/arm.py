@@ -115,9 +115,9 @@ class Arm:
             elbow_position=Pose2D(axis_1=FloatValue(value=positions[2]), axis_2=FloatValue(value=positions[3])),
             wrist_position=Rotation3D(
                 rpy=ExtEulerAngles(
-                    roll=FloatValue(value=positions[4]),
-                    pitch=FloatValue(value=positions[5]),
-                    yaw=FloatValue(value=positions[6]),
+                    roll=positions[4],
+                    pitch=positions[5],
+                    yaw=positions[6],
                 )
             ),
         )
