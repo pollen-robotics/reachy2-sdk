@@ -57,17 +57,17 @@ class Orbita3d:
         self.roll = OrbitaJoint3D(initial_state=init_state["roll"], axis_type="roll", actuator=self)
         self.pitch = OrbitaJoint3D(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
         self.yaw = OrbitaJoint3D(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
-        self._joints = {'roll': self.roll, 'pitch': self.pitch, 'yaw': self.yaw}
+        self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
         self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
         self.__motor_3 = OrbitaMotor(initial_state=init_state["motor_3"], actuator=self)
-        self._motors = {'motor_1': self.__motor_1, 'motor_2': self.__motor_2, 'motor_3': self.__motor_3}
+        self._motors = {"motor_1": self.__motor_1, "motor_2": self.__motor_2, "motor_3": self.__motor_3}
 
         self.__x = OrbitaAxis(initial_state=init_state["x"])
         self.__y = OrbitaAxis(initial_state=init_state["y"])
         self.__z = OrbitaAxis(initial_state=init_state["z"])
-        self._axis = {'x': self.__x, 'y': self.__y, 'z': self.__z}
+        self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
 
     def set_speed_limit(self, speed_limit: float) -> None:
         self._set_motors_fields("speed_limit", speed_limit)

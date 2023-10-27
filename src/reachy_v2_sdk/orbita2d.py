@@ -78,15 +78,15 @@ class Orbita2d:
             axis2_name,
             OrbitaJoint2D(initial_state=init_state["axis_2"], axis_type=axis2, actuator=self),
         )
-        self._joints = {'axis_1': getattr(self, axis1_name), 'axis_2': getattr(self, axis2_name)}
+        self._joints = {"axis_1": getattr(self, axis1_name), "axis_2": getattr(self, axis2_name)}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
         self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
-        self._motors = {'motor_1': self.__motor_1, 'motor_2': self.__motor_2}
+        self._motors = {"motor_1": self.__motor_1, "motor_2": self.__motor_2}
 
         self.__x = OrbitaAxis(initial_state=init_state["x"])
         self.__y = OrbitaAxis(initial_state=init_state["y"])
-        self._axis = {'x': self.__x, 'y': self.__y}
+        self._axis = {"x": self.__x, "y": self.__y}
 
     def set_speed_limit(self, speed_limit: float) -> None:
         self._set_motors_fields("speed_limit", speed_limit)
@@ -111,8 +111,8 @@ class Orbita2d:
     def _build_grpc_cmd_msg(self, field: str) -> Pose2D | PID2D | Float2D:
         if field == "goal_position":
             return Pose2D(
-                axis_1=FloatValue(value=self._joints['axis_1'].goal_position),
-                axis_2=FloatValue(value=self._joints['axis_2'].goal_position),
+                axis_1=FloatValue(value=self._joints["axis_1"].goal_position),
+                axis_2=FloatValue(value=self._joints["axis_2"].goal_position),
             )
 
         elif field == "pid":
