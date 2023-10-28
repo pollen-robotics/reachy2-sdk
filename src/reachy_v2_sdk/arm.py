@@ -74,8 +74,9 @@ class Arm:
             "id": self.part_id,
         }
         if joints_positions is None:
-            present_joints_positions = [joint.present_position for actuator in self._actuators for joint in actuator._joints.values()]
-            print(present_joints_positions)
+            present_joints_positions = [
+                joint.present_position for orbita in self._actuators for joint in orbita._joints.values()  # type: ignore
+            ]
             req_params["position"] = self._list_to_arm_position(present_joints_positions, degrees)
 
         else:
