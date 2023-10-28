@@ -73,7 +73,12 @@ class Arm:
         req_params = {
             "id": self.part_id,
         }
-        if joints_positions is not None:
+        if joints_positions is None:
+            present_joints_positions = [joint.present_position for actuator in self._actuators for joint in actuator._joints.values()]
+            print(present_joints_positions)
+            req_params["position"] = self._list_to_arm_position(present_joints_positions, degrees)
+
+        else:
             if len(joints_positions) != 7:
                 raise ValueError(f"joints_positions should be length 7 (got {len(joints_positions)} instead)!")
             req_params["position"] = self._list_to_arm_position(joints_positions, degrees)
