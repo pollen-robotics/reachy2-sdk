@@ -108,6 +108,9 @@ class Orbita2d:
     def get_torque_limit(self) -> Dict[str, float]:
         return {motor_name: m.torque_limit for motor_name, m in self._motors.items()}
 
+    def get_pid(self) -> Dict[str, Tuple[float, float, float]]:
+        return {motor_name: m.pid for motor_name, m in self._motors.items()}
+
     def _build_grpc_cmd_msg(self, field: str) -> Pose2D | PID2D | Float2D:
         if field == "goal_position":
             return Pose2D(
@@ -116,18 +119,16 @@ class Orbita2d:
             )
 
         elif field == "pid":
-            motor_1_gains = self.__motor_1.pid
-            motor_2_gains = self.__motor_2.pid
             return PID2D(
                 motor_1=PIDGains(
-                    p=FloatValue(value=motor_1_gains[0]),
-                    i=FloatValue(value=motor_1_gains[1]),
-                    d=FloatValue(value=motor_1_gains[2]),
+                    p=self.__motor_1._state[field].p,
+                    i=self.__motor_1._state[field].i,
+                    d=self.__motor_1._state[field].d,
                 ),
                 motor_2=PIDGains(
-                    p=FloatValue(value=motor_2_gains[0]),
-                    i=FloatValue(value=motor_2_gains[1]),
-                    d=FloatValue(value=motor_2_gains[2]),
+                    p=self.__motor_2._state[field].p,
+                    i=self.__motor_2._state[field].i,
+                    d=self.__motor_2._state[field].d,
                 ),
             )
 

@@ -50,7 +50,7 @@ class OrbitaMotor:
 
     pid = Register(readonly=False, type=PIDGains, label="pid")
 
-    def __init__(self, initial_state: Dict[str, float], actuator: Any) -> None:
+    def __init__(self, initial_state: Dict[str, Any], actuator: Any) -> None:
         self._actuator = actuator
 
         self._state = initial_state
@@ -78,13 +78,3 @@ class OrbitaAxis:
             value = getattr(self, field)
             if isinstance(value, Register):
                 value.label = field
-
-
-# class PID:
-#     def __init__(self, p: float, i: float, d: float) -> None:
-#         self.p = p
-#         self.i = i
-#         self.d = d
-
-#     def __repr__(self) -> str:
-#         return f"PID(p={self.p}, i={self.i}, d={self.d})"
