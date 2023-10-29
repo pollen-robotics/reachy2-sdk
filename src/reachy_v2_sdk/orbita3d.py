@@ -14,7 +14,8 @@ from reachy_sdk_api_v2.orbita3d_pb2 import (
 from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
 from reachy_sdk_api_v2.kinematics_pb2 import ExtEulerAngles, Rotation3D
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
-from .orbita_utils import OrbitaJoint3D, OrbitaMotor, OrbitaAxis
+from .orbita_utils import OrbitaAxis, OrbitaJoint3D, OrbitaMotor, _to_internal_position
+
 from .register import Register
 
 
@@ -70,6 +71,7 @@ class Orbita3d:
         self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
 
     def set_speed_limit(self, speed_limit: float) -> None:
+        speed_limit = _to_internal_position(speed_limit)
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:
@@ -122,9 +124,9 @@ class Orbita3d:
         if field == "goal_position":
             return Rotation3D(
                 rpy=ExtEulerAngles(
-                    roll=self.roll.goal_position,
-                    pitch=self.pitch.goal_position,
-                    yaw=self.yaw.goal_position,
+                    roll=self.roll._state["goal_position"],
+                    pitch=self.pitch._state["goal_position"],
+                    yaw=self.yaw._state["goal_position"],
                 )
             )
 
@@ -148,9 +150,9 @@ class Orbita3d:
             )
 
         return Float3D(
-            motor_1=FloatValue(value=getattr(self.__motor_1, field)),
-            motor_2=FloatValue(value=getattr(self.__motor_2, field)),
-            motor_3=FloatValue(value=getattr(self.__motor_3, field)),
+            motor_1=self.__motor_1._state[field],
+            motor_2=self.__motor_2._state[field],
+            motor_3=self.__motor_3._state[field],
         )
 
     def _build_grpc_cmd_msg_actuator(self, field: str) -> Float3D:

@@ -19,7 +19,7 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
 
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 
-from .orbita_utils import OrbitaJoint2D, OrbitaMotor, OrbitaAxis
+from .orbita_utils import OrbitaJoint2D, OrbitaMotor, OrbitaAxis, _to_internal_position
 
 
 class Orbita2d:
@@ -89,6 +89,7 @@ class Orbita2d:
         self._axis = {"x": self.__x, "y": self.__y}
 
     def set_speed_limit(self, speed_limit: float) -> None:
+        speed_limit = _to_internal_position(speed_limit)
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:
@@ -114,8 +115,8 @@ class Orbita2d:
     def _build_grpc_cmd_msg(self, field: str) -> Pose2D | PID2D | Float2D:
         if field == "goal_position":
             return Pose2D(
-                axis_1=FloatValue(value=self._joints["axis_1"].goal_position),
-                axis_2=FloatValue(value=self._joints["axis_2"].goal_position),
+                axis_1=self._joints["axis_1"]._state["goal_position"],
+                axis_2=self._joints["axis_2"]._state["goal_position"],
             )
 
         elif field == "pid":
@@ -133,8 +134,8 @@ class Orbita2d:
             )
 
         return Float2D(
-            motor_1=FloatValue(value=getattr(self.__motor_1, field)),
-            motor_2=FloatValue(value=getattr(self.__motor_2, field)),
+            motor_1=self.__motor_1._state[field],
+            motor_2=self.__motor_2._state[field],
         )
 
     def _build_grpc_cmd_msg_actuator(self, field: str) -> Float2D:

@@ -7,10 +7,24 @@ from .register import Register
 from reachy_sdk_api_v2.component_pb2 import PIDGains
 from google.protobuf.wrappers_pb2 import BoolValue
 
+import numpy as np
+
+
+def _to_position(internal_pos: float) -> Any:
+    return round(np.rad2deg(internal_pos), 2)
+
+
+def _to_internal_position(pos: float) -> Any:
+    return np.deg2rad(pos)
+
 
 class OrbitaJoint2D:
-    present_position = Register(readonly=True, type=FloatValue, label="present_position")
-    goal_position = Register(readonly=False, type=FloatValue, label="goal_position")
+    present_position = Register(
+        readonly=True, type=FloatValue, label="present_position", conversion=(_to_internal_position, _to_position)
+    )
+    goal_position = Register(
+        readonly=False, type=FloatValue, label="goal_position", conversion=(_to_internal_position, _to_position)
+    )
 
     def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
@@ -26,8 +40,12 @@ class OrbitaJoint2D:
 
 
 class OrbitaJoint3D:
-    present_position = Register(readonly=True, type=float, label="present_position")
-    goal_position = Register(readonly=False, type=float, label="goal_position")
+    present_position = Register(
+        readonly=True, type=float, label="present_position", conversion=(_to_internal_position, _to_position)
+    )
+    goal_position = Register(
+        readonly=False, type=float, label="goal_position", conversion=(_to_internal_position, _to_position)
+    )
 
     def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
@@ -44,7 +62,9 @@ class OrbitaJoint3D:
 
 class OrbitaMotor:
     temperature = Register(readonly=True, type=FloatValue, label="temperature")
-    speed_limit = Register(readonly=False, type=FloatValue, label="speed_limit")
+    speed_limit = Register(
+        readonly=False, type=FloatValue, label="speed_limit", conversion=(_to_internal_position, _to_position)
+    )
     torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
     compliant = Register(readonly=True, type=BoolValue, label="compliant")
 
@@ -54,6 +74,7 @@ class OrbitaMotor:
         self._actuator = actuator
 
         self._state = initial_state
+
         self._tmp_fields: Dict[str, float | None] = {}
         self._tmp_pid: Tuple[float, float, float]
 
@@ -68,7 +89,9 @@ class OrbitaMotor:
 
 
 class OrbitaAxis:
-    present_speed = Register(readonly=True, type=FloatValue, label="present_speed")
+    present_speed = Register(
+        readonly=True, type=FloatValue, label="present_speed", conversion=(_to_internal_position, _to_position)
+    )
     present_load = Register(readonly=True, type=FloatValue, label="present_load")
 
     def __init__(self, initial_state: Dict[str, float]) -> None:
