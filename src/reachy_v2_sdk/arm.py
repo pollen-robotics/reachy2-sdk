@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 
 import grpc
 
@@ -67,14 +67,22 @@ class Arm:
     def turn_off(self) -> None:
         self._arm_stub.TurnOff(self.part_id)
 
-    def forward_kinematics(self, joints_positions: Optional[List[float]] = None) -> npt.NDArray[np.float64]:
+    def forward_kinematics(
+        self, joints_positions: Optional[List[float]] = None, degrees: bool = True
+    ) -> npt.NDArray[np.float64]:
         req_params = {
             "id": self.part_id,
         }
-        if joints_positions is not None:
+        if joints_positions is None:
+            present_joints_positions = [
+                joint.present_position for orbita in self._actuators for joint in orbita._joints.values()  # type: ignore
+            ]
+            req_params["position"] = self._list_to_arm_position(present_joints_positions, degrees)
+
+        else:
             if len(joints_positions) != 7:
                 raise ValueError(f"joints_positions should be length 7 (got {len(joints_positions)} instead)!")
-            req_params["position"] = self._list_to_arm_position(joints_positions)
+            req_params["position"] = self._list_to_arm_position(joints_positions, degrees)
         req = ArmFKRequest(**req_params)
         resp = self._arm_stub.ComputeArmFK(req)
         if not resp.success:
@@ -82,7 +90,9 @@ class Arm:
 
         return np.array(resp.end_effector.pose.data).reshape((4, 4))
 
-    def inverse_kinematics(self, target: npt.NDArray[np.float64], q0: Optional[List[float]] = None) -> List[float]:
+    def inverse_kinematics(
+        self, target: npt.NDArray[np.float64], q0: Optional[List[float]] = None, degrees: bool = True
+    ) -> List[float]:
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
 
@@ -99,7 +109,7 @@ class Arm:
         }
 
         if q0 is not None:
-            req_params["q0"] = self._list_to_arm_position(q0)
+            req_params["q0"] = self._list_to_arm_position(q0, degrees)
 
         req = ArmIKRequest(**req_params)
         resp = self._arm_stub.ComputeArmIK(req)
@@ -109,20 +119,27 @@ class Arm:
 
         return self._arm_position_to_list(resp.arm_position)
 
-    def _list_to_arm_position(self, positions: List[float]) -> ArmPosition:
+    def _list_to_arm_position(self, positions: List[float], degrees: bool = True) -> ArmPosition:
+        if degrees:
+            positions = self._convert_to_radians(positions)
         arm_pos = ArmPosition(
             shoulder_position=Pose2D(axis_1=FloatValue(value=positions[0]), axis_2=FloatValue(value=positions[1])),
             elbow_position=Pose2D(axis_1=FloatValue(value=positions[2]), axis_2=FloatValue(value=positions[3])),
             wrist_position=Rotation3D(
                 rpy=ExtEulerAngles(
-                    roll=FloatValue(value=positions[4]),
-                    pitch=FloatValue(value=positions[5]),
-                    yaw=FloatValue(value=positions[6]),
+                    roll=positions[4],
+                    pitch=positions[5],
+                    yaw=positions[6],
                 )
             ),
         )
 
         return arm_pos
+
+    def _convert_to_radians(self, my_list: List[float]) -> Any:
+        a = np.array(my_list)
+        a = np.deg2rad(a)
+        return a.tolist()
 
     def _arm_position_to_list(self, arm_pos: ArmPosition) -> List[float]:
         positions = []
@@ -180,8 +197,8 @@ class Arm:
             )
         self._arm_stub.GoToCartesianPosition(target)
 
-    def goto_joints(self, positions: List[float], duration: float = 0) -> None:
-        arm_pos = self._list_to_arm_position(positions)
+    def goto_joints(self, positions: List[float], duration: float = 0, degrees: bool = True) -> None:
+        arm_pos = self._list_to_arm_position(positions, degrees)
         goal = ArmJointGoal(id=self.part_id, position=arm_pos, duration=FloatValue(value=duration))
         self._arm_stub.GoToJointPosition(goal)
 

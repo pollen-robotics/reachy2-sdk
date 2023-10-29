@@ -18,7 +18,7 @@ def _to_internal_position(pos: float) -> Any:
     return np.deg2rad(pos)
 
 
-class OrbitaJoint:
+class OrbitaJoint2D:
     present_position = Register(
         readonly=True, type=FloatValue, label="present_position", conversion=(_to_internal_position, _to_position)
     )
@@ -29,7 +29,27 @@ class OrbitaJoint:
     def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
         self.axis_type = axis_type
+        self._state = initial_state
 
+        for field in dir(self):
+            value = getattr(self, field)
+            if isinstance(value, Register):
+                value.label = field
+
+        self._register_needing_sync: List[str] = []
+
+
+class OrbitaJoint3D:
+    present_position = Register(
+        readonly=True, type=float, label="present_position", conversion=(_to_internal_position, _to_position)
+    )
+    goal_position = Register(
+        readonly=False, type=float, label="goal_position", conversion=(_to_internal_position, _to_position)
+    )
+
+    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
+        self._actuator = actuator
+        self.axis_type = axis_type
         self._state = initial_state
 
         for field in dir(self):
@@ -50,7 +70,7 @@ class OrbitaMotor:
 
     pid = Register(readonly=False, type=PIDGains, label="pid")
 
-    def __init__(self, initial_state: Dict[str, float], actuator: Any) -> None:
+    def __init__(self, initial_state: Dict[str, Any], actuator: Any) -> None:
         self._actuator = actuator
 
         self._state = initial_state
@@ -81,13 +101,3 @@ class OrbitaAxis:
             value = getattr(self, field)
             if isinstance(value, Register):
                 value.label = field
-
-
-# class PID:
-#     def __init__(self, p: float, i: float, d: float) -> None:
-#         self.p = p
-#         self.i = i
-#         self.d = d
-
-#     def __repr__(self) -> str:
-#         return f"PID(p={self.p}, i={self.i}, d={self.d})"

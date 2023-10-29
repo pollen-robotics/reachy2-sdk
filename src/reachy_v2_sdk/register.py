@@ -24,8 +24,9 @@ class Register:
         if instance is None:
             return self
         value = self.unwrapped_value(instance._state[self.label])
-        if self.cvt_to_external is not None:
-            value = self.cvt_to_external(value)
+        if self.internal_class != BoolValue:
+            if self.cvt_to_external is not None:
+                value = self.cvt_to_external(value)
         return value
 
     def __set__(self, instance, value):  # type: ignore
