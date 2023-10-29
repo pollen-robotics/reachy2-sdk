@@ -15,6 +15,7 @@ from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
 from reachy_sdk_api_v2.kinematics_pb2 import ExtEulerAngles, Rotation3D
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 from .orbita_utils import OrbitaAxis, OrbitaJoint3D, OrbitaMotor, _to_internal_position
+
 from .register import Register
 
 
