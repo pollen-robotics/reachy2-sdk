@@ -111,15 +111,13 @@ class ReachySDK:
             else:
                 self._disabled_parts.append("r_arm")
 
-        # if self._robot.HasField("l_arm"):
-        #     self.l_arm = Arm(self._grpc_channel, self._robot.l_arm)
-        #     for articulation in self._robot.l_arm.DESCRIPTOR.fields:
-        #         actuator = getattr(self._robot.l_arm, articulation.name)
-        #         setattr(self.l_arm, articulation.name, self._actuators_dict[actuator.info.id])
-
-        #     if self._robot.HasField("l_hand"):
-        #         left_hand = Hand(self._grpc_channel, self._robot.l_hand)
-        #         setattr(self.l_arm, "gripper", left_hand)
+        if self._robot.HasField("l_arm"):
+            if initial_state.l_arm_state.activated:
+                l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel)
+                setattr(self, "l_arm", l_arm)
+                self._enabled_parts["l_arm"] = getattr(self, "l_arm")
+            else:
+                self._disabled_parts.append("l_arm")
 
         if self._robot.HasField("head"):
             if initial_state.head_state.activated:
@@ -218,6 +216,10 @@ class ReachySDK:
     async def _sync_loop(self) -> None:
         if hasattr(self, "r_arm"):
             for actuator in self.r_arm._actuators.keys():
+                actuator._setup_sync_loop()
+
+        if hasattr(self, "l_arm"):
+            for actuator in self.l_arm._actuators.keys():
                 actuator._setup_sync_loop()
 
         if hasattr(self, "head"):
