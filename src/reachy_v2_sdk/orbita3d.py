@@ -107,10 +107,9 @@ class Orbita3d:
                     m._state[field.name] = value
             else:
                 if isinstance(value, Rotation3D):
-                    for _, rpy in value.ListFields():
-                        for joint, val in rpy.ListFields():
-                            j = getattr(self, joint.name)
-                            j._state[field.name] = val
+                    self.roll._state[field.name] = value.rpy.roll
+                    self.pitch._state[field.name] = value.rpy.pitch
+                    self.yaw._state[field.name] = value.rpy.yaw
                 if isinstance(value, Float3D):
                     for motor, val in value.ListFields():
                         m = self._motors[motor.name]
