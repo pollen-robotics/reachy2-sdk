@@ -184,7 +184,9 @@ class Orbita2d:
 
             fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
             fut.result()
-        super().__setattr__(__name, __value)
+
+        else:
+            super().__setattr__(__name, __value)
 
     def _set_motors_fields(self, field: str, value: float) -> None:
         for m in self._motors.values():
