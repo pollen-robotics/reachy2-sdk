@@ -100,12 +100,12 @@ class Orbita2d:
         self._set_motors_fields("torque_limit", torque_limit)
 
     def set_pid(self, pid: Tuple[float, float, float]) -> None:
-        if isinstance(pid, tuple) and len(pid) == 3:
+        if isinstance(pid, tuple) and len(pid) == 3 and all(isinstance(n, float | int) for n in pid):
             for m in self._motors.values():
                 m._tmp_pid = pid
             self._update_loop("pid")
         else:
-            raise ValueError("pid should be a tuple of length 3, e.g (1.0, 2.0, 1.0)")
+            raise TypeError("pid should be a tuple of length 3: (p: float, i: float, d: float)")
 
     def get_speed_limit(self) -> Dict[str, float]:
         return {motor_name: m.speed_limit for motor_name, m in self._motors.items()}
