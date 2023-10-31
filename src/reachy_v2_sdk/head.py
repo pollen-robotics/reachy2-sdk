@@ -10,7 +10,7 @@ from pyquaternion import Quaternion as pyQuat
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
 from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
@@ -141,3 +141,16 @@ class Head:
         self.neck._update_with(new_state.neck_state)
         # self.l_antenna._update_with(new_state.l_antenna_state)
         # self.r_antenna._update_with(new_state.r_antenna_state)
+
+    @property
+    def compliant(self) -> Dict[str, bool]:
+        return {"neck": self.neck.compliant}  # , "l_antenna": self.l_antenna.compliant, "r_antenna": self.r_antenna.compliant}
+
+    @compliant.setter
+    def compliant(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise ValueError("Expecting bool as compliant value")
+        if value:
+            self._head_stub.TurnOff(self.part_id)
+        else:
+            self._head_stub.TurnOn(self.part_id)
