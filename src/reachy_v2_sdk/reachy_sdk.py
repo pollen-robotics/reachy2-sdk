@@ -21,7 +21,7 @@ import grpc
 
 from typing import Dict, Any
 
-# from grpc._channel import _InactiveRpcError
+from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
 
 from reachy_sdk_api_v2 import reachy_pb2, reachy_pb2_grpc
@@ -71,7 +71,14 @@ class ReachySDK:
         self._pushed_3dcommand = threading.Event()
         # self._pushed_dmcommand = threading.Event()
 
-        self._get_info()
+        try:
+            self._get_info()
+        except ConnectionError:
+            print(f"Could not connect to Reachy with on IP address {self._host}, check that the sdk server is running and that the IP is correct.")
+            self._grpc_channel.close()
+            self._grpc_status = "disconnected"
+            return
+
         self._setup_parts()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
@@ -92,9 +99,14 @@ class ReachySDK:
 
     def _get_info(self) -> None:
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
-        self._robot = config_stub.GetReachy(Empty())
+        try:
+            self._robot = config_stub.GetReachy(Empty())
+        except _InactiveRpcError:
+            raise ConnectionError()
+
         self.info = ReachyInfo(self._host, self._robot.info)
         self.config = get_config(self._robot)
+        self._grpc_status = "connected"
 
     def _setup_parts(self) -> None:
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
