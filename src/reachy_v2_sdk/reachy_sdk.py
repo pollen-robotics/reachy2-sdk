@@ -120,7 +120,6 @@ class ReachySDK:
             for attr in attributs:
                 if attr not in ["grpc_status", "turn_on", "turn_off", "enabled_parts", "disabled_parts"]:
                     delattr(self, attr)
-                    print(f"Deleted {attr}.")
         else:
             raise ValueError("grpc_status can only be set to 'connected' or 'disconnected'")
 
@@ -280,19 +279,23 @@ class ReachySDK:
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
-        async for state_update in reachy_stub.StreamReachyState(stream_req):
-            if hasattr(self, "l_arm"):
-                self.l_arm._update_with(state_update.l_arm_state)
-                if hasattr(self.l_arm, "l_hand"):
-                    self.l_arm.gripper._update_with(state_update.l_hand_state)
-            if hasattr(self, "r_arm"):
-                self.r_arm._update_with(state_update.r_arm_state)
-                if hasattr(self, "r_hand"):
-                    self.r_arm.gripper._update_with(state_update.r_hand_state)
-            if hasattr(self, "head"):
-                self.head._update_with(state_update.head_state)
-            if hasattr(self, "mobile_base"):
-                self.mobile_base._update_with(state_update.mobile_base_state)
+        try:
+            async for state_update in reachy_stub.StreamReachyState(stream_req):
+                if hasattr(self, "l_arm"):
+                    self.l_arm._update_with(state_update.l_arm_state)
+                    if hasattr(self.l_arm, "l_hand"):
+                        self.l_arm.gripper._update_with(state_update.l_hand_state)
+                if hasattr(self, "r_arm"):
+                    self.r_arm._update_with(state_update.r_arm_state)
+                    if hasattr(self, "r_hand"):
+                        self.r_arm.gripper._update_with(state_update.r_hand_state)
+                if hasattr(self, "head"):
+                    self.head._update_with(state_update.head_state)
+                if hasattr(self, "mobile_base"):
+                    self.mobile_base._update_with(state_update.mobile_base_state)
+        except grpc.aio._call.AioRpcError:
+            print("Connection with Reachy lost, check the sdk server status.")
+            self.grpc_status = "disconnected"
 
     async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2DServiceStub, freq: float) -> None:
         async def command_poll_2d() -> Orbita2DsCommand:
@@ -310,7 +313,10 @@ class ReachySDK:
                 self._pushed_2dcommand.clear()
                 last_pub = time.time()
 
-        await orbita2d_stub.StreamCommand(command_poll_2d())
+        try:
+            await orbita2d_stub.StreamCommand(command_poll_2d())
+        except grpc.aio._call.AioRpcError:
+            self.grpc_status = "disconnected"
 
     async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3DServiceStub, freq: float) -> None:
         async def command_poll_3d() -> Orbita3DsCommand:
@@ -328,7 +334,10 @@ class ReachySDK:
                 self._pushed_3dcommand.clear()
                 last_pub = time.time()
 
-        await orbita3d_stub.StreamCommand(command_poll_3d())
+        try:
+            await orbita3d_stub.StreamCommand(command_poll_3d())
+        except grpc.aio._call.AioRpcError:
+            self.grpc_status = "disconnected"
 
     # async def _stream_dynamixel_motor_commands_loop(self, dynamixel_motor_stub: DynamixelMotorServiceStub, freq: float) -> None:  # noqa: E501
     #     async def command_poll_dm() -> DynamixelMotorsCommand:
