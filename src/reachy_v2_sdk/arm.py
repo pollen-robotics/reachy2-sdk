@@ -224,6 +224,8 @@ class Arm:
 
     @compliant.setter
     def compliant(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise ValueError("Expecting bool as compliant value")
         if value:
             self._arm_stub.TurnOff(self.part_id)
         else:

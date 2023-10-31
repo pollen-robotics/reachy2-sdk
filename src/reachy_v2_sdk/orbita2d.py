@@ -90,13 +90,13 @@ class Orbita2d:
 
     def set_speed_limit(self, speed_limit: float) -> None:
         if not isinstance(speed_limit, float | int):
-            raise ValueError("Expecting a float or int value as speed_limit")
+            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
         speed_limit = _to_internal_position(speed_limit)
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:
         if not isinstance(torque_limit, float | int):
-            raise ValueError("Expecting a float or int value as torque_limit")
+            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
         self._set_motors_fields("torque_limit", torque_limit)
 
     def set_pid(self, pid: Tuple[float, float, float]) -> None:
@@ -105,7 +105,7 @@ class Orbita2d:
                 m._tmp_pid = pid
             self._update_loop("pid")
         else:
-            raise TypeError("pid should be a tuple of length 3: (p: float, i: float, d: float)")
+            raise ValueError("pid should be of type Tuple[float, float, float]")
 
     def get_speed_limit(self) -> Dict[str, float]:
         return {motor_name: m.speed_limit for motor_name, m in self._motors.items()}
@@ -180,6 +180,8 @@ class Orbita2d:
 
     def __setattr__(self, __name: str, __value: Any) -> None:
         if __name == "compliant":
+            if not isinstance(__value, bool):
+                raise ValueError(f"Expected bool for compliant value, got {type(__value).__name__}")
             self._state[__name] = __value
 
             async def set_in_loop() -> None:
