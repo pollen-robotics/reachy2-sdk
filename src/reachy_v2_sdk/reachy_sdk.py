@@ -75,8 +75,7 @@ class ReachySDK:
             self._get_info()
         except ConnectionError:
             print(f"Could not connect to Reachy with on IP address {self._host}, check that the sdk server is running and that the IP is correct.")
-            self._grpc_channel.close()
-            self._grpc_status = "disconnected"
+            self.grpc_status = "disconnected"
             return
 
         self._setup_parts()
@@ -91,11 +90,39 @@ class ReachySDK:
 
     @property
     def enabled_parts(self) -> List[str]:
+        if self.grpc_status == "disconnected":
+            print("Cannot get enabled parts, not connected to Reachy.")
+            return []
         return list(self._enabled_parts.keys())
 
     @property
     def disabled_parts(self) -> List[str]:
+        if self.grpc_status == "disconnected":
+            print("Cannot get disabled parts, not connected to Reachy.")
+            return []
         return self._disabled_parts
+
+    @property
+    def grpc_status(self) -> str:
+        if self._grpc_connected:
+            return "connected"
+        else:
+            return "disconnected"
+
+    @grpc_status.setter
+    def grpc_status(self, status: str) -> None:
+        if status == "connected":
+            self._grpc_connected = True
+        elif status == "disconnected":
+            self._grpc_connected = False
+            self._grpc_channel.close()
+            attributs = [attr for attr in dir(self) if not attr.startswith("_")]
+            for attr in attributs:
+                if attr not in ["grpc_status", "turn_on", "turn_off", "enabled_parts", "disabled_parts"]:
+                    delattr(self, attr)
+                    print(f"Deleted {attr}.")
+        else:
+            raise ValueError("grpc_status can only be set to 'connected' or 'disconnected'")
 
     def _get_info(self) -> None:
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
@@ -106,7 +133,7 @@ class ReachySDK:
 
         self.info = ReachyInfo(self._host, self._robot.info)
         self.config = get_config(self._robot)
-        self._grpc_status = "connected"
+        self.grpc_status = "connected"
 
     def _setup_parts(self) -> None:
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
@@ -322,10 +349,16 @@ class ReachySDK:
     #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
     def turn_on(self) -> None:
+        if self.grpc_status == "disconnected":
+            print("Cannot turn on Reachy, not connected.")
+            return
         for part in self._enabled_parts.values():
             part.turn_on()
 
     def turn_off(self) -> None:
+        if self.grpc_status == "disconnected":
+            print("Cannot turn off Reachy, not connected.")
+            return
         for part in self._enabled_parts.values():
             part.turn_off()
 
