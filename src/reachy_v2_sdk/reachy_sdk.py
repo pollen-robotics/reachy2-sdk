@@ -45,6 +45,20 @@ from .orbita3d import Orbita3d
 # from .dynamixel_motor import DynamixelMotor
 
 
+def singleton(cls: Any, *args: Any, **kw: Any) -> Any:
+    instances = {}
+
+    def _singleton(*args: Any, **kw: Any) -> Any:
+        if cls not in instances:
+            instances[cls] = cls(*args, **kw)
+        else:
+            raise ConnectionError("Cannot open 2 robot connections in the same kernel.")
+        return instances[cls]
+
+    return _singleton
+
+
+@singleton
 class ReachySDK:
     """The ReachySDK class handles the connection with your robot.
 
