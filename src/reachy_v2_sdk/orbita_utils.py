@@ -15,7 +15,10 @@ def _to_position(internal_pos: float) -> Any:
 
 
 def _to_internal_position(pos: float) -> Any:
-    return np.deg2rad(pos)
+    try:
+        return np.deg2rad(pos)
+    except TypeError:
+        raise TypeError(f"Excepted one of: int, float, got {type(pos).__name__}")
 
 
 class OrbitaJoint2D:
