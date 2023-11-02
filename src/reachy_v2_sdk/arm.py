@@ -31,9 +31,9 @@ class Arm:
 
         self._setup_arm(arm_msg, initial_state)
         self._actuators = {
-            self.shoulder: "orbita2d",
-            self.elbow: "orbita2d",
-            self.wrist: "orbita3d",
+            "shoulder": self.shoulder,
+            "elbow": self.elbow,
+            "wrist": self.wrist,
         }
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
@@ -67,6 +67,13 @@ class Arm:
     def turn_off(self) -> None:
         self._arm_stub.TurnOff(self.part_id)
 
+    def __repr__(self) -> str:
+        """Clean representation of an Arm."""
+        s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
+        return f"""<Arm actuators=\n\t{
+            s
+        }\n>"""
+
     def forward_kinematics(
         self, joints_positions: Optional[List[float]] = None, degrees: bool = True
     ) -> npt.NDArray[np.float64]:
@@ -75,7 +82,9 @@ class Arm:
         }
         if joints_positions is None:
             present_joints_positions = [
-                joint.present_position for orbita in self._actuators for joint in orbita._joints.values()  # type: ignore
+                joint.present_position
+                for orbita in self._actuators.values()
+                for joint in orbita._joints.values()  # type: ignore
             ]
             req_params["position"] = self._list_to_arm_position(present_joints_positions, degrees)
 

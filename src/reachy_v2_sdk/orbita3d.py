@@ -70,6 +70,13 @@ class Orbita3d:
         self.__z = OrbitaAxis(initial_state=init_state["z"])
         self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
 
+    def __repr__(self) -> str:
+        """Clean representation of an Orbita2D."""
+        s = "\n\t".join([str(joint) for _, joint in self._joints.items()])
+        return f"""<Orbita3D compliant={self.compliant} joints=\n\t{
+            s
+        }\n>"""
+
     def set_speed_limit(self, speed_limit: float) -> None:
         if not isinstance(speed_limit, float | int):
             raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
