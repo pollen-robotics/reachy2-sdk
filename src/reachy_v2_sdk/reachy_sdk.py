@@ -106,6 +106,14 @@ is running and that the IP is correct."
         return self._disabled_parts
 
     @property
+    def grpc_status(self) -> str:
+        """Get the status of the connection with the robot.
+
+        Can be either 'connected' or 'disconnected'.
+        """
+        return self._grpc_status
+
+    @property
     def _grpc_status(self) -> str:
         if self._grpc_connected:
             return "connected"
@@ -121,7 +129,7 @@ is running and that the IP is correct."
             self._grpc_channel.close()
             attributs = [attr for attr in dir(self) if not attr.startswith("_")]
             for attr in attributs:
-                if attr not in ["turn_on", "turn_off", "enabled_parts", "disabled_parts"]:
+                if attr not in ["grpc_status", "turn_on", "turn_off", "enabled_parts", "disabled_parts"]:
                     delattr(self, attr)
         else:
             raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
