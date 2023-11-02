@@ -75,7 +75,8 @@ class ReachySDK:
             self._get_info()
         except ConnectionError:
             print(
-                f"Could not connect to Reachy with on IP address {self._host}, check that the sdk server is running and that the IP is correct."
+                f"Could not connect to Reachy with on IP address {self._host}, check that the sdk server \
+is running and that the IP is correct."
             )
             self.grpc_status = "disconnected"
             return
