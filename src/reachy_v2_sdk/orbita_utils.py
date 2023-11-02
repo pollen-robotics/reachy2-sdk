@@ -39,9 +39,7 @@ class OrbitaJoint2D:
         self._register_needing_sync: List[str] = []
 
     def __repr__(self) -> str:
-        return f"""<OrbitaJoint2D axis_type="{self.axis_type}"
-        present_position={self.present_position}
-        goal_position={self.goal_position} >"""
+        return f'<OrbitaJoint2D axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
 
 
 class OrbitaJoint3D:
@@ -65,9 +63,7 @@ class OrbitaJoint3D:
         self._register_needing_sync: List[str] = []
 
     def __repr__(self) -> str:
-        return f"""<OrbitaJoint3D axis_type="{self.axis_type}"
-        present_position={self.present_position}
-        goal_position={self.goal_position} >"""
+        return f'<OrbitaJoint3D axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
 
 
 class OrbitaMotor:

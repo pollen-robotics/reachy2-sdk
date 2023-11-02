@@ -34,9 +34,7 @@ class DynamixelMotor:
         self._update_with(initial_state)
 
     def __repr__(self) -> str:
-        return f"""<DynamixelMotor compliant={self.compliant}
-        present_position={self.present_position}
-        goal_position={self.goal_position}>"""
+        return f"<DynamixelMotor compliant={self.compliant} present_position={self.present_position} goal_position={self.goal_position} >"  # noqa: E501
 
     def __setattr__(self, __name: str, __value: Any) -> None:
         if __name in ["goal_position", "speed_limit", "torque_limit", "compliant"]:
