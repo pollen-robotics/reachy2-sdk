@@ -111,7 +111,7 @@ is running and that the IP is correct."
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
         s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self._enabled_parts.items()])
-        return f"""<Reachy host="{self._host}" enabled_parts=\n\t{
+        return f"""<Reachy host="{self._host}"\n grpc_status={self.grpc_status} \n enabled_parts=\n\t{
             s
         }\n\tdisabled_parts={self._disabled_parts}\n>"""
 
