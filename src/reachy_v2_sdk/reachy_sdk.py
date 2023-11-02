@@ -21,7 +21,7 @@ import grpc
 
 from typing import Dict, Any
 
-# from grpc._channel import _InactiveRpcError
+from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
 
 from reachy_sdk_api_v2 import reachy_pb2, reachy_pb2_grpc
@@ -76,7 +76,16 @@ class ReachySDK:
         self._pushed_3dcommand = threading.Event()
         # self._pushed_dmcommand = threading.Event()
 
-        self._get_info()
+        try:
+            self._get_info()
+        except ConnectionError:
+            print(
+                f"Could not connect to Reachy with on IP address {self._host}, check that the sdk server \
+is running and that the IP is correct."
+            )
+            self._grpc_status = "disconnected"
+            return
+
         self._setup_parts()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
@@ -92,17 +101,57 @@ class ReachySDK:
 
     @property
     def enabled_parts(self) -> List[str]:
+        if self._grpc_status == "disconnected":
+            print("Cannot get enabled parts, not connected to Reachy.")
+            return []
         return list(self._enabled_parts.keys())
 
     @property
     def disabled_parts(self) -> List[str]:
+        if self._grpc_status == "disconnected":
+            print("Cannot get disabled parts, not connected to Reachy.")
+            return []
         return self._disabled_parts
+
+    @property
+    def grpc_status(self) -> str:
+        """Get the status of the connection with the robot.
+
+        Can be either 'connected' or 'disconnected'.
+        """
+        return self._grpc_status
+
+    @property
+    def _grpc_status(self) -> str:
+        if self._grpc_connected:
+            return "connected"
+        else:
+            return "disconnected"
+
+    @_grpc_status.setter
+    def _grpc_status(self, status: str) -> None:
+        if status == "connected":
+            self._grpc_connected = True
+        elif status == "disconnected":
+            self._grpc_connected = False
+            self._grpc_channel.close()
+            attributs = [attr for attr in dir(self) if not attr.startswith("_")]
+            for attr in attributs:
+                if attr not in ["grpc_status", "turn_on", "turn_off", "enabled_parts", "disabled_parts"]:
+                    delattr(self, attr)
+        else:
+            raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
 
     def _get_info(self) -> None:
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
-        self._robot = config_stub.GetReachy(Empty())
+        try:
+            self._robot = config_stub.GetReachy(Empty())
+        except _InactiveRpcError:
+            raise ConnectionError()
+
         self.info = ReachyInfo(self._host, self._robot.info)
         self.config = get_config(self._robot)
+        self._grpc_status = "connected"
 
     def _setup_parts(self) -> None:
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
@@ -249,19 +298,23 @@ class ReachySDK:
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
-        async for state_update in reachy_stub.StreamReachyState(stream_req):
-            if hasattr(self, "l_arm"):
-                self.l_arm._update_with(state_update.l_arm_state)
-                if hasattr(self.l_arm, "l_hand"):
-                    self.l_arm.gripper._update_with(state_update.l_hand_state)
-            if hasattr(self, "r_arm"):
-                self.r_arm._update_with(state_update.r_arm_state)
-                if hasattr(self, "r_hand"):
-                    self.r_arm.gripper._update_with(state_update.r_hand_state)
-            if hasattr(self, "head"):
-                self.head._update_with(state_update.head_state)
-            if hasattr(self, "mobile_base"):
-                self.mobile_base._update_with(state_update.mobile_base_state)
+        try:
+            async for state_update in reachy_stub.StreamReachyState(stream_req):
+                if hasattr(self, "l_arm"):
+                    self.l_arm._update_with(state_update.l_arm_state)
+                    if hasattr(self.l_arm, "l_hand"):
+                        self.l_arm.gripper._update_with(state_update.l_hand_state)
+                if hasattr(self, "r_arm"):
+                    self.r_arm._update_with(state_update.r_arm_state)
+                    if hasattr(self, "r_hand"):
+                        self.r_arm.gripper._update_with(state_update.r_hand_state)
+                if hasattr(self, "head"):
+                    self.head._update_with(state_update.head_state)
+                if hasattr(self, "mobile_base"):
+                    self.mobile_base._update_with(state_update.mobile_base_state)
+        except grpc.aio._call.AioRpcError:
+            print("Connection with Reachy lost, check the sdk server status.")
+            self._grpc_status = "disconnected"
 
     async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2DServiceStub, freq: float) -> None:
         async def command_poll_2d() -> Orbita2DsCommand:
@@ -279,7 +332,10 @@ class ReachySDK:
                 self._pushed_2dcommand.clear()
                 last_pub = time.time()
 
-        await orbita2d_stub.StreamCommand(command_poll_2d())
+        try:
+            await orbita2d_stub.StreamCommand(command_poll_2d())
+        except grpc.aio._call.AioRpcError:
+            self._grpc_status = "disconnected"
 
     async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3DServiceStub, freq: float) -> None:
         async def command_poll_3d() -> Orbita3DsCommand:
@@ -297,7 +353,10 @@ class ReachySDK:
                 self._pushed_3dcommand.clear()
                 last_pub = time.time()
 
-        await orbita3d_stub.StreamCommand(command_poll_3d())
+        try:
+            await orbita3d_stub.StreamCommand(command_poll_3d())
+        except grpc.aio._call.AioRpcError:
+            self._grpc_status = "disconnected"
 
     # async def _stream_dynamixel_motor_commands_loop(self, dynamixel_motor_stub: DynamixelMotorServiceStub, freq: float) -> None:  # noqa: E501
     #     async def command_poll_dm() -> DynamixelMotorsCommand:
@@ -318,10 +377,16 @@ class ReachySDK:
     #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
     def turn_on(self) -> None:
+        if self._grpc_status == "disconnected":
+            print("Cannot turn on Reachy, not connected.")
+            return
         for part in self._enabled_parts.values():
             part.turn_on()
 
     def turn_off(self) -> None:
+        if self._grpc_status == "disconnected":
+            print("Cannot turn off Reachy, not connected.")
+            return
         for part in self._enabled_parts.values():
             part.turn_off()
 
