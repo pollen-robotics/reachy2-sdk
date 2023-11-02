@@ -87,6 +87,8 @@ is running and that the IP is correct."
         self._sync_thread.daemon = True
         self._sync_thread.start()
 
+        _open_connection.append(self)
+
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
         return f'<Reachy host="{self._host}">'
@@ -250,9 +252,9 @@ is running and that the IP is correct."
     #         pass
 
     def _start_sync_in_bg(self) -> None:
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-        self.loop.run_until_complete(self._sync_loop())
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
+        self._loop.run_until_complete(self._sync_loop())
 
     async def _sync_loop(self) -> None:
         if hasattr(self, "r_arm"):
@@ -375,12 +377,21 @@ is running and that the IP is correct."
             part.turn_off()
 
 
-def flush_communication() -> None:
+_open_connection: List[ReachySDK] = []
+
+
+def flush_connection() -> None:
     """Flush communication before leaving.
 
     We make sure all buffered commands have been sent before actually leaving.
+    Cancel any pending asyncio task.
     """
-    print("Kezaco")
+    for reachy in _open_connection:
+        reachy._pushed_2dcommand.wait(timeout=0.5)
+        reachy._pushed_3dcommand.wait(timeout=0.5)
+
+        for task in asyncio.all_tasks(loop=reachy._loop):
+            task.cancel()
 
 
-atexit.register(flush_communication)
+atexit.register(flush_connection)
