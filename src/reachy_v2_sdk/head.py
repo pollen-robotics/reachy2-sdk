@@ -41,9 +41,9 @@ class Head:
 
         self._setup_head(head_msg, initial_state)
         self._actuators = {
-            self.neck: "orbita3d",
-            # self.l_antenna: "dynamixel_motor",
-            # self.r_antenna: "dynamixel_motor",
+            "neck": self.neck,
+            # "l_antenna" : self.l_antenna,
+            # r_antenna" : self.r_antenna,
         }
 
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
@@ -66,6 +66,13 @@ class Head:
         #     initial_state=initial_state.r_antenna_state,
         #     grpc_channel=self._grpc_channel,
         # )
+
+    def __repr__(self) -> str:
+        """Clean representation of an Head."""
+        s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
+        return f"""<Head actuators=\n\t{
+            s
+        }\n>"""
 
     def get_orientation(self) -> pyQuat:
         quat = self._head_stub.GetOrientation(self.part_id).q

@@ -71,12 +71,12 @@ class Orbita2d:
         setattr(
             self,
             axis1_name,
-            OrbitaJoint2D(initial_state=init_state["axis_1"], axis_type=axis1, actuator=self),
+            OrbitaJoint2D(initial_state=init_state["axis_1"], axis_type=axis1_name, actuator=self),
         )
         setattr(
             self,
             axis2_name,
-            OrbitaJoint2D(initial_state=init_state["axis_2"], axis_type=axis2, actuator=self),
+            OrbitaJoint2D(initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self),
         )
         self._joints = {"axis_1": getattr(self, axis1_name), "axis_2": getattr(self, axis2_name)}
 
@@ -87,6 +87,13 @@ class Orbita2d:
         self.__x = OrbitaAxis(initial_state=init_state["x"])
         self.__y = OrbitaAxis(initial_state=init_state["y"])
         self._axis = {"x": self.__x, "y": self.__y}
+
+    def __repr__(self) -> str:
+        """Clean representation of an Orbita2D."""
+        s = "\n\t".join([str(joint) for joint in self._joints.values()])
+        return f"""<Orbita2D compliant={self.compliant} joints=\n\t{
+            s
+        }\n>"""
 
     def set_speed_limit(self, speed_limit: float) -> None:
         speed_limit = _to_internal_position(speed_limit)

@@ -38,6 +38,11 @@ class OrbitaJoint2D:
 
         self._register_needing_sync: List[str] = []
 
+    def __repr__(self) -> str:
+        return f"""<OrbitaJoint2D axis_type="{self.axis_type}"
+        present_position={self.present_position}
+        goal_position={self.goal_position} >"""
+
 
 class OrbitaJoint3D:
     present_position = Register(
@@ -58,6 +63,11 @@ class OrbitaJoint3D:
                 value.label = field
 
         self._register_needing_sync: List[str] = []
+
+    def __repr__(self) -> str:
+        return f"""<OrbitaJoint3D axis_type="{self.axis_type}"
+        present_position={self.present_position}
+        goal_position={self.goal_position} >"""
 
 
 class OrbitaMotor:

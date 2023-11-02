@@ -39,6 +39,11 @@ from .arm import Arm
 
 from .head import Head
 
+from .orbita2d import Orbita2d
+from .orbita3d import Orbita3d
+
+# from .dynamixel_motor import DynamixelMotor
+
 
 class ReachySDK:
     """The ReachySDK class handles the connection with your robot.
@@ -80,7 +85,10 @@ class ReachySDK:
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
-        return f'<Reachy host="{self._host}">'
+        s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self._enabled_parts.items()])
+        return f"""<Reachy host="{self._host}" enabled_parts=\n\t{
+            s
+        }\n\tdisabled_parts={self._disabled_parts}\n>"""
 
     @property
     def enabled_parts(self) -> List[str]:
@@ -134,8 +142,8 @@ class ReachySDK:
         tasks = []
 
         for part in self._enabled_parts.values():
-            for actuator, act_type in part._actuators.items():
-                if act_type == "orbita2d":
+            for actuator in part._actuators.values():
+                if isinstance(actuator, Orbita2d):
                     tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
 
         if len(tasks) > 0:
@@ -147,8 +155,8 @@ class ReachySDK:
             commands = []
 
             for part in self._enabled_parts.values():
-                for actuator, act_type in part._actuators.items():
-                    if act_type == "orbita2d" and actuator._need_sync.is_set():
+                for actuator in part._actuators.values():
+                    if isinstance(actuator, Orbita2d) and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
 
             return Orbita2DsCommand(cmd=commands)
@@ -160,8 +168,8 @@ class ReachySDK:
         tasks = []
 
         for part in self._enabled_parts.values():
-            for actuator, act_type in part._actuators.items():
-                if act_type == "orbita3d":
+            for actuator in part._actuators.values():
+                if isinstance(actuator, Orbita3d):
                     tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
 
         if len(tasks) > 0:
@@ -173,8 +181,8 @@ class ReachySDK:
             commands = []
 
             for part in self._enabled_parts.values():
-                for actuator, act_type in part._actuators.items():
-                    if act_type == "orbita3d" and actuator._need_sync.is_set():
+                for actuator in part._actuators.values():
+                    if isinstance(actuator, Orbita3d) and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
 
             return Orbita3DsCommand(cmd=commands)
@@ -186,8 +194,8 @@ class ReachySDK:
     #     tasks = []
 
     #     for part in self._enabled_parts.values():
-    #         for actuator, act_type in part._actuators.items():
-    #             if act_type == "dynamixel_motor":
+    #         for actuator in part._actuators.values():
+    #             if isinstance(actuator, DynamixelMotor):
     #                 tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
 
     #     if len(tasks) > 0:
@@ -199,8 +207,8 @@ class ReachySDK:
     #         commands = []
 
     #         for part in self._enabled_parts.values():
-    #             for actuator, act_type in part._actuators.items():
-    #                 if act_type == "dynamixel_motor" and actuator._need_sync.is_set():
+    #             for actuator in part._actuators.values():
+    #                 if isinstance(actuator, DynamixelMotor) and actuator._need_sync.is_set():
     #                     commands.append(actuator._pop_command())
 
     #         return DynamixelMotorsCommand(cmd=commands)
@@ -215,15 +223,15 @@ class ReachySDK:
 
     async def _sync_loop(self) -> None:
         if hasattr(self, "r_arm"):
-            for actuator in self.r_arm._actuators.keys():
+            for actuator in self.r_arm._actuators.values():
                 actuator._setup_sync_loop()
 
         if hasattr(self, "l_arm"):
-            for actuator in self.l_arm._actuators.keys():
+            for actuator in self.l_arm._actuators.values():
                 actuator._setup_sync_loop()
 
         if hasattr(self, "head"):
-            for actuator in self.head._actuators.keys():
+            for actuator in self.head._actuators.values():
                 actuator._setup_sync_loop()
 
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
