@@ -75,11 +75,13 @@ class ReachySDK:
         self,
         host: str,
         sdk_port: int = 50051,
+        audio_port: int = 50061,
     ) -> None:
         """Set up the connection with the robot."""
         self._logger = getLogger()
         self._host = host
         self._sdk_port = sdk_port
+        self._audio_port = audio_port
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
 
         self._enabled_parts: Dict[str, Any] = {}
