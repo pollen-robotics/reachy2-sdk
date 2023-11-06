@@ -42,6 +42,8 @@ from .head import Head
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
 
+from .audio import Audio
+
 # from .dynamixel_motor import DynamixelMotor
 
 
@@ -103,6 +105,7 @@ is running and that the IP is correct."
             return
 
         self._setup_parts()
+        self._setup_audio()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
@@ -170,6 +173,12 @@ is running and that the IP is correct."
         self.info = ReachyInfo(self._host, self._robot.info)
         self.config = get_config(self._robot)
         self._grpc_status = "connected"
+
+    def _setup_audio(self) -> None:
+        try:
+            self.audio = Audio(self._host, self._audio_port)
+        except Exception:
+            print("Failed to connect to audio server. ReachySDK.audio will not be available.")
 
     def _setup_parts(self) -> None:
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
