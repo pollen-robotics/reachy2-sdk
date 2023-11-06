@@ -49,8 +49,8 @@ class Audio:
         sounds = self._audio_stub.GetSoundsList(Empty())
         return [soundId.id for soundId in sounds.sounds]
 
-    def play(self, sound_name: str) -> None:
-        self._audio_stub.PlaySound(SoundRequest(speaker=self._speaker_id, sound=SoundId(id=sound_name)))
+    def play(self, sound_name: str, volume: int = 100) -> None:
+        self._audio_stub.PlaySound(SoundRequest(speaker=self._speaker_id, sound=SoundId(id=sound_name, volume=volume)))
 
     def stop(self) -> None:
         self._audio_stub.StopSound(ComponentId=self._speaker_id)
