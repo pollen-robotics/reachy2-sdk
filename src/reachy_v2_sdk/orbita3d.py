@@ -1,6 +1,8 @@
 import asyncio
 from grpc import Channel
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
+from pyquaternion import Quaternion as pyQuat
+
 from typing import Dict, List, Any, Tuple
 
 from reachy_sdk_api_v2.orbita3d_pb2 import (
@@ -12,7 +14,8 @@ from reachy_sdk_api_v2.orbita3d_pb2 import (
 )
 
 from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
-from reachy_sdk_api_v2.kinematics_pb2 import ExtEulerAngles, Rotation3D
+from reachy_sdk_api_v2.kinematics_pb2 import ExtEulerAngles, Quaternion, Rotation3D
+from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DGoal
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 from .orbita_utils import OrbitaAxis, OrbitaJoint3D, OrbitaMotor, _to_internal_position
 
@@ -104,6 +107,22 @@ class Orbita3d:
 
     def get_pid(self) -> Dict[str, Tuple[float, float, float]]:
         return {motor_name: m.pid for motor_name, m in self._motors.items()}
+
+    def orient(self, q: pyQuat, duration: float) -> None:
+        req = Orbita3DGoal(
+            id=ComponentId(id=self.id, name=self.name),
+            rotation=Rotation3D(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)),
+            duration=FloatValue(value=duration),
+        )
+        self._stub.GoToOrientation(req)
+
+    def rotate_to(self, roll: float, pitch: float, yaw: float, duration: float) -> None:
+        req = Orbita3DGoal(
+            id=ComponentId(id=self.id, name=self.name),
+            rotation=Rotation3D(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)),
+            duration=FloatValue(value=duration),
+        )
+        self._stub.GoToOrientation(req)
 
     @property
     def temperatures(self) -> Dict[str, Register]:
