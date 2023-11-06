@@ -55,7 +55,7 @@ class Audio:
     def stop(self) -> None:
         self._audio_stub.StopSound(ComponentId=self._speaker_id)
 
-    def startRecording(self, sound_name: str) -> None:
+    def start_recording(self, sound_name: str) -> None:
         self._audio_stub.StartRecording(RecordingRequest(micro=self._microphone_id, recording_id=SoundId(id=sound_name)))
 
     def stopRecording(self) -> None:
