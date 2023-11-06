@@ -1,8 +1,8 @@
-"""Reachy Arm module.
+"""Reachy Audio module.
 
-Handles all specific method to an Arm (left and/or right) especially:
-- the forward kinematics
-- the inverse kinematics
+Handles all specific method related to audio especially:
+- playing sounds
+- recording sounds
 """
 import grpc
 
