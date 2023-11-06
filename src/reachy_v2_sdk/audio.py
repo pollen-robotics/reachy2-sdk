@@ -50,6 +50,9 @@ class Audio:
         return [soundId.id for soundId in sounds.sounds]
 
     def play(self, sound_name: str, volume: int = 100) -> None:
+        available_sounds = self.get_sounds_list()
+        if sound_name not in available_sounds:
+            raise ValueError(f"Sound to play not available! Sounds available are {available_sounds}")
         self._audio_stub.PlaySound(SoundRequest(speaker=self._speaker_id, sound=SoundId(id=sound_name, volume=volume)))
 
     def stop(self) -> None:
