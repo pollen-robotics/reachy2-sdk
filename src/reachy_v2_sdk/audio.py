@@ -19,11 +19,12 @@ from typing import List
 
 
 class Audio:
-    """Arm abstract class used for both left/right arms.
+    """Audio class used for microphone and speakers.
 
-    It exposes the kinematics of the arm:
-    - you can access the joints actually used in the kinematic chain,
-    - you can compute the forward and inverse kinematics
+    It exposes functions to:
+    - play / stop sounds with defined speakers,
+    - test the speakers,
+    - record tracks with a defined microphone,
     """
 
     def __init__(self, host: str, port: int) -> None:
