@@ -28,7 +28,7 @@ class Audio:
     """
 
     def __init__(self, host: str, port: int) -> None:
-        """Set up the arm with its kinematics."""
+        """Set up audio module, along with microphone and speakers."""
         self._grpc_audio_channel = grpc.insecure_channel(f"{host}:{port}")
 
         self._audio_stub = SoundServiceStub(self._grpc_audio_channel)
