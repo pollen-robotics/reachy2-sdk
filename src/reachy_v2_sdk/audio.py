@@ -58,7 +58,7 @@ class Audio:
     def start_recording(self, sound_name: str) -> None:
         self._audio_stub.StartRecording(RecordingRequest(micro=self._microphone_id, recording_id=SoundId(id=sound_name)))
 
-    def stopRecording(self) -> None:
+    def stop_recording(self) -> None:
         self._audio_stub.StopRecording(self._microphone_id)
 
     def setAudioVolume(self, volume: int) -> None:
