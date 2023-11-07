@@ -46,6 +46,11 @@ from .orbita3d import Orbita3d
 
 
 def singleton(cls: Any, *args: Any, **kw: Any) -> Any:
+    """singleton decorator enanles the creation of a single instance of a class.
+
+    Used to check only one connection to ReachySDK is open.
+    Raise ConnectionError if several a user attempts several connections.
+    """
     instances = {}
 
     def _singleton(*args: Any, **kw: Any) -> Any:
@@ -61,12 +66,12 @@ def singleton(cls: Any, *args: Any, **kw: Any) -> Any:
 @singleton
 class ReachySDK:
     """The ReachySDK class handles the connection with your robot.
+    Only one instance of this class can be created in a session.
 
-    It holds:
-
-    - all joints (can be accessed directly via their name or via the joints list).
-    - all force sensors (can be accessed directly via their name or via the force_sensors list).
-    - all fans (can be accessed directly via their name or via the fans list).
+    # It holds:
+    # - all joints (can be accessed directly via their name or via the joints list).
+    # - all force sensors (can be accessed directly via their name or via the force_sensors list).
+    # - all fans (can be accessed directly via their name or via the fans list).
 
     The synchronisation with the robot is automatically launched at instanciation and is handled in background automatically.
     """
@@ -117,6 +122,7 @@ is running and that the IP is correct."
 
     @property
     def enabled_parts(self) -> List[str]:
+        """Get existing parts of the robot the user can effectively control."""
         if self._grpc_status == "disconnected":
             print("Cannot get enabled parts, not connected to Reachy.")
             return []
@@ -124,6 +130,7 @@ is running and that the IP is correct."
 
     @property
     def disabled_parts(self) -> List[str]:
+        """Get existing parts of the robot that cannot be controlled by the user"""
         if self._grpc_status == "disconnected":
             print("Cannot get disabled parts, not connected to Reachy.")
             return []
@@ -159,6 +166,13 @@ is running and that the IP is correct."
             raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
 
     def _get_info(self) -> None:
+        """Get main description of the robot.
+
+        First connection to the robot. Information get:
+        - robot's parts
+        - robot's sofware and hardware version
+        - robot's serial number
+        """
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         try:
             self._robot = config_stub.GetReachy(Empty())
@@ -393,6 +407,10 @@ is running and that the IP is correct."
     #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
     def turn_on(self) -> None:
+        """Turn all motors of enabled parts on.
+
+        All enabled parts' motors will then be stiff.
+        """
         if self._grpc_status == "disconnected":
             print("Cannot turn on Reachy, not connected.")
             return
@@ -400,6 +418,10 @@ is running and that the IP is correct."
             part.turn_on()
 
     def turn_off(self) -> None:
+        """Turn all motors of enabled parts off.
+
+        All enabled parts' motors will then be compliant.
+        """
         if self._grpc_status == "disconnected":
             print("Cannot turn off Reachy, not connected.")
             return
