@@ -40,6 +40,7 @@ class Arm:
 
         self.__joints_record: List[List[float]] = []
         self._is_recording = False
+        self._is_playing = False
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
         description = arm.description
@@ -250,7 +251,13 @@ class Arm:
     def get_record(self) -> List[List[float]]:
         return self.__joints_record
 
-    def replay(self, trajectories: List[List[float]] = [], replay_hand: bool = False, sampling_frequency: int = 100) -> None:
+    def replay(
+        self,
+        trajectories: List[List[float]] = [],
+        replay_hand: bool = False,
+        blocking: bool = True,
+        sampling_frequency: int = 100,
+    ) -> None:
         if trajectories == []:
             trajectories = self.__joints_record
             if trajectories == []:
@@ -264,16 +271,42 @@ class Arm:
                 print("No hand movement was recorded. Replaying arm movement only.")
             else:
                 pass
+        if blocking:
+            self.__replay(trajectories, recorded_joints, sampling_frequency)
+        else:
+            self.__playing_thread = threading.Thread(
+                target=self.__replay,
+                args=(
+                    trajectories,
+                    recorded_joints,
+                    sampling_frequency,
+                ),
+            )
+            self.__playing_thread.start()
+
+    def stop(self) -> None:
+        self._is_playing = False
+        self.__playing_thread.join()
+
+    def __replay(self, trajectories: List[List[float]], recorded_joints: List[Any], sampling_frequency: int) -> None:
+        self._is_playing = True
         for joints_positions in trajectories:
+            if not self._is_playing:
+                break
             if len(joints_positions) != 7:
                 raise Exception(f"Each recorded position should be of length 7 or 8, got {len(joints_positions)}")
             for joint, pos in zip(recorded_joints, joints_positions):
                 joint.goal_position = pos
             time.sleep(1 / sampling_frequency)
+        self._is_playing = False
 
     @property
     def is_recording(self) -> bool:
         return self._is_recording
+
+    @property
+    def is_playing(self) -> bool:
+        return self._is_playing
 
     @property
     def joints_limits(self) -> ArmLimits:

@@ -13,7 +13,7 @@ from pyquaternion import Quaternion as pyQuat
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
-from typing import Optional, Tuple, Dict, List
+from typing import Optional, Tuple, Dict, List, Any
 
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
 from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
@@ -51,6 +51,7 @@ class Head:
 
         self.__joints_record: List[List[float]] = []
         self._is_recording = False
+        self._is_playing = False
 
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
         description = head.description
@@ -162,11 +163,12 @@ class Head:
     def get_record(self) -> List[List[float]]:
         return self.__joints_record
 
-    def replay(  # noqa: C901
+    def replay(
         self,
         trajectories: List[List[float]] = [],
         replay_neck: bool = True,
         replay_antennas: bool = True,
+        blocking: bool = True,
         sampling_frequency: int = 100,
     ) -> None:
         if trajectories == []:
@@ -187,16 +189,42 @@ class Head:
                 # recorded_joints.append(self.l_antenna)
                 # recorded_joints.append(self.r_antenna)
                 pass
+        if blocking:
+            self.__replay(trajectories, recorded_joints, sampling_frequency)
+        else:
+            self.__playing_thread = threading.Thread(
+                target=self.__replay,
+                args=(
+                    trajectories,
+                    recorded_joints,
+                    sampling_frequency,
+                ),
+            )
+            self.__playing_thread.start()
+
+    def stop(self) -> None:
+        self._is_playing = False
+        self.__playing_thread.join()
+
+    def __replay(self, trajectories: List[List[float]], recorded_joints: List[Any], sampling_frequency: int) -> None:
+        self._is_playing = True
         for joints_positions in trajectories:
+            if not self._is_playing:
+                break
             if len(joints_positions) not in [2, 3, 5]:
                 raise Exception(f"Each head recorded position should be of length 2, 3 or 5, got {len(joints_positions)}")
             for joint, pos in zip(recorded_joints, joints_positions):
                 joint.goal_position = pos
-                time.sleep(1 / sampling_frequency)
+            time.sleep(1 / sampling_frequency)
+        self._is_playing = False
 
     @property
     def is_recording(self) -> bool:
         return self._is_recording
+
+    @property
+    def is_playing(self) -> bool:
+        return self._is_playing
 
     def look_at(self, x: float, y: float, z: float, duration: float) -> None:
         req = HeadLookAtGoal(id=self.part_id, point=Point(x=x, y=y, z=z), duration=FloatValue(value=duration))
