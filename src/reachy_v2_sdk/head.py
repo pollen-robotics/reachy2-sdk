@@ -5,12 +5,15 @@ Handles all specific method to an Head:
 - look_at function
 """
 import grpc
+import time
+
+import threading
 
 from pyquaternion import Quaternion as pyQuat
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, List
 
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
 from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
@@ -45,6 +48,9 @@ class Head:
             # "l_antenna" : self.l_antenna,
             # r_antenna" : self.r_antenna,
         }
+
+        self.__joints_record: List[List[float]] = []
+        self._is_recording = False
 
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
         description = head.description
@@ -118,6 +124,49 @@ class Head:
         req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
         return (rpy_pos.position.rpy.roll, rpy_pos.position.rpy.pitch, rpy_pos.position.rpy.yaw)
+
+    def start_recording(self, record_neck: bool = True, record_antennas: bool = True, sampling_frequency: int = 100) -> None:
+        self.__joints_record = []
+        self._is_recording = True
+        self.__record_thread = threading.Thread(
+            target=self.__record,
+            args=(
+                record_neck,
+                record_antennas,
+                sampling_frequency,
+            ),
+        )
+        self.__record_thread.start()
+
+    def __record(self, record_neck: bool, record_antennas: bool, sampling_frequency: int) -> None:
+        recorded_joints = []
+        if record_neck:
+            for joint in self.neck._joints.values():
+                recorded_joints.append(joint)
+        if record_antennas:
+            # recorded_joints.append(self.l_antenna)
+            # recorded_joints.append(self.r_antenna)
+            pass
+        while self._is_recording:
+            # We here get the present position for all of recorded joints
+            current_point = [joint.present_position for joint in recorded_joints]
+            # Add this point to the already recorded trajectories
+            self.__joints_record.append(current_point)
+            time.sleep(1 / sampling_frequency)
+
+    def stop_recording(self) -> None:
+        self._is_recording = False
+        try:
+            self.__record_thread.join()
+        except Exception:
+            print("No record was launched")
+
+    def get_record(self) -> List[List[float]]:
+        return self.__joints_record
+
+    @property
+    def is_recording(self) -> bool:
+        return self._is_recording
 
     def look_at(self, x: float, y: float, z: float, duration: float) -> None:
         req = HeadLookAtGoal(id=self.part_id, point=Point(x=x, y=y, z=z), duration=FloatValue(value=duration))

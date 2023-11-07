@@ -1,6 +1,8 @@
 from typing import Any, List, Optional, Tuple, Dict
 
 import grpc
+import threading
+import time
 
 import numpy as np
 import numpy.typing as npt
@@ -35,6 +37,9 @@ class Arm:
             "elbow": self.elbow,
             "wrist": self.wrist,
         }
+
+        self.__joints_record: List[List[float]] = []
+        self._is_recording = False
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
         description = arm.description
@@ -210,6 +215,46 @@ class Arm:
         arm_pos = self._list_to_arm_position(positions, degrees)
         goal = ArmJointGoal(id=self.part_id, position=arm_pos, duration=FloatValue(value=duration))
         self._arm_stub.GoToJointPosition(goal)
+
+    def start_recording(self, record_hand: bool = False, sampling_frequency: int = 100) -> None:
+        self.__joints_record = []
+        self._is_recording = True
+        self.__record_thread = threading.Thread(
+            target=self.__record,
+            args=(
+                record_hand,
+                sampling_frequency,
+            ),
+        )
+        self.__record_thread.start()
+
+    def __record(self, record_hand: bool, sampling_frequency: int) -> None:
+        recorded_joints = []
+        for actuator in self._actuators.values():
+            for joint in getattr(actuator, "_joints").values():
+                recorded_joints.append(joint)
+        if record_hand:
+            pass
+        while self._is_recording:
+            # We here get the present position for all of recorded joints
+            current_point = [joint.present_position for joint in recorded_joints]
+            # Add this point to the already recorded trajectories
+            self.__joints_record.append(current_point)
+            time.sleep(1 / sampling_frequency)
+
+    def stop_recording(self) -> None:
+        self._is_recording = False
+        try:
+            self.__record_thread.join()
+        except Exception:
+            print("No record was launched")
+
+    def get_record(self) -> List[List[float]]:
+        return self.__joints_record
+
+    @property
+    def is_recording(self) -> bool:
+        return self._is_recording
 
     @property
     def joints_limits(self) -> ArmLimits:
