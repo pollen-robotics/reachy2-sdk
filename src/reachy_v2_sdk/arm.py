@@ -236,9 +236,7 @@ class Arm:
         if record_hand:
             pass
         while self._is_recording:
-            # We here get the present position for all of recorded joints
             current_point = [joint.present_position for joint in recorded_joints]
-            # Add this point to the already recorded trajectories
             self.__joints_record.append(current_point)
             time.sleep(1 / sampling_frequency)
 
