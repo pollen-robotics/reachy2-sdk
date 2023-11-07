@@ -250,6 +250,23 @@ class Arm:
     def get_record(self) -> List[List[float]]:
         return self.__joints_record
 
+    def replay(self, trajectories: List[List[float]], replay_hand: bool = False, sampling_frequency: int = 100) -> None:
+        recorded_joints = []
+        for actuator in self._actuators.values():
+            for joint in getattr(actuator, "_joints").values():
+                recorded_joints.append(joint)
+        if replay_hand:
+            if len(trajectories[0]) < 8:
+                print("No hand movement was recorded. Replaying arm movement only.")
+            else:
+                pass
+        for joints_positions in trajectories:
+            if len(joints_positions) != 7:
+                raise Exception(f"Each recorded position should be of length 7 or 8, got {len(joints_positions)}")
+            for joint, pos in zip(recorded_joints, joints_positions):
+                joint.goal_position = pos
+                time.sleep(1 / sampling_frequency)
+
     @property
     def is_recording(self) -> bool:
         return self._is_recording
