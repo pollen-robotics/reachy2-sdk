@@ -3,7 +3,7 @@
 Handles all specific method to an Arm (left and/or right) especially:
 - the forward kinematics
 - the inverse kinematics
-- the goto functions
+- goto functions
 """
 from typing import Any, List, Optional, Tuple, Dict
 
@@ -241,7 +241,7 @@ class Arm:
     ) -> None:
         """Move the arm so that the end effector reaches the given position and orientation.
 
-        Given a 3D position and a roll, pitch, yaw rotation expressed in Reachy coordinate systems,
+        Given a 3D position and a rpy rotation expressed in Reachy coordinate systems,
         it will try to compute a joint solution to reach this target (or get close),
         and move to this position in the defined duration.
 
