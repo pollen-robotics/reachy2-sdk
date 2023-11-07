@@ -269,7 +269,7 @@ class Arm:
                 raise Exception(f"Each recorded position should be of length 7 or 8, got {len(joints_positions)}")
             for joint, pos in zip(recorded_joints, joints_positions):
                 joint.goal_position = pos
-                time.sleep(1 / sampling_frequency)
+            time.sleep(1 / sampling_frequency)
 
     @property
     def is_recording(self) -> bool:
