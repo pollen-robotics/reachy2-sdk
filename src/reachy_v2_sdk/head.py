@@ -162,6 +162,38 @@ class Head:
     def get_record(self) -> List[List[float]]:
         return self.__joints_record
 
+    def replay(  # noqa: C901
+        self,
+        trajectories: List[List[float]] = [],
+        replay_neck: bool = True,
+        replay_antennas: bool = True,
+        sampling_frequency: int = 100,
+    ) -> None:
+        if trajectories == []:
+            trajectories = self.__joints_record
+            if trajectories == []:
+                print("Nothing to replay.")
+        recorded_joints = []
+        if replay_neck:
+            if len(trajectories[0]) != 3 and len(trajectories[0]) != 5:
+                print("No neck movement was recorded.")
+            else:
+                for joint in self.neck._joints.values():
+                    recorded_joints.append(joint)
+        if replay_antennas:
+            if len(trajectories[0]) != 2 and len(trajectories[0]) != 5:
+                print("No antennas movements were recorded.")
+            else:
+                # recorded_joints.append(self.l_antenna)
+                # recorded_joints.append(self.r_antenna)
+                pass
+        for joints_positions in trajectories:
+            if len(joints_positions) not in [2, 3, 5]:
+                raise Exception(f"Each head recorded position should be of length 2, 3 or 5, got {len(joints_positions)}")
+            for joint, pos in zip(recorded_joints, joints_positions):
+                joint.goal_position = pos
+                time.sleep(1 / sampling_frequency)
+
     @property
     def is_recording(self) -> bool:
         return self._is_recording
