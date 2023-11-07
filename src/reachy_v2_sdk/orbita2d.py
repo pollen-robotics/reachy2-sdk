@@ -1,4 +1,4 @@
-"""This module define the Orbita2d class and its registers, joints, motors and axis."""
+"""This module defines the Orbita2d class and its registers, joints, motors and axis."""
 import asyncio
 from grpc import Channel
 from typing import Dict, Any, List, Tuple

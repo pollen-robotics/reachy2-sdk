@@ -1,3 +1,4 @@
+"""This module defines the utils class to describe Orbita2d and Orbita3d joints, motors and axis."""
 from typing import Any, Dict, List, Tuple
 
 from google.protobuf.wrappers_pb2 import FloatValue
@@ -22,6 +23,13 @@ def _to_internal_position(pos: float) -> Any:
 
 
 class OrbitaJoint2D:
+    """The OrbitaJoint2D class represents any Orbita2d joint.
+
+    The OrbitaJoint2D class is used to store the up-to-date state of the joint, especially:
+        - its present_position (RO)
+        - its goal_position (RW)
+    """
+
     present_position = Register(
         readonly=True, type=FloatValue, label="present_position", conversion=(_to_internal_position, _to_position)
     )
@@ -46,6 +54,13 @@ class OrbitaJoint2D:
 
 
 class OrbitaJoint3D:
+    """The OrbitaJoint3D class represents any Orbita3d joint.
+
+    The OrbitaJoint3D class is used to store the up-to-date state of the joint, especially:
+        - its present position (RO)
+        - its goal position (RW)
+    """
+
     present_position = Register(
         readonly=True, type=float, label="present_position", conversion=(_to_internal_position, _to_position)
     )
@@ -70,6 +85,16 @@ class OrbitaJoint3D:
 
 
 class OrbitaMotor:
+    """The OrbitaMotor class represents any Orbita3d or Orbita2d motor.
+
+    The OrbitaMotor class is used to store the up-to-date state of the motor, especially:
+        - its temperature (RO)
+        - its compliancy (RO)
+        - its speed limit (RW)
+        - its torque limit (RW)
+        - its pid (RW)
+    """
+
     temperature = Register(readonly=True, type=FloatValue, label="temperature")
     speed_limit = Register(
         readonly=False, type=FloatValue, label="speed_limit", conversion=(_to_internal_position, _to_position)
@@ -98,6 +123,13 @@ class OrbitaMotor:
 
 
 class OrbitaAxis:
+    """The OrbitaAxis class represents any Orbita3d or Orbita2d axis.
+
+    The OrbitaAxis class is used to store the up-to-date state of the axis, especially:
+        - its present speed (RO)
+        - its present load (RO)
+    """
+
     present_speed = Register(
         readonly=True, type=FloatValue, label="present_speed", conversion=(_to_internal_position, _to_position)
     )

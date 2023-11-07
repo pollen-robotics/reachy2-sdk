@@ -1,4 +1,4 @@
-"""This module define the Orbita3d class and its registers, joints, motors and axis."""
+"""This module defines the Orbita3d class and its registers, joints, motors and axis."""
 import asyncio
 from grpc import Channel
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
