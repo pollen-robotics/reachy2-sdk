@@ -74,7 +74,7 @@ class Orbita3d:
         self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
 
     def __repr__(self) -> str:
-        """Clean representation of an Orbita2D."""
+        """Clean representation of an Orbita3D."""
         s = "\n\t".join([str(joint) for _, joint in self._joints.items()])
         return f"""<Orbita3D compliant={self.compliant} joints=\n\t{
             s

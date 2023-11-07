@@ -96,17 +96,20 @@ class Orbita2d:
         }\n>"""
 
     def set_speed_limit(self, speed_limit: float) -> None:
+        """Set a speed_limit on all motors of the actuator"""
         if not isinstance(speed_limit, float | int):
             raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
         speed_limit = _to_internal_position(speed_limit)
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:
+        """Set a torque_limit on all motors of the actuator"""
         if not isinstance(torque_limit, float | int):
             raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
         self._set_motors_fields("torque_limit", torque_limit)
 
     def set_pid(self, pid: Tuple[float, float, float]) -> None:
+        """Set a pid value on all motors of the actuator"""
         if isinstance(pid, tuple) and len(pid) == 3 and all(isinstance(n, float | int) for n in pid):
             for m in self._motors.values():
                 m._tmp_pid = pid
@@ -115,13 +118,21 @@ class Orbita2d:
             raise ValueError("pid should be of type Tuple[float, float, float]")
 
     def get_speed_limit(self) -> Dict[str, float]:
+        """Get speed_limit of all motors of the actuator"""
         return {motor_name: m.speed_limit for motor_name, m in self._motors.items()}
 
     def get_torque_limit(self) -> Dict[str, float]:
+        """Get torque_limit of all motors of the actuator"""
         return {motor_name: m.torque_limit for motor_name, m in self._motors.items()}
 
     def get_pid(self) -> Dict[str, Tuple[float, float, float]]:
+        """Get pid of all motors of the actuator"""
         return {motor_name: m.pid for motor_name, m in self._motors.items()}
+
+    @property
+    def temperatures(self) -> Dict[str, Register]:
+        """Get temperatures of all the motors of the actuator"""
+        return {motor_name: m.temperature for motor_name, m in self._motors.items()}
 
     def _build_grpc_cmd_msg(self, field: str) -> Pose2D | PID2D | Float2D:
         if field == "goal_position":
