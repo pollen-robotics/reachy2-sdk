@@ -250,7 +250,11 @@ class Arm:
     def get_record(self) -> List[List[float]]:
         return self.__joints_record
 
-    def replay(self, trajectories: List[List[float]], replay_hand: bool = False, sampling_frequency: int = 100) -> None:
+    def replay(self, trajectories: List[List[float]] = [], replay_hand: bool = False, sampling_frequency: int = 100) -> None:
+        if trajectories == []:
+            trajectories = self.__joints_record
+            if trajectories == []:
+                print("Nothing to replay.")
         recorded_joints = []
         for actuator in self._actuators.values():
             for joint in getattr(actuator, "_joints").values():
