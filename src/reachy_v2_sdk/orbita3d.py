@@ -81,17 +81,20 @@ class Orbita3d:
         }\n>"""
 
     def set_speed_limit(self, speed_limit: float) -> None:
+        """Set a speed_limit on all motors of the actuator"""
         if not isinstance(speed_limit, float | int):
             raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
         speed_limit = _to_internal_position(speed_limit)
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:
+        """Set a torque_limit on all motors of the actuator"""
         if not isinstance(torque_limit, float | int):
             raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
         self._set_motors_fields("torque_limit", torque_limit)
 
     def set_pid(self, pid: Tuple[float, float, float]) -> None:
+        """Set a pid value on all motors of the actuator"""
         if isinstance(pid, tuple) and len(pid) == 3 and all(isinstance(n, float | int) for n in pid):
             for m in self._motors.values():
                 m._tmp_pid = pid
@@ -100,15 +103,21 @@ class Orbita3d:
             raise ValueError("pid should be of type Tuple[float, float, float]")
 
     def get_speed_limit(self) -> Dict[str, float]:
+        """Get speed_limit of all motors of the actuator"""
         return {motor_name: m.speed_limit for motor_name, m in self._motors.items()}
 
     def get_torque_limit(self) -> Dict[str, float]:
+        """Get torque_limit of all motors of the actuator"""
         return {motor_name: m.torque_limit for motor_name, m in self._motors.items()}
 
     def get_pid(self) -> Dict[str, Tuple[float, float, float]]:
+        """Get pid of all motors of the actuator"""
         return {motor_name: m.pid for motor_name, m in self._motors.items()}
 
     def orient(self, q: pyQuat, duration: float) -> None:
+        """Orient the head to a given quaternion.
+
+        Goal orientation is reached in a defined duration"""
         req = Orbita3DGoal(
             id=ComponentId(id=self.id, name=self.name),
             rotation=Rotation3D(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)),
@@ -117,6 +126,9 @@ class Orbita3d:
         self._stub.GoToOrientation(req)
 
     def rotate_to(self, roll: float, pitch: float, yaw: float, duration: float) -> None:
+        """Rotate the head to a given roll, pitch, yaw orientation.
+
+        Goal orientation is reached in a defined duration"""
         req = Orbita3DGoal(
             id=ComponentId(id=self.id, name=self.name),
             rotation=Rotation3D(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)),
@@ -126,6 +138,7 @@ class Orbita3d:
 
     @property
     def temperatures(self) -> Dict[str, Register]:
+        """Get temperatures of all the motors of the actuator"""
         return {motor_name: m.temperature for motor_name, m in self._motors.items()}
 
     def _update_with(self, new_state: Orbita3DState) -> None:  # noqa: C901
