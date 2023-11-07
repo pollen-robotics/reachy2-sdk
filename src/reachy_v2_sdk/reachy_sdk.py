@@ -77,7 +77,7 @@ class ReachySDK:
         self,
         host: str,
         sdk_port: int = 50051,
-        audio_port: int = 50061,
+        audio_port: int = 50063,
     ) -> None:
         """Set up the connection with the robot."""
         self._logger = getLogger()
