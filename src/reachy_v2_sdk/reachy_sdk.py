@@ -81,9 +81,14 @@ class ReachySDK:
         self._host = host
         self._sdk_port = sdk_port
 
+        self._grpc_connected = False
         self.connect()
 
     def connect(self) -> None:
+        if self._grpc_status == "connected":
+            print("Already connected to Reachy.")
+            return
+
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
 
         self._enabled_parts: Dict[str, Any] = {}
@@ -105,24 +110,38 @@ is running and that the IP is correct."
             self._grpc_status = "disconnected"
             return
 
+        print("Got info")
+
         self._setup_parts()
+
+        print("Setup parts")
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
         self._sync_thread.start()
 
+        print("Sync thread started")
+
         self._grpc_status = "connected"
         _open_connection.append(self)
 
     def disconnect(self) -> None:
+        if self._grpc_status == "disconnected":
+            print("Already disconnected from Reachy.")
+            return
+
         for part in self._enabled_parts.values():
             for actuator in part._actuators.values():
                 actuator._need_sync.clear()
 
         self._stop_flag.set()
+        time.sleep(0.1)
         self._sync_thread.join()
         print("sync thread joined")
         self._grpc_status = "disconnected"
+
+        for task in asyncio.all_tasks(loop=self._loop):
+            task.cancel()
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
@@ -165,10 +184,6 @@ is running and that the IP is correct."
         if status == "connected":
             self._grpc_connected = True
         elif status == "disconnected":
-            for task in asyncio.all_tasks(loop=self._loop):
-                task.cancel()
-            self._loop.close()
-
             self._grpc_connected = False
             self._grpc_channel.close()
             attributs = [attr for attr in dir(self) if not attr.startswith("_")]
@@ -226,6 +241,7 @@ is running and that the IP is correct."
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
             await asyncio.sleep(0.1)
+        print("Stop flag set")
         raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
     async def _poll_waiting_2dcommands(self) -> Orbita2DsCommand:
@@ -236,7 +252,6 @@ is running and that the IP is correct."
                 if isinstance(actuator, Orbita2d):
                     # tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
                     tasks.append(asyncio.create_task(actuator._need_sync.wait()))
-
 
         if len(tasks) > 0:
             await asyncio.wait(
@@ -311,10 +326,14 @@ is running and that the IP is correct."
     def _start_sync_in_bg(self) -> None:
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
+
+        for task in asyncio.all_tasks(loop=self._loop):
+            task.cancel()
         try:
             self._loop.run_until_complete(self._sync_loop())
+            print("Sync loop finished.")
         except asyncio.CancelledError:
-            pass
+            print("Sync loop cancelled.")
 
     async def _sync_loop(self) -> None:
         if hasattr(self, "r_arm"):
@@ -344,12 +363,12 @@ is running and that the IP is correct."
                 self._wait_for_stop(),
             )
         except ConnectionError:
-            print("Connection with Reachy lost, check the sdk server status.")
+            print("[sync loop] Connection with Reachy lost, check the sdk server status.")
         except asyncio.CancelledError:
+            # self.disconnect()
             print("Stopped streaming commands.")
 
-        for task in asyncio.all_tasks(loop=self._loop):
-            task.cancel()
+        print("Finished sync loop.")
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
@@ -368,8 +387,10 @@ is running and that the IP is correct."
                 if hasattr(self, "mobile_base"):
                     self.mobile_base._update_with(state_update.mobile_base_state)
         except grpc.aio._call.AioRpcError:
-            print("Connection with Reachy lost, check the sdk server status.")
-            self._grpc_status = "disconnected"
+            raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
+            # print("Connection with Reachy lost, check the sdk server status.")
+            # self.disconnect()
+            # self._grpc_status = "disconnected"
 
     async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2DServiceStub, freq: float) -> None:
         async def command_poll_2d() -> Orbita2DsCommand:
