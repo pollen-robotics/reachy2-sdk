@@ -1,3 +1,4 @@
+"""This module define the Orbita2d class and its registers, joints, motors and axis."""
 import asyncio
 from grpc import Channel
 from typing import Dict, Any, List, Tuple
@@ -23,6 +24,26 @@ from .orbita_utils import OrbitaJoint2D, OrbitaMotor, OrbitaAxis, _to_internal_p
 
 
 class Orbita2d:
+    """The Orbita2d class represents any Orbita2d actuator and its registers, joints, motors and axis.
+
+    The Orbita2d class is used to store the up-to-date state of the actuator, especially:
+        - its compliancy
+        - its joints state
+        - its motors state
+        - its axis state
+
+    The only register available at the actuator is the compliancy RW register.
+    You can set the compliance on/off (boolean).
+
+    You can access registers of the motors from the actuators with function that act on all the actuator's motors.
+    Lower registers which can be read/write at actuator level:
+    - speed limit (in degree per second, for all motors of the actuator)
+    - torque limit (in %, for all motors of the actuator)
+    - pid (for all motors of the actuator)
+    Lower registers that are read-only but acessible at actuator level:
+    - temperatures (temperatures of all motors of the actuator)
+    """
+
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
 
     def __init__(  # noqa: C901
