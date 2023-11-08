@@ -50,9 +50,9 @@ class Orbita3d:
                         init_state[joint][field.name] = getattr(value.rpy, joint)
                 if isinstance(value, Limits3D):
                     for joint, val in value.ListFields():
-                        if joint not in init_state:
+                        if getattr(joint, "name") not in init_state:
                             init_state[joint] = {}
-                        init_state[joint][field.name] = val
+                        init_state[getattr(joint, "name")][field.name] = val
                 if isinstance(value, Float3D | PID3D):
                     for motor, val in value.ListFields():
                         if motor.name not in init_state:
