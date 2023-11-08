@@ -1,6 +1,7 @@
 from typing import Type, Any, Optional, Tuple, Callable
 import asyncio
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue, UInt32Value
+from reachy_sdk_api_v2.component_pb2 import JointLimits
 
 
 class Register:
@@ -25,21 +26,23 @@ class Register:
         if conversion is not None:
             self.cvt_to_internal, self.cvt_to_external = conversion
 
-    def __get__(self, instance, owner):  # type: ignore
+    def __get__(self, instance: Any, owner: Any) -> Any:
         if instance is None:
             return self
         value = self.unwrapped_value(instance._state[self.label])
-        if self.internal_class != BoolValue:
-            if self.cvt_to_external is not None:
+        if self.cvt_to_external is not None:
+            if self.internal_class == JointLimits:
+                value = (self.cvt_to_external(value[0]), self.cvt_to_external(value[1]))
+            elif self.internal_class != BoolValue:
                 value = self.cvt_to_external(value)
         return value
 
-    def __set__(self, instance, value):  # type: ignore
+    def __set__(self, instance: Any, value: Any) -> None:
         if self.readonly:
             raise AttributeError("can't set attribute")
         if self.cvt_to_internal is not None:
             value = self.cvt_to_internal(value)
-        instance._state[self.label] = self.wrapped_value(self.bound(value))
+        instance._state[self.label] = self.wrapped_value(self.bound(value, instance))
 
         async def set_in_loop() -> None:
             instance._register_needing_sync.append(self.label)
@@ -54,6 +57,8 @@ class Register:
             return value.value
         elif self.internal_class.__name__ == "PIDGains":
             return (value.p.value, value.i.value, value.d.value)
+        elif self.internal_class.__name__ == "JointLimits":
+            return (value.min.value, value.max.value)
         return value
 
     def wrapped_value(self, value: Any) -> Any:
@@ -62,18 +67,28 @@ class Register:
             return self.internal_class(value=value)
         elif self.internal_class.__name__ == "PIDGains":
             return self.internal_class(p=FloatValue(value=value[0]), i=FloatValue(value=value[1]), d=FloatValue(value=value[2]))
+        elif self.internal_class.__name__ == "JointLimits":
+            return self.internal_class(min=FloatValue(value=value[0]), max=FloatValue(value=value[1]))
         return value
 
-    def bound(self, value: float) -> float:
+    def bound(self, value: float, instance: Any) -> float:
         new_value = value
+        if self.label == "goal_position":
+            if self.cvt_to_internal is not None:
+                self.lower_limit = self.cvt_to_internal(instance.joint_limit[0])
+                self.upper_limit = self.cvt_to_internal(instance.joint_limit[1])
         if self.upper_limit is not None and self.lower_limit is not None:
             new_value = max(self.lower_limit, min(self.upper_limit, value))
             if new_value != value:
-                print(f"{self.label} should be in [{self.lower_limit, self.upper_limit}]. Got {value}, set {new_value}]")
+                if self.cvt_to_external is not None:
+                    print(
+                        f"""{self.label} should be in \
+{self.cvt_to_external(self.lower_limit), self.cvt_to_external(self.upper_limit)}. \
+Got {self.cvt_to_external(value)}, set {self.cvt_to_external(new_value)}"""
+                    )
+                else:
+                    print(
+                        f"""{self.label} should be in {self.lower_limit, self.upper_limit}. \
+Got {value}, set {new_value}"""
+                    )
         return new_value
-
-    def update_limits(self, lower_limit: float, upper_limit: float) -> None:
-        print("update limits")
-        self.lower_limit = self.cvt_to_internal(lower_limit) if self.cvt_to_internal is not None else lower_limit
-        self.upper_limit = self.cvt_to_internal(upper_limit) if self.cvt_to_internal is not None else upper_limit
-        print(f"{self.lower_limit}, { self.upper_limit}")
