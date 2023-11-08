@@ -9,11 +9,16 @@ class Register:
         readonly: bool,
         type: Type[Any],
         label: str,
+        lower_limit: Optional[float] = None,
+        upper_limit: Optional[float] = None,
         conversion: Optional[Tuple[Callable[[Any], Any], Callable[[Any], Any]]] = None,
     ) -> None:
         self.readonly = readonly
         self.internal_class = type
         self.label = label
+
+        self.lower_limit = lower_limit
+        self.upper_limit = upper_limit
 
         self.cvt_to_internal: Optional[Callable[[Any], Any]] = None
         self.cvt_to_external: Optional[Callable[[Any], Any]] = None
@@ -34,7 +39,7 @@ class Register:
             raise AttributeError("can't set attribute")
         if self.cvt_to_internal is not None:
             value = self.cvt_to_internal(value)
-        instance._state[self.label] = self.wrapped_value(value)
+        instance._state[self.label] = self.wrapped_value(self.bound(value))
 
         async def set_in_loop() -> None:
             instance._register_needing_sync.append(self.label)
@@ -57,5 +62,18 @@ class Register:
             return self.internal_class(value=value)
         elif self.internal_class.__name__ == "PIDGains":
             return self.internal_class(p=FloatValue(value=value[0]), i=FloatValue(value=value[1]), d=FloatValue(value=value[2]))
-
         return value
+
+    def bound(self, value: float) -> float:
+        new_value = value
+        if self.upper_limit is not None and self.lower_limit is not None:
+            new_value = max(self.lower_limit, min(self.upper_limit, value))
+            if new_value != value:
+                print(f"{self.label} should be in [{self.lower_limit, self.upper_limit}]. Got {value}, set {new_value}]")
+        return new_value
+
+    def update_limits(self, lower_limit: float, upper_limit: float) -> None:
+        print("update limits")
+        self.lower_limit = self.cvt_to_internal(lower_limit) if self.cvt_to_internal is not None else lower_limit
+        self.upper_limit = self.cvt_to_internal(upper_limit) if self.cvt_to_internal is not None else upper_limit
+        print(f"{self.lower_limit}, { self.upper_limit}")
