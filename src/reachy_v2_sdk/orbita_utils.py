@@ -34,11 +34,6 @@ class OrbitaJoint2D:
         self.axis_type = axis_type
         self._state = initial_state
 
-        for field in dir(self):
-            value = getattr(self, field)
-            if isinstance(value, Register):
-                value.label = field
-
         self._register_needing_sync: List[str] = []
 
     def __repr__(self) -> str:
@@ -57,11 +52,6 @@ class OrbitaJoint3D:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
-
-        for field in dir(self):
-            value = getattr(self, field)
-            if isinstance(value, Register):
-                value.label = field
 
         self._register_needing_sync: List[str] = []
 
