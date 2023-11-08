@@ -15,6 +15,7 @@ from reachy_sdk_api_v2.orbita2d_pb2 import (
     Pose2D,
     Vector2D,
     PID2D,
+    Limits2D,
 )
 
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
@@ -52,7 +53,7 @@ class Orbita2d:
                 init_state["motor_1"][field.name] = value
                 init_state["motor_2"][field.name] = value
             else:
-                if isinstance(value, Pose2D):
+                if isinstance(value, Pose2D | Limits2D):
                     for axis, val in value.ListFields():
                         if axis.name not in init_state:
                             init_state[axis.name] = {}
