@@ -110,20 +110,15 @@ is running and that the IP is correct."
             self._grpc_status = "disconnected"
             return
 
-        print("Got info")
-
         self._setup_parts()
-
-        print("Setup parts")
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
         self._sync_thread.start()
 
-        print("Sync thread started")
-
         self._grpc_status = "connected"
         _open_connection.append(self)
+        print("Connected to Reachy.")
 
     def disconnect(self) -> None:
         if self._grpc_status == "disconnected":
@@ -136,12 +131,18 @@ is running and that the IP is correct."
 
         self._stop_flag.set()
         time.sleep(0.1)
-        self._sync_thread.join()
-        print("sync thread joined")
         self._grpc_status = "disconnected"
+
+        self._grpc_channel.close()
+        attributs = [attr for attr in dir(self) if not attr.startswith("_")]
+        for attr in attributs:
+            if attr not in ["grpc_status", "connect", "disconnect", "turn_on", "turn_off", "enabled_parts", "disabled_parts"]:
+                delattr(self, attr)
 
         for task in asyncio.all_tasks(loop=self._loop):
             task.cancel()
+
+        print("Disconnected from Reachy.")
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
@@ -185,11 +186,6 @@ is running and that the IP is correct."
             self._grpc_connected = True
         elif status == "disconnected":
             self._grpc_connected = False
-            self._grpc_channel.close()
-            attributs = [attr for attr in dir(self) if not attr.startswith("_")]
-            for attr in attributs:
-                if attr not in ["grpc_status", "connect", "disconnect", "turn_on", "turn_off", "enabled_parts", "disabled_parts"]:
-                    delattr(self, attr)
         else:
             raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
 
@@ -241,7 +237,6 @@ is running and that the IP is correct."
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
             await asyncio.sleep(0.1)
-        print("Stop flag set")
         raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
     async def _poll_waiting_2dcommands(self) -> Orbita2DsCommand:
@@ -327,11 +322,9 @@ is running and that the IP is correct."
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
 
-        for task in asyncio.all_tasks(loop=self._loop):
-            task.cancel()
         try:
             self._loop.run_until_complete(self._sync_loop())
-            print("Sync loop finished.")
+            self.disconnect()
         except asyncio.CancelledError:
             print("Sync loop cancelled.")
 
@@ -363,12 +356,9 @@ is running and that the IP is correct."
                 self._wait_for_stop(),
             )
         except ConnectionError:
-            print("[sync loop] Connection with Reachy lost, check the sdk server status.")
+            print("Connection with Reachy lost, check the sdk server status.")
         except asyncio.CancelledError:
-            # self.disconnect()
             print("Stopped streaming commands.")
-
-        print("Finished sync loop.")
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
@@ -387,10 +377,7 @@ is running and that the IP is correct."
                 if hasattr(self, "mobile_base"):
                     self.mobile_base._update_with(state_update.mobile_base_state)
         except grpc.aio._call.AioRpcError:
-            raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
-            # print("Connection with Reachy lost, check the sdk server status.")
-            # self.disconnect()
-            # self._grpc_status = "disconnected"
+            raise ConnectionError("")
 
     async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2DServiceStub, freq: float) -> None:
         async def command_poll_2d() -> Orbita2DsCommand:
@@ -411,7 +398,7 @@ is running and that the IP is correct."
         try:
             await orbita2d_stub.StreamCommand(command_poll_2d())
         except grpc.aio._call.AioRpcError:
-            self._grpc_status = "disconnected"
+            pass
 
     async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3DServiceStub, freq: float) -> None:
         async def command_poll_3d() -> Orbita3DsCommand:
@@ -432,7 +419,7 @@ is running and that the IP is correct."
         try:
             await orbita3d_stub.StreamCommand(command_poll_3d())
         except grpc.aio._call.AioRpcError:
-            self._grpc_status = "disconnected"
+            pass
 
     # async def _stream_dynamixel_motor_commands_loop(self, dynamixel_motor_stub: DynamixelMotorServiceStub, freq: float) -> None:  # noqa: E501
     #     async def command_poll_dm() -> DynamixelMotorsCommand:
