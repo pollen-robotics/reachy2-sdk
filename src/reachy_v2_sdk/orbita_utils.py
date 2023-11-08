@@ -4,7 +4,7 @@ from google.protobuf.wrappers_pb2 import FloatValue
 
 from .register import Register
 
-from reachy_sdk_api_v2.component_pb2 import PIDGains
+from reachy_sdk_api_v2.component_pb2 import PIDGains, JointLimits
 from google.protobuf.wrappers_pb2 import BoolValue
 
 import numpy as np
@@ -25,11 +25,16 @@ class OrbitaJoint2D:
     present_position = Register(
         readonly=True, type=FloatValue, label="present_position", conversion=(_to_internal_position, _to_position)
     )
+
+    joint_limit = Register(
+        readonly=True, type=JointLimits, label="joint_limit", conversion=(_to_internal_position, _to_position)
+    )
+
     goal_position = Register(
         readonly=False, type=FloatValue, label="goal_position", conversion=(_to_internal_position, _to_position)
     )
 
-    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
+    def __init__(self, initial_state: Dict[str, Any], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
@@ -44,11 +49,19 @@ class OrbitaJoint3D:
     present_position = Register(
         readonly=True, type=float, label="present_position", conversion=(_to_internal_position, _to_position)
     )
-    goal_position = Register(
-        readonly=False, type=float, label="goal_position", conversion=(_to_internal_position, _to_position)
+
+    joint_limit = Register(
+        readonly=True, type=JointLimits, label="joint_limit", conversion=(_to_internal_position, _to_position)
     )
 
-    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
+    goal_position = Register(
+        readonly=False,
+        type=float,
+        label="goal_position",
+        conversion=(_to_internal_position, _to_position),
+    )
+
+    def __init__(self, initial_state: Dict[str, Any], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
@@ -62,9 +75,14 @@ class OrbitaJoint3D:
 class OrbitaMotor:
     temperature = Register(readonly=True, type=FloatValue, label="temperature")
     speed_limit = Register(
-        readonly=False, type=FloatValue, label="speed_limit", conversion=(_to_internal_position, _to_position)
+        readonly=False,
+        type=FloatValue,
+        label="speed_limit",
+        lower_limit=0,
+        upper_limit=100,
+        conversion=(_to_internal_position, _to_position),
     )
-    torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
+    torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit", lower_limit=0, upper_limit=100)
     compliant = Register(readonly=True, type=BoolValue, label="compliant")
 
     pid = Register(readonly=False, type=PIDGains, label="pid")
