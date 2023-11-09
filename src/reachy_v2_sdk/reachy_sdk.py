@@ -35,7 +35,6 @@ from .reachy import ReachyInfo, get_config
 # from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 
 
-
 # from .dynamixel_motor import DynamixelMotor
 
 
