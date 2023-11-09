@@ -4,18 +4,18 @@ This module defines the DynamixelMotor class.
 This class is used to represent a single Dynamixel motor on the robot.
 It is used to send commands to the motor and to read its state.
 """
-from grpc import Channel
 import asyncio
-
 from typing import Any, Dict, List
 
-from .register import Register
-
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-
-from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
-from reachy_sdk_api_v2.dynamixel_motor_pb2 import DynamixelMotorState, DynamixelMotorCommand
+from grpc import Channel
 from reachy_sdk_api_v2.component_pb2 import ComponentId
+from reachy_sdk_api_v2.dynamixel_motor_pb2 import (DynamixelMotorCommand,
+                                                   DynamixelMotorState)
+from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import \
+    DynamixelMotorServiceStub
+
+from .register import Register
 
 
 class DynamixelMotor:

@@ -1,14 +1,11 @@
 """This module defines the utils class to describe Orbita2d and Orbita3d joints, motors and axis."""
 from typing import Any, Dict, List, Tuple
 
-from google.protobuf.wrappers_pb2 import FloatValue
+import numpy as np
+from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
+from reachy_sdk_api_v2.component_pb2 import PIDGains
 
 from .register import Register
-
-from reachy_sdk_api_v2.component_pb2 import PIDGains
-from google.protobuf.wrappers_pb2 import BoolValue
-
-import numpy as np
 
 
 def _to_position(internal_pos: float) -> Any:

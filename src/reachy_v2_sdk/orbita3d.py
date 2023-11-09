@@ -1,25 +1,20 @@
 """This module defines the Orbita3d class and its registers, joints, motors and axis."""
 import asyncio
-from grpc import Channel
+from typing import Any, Dict, List, Tuple
+
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
+from grpc import Channel
 from pyquaternion import Quaternion as pyQuat
-
-from typing import Dict, List, Any, Tuple
-
-from reachy_sdk_api_v2.orbita3d_pb2 import (
-    Float3D,
-    Orbita3DCommand,
-    Orbita3DState,
-    Vector3D,
-    PID3D,
-)
-
 from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
-from reachy_sdk_api_v2.kinematics_pb2 import ExtEulerAngles, Quaternion, Rotation3D
-from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DGoal
+from reachy_sdk_api_v2.kinematics_pb2 import (ExtEulerAngles, Quaternion,
+                                              Rotation3D)
+from reachy_sdk_api_v2.orbita3d_pb2 import (PID3D, Float3D, Orbita3DCommand,
+                                            Orbita3DGoal, Orbita3DState,
+                                            Vector3D)
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
-from .orbita_utils import OrbitaAxis, OrbitaJoint3D, OrbitaMotor, _to_internal_position
 
+from .orbita_utils import (OrbitaAxis, OrbitaJoint3D, OrbitaMotor,
+                           _to_internal_position)
 from .register import Register
 
 

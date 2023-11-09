@@ -5,26 +5,26 @@ Handles all specific method to an Arm (left and/or right) especially:
 - the inverse kinematics
 - goto functions
 """
-from typing import Any, List, Optional, Tuple, Dict
+from typing import Any, Dict, List, Optional, Tuple
 
 import grpc
-
 import numpy as np
 import numpy.typing as npt
-
-from pyquaternion import Quaternion as pyQuat
-
 from google.protobuf.wrappers_pb2 import FloatValue
-
+from pyquaternion import Quaternion as pyQuat
+from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto
+from reachy_sdk_api_v2.arm_pb2 import (ArmCartesianGoal, ArmEndEffector,
+                                       ArmFKRequest, ArmIKRequest,
+                                       ArmJointGoal, ArmLimits, ArmPosition,
+                                       ArmState, ArmTemperatures)
 from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
-from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto, ArmPosition
-from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal, ArmState, ArmCartesianGoal
-from reachy_sdk_api_v2.arm_pb2 import ArmLimits, ArmTemperatures
-from reachy_sdk_api_v2.arm_pb2 import ArmFKRequest, ArmIKRequest, ArmEndEffector
+from reachy_sdk_api_v2.kinematics_pb2 import (ExtEulerAngles,
+                                              ExtEulerAnglesTolerances,
+                                              Matrix3x3, Matrix4x4, Point,
+                                              PointDistanceTolerances,
+                                              Quaternion, Rotation3D)
 from reachy_sdk_api_v2.orbita2d_pb2 import Pose2D
 from reachy_sdk_api_v2.part_pb2 import PartId
-from reachy_sdk_api_v2.kinematics_pb2 import Matrix4x4, Point, Rotation3D, ExtEulerAngles, Matrix3x3, Quaternion
-from reachy_sdk_api_v2.kinematics_pb2 import PointDistanceTolerances, ExtEulerAnglesTolerances
 
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d

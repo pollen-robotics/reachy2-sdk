@@ -4,21 +4,19 @@ Handles all specific method to an Head:
 - the inverse kinematics
 - look_at function
 """
+from typing import Dict, Optional, Tuple
+
 import grpc
-
-from pyquaternion import Quaternion as pyQuat
-
 from google.protobuf.wrappers_pb2 import FloatValue
-
-from typing import Optional, Tuple, Dict
-
+from pyquaternion import Quaternion as pyQuat
+from reachy_sdk_api_v2.head_pb2 import Head as Head_proto
+from reachy_sdk_api_v2.head_pb2 import (HeadLookAtGoal, HeadPosition,
+                                        HeadState, NeckFKRequest,
+                                        NeckIKRequest, NeckOrientation)
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
-from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
-from reachy_sdk_api_v2.head_pb2 import HeadLookAtGoal
-from reachy_sdk_api_v2.head_pb2 import HeadPosition, NeckOrientation
-from reachy_sdk_api_v2.head_pb2 import NeckFKRequest, NeckIKRequest
+from reachy_sdk_api_v2.kinematics_pb2 import (ExtEulerAngles, Point,
+                                              Quaternion, Rotation3D)
 from reachy_sdk_api_v2.part_pb2 import PartId
-from reachy_sdk_api_v2.kinematics_pb2 import Point, Rotation3D, Quaternion, ExtEulerAngles
 
 from .orbita3d import Orbita3d
 

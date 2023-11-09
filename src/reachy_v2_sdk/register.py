@@ -3,8 +3,9 @@
 The Register class is used to define the registers of the motors and joints of the robot
 such as the goal position, the present position, the speed limit, etc.
 """
-from typing import Type, Any, Optional, Tuple, Callable
 import asyncio
+from typing import Any, Callable, Optional, Tuple, Type
+
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue, UInt32Value
 
 

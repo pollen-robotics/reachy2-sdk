@@ -1,26 +1,18 @@
 """This module defines the Orbita2d class and its registers, joints, motors and axis."""
 import asyncio
-from grpc import Channel
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-
-from .register import Register
-
+from grpc import Channel
 from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
-from reachy_sdk_api_v2.orbita2d_pb2 import (
-    Axis,
-    Float2D,
-    Orbita2DCommand,
-    Orbita2DState,
-    Pose2D,
-    Vector2D,
-    PID2D,
-)
-
+from reachy_sdk_api_v2.orbita2d_pb2 import (PID2D, Axis, Float2D,
+                                            Orbita2DCommand, Orbita2DState,
+                                            Pose2D, Vector2D)
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 
-from .orbita_utils import OrbitaJoint2D, OrbitaMotor, OrbitaAxis, _to_internal_position
+from .orbita_utils import (OrbitaAxis, OrbitaJoint2D, OrbitaMotor,
+                           _to_internal_position)
+from .register import Register
 
 
 class Orbita2d:
