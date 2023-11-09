@@ -1,23 +1,35 @@
-from typing import Any, List, Optional, Tuple, Dict
+from typing import Any, Dict, List, Optional, Tuple
 
 import grpc
-
 import numpy as np
 import numpy.typing as npt
-
-from pyquaternion import Quaternion as pyQuat
-
 from google.protobuf.wrappers_pb2 import FloatValue
-
+from pyquaternion import Quaternion as pyQuat
+from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto
+from reachy_sdk_api_v2.arm_pb2 import (
+    ArmCartesianGoal,
+    ArmEndEffector,
+    ArmFKRequest,
+    ArmIKRequest,
+    ArmJointGoal,
+    ArmLimits,
+    ArmPosition,
+    ArmState,
+    ArmTemperatures,
+)
 from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
-from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto, ArmPosition
-from reachy_sdk_api_v2.arm_pb2 import ArmJointGoal, ArmState, ArmCartesianGoal
-from reachy_sdk_api_v2.arm_pb2 import ArmLimits, ArmTemperatures
-from reachy_sdk_api_v2.arm_pb2 import ArmFKRequest, ArmIKRequest, ArmEndEffector
+from reachy_sdk_api_v2.kinematics_pb2 import (
+    ExtEulerAngles,
+    ExtEulerAnglesTolerances,
+    Matrix3x3,
+    Matrix4x4,
+    Point,
+    PointDistanceTolerances,
+    Quaternion,
+    Rotation3D,
+)
 from reachy_sdk_api_v2.orbita2d_pb2 import Pose2D
 from reachy_sdk_api_v2.part_pb2 import PartId
-from reachy_sdk_api_v2.kinematics_pb2 import Matrix4x4, Point, Rotation3D, ExtEulerAngles, Matrix3x3, Quaternion
-from reachy_sdk_api_v2.kinematics_pb2 import PointDistanceTolerances, ExtEulerAnglesTolerances
 
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
@@ -100,7 +112,10 @@ class Arm:
         return np.array(resp.end_effector.pose.data).reshape((4, 4))
 
     def inverse_kinematics(
-        self, target: npt.NDArray[np.float64], q0: Optional[List[float]] = None, degrees: bool = True
+        self,
+        target: npt.NDArray[np.float64],
+        q0: Optional[List[float]] = None,
+        degrees: bool = True,
     ) -> List[float]:
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
@@ -132,8 +147,14 @@ class Arm:
         if degrees:
             positions = self._convert_to_radians(positions)
         arm_pos = ArmPosition(
-            shoulder_position=Pose2D(axis_1=FloatValue(value=positions[0]), axis_2=FloatValue(value=positions[1])),
-            elbow_position=Pose2D(axis_1=FloatValue(value=positions[2]), axis_2=FloatValue(value=positions[3])),
+            shoulder_position=Pose2D(
+                axis_1=FloatValue(value=positions[0]),
+                axis_2=FloatValue(value=positions[1]),
+            ),
+            elbow_position=Pose2D(
+                axis_1=FloatValue(value=positions[2]),
+                axis_2=FloatValue(value=positions[3]),
+            ),
             wrist_position=Rotation3D(
                 rpy=ExtEulerAngles(
                     roll=positions[4],
@@ -173,7 +194,12 @@ class Arm:
         )
         self._arm_stub.GoToCartesianPosition(target)
 
-    def goto_from_quaternion(self, position: Tuple[float, float, float], orientation: pyQuat, duration: float = 0) -> None:
+    def goto_from_quaternion(
+        self,
+        position: Tuple[float, float, float],
+        orientation: pyQuat,
+        duration: float = 0,
+    ) -> None:
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
@@ -202,7 +228,9 @@ class Arm:
             )
         if orientation_tol is not None:
             target.orientation_tolerance = ExtEulerAnglesTolerances(
-                x_tol=orientation_tol[0], y_tol=orientation_tol[1], z_tol=orientation_tol[2]
+                x_tol=orientation_tol[0],
+                y_tol=orientation_tol[1],
+                z_tol=orientation_tol[2],
             )
         self._arm_stub.GoToCartesianPosition(target)
 
@@ -229,7 +257,11 @@ class Arm:
 
     @property
     def compliant(self) -> Dict[str, bool]:
-        return {"shoulder": self.shoulder.compliant, "elbow": self.elbow.compliant, "wrist": self.wrist.compliant}
+        return {
+            "shoulder": self.shoulder.compliant,
+            "elbow": self.elbow.compliant,
+            "wrist": self.wrist.compliant,
+        }
 
     @compliant.setter
     def compliant(self, value: bool) -> None:

@@ -9,38 +9,30 @@ You can also send joint commands, compute forward or inverse kinematics.
 
 import asyncio
 import atexit
-
 import threading
-
 import time
-
-from typing import List
 from logging import getLogger
+from typing import Any, Dict, List
 
 import grpc
-
-from typing import Dict, Any
-
-from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
-
+from grpc._channel import _InactiveRpcError
 from reachy_sdk_api_v2 import reachy_pb2, reachy_pb2_grpc
 from reachy_sdk_api_v2.orbita2d_pb2 import Orbita2DsCommand
-from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DsCommand
 
 # from reachy_sdk_api_v2.dynamixel_motor_pb2 import DynamixelMotorsCommand
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
+from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DsCommand
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
+
+from .arm import Arm
+from .head import Head
+from .orbita2d import Orbita2d
+from .orbita3d import Orbita3d
+from .reachy import ReachyInfo, get_config
 
 # from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 
-from .reachy import ReachyInfo, get_config
-from .arm import Arm
-
-from .head import Head
-
-from .orbita2d import Orbita2d
-from .orbita3d import Orbita3d
 
 from .audio import Audio
 
@@ -141,7 +133,15 @@ is running and that the IP is correct."
         self._grpc_channel.close()
         attributs = [attr for attr in dir(self) if not attr.startswith("_")]
         for attr in attributs:
-            if attr not in ["grpc_status", "connect", "disconnect", "turn_on", "turn_off", "enabled_parts", "disabled_parts"]:
+            if attr not in [
+                "grpc_status",
+                "connect",
+                "disconnect",
+                "turn_on",
+                "turn_off",
+                "enabled_parts",
+                "disabled_parts",
+            ]:
                 delattr(self, attr)
 
         for task in asyncio.all_tasks(loop=self._loop):

@@ -1,25 +1,22 @@
 import asyncio
-from grpc import Channel
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-
-from .register import Register
-
+from grpc import Channel
 from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
 from reachy_sdk_api_v2.orbita2d_pb2 import (
+    PID2D,
     Axis,
     Float2D,
     Orbita2DCommand,
     Orbita2DState,
     Pose2D,
     Vector2D,
-    PID2D,
 )
-
 from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
 
-from .orbita_utils import OrbitaJoint2D, OrbitaMotor, OrbitaAxis, _to_internal_position
+from .orbita_utils import OrbitaAxis, OrbitaJoint2D, OrbitaMotor, _to_internal_position
+from .register import Register
 
 
 class Orbita2d:
@@ -78,7 +75,10 @@ class Orbita2d:
             axis2_name,
             OrbitaJoint2D(initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self),
         )
-        self._joints = {"axis_1": getattr(self, axis1_name), "axis_2": getattr(self, axis2_name)}
+        self._joints = {
+            "axis_1": getattr(self, axis1_name),
+            "axis_2": getattr(self, axis2_name),
+        }
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
         self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
