@@ -26,6 +26,7 @@ from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DsCommand
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 
 from .arm import Arm
+from .audio import Audio
 from .head import Head
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
@@ -34,7 +35,6 @@ from .reachy import ReachyInfo, get_config
 # from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 
 
-from .audio import Audio
 
 # from .dynamixel_motor import DynamixelMotor
 

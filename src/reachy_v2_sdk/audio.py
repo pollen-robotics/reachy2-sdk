@@ -4,18 +4,17 @@ Handles all specific method related to audio especially:
 - playing sounds
 - recording sounds
 """
-import grpc
+from typing import List
 
-from reachy_sdk_api_v2.sound_pb2_grpc import SoundServiceStub
+import grpc
+from google.protobuf.empty_pb2 import Empty
 from reachy_sdk_api_v2.sound_pb2 import (
-    VolumeRequest,
+    RecordingRequest,
     SoundId,
     SoundRequest,
-    RecordingRequest,
+    VolumeRequest,
 )
-from google.protobuf.empty_pb2 import Empty
-
-from typing import List
+from reachy_sdk_api_v2.sound_pb2_grpc import SoundServiceStub
 
 
 class Audio:
