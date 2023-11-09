@@ -1,3 +1,9 @@
+"""
+This module defines the DynamixelMotor class.
+
+This class is used to represent a single Dynamixel motor on the robot.
+It is used to send commands to the motor and to read its state.
+"""
 from grpc import Channel
 import asyncio
 
@@ -13,6 +19,13 @@ from reachy_sdk_api_v2.component_pb2 import ComponentId
 
 
 class DynamixelMotor:
+    """DynamixelMotor class.
+
+    This class is used to represent a single Dynamixel motor on the robot.
+    It is used to send commands to the motor and to read its state.
+
+    The DynamixelMotor class is used in parts using Dynamixel motors (hand and head).
+    """
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
     present_position = Register(readonly=True, type=FloatValue, label="present_position")
     present_speed = Register(readonly=True, type=FloatValue, label="present_speed")
@@ -59,6 +72,7 @@ class DynamixelMotor:
             self._state[field.name] = value
 
     def set_position(self, goal_position: float, duration: float) -> None:
+        """Set the goal position of the motor. The movement will be done in the given duration (in seconds)."""
         self._stub.SetPosition(id=self.id, goal_position=goal_position, duration=FloatValue(value=duration))
 
     def _setup_sync_loop(self) -> None:

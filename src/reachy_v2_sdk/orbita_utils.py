@@ -12,10 +12,16 @@ import numpy as np
 
 
 def _to_position(internal_pos: float) -> Any:
+    """Convert an internal angluar value in radians to a value in degrees."""
     return round(np.rad2deg(internal_pos), 2)
 
 
 def _to_internal_position(pos: float) -> Any:
+    """Convert an angluar value in degrees to a value in radians.
+    
+    It is necessary to convert the value from degrees to radians because the
+    server expect values in radians.
+    """
     try:
         return np.deg2rad(pos)
     except TypeError:
@@ -69,6 +75,7 @@ class OrbitaJoint3D:
     )
 
     def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
+        """Initialize the joint with its initial state and its axis type (either roll, pitch or yaw)."""
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
@@ -81,6 +88,7 @@ class OrbitaJoint3D:
         self._register_needing_sync: List[str] = []
 
     def __repr__(self) -> str:
+        """Return a clean representation of an Orbita 3d joint."""
         return f'<OrbitaJoint3D axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
 
 
@@ -105,6 +113,7 @@ class OrbitaMotor:
     pid = Register(readonly=False, type=PIDGains, label="pid")
 
     def __init__(self, initial_state: Dict[str, Any], actuator: Any) -> None:
+        """Initialize the motor with its initial state."""
         self._actuator = actuator
 
         self._state = initial_state
@@ -136,6 +145,7 @@ class OrbitaAxis:
     present_load = Register(readonly=True, type=FloatValue, label="present_load")
 
     def __init__(self, initial_state: Dict[str, float]) -> None:
+        """Initialize the axis with its initial state."""
         self._state = initial_state
 
         for field in dir(self):

@@ -47,6 +47,7 @@ class Orbita3d:
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
 
     def __init__(self, uid: int, name: str, initial_state: Orbita3DState, grpc_channel: Channel):  # noqa: C901
+        """Initialize the Orbita2d with its joints, motors and axis."""
         self.name = name
         self.id = uid
         self._stub = Orbita3DServiceStub(grpc_channel)
@@ -184,6 +185,9 @@ class Orbita3d:
                         a._state[field.name] = val
 
     def _build_grpc_cmd_msg(self, field: str) -> Float3D:
+        """Build a gRPC message from the registers that need to be synced at the joints and
+        motors level. Registers can either be goal_position, pid or speed_limit/torque_limit.
+        """
         if field == "goal_position":
             return Rotation3D(
                 rpy=ExtEulerAngles(
@@ -219,6 +223,8 @@ class Orbita3d:
         )
 
     def _build_grpc_cmd_msg_actuator(self, field: str) -> Float3D:
+        """Build a gRPC message from the registers that need to be synced at the actuator level.
+        Registers can either be compliant, pid, speed_limit or torque_limit."""
         if field == "pid":
             motor_1_gains = self.__motor_1._tmp_pid
             motor_2_gains = self.__motor_2._tmp_pid
@@ -279,12 +285,21 @@ class Orbita3d:
         self._loop = asyncio.get_running_loop()
 
     def _set_motors_fields(self, field: str, value: float) -> None:
+        """Set the value of the register for all motors of the actuator.
+
+        It is used to set pid, speed_limit and torque_limit.
+        """
         for m in self._motors.values():
             m._tmp_fields[field] = value
 
         self._update_loop(field)
 
     def _update_loop(self, field: str) -> None:
+        """Update the registers that need to be synced.
+
+        Set a threading event to inform the stream command thread that some data need to be pushed
+        to the robot.
+        """
         async def set_in_loop() -> None:
             self._register_needing_sync.append(field)
             self._need_sync.set()

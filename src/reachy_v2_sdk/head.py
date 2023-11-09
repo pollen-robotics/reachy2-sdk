@@ -34,7 +34,7 @@ class Head:
     """
 
     def __init__(self, head_msg: Head_proto, initial_state: HeadState, grpc_channel: grpc.Channel) -> None:
-        """Set up the head."""
+        """Initialize the head with its actuators."""
         self._grpc_channel = grpc_channel
         self._head_stub = HeadServiceStub(grpc_channel)
         self.part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
@@ -47,6 +47,10 @@ class Head:
         }
 
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
+        """Set up the head with its actuators.
+
+        It will create the actuators neck and antennas and set their initial state.
+        """
         description = head.description
         self.neck = Orbita3d(
             uid=description.neck.id.id,
@@ -75,6 +79,10 @@ class Head:
         }\n>"""
 
     def get_orientation(self) -> pyQuat:
+        """Get the current orientation of the head.
+
+        It will return the quaternion (x, y, z, w).
+        """
         quat = self._head_stub.GetOrientation(self.part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
@@ -168,6 +176,7 @@ class Head:
 
     @compliant.setter
     def compliant(self, value: bool) -> None:
+        """Set compliancy of all the part's actuators"""
         if not isinstance(value, bool):
             raise ValueError("Expecting bool as compliant value")
         if value:

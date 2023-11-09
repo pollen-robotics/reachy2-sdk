@@ -46,7 +46,7 @@ from .orbita3d import Orbita3d
 
 
 def singleton(cls: Any, *args: Any, **kw: Any) -> Any:
-    """singleton decorator enanles the creation of a single instance of a class.
+    """singleton decorator enables the creation of a single instance of a class.
 
     Used to check only one connection to ReachySDK is open.
     Raise ConnectionError if several a user attempts several connections.
@@ -138,7 +138,7 @@ is running and that the IP is correct."
 
     @property
     def grpc_status(self) -> str:
-        """Get the status of the connection with the robot.
+        """Get the status of the connection with the robot server.
 
         Can be either 'connected' or 'disconnected'.
         """
@@ -146,6 +146,7 @@ is running and that the IP is correct."
 
     @property
     def _grpc_status(self) -> str:
+        """Get the status of the connection with the robot server."""
         if self._grpc_connected:
             return "connected"
         else:
@@ -153,6 +154,7 @@ is running and that the IP is correct."
 
     @_grpc_status.setter
     def _grpc_status(self, status: str) -> None:
+        """Set the status of the connection with the robot server."""
         if status == "connected":
             self._grpc_connected = True
         elif status == "disconnected":
@@ -184,6 +186,11 @@ is running and that the IP is correct."
         self._grpc_status = "connected"
 
     def _setup_parts(self) -> None:
+        """Setup all parts of the robot.
+
+        Get the state of each part of the robot, create an instance for each of them and add
+        it to the ReachySDK instance.
+        """
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
@@ -218,6 +225,7 @@ is running and that the IP is correct."
         #     pass
 
     async def _poll_waiting_2dcommands(self) -> Orbita2DsCommand:
+        """Poll registers to update for Orbita2d actuators of the robot."""
         tasks = []
 
         for part in self._enabled_parts.values():
@@ -244,6 +252,7 @@ is running and that the IP is correct."
             pass
 
     async def _poll_waiting_3dcommands(self) -> Orbita3DsCommand:
+        """Poll registers to update for Orbita3d actuators of the robot."""
         tasks = []
 
         for part in self._enabled_parts.values():
@@ -296,11 +305,18 @@ is running and that the IP is correct."
     #         pass
 
     def _start_sync_in_bg(self) -> None:
+        """Start the synchronization asyncio tasks with the robot in background."""
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         self._loop.run_until_complete(self._sync_loop())
 
     async def _sync_loop(self) -> None:
+        """Define the synchronization loop.
+
+        The synchronization loop is used to:
+            - stream commands to the robot
+            - update the state of the robot
+        """
         if hasattr(self, "r_arm"):
             for actuator in self.r_arm._actuators.values():
                 actuator._setup_sync_loop()
@@ -327,6 +343,7 @@ is running and that the IP is correct."
         )
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
+        """Update the state of the robot at a given frequency."""
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         try:
             async for state_update in reachy_stub.StreamReachyState(stream_req):
@@ -347,6 +364,11 @@ is running and that the IP is correct."
             self._grpc_status = "disconnected"
 
     async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2DServiceStub, freq: float) -> None:
+        """Stream commands for the 2d actuators of the robot at a given frequency.
+
+        Poll the waiting commands at a given frequency and stream them to the server.
+        Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
+        """
         async def command_poll_2d() -> Orbita2DsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
@@ -368,6 +390,11 @@ is running and that the IP is correct."
             self._grpc_status = "disconnected"
 
     async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3DServiceStub, freq: float) -> None:
+        """Stream commands for the 3d actuators of the robot at a given frequency.
+
+        Poll the waiting commands at a given frequency and stream them to the server.
+        Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
+        """
         async def command_poll_3d() -> Orbita3DsCommand:
             last_pub = 0.0
             dt = 1.0 / freq

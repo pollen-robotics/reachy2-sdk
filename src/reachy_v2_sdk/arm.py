@@ -40,6 +40,10 @@ class Arm:
     """
 
     def __init__(self, arm_msg: Arm_proto, initial_state: ArmState, grpc_channel: grpc.Channel) -> None:
+        """Define an arm (left or right).
+
+        Connect to the arm's gRPC server stub and set up the arm's actuators.
+        """
         self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
         self.part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
@@ -52,6 +56,10 @@ class Arm:
         }
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
+        """Set up the arm.
+        
+        Set up the arm's actuators (shoulder, elbow and wrist) with the arm's description and initial state.
+        """
         description = arm.description
         self.shoulder = Orbita2d(
             uid=description.shoulder.id.id,
@@ -166,6 +174,11 @@ class Arm:
         return self._arm_position_to_list(resp.arm_position)
 
     def _list_to_arm_position(self, positions: List[float], degrees: bool = True) -> ArmPosition:
+        """Convert a list of joint positions to an ArmPosition message.
+
+        This is used to send a joint position to the arm's gRPC server and to compute the forward
+        and inverse kinematics.
+        """
         if degrees:
             positions = self._convert_to_radians(positions)
         arm_pos = ArmPosition(
@@ -183,11 +196,16 @@ class Arm:
         return arm_pos
 
     def _convert_to_radians(self, my_list: List[float]) -> Any:
+        """Convert a list of angles from degrees to radians."""
         a = np.array(my_list)
         a = np.deg2rad(a)
         return a.tolist()
 
     def _arm_position_to_list(self, arm_pos: ArmPosition) -> List[float]:
+        """Convert an ArmPosition message to a list of joint positions.
+
+        It is used to convert the result of the inverse kinematics.
+        """
         positions = []
 
         for _, value in arm_pos.shoulder_position.ListFields():
@@ -298,6 +316,7 @@ class Arm:
 
     @compliant.setter
     def compliant(self, value: bool) -> None:
+        """Set compliancy of all the part's actuators"""
         if not isinstance(value, bool):
             raise ValueError("Expecting bool as compliant value")
         if value:
