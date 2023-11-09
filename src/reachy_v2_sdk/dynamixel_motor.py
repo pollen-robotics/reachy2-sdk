@@ -26,6 +26,7 @@ class DynamixelMotor:
 
     The DynamixelMotor class is used in parts using Dynamixel motors (hand and head).
     """
+
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
     present_position = Register(readonly=True, type=FloatValue, label="present_position")
     present_speed = Register(readonly=True, type=FloatValue, label="present_speed")

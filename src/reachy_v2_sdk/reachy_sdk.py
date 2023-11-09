@@ -369,6 +369,7 @@ is running and that the IP is correct."
         Poll the waiting commands at a given frequency and stream them to the server.
         Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
         """
+
         async def command_poll_2d() -> Orbita2DsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
@@ -395,6 +396,7 @@ is running and that the IP is correct."
         Poll the waiting commands at a given frequency and stream them to the server.
         Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
         """
+
         async def command_poll_3d() -> Orbita3DsCommand:
             last_pub = 0.0
             dt = 1.0 / freq

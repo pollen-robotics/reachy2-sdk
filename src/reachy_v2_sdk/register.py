@@ -14,6 +14,7 @@ class Register:
     This class is used to define the registers of the motors and joints of the robot
     such as the goal position, the present position, the speed limit, etc.
     """
+
     def __init__(
         self,
         readonly: bool,

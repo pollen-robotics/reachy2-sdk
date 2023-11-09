@@ -18,7 +18,7 @@ def _to_position(internal_pos: float) -> Any:
 
 def _to_internal_position(pos: float) -> Any:
     """Convert an angluar value in degrees to a value in radians.
-    
+
     It is necessary to convert the value from degrees to radians because the
     server expect values in radians.
     """

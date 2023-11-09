@@ -256,6 +256,7 @@ class Orbita2d:
         Set a threading event to inform the stream command thread that some data need to be pushed
         to the robot.
         """
+
         async def set_in_loop() -> None:
             self._register_needing_sync.append(field)
             self._need_sync.set()

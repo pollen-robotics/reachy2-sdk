@@ -57,7 +57,7 @@ class Arm:
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
         """Set up the arm.
-        
+
         Set up the arm's actuators (shoulder, elbow and wrist) with the arm's description and initial state.
         """
         description = arm.description
