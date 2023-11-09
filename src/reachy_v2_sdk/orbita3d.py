@@ -1,39 +1,69 @@
 import asyncio
-from grpc import Channel
+from typing import Any, Dict, List, Tuple
+
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
+from grpc import Channel
 from pyquaternion import Quaternion as pyQuat
-
-from typing import Dict, List, Any, Tuple
-
-from reachy_sdk_api_v2.orbita3d_pb2 import (
-    Float3D,
-    Orbita3DCommand,
-    Orbita3DState,
-    Vector3D,
-    PID3D,
-)
-
 from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
 from reachy_sdk_api_v2.kinematics_pb2 import ExtEulerAngles, Quaternion, Rotation3D
-from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DGoal
+from reachy_sdk_api_v2.orbita3d_pb2 import (
+    PID3D,
+    Float3D,
+    Orbita3DCommand,
+    Orbita3DGoal,
+    Orbita3DState,
+    Vector3D,
+)
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
-from .orbita_utils import OrbitaAxis, OrbitaJoint3D, OrbitaMotor, _to_internal_position
 
+from .orbita_utils import OrbitaAxis, OrbitaJoint3D, OrbitaMotor, _to_internal_position
 from .register import Register
 
 
 class Orbita3d:
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
 
-    def __init__(self, uid: int, name: str, initial_state: Orbita3DState, grpc_channel: Channel):  # noqa: C901
+    def __init__(
+        self, uid: int, name: str, initial_state: Orbita3DState, grpc_channel: Channel
+    ):
         self.name = name
         self.id = uid
         self._stub = Orbita3DServiceStub(grpc_channel)
 
         self._state: Dict[str, bool] = {}
-        init_state: Dict[str, Dict[str, float]] = {}
+        init_state: Dict[str, Dict[str, float]] = self._create_init_state(initial_state)
 
         self._register_needing_sync: List[str] = []
+
+        self.roll = OrbitaJoint3D(
+            initial_state=init_state["roll"], axis_type="roll", actuator=self
+        )
+        self.pitch = OrbitaJoint3D(
+            initial_state=init_state["pitch"], axis_type="pitch", actuator=self
+        )
+        self.yaw = OrbitaJoint3D(
+            initial_state=init_state["yaw"], axis_type="yaw", actuator=self
+        )
+        self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
+
+        self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
+        self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
+        self.__motor_3 = OrbitaMotor(initial_state=init_state["motor_3"], actuator=self)
+        self._motors = {
+            "motor_1": self.__motor_1,
+            "motor_2": self.__motor_2,
+            "motor_3": self.__motor_3,
+        }
+
+        self.__x = OrbitaAxis(initial_state=init_state["x"])
+        self.__y = OrbitaAxis(initial_state=init_state["y"])
+        self.__z = OrbitaAxis(initial_state=init_state["z"])
+        self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
+
+    def _create_init_state(  # noqa: C901
+        self, initial_state: Orbita3DState
+    ) -> Dict[str, Dict[str, float]]:
+        init_state: Dict[str, Dict[str, float]] = {}
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
@@ -57,21 +87,7 @@ class Orbita3d:
                         if axis.name not in init_state:
                             init_state[axis.name] = {}
                         init_state[axis.name][field.name] = val
-
-        self.roll = OrbitaJoint3D(initial_state=init_state["roll"], axis_type="roll", actuator=self)
-        self.pitch = OrbitaJoint3D(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
-        self.yaw = OrbitaJoint3D(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
-        self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
-
-        self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
-        self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
-        self.__motor_3 = OrbitaMotor(initial_state=init_state["motor_3"], actuator=self)
-        self._motors = {"motor_1": self.__motor_1, "motor_2": self.__motor_2, "motor_3": self.__motor_3}
-
-        self.__x = OrbitaAxis(initial_state=init_state["x"])
-        self.__y = OrbitaAxis(initial_state=init_state["y"])
-        self.__z = OrbitaAxis(initial_state=init_state["z"])
-        self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
+        return init_state
 
     def __repr__(self) -> str:
         """Clean representation of an Orbita2D."""
@@ -82,17 +98,25 @@ class Orbita3d:
 
     def set_speed_limit(self, speed_limit: float) -> None:
         if not isinstance(speed_limit, float | int):
-            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
+            raise ValueError(
+                f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}"
+            )
         speed_limit = _to_internal_position(speed_limit)
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:
         if not isinstance(torque_limit, float | int):
-            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
+            raise ValueError(
+                f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}"
+            )
         self._set_motors_fields("torque_limit", torque_limit)
 
     def set_pid(self, pid: Tuple[float, float, float]) -> None:
-        if isinstance(pid, tuple) and len(pid) == 3 and all(isinstance(n, float | int) for n in pid):
+        if (
+            isinstance(pid, tuple)
+            and len(pid) == 3
+            and all(isinstance(n, float | int) for n in pid)
+        ):
             for m in self._motors.values():
                 m._tmp_pid = pid
             self._update_loop("pid")
@@ -189,7 +213,11 @@ class Orbita3d:
             motor_1_gains = self.__motor_1._tmp_pid
             motor_2_gains = self.__motor_2._tmp_pid
             motor_3_gains = self.__motor_3._tmp_pid
-            if type(motor_1_gains) is tuple and type(motor_2_gains) is tuple and type(motor_3_gains) is tuple:
+            if (
+                type(motor_1_gains) is tuple
+                and type(motor_2_gains) is tuple
+                and type(motor_3_gains) is tuple
+            ):
                 return PID3D(
                     motor_1=PIDGains(
                         p=FloatValue(value=motor_1_gains[0]),
@@ -220,7 +248,9 @@ class Orbita3d:
     def __setattr__(self, __name: str, __value: Any) -> None:
         if __name == "compliant":
             if not isinstance(__value, bool):
-                raise ValueError(f"Expected bool for compliant value, got {type(__value).__name__}")
+                raise ValueError(
+                    f"Expected bool for compliant value, got {type(__value).__name__}"
+                )
             self._state[__name] = __value
 
             async def set_in_loop() -> None:

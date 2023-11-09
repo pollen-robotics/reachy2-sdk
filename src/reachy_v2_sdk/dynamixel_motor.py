@@ -1,20 +1,23 @@
-from grpc import Channel
 import asyncio
-
 from typing import Any, Dict, List
 
-from .register import Register
-
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-
-from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
-from reachy_sdk_api_v2.dynamixel_motor_pb2 import DynamixelMotorState, DynamixelMotorCommand
+from grpc import Channel
 from reachy_sdk_api_v2.component_pb2 import ComponentId
+from reachy_sdk_api_v2.dynamixel_motor_pb2 import (
+    DynamixelMotorCommand,
+    DynamixelMotorState,
+)
+from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
+
+from .register import Register
 
 
 class DynamixelMotor:
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
-    present_position = Register(readonly=True, type=FloatValue, label="present_position")
+    present_position = Register(
+        readonly=True, type=FloatValue, label="present_position"
+    )
     present_speed = Register(readonly=True, type=FloatValue, label="present_speed")
     present_load = Register(readonly=True, type=FloatValue, label="present_load")
     temperature = Register(readonly=True, type=FloatValue, label="temperature")
@@ -22,7 +25,13 @@ class DynamixelMotor:
     speed_limit = Register(readonly=False, type=FloatValue, label="speed_limit")
     torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
 
-    def __init__(self, uid: int, name: str, initial_state: DynamixelMotorState, grpc_channel: Channel):
+    def __init__(
+        self,
+        uid: int,
+        name: str,
+        initial_state: DynamixelMotorState,
+        grpc_channel: Channel,
+    ):
         self.id = uid
         self.name = name
         self._stub = DynamixelMotorServiceStub(grpc_channel)
@@ -59,7 +68,9 @@ class DynamixelMotor:
             self._state[field.name] = value
 
     def set_position(self, goal_position: float, duration: float) -> None:
-        self._stub.SetPosition(id=self.id, goal_position=goal_position, duration=FloatValue(value=duration))
+        self._stub.SetPosition(
+            id=self.id, goal_position=goal_position, duration=FloatValue(value=duration)
+        )
 
     def _setup_sync_loop(self) -> None:
         """Set up the async synchronisation loop.

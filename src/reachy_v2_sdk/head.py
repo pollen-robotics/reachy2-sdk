@@ -4,21 +4,28 @@ Handles all specific method to an Head:
 - the inverse kinematics
 - look_at function
 """
+from typing import Dict, Optional, Tuple
+
 import grpc
-
-from pyquaternion import Quaternion as pyQuat
-
 from google.protobuf.wrappers_pb2 import FloatValue
-
-from typing import Optional, Tuple, Dict
-
+from pyquaternion import Quaternion as pyQuat
+from reachy_sdk_api_v2.head_pb2 import Head as Head_proto
+from reachy_sdk_api_v2.head_pb2 import (
+    HeadLookAtGoal,
+    HeadPosition,
+    HeadState,
+    NeckFKRequest,
+    NeckIKRequest,
+    NeckOrientation,
+)
 from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
-from reachy_sdk_api_v2.head_pb2 import Head as Head_proto, HeadState
-from reachy_sdk_api_v2.head_pb2 import HeadLookAtGoal
-from reachy_sdk_api_v2.head_pb2 import HeadPosition, NeckOrientation
-from reachy_sdk_api_v2.head_pb2 import NeckFKRequest, NeckIKRequest
+from reachy_sdk_api_v2.kinematics_pb2 import (
+    ExtEulerAngles,
+    Point,
+    Quaternion,
+    Rotation3D,
+)
 from reachy_sdk_api_v2.part_pb2 import PartId
-from reachy_sdk_api_v2.kinematics_pb2 import Point, Rotation3D, Quaternion, ExtEulerAngles
 
 from .orbita3d import Orbita3d
 
@@ -33,7 +40,9 @@ class Head:
     expressed in Reachy's coordinate system.
     """
 
-    def __init__(self, head_msg: Head_proto, initial_state: HeadState, grpc_channel: grpc.Channel) -> None:
+    def __init__(
+        self, head_msg: Head_proto, initial_state: HeadState, grpc_channel: grpc.Channel
+    ) -> None:
         """Set up the head."""
         self._grpc_channel = grpc_channel
         self._head_stub = HeadServiceStub(grpc_channel)
@@ -69,7 +78,12 @@ class Head:
 
     def __repr__(self) -> str:
         """Clean representation of an Head."""
-        s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
+        s = "\n\t".join(
+            [
+                act_name + ": " + str(actuator)
+                for act_name, actuator in self._actuators.items()
+            ]
+        )
         return f"""<Head actuators=\n\t{
             s
         }\n>"""
@@ -78,7 +92,9 @@ class Head:
         quat = self._head_stub.GetOrientation(self.part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
-    def forward_kinematics(self, rpy_position: Optional[Tuple[float, float, float]] = None) -> pyQuat:
+    def forward_kinematics(
+        self, rpy_position: Optional[Tuple[float, float, float]] = None
+    ) -> pyQuat:
         if rpy_position is None:
             return self.get_orientation()
         else:
@@ -99,7 +115,9 @@ class Head:
             return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def inverse_kinematics(
-        self, orientation: Optional[pyQuat] = None, rpy_q0: Optional[Tuple[float, float, float]] = None
+        self,
+        orientation: Optional[pyQuat] = None,
+        rpy_q0: Optional[Tuple[float, float, float]] = None,
     ) -> Tuple[float, float, float]:
         req_params = {
             "id": self.part_id,
@@ -114,13 +132,23 @@ class Head:
                 )
             )
         if rpy_q0 is not None:
-            req_params["q0"] = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
+            req_params["q0"] = Rotation3D(
+                rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2])
+            )
         req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
-        return (rpy_pos.position.rpy.roll, rpy_pos.position.rpy.pitch, rpy_pos.position.rpy.yaw)
+        return (
+            rpy_pos.position.rpy.roll,
+            rpy_pos.position.rpy.pitch,
+            rpy_pos.position.rpy.yaw,
+        )
 
     def look_at(self, x: float, y: float, z: float, duration: float) -> None:
-        req = HeadLookAtGoal(id=self.part_id, point=Point(x=x, y=y, z=z), duration=FloatValue(value=duration))
+        req = HeadLookAtGoal(
+            id=self.part_id,
+            point=Point(x=x, y=y, z=z),
+            duration=FloatValue(value=duration),
+        )
         self._head_stub.LookAt(req)
 
     def turn_on(self) -> None:
@@ -137,7 +165,9 @@ class Head:
 
     @property
     def compliant(self) -> Dict[str, bool]:
-        return {"neck": self.neck.compliant}  # , "l_antenna": self.l_antenna.compliant, "r_antenna": self.r_antenna.compliant}
+        return {
+            "neck": self.neck.compliant
+        }  # , "l_antenna": self.l_antenna.compliant, "r_antenna": self.r_antenna.compliant}
 
     @compliant.setter
     def compliant(self, value: bool) -> None:
