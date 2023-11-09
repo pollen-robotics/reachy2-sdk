@@ -68,16 +68,12 @@ class Orbita2d:
         setattr(
             self,
             axis1_name,
-            OrbitaJoint2D(
-                initial_state=init_state["axis_1"], axis_type=axis1_name, actuator=self
-            ),
+            OrbitaJoint2D(initial_state=init_state["axis_1"], axis_type=axis1_name, actuator=self),
         )
         setattr(
             self,
             axis2_name,
-            OrbitaJoint2D(
-                initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self
-            ),
+            OrbitaJoint2D(initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self),
         )
         self._joints = {
             "axis_1": getattr(self, axis1_name),
@@ -101,25 +97,17 @@ class Orbita2d:
 
     def set_speed_limit(self, speed_limit: float) -> None:
         if not isinstance(speed_limit, float | int):
-            raise ValueError(
-                f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}"
-            )
+            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
         speed_limit = _to_internal_position(speed_limit)
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:
         if not isinstance(torque_limit, float | int):
-            raise ValueError(
-                f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}"
-            )
+            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
         self._set_motors_fields("torque_limit", torque_limit)
 
     def set_pid(self, pid: Tuple[float, float, float]) -> None:
-        if (
-            isinstance(pid, tuple)
-            and len(pid) == 3
-            and all(isinstance(n, float | int) for n in pid)
-        ):
+        if isinstance(pid, tuple) and len(pid) == 3 and all(isinstance(n, float | int) for n in pid):
             for m in self._motors.values():
                 m._tmp_pid = pid
             self._update_loop("pid")
@@ -200,9 +188,7 @@ class Orbita2d:
     def __setattr__(self, __name: str, __value: Any) -> None:
         if __name == "compliant":
             if not isinstance(__value, bool):
-                raise ValueError(
-                    f"Expected bool for compliant value, got {type(__value).__name__}"
-                )
+                raise ValueError(f"Expected bool for compliant value, got {type(__value).__name__}")
             self._state[__name] = __value
 
             async def set_in_loop() -> None:

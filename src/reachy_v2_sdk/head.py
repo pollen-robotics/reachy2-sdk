@@ -40,9 +40,7 @@ class Head:
     expressed in Reachy's coordinate system.
     """
 
-    def __init__(
-        self, head_msg: Head_proto, initial_state: HeadState, grpc_channel: grpc.Channel
-    ) -> None:
+    def __init__(self, head_msg: Head_proto, initial_state: HeadState, grpc_channel: grpc.Channel) -> None:
         """Set up the head."""
         self._grpc_channel = grpc_channel
         self._head_stub = HeadServiceStub(grpc_channel)
@@ -78,12 +76,7 @@ class Head:
 
     def __repr__(self) -> str:
         """Clean representation of an Head."""
-        s = "\n\t".join(
-            [
-                act_name + ": " + str(actuator)
-                for act_name, actuator in self._actuators.items()
-            ]
-        )
+        s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
         return f"""<Head actuators=\n\t{
             s
         }\n>"""
@@ -92,9 +85,7 @@ class Head:
         quat = self._head_stub.GetOrientation(self.part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
-    def forward_kinematics(
-        self, rpy_position: Optional[Tuple[float, float, float]] = None
-    ) -> pyQuat:
+    def forward_kinematics(self, rpy_position: Optional[Tuple[float, float, float]] = None) -> pyQuat:
         if rpy_position is None:
             return self.get_orientation()
         else:
@@ -132,9 +123,7 @@ class Head:
                 )
             )
         if rpy_q0 is not None:
-            req_params["q0"] = Rotation3D(
-                rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2])
-            )
+            req_params["q0"] = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
         req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
         return (
@@ -165,9 +154,7 @@ class Head:
 
     @property
     def compliant(self) -> Dict[str, bool]:
-        return {
-            "neck": self.neck.compliant
-        }  # , "l_antenna": self.l_antenna.compliant, "r_antenna": self.r_antenna.compliant}
+        return {"neck": self.neck.compliant}  # , "l_antenna": self.l_antenna.compliant, "r_antenna": self.r_antenna.compliant}
 
     @compliant.setter
     def compliant(self, value: bool) -> None:

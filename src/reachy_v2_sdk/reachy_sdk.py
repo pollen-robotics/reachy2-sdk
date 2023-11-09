@@ -146,12 +146,7 @@ is running and that the IP is correct."
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
-        s = "\n\t".join(
-            [
-                part_name + ": " + str(part)
-                for part_name, part in self._enabled_parts.items()
-            ]
-        )
+        s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self._enabled_parts.items()])
         return f"""<Reachy host="{self._host}"\n grpc_status={self.grpc_status} \n enabled_parts=\n\t{
             s
         }\n\tdisabled_parts={self._disabled_parts}\n>"""
@@ -192,9 +187,7 @@ is running and that the IP is correct."
         elif status == "disconnected":
             self._grpc_connected = False
         else:
-            raise ValueError(
-                "_grpc_status can only be set to 'connected' or 'disconnected'"
-            )
+            raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
 
     def _get_info(self) -> None:
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
@@ -213,9 +206,7 @@ is running and that the IP is correct."
 
         if self._robot.HasField("r_arm"):
             if initial_state.r_arm_state.activated:
-                r_arm = Arm(
-                    self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel
-                )
+                r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
                 setattr(self, "r_arm", r_arm)
                 self._enabled_parts["r_arm"] = getattr(self, "r_arm")
                 # if self._robot.HasField("r_hand"):
@@ -226,9 +217,7 @@ is running and that the IP is correct."
 
         if self._robot.HasField("l_arm"):
             if initial_state.l_arm_state.activated:
-                l_arm = Arm(
-                    self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel
-                )
+                l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel)
                 setattr(self, "l_arm", l_arm)
                 self._enabled_parts["l_arm"] = getattr(self, "l_arm")
             else:
@@ -236,9 +225,7 @@ is running and that the IP is correct."
 
         if self._robot.HasField("head"):
             if initial_state.head_state.activated:
-                head = Head(
-                    self._robot.head, initial_state.head_state, self._grpc_channel
-                )
+                head = Head(self._robot.head, initial_state.head_state, self._grpc_channel)
                 setattr(self, "head", head)
                 self._enabled_parts["head"] = getattr(self, "head")
             else:
@@ -250,9 +237,7 @@ is running and that the IP is correct."
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
             await asyncio.sleep(0.1)
-        raise ConnectionError(
-            "Connection with Reachy lost, check the sdk server status."
-        )
+        raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
     async def _poll_waiting_2dcommands(self) -> Orbita2DsCommand:
         tasks = []
@@ -375,12 +360,8 @@ is running and that the IP is correct."
         except asyncio.CancelledError:
             print("Stopped streaming commands.")
 
-    async def _get_stream_update_loop(
-        self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float
-    ) -> None:
-        stream_req = reachy_pb2.ReachyStreamStateRequest(
-            id=self._robot.id, publish_frequency=freq
-        )
+    async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
+        stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         try:
             async for state_update in reachy_stub.StreamReachyState(stream_req):
                 if hasattr(self, "l_arm"):
@@ -398,9 +379,7 @@ is running and that the IP is correct."
         except grpc.aio._call.AioRpcError:
             raise ConnectionError("")
 
-    async def _stream_orbita2d_commands_loop(
-        self, orbita2d_stub: Orbita2DServiceStub, freq: float
-    ) -> None:
+    async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2DServiceStub, freq: float) -> None:
         async def command_poll_2d() -> Orbita2DsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
@@ -421,9 +400,7 @@ is running and that the IP is correct."
         except grpc.aio._call.AioRpcError:
             pass
 
-    async def _stream_orbita3d_commands_loop(
-        self, orbita3d_stub: Orbita3DServiceStub, freq: float
-    ) -> None:
+    async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3DServiceStub, freq: float) -> None:
         async def command_poll_3d() -> Orbita3DsCommand:
             last_pub = 0.0
             dt = 1.0 / freq

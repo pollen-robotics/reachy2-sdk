@@ -36,9 +36,7 @@ from .orbita3d import Orbita3d
 
 
 class Arm:
-    def __init__(
-        self, arm_msg: Arm_proto, initial_state: ArmState, grpc_channel: grpc.Channel
-    ) -> None:
+    def __init__(self, arm_msg: Arm_proto, initial_state: ArmState, grpc_channel: grpc.Channel) -> None:
         self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
         self.part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
@@ -83,12 +81,7 @@ class Arm:
 
     def __repr__(self) -> str:
         """Clean representation of an Arm."""
-        s = "\n\t".join(
-            [
-                act_name + ": " + str(actuator)
-                for act_name, actuator in self._actuators.items()
-            ]
-        )
+        s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
         return f"""<Arm actuators=\n\t{
             s
         }\n>"""
@@ -105,24 +98,16 @@ class Arm:
                 for orbita in self._actuators.values()
                 for joint in orbita._joints.values()  # type: ignore
             ]
-            req_params["position"] = self._list_to_arm_position(
-                present_joints_positions, degrees
-            )
+            req_params["position"] = self._list_to_arm_position(present_joints_positions, degrees)
 
         else:
             if len(joints_positions) != 7:
-                raise ValueError(
-                    f"joints_positions should be length 7 (got {len(joints_positions)} instead)!"
-                )
-            req_params["position"] = self._list_to_arm_position(
-                joints_positions, degrees
-            )
+                raise ValueError(f"joints_positions should be length 7 (got {len(joints_positions)} instead)!")
+            req_params["position"] = self._list_to_arm_position(joints_positions, degrees)
         req = ArmFKRequest(**req_params)
         resp = self._arm_stub.ComputeArmFK(req)
         if not resp.success:
-            raise ValueError(
-                f"No solution found for the given joints ({joints_positions})!"
-            )
+            raise ValueError(f"No solution found for the given joints ({joints_positions})!")
 
         return np.array(resp.end_effector.pose.data).reshape((4, 4))
 
@@ -133,9 +118,7 @@ class Arm:
         degrees: bool = True,
     ) -> List[float]:
         if target.shape != (4, 4):
-            raise ValueError(
-                "target shape should be (4, 4) (got {target.shape} instead)!"
-            )
+            raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
 
         if q0 is not None and (len(q0) != 7):
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
@@ -160,9 +143,7 @@ class Arm:
 
         return self._arm_position_to_list(resp.arm_position)
 
-    def _list_to_arm_position(
-        self, positions: List[float], degrees: bool = True
-    ) -> ArmPosition:
+    def _list_to_arm_position(self, positions: List[float], degrees: bool = True) -> ArmPosition:
         if degrees:
             positions = self._convert_to_radians(positions)
         arm_pos = ArmPosition(
@@ -202,19 +183,13 @@ class Arm:
 
         return positions
 
-    def goto_from_matrix(
-        self, target: npt.NDArray[np.float64], duration: float = 0
-    ) -> None:
+    def goto_from_matrix(self, target: npt.NDArray[np.float64], duration: float = 0) -> None:
         position = target[:3, 3]
         orientation = target[:3, :3]
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3D(
-                matrix=Matrix3x3(
-                    roll=orientation[0], pitch=orientation[1], yaw=orientation[2]
-                )
-            ),
+            target_orientation=Rotation3D(matrix=Matrix3x3(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
             duration=FloatValue(value=duration),
         )
         self._arm_stub.GoToCartesianPosition(target)
@@ -228,11 +203,7 @@ class Arm:
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3D(
-                q=Quaternion(
-                    w=orientation.w, x=orientation.x, y=orientation.y, z=orientation.z
-                )
-            ),
+            target_orientation=Rotation3D(q=Quaternion(w=orientation.w, x=orientation.x, y=orientation.y, z=orientation.z)),
             duration=FloatValue(value=duration),
         )
         self._arm_stub.GoToCartesianPosition(target)
@@ -248,11 +219,7 @@ class Arm:
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3D(
-                rpy=ExtEulerAngles(
-                    roll=orientation[0], pitch=orientation[1], yaw=orientation[2]
-                )
-            ),
+            target_orientation=Rotation3D(rpy=ExtEulerAngles(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
             duration=FloatValue(value=duration),
         )
         if position_tol is not None:
@@ -267,13 +234,9 @@ class Arm:
             )
         self._arm_stub.GoToCartesianPosition(target)
 
-    def goto_joints(
-        self, positions: List[float], duration: float = 0, degrees: bool = True
-    ) -> None:
+    def goto_joints(self, positions: List[float], duration: float = 0, degrees: bool = True) -> None:
         arm_pos = self._list_to_arm_position(positions, degrees)
-        goal = ArmJointGoal(
-            id=self.part_id, position=arm_pos, duration=FloatValue(value=duration)
-        )
+        goal = ArmJointGoal(id=self.part_id, position=arm_pos, duration=FloatValue(value=duration))
         self._arm_stub.GoToJointPosition(goal)
 
     @property

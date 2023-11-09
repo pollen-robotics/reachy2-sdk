@@ -32,9 +32,7 @@ class OrbitaJoint2D:
         conversion=(_to_internal_position, _to_position),
     )
 
-    def __init__(
-        self, initial_state: Dict[str, float], axis_type: str, actuator: Any
-    ) -> None:
+    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
@@ -64,9 +62,7 @@ class OrbitaJoint3D:
         conversion=(_to_internal_position, _to_position),
     )
 
-    def __init__(
-        self, initial_state: Dict[str, float], axis_type: str, actuator: Any
-    ) -> None:
+    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state

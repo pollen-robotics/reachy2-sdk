@@ -15,9 +15,7 @@ from .register import Register
 
 class DynamixelMotor:
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
-    present_position = Register(
-        readonly=True, type=FloatValue, label="present_position"
-    )
+    present_position = Register(readonly=True, type=FloatValue, label="present_position")
     present_speed = Register(readonly=True, type=FloatValue, label="present_speed")
     present_load = Register(readonly=True, type=FloatValue, label="present_load")
     temperature = Register(readonly=True, type=FloatValue, label="temperature")
@@ -68,9 +66,7 @@ class DynamixelMotor:
             self._state[field.name] = value
 
     def set_position(self, goal_position: float, duration: float) -> None:
-        self._stub.SetPosition(
-            id=self.id, goal_position=goal_position, duration=FloatValue(value=duration)
-        )
+        self._stub.SetPosition(id=self.id, goal_position=goal_position, duration=FloatValue(value=duration))
 
     def _setup_sync_loop(self) -> None:
         """Set up the async synchronisation loop.

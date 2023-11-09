@@ -23,9 +23,7 @@ from .register import Register
 class Orbita3d:
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
 
-    def __init__(
-        self, uid: int, name: str, initial_state: Orbita3DState, grpc_channel: Channel
-    ):
+    def __init__(self, uid: int, name: str, initial_state: Orbita3DState, grpc_channel: Channel):
         self.name = name
         self.id = uid
         self._stub = Orbita3DServiceStub(grpc_channel)
@@ -35,15 +33,9 @@ class Orbita3d:
 
         self._register_needing_sync: List[str] = []
 
-        self.roll = OrbitaJoint3D(
-            initial_state=init_state["roll"], axis_type="roll", actuator=self
-        )
-        self.pitch = OrbitaJoint3D(
-            initial_state=init_state["pitch"], axis_type="pitch", actuator=self
-        )
-        self.yaw = OrbitaJoint3D(
-            initial_state=init_state["yaw"], axis_type="yaw", actuator=self
-        )
+        self.roll = OrbitaJoint3D(initial_state=init_state["roll"], axis_type="roll", actuator=self)
+        self.pitch = OrbitaJoint3D(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
+        self.yaw = OrbitaJoint3D(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
         self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
@@ -60,9 +52,7 @@ class Orbita3d:
         self.__z = OrbitaAxis(initial_state=init_state["z"])
         self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
 
-    def _create_init_state(  # noqa: C901
-        self, initial_state: Orbita3DState
-    ) -> Dict[str, Dict[str, float]]:
+    def _create_init_state(self, initial_state: Orbita3DState) -> Dict[str, Dict[str, float]]:  # noqa: C901
         init_state: Dict[str, Dict[str, float]] = {}
 
         for field, value in initial_state.ListFields():
@@ -98,25 +88,17 @@ class Orbita3d:
 
     def set_speed_limit(self, speed_limit: float) -> None:
         if not isinstance(speed_limit, float | int):
-            raise ValueError(
-                f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}"
-            )
+            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
         speed_limit = _to_internal_position(speed_limit)
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:
         if not isinstance(torque_limit, float | int):
-            raise ValueError(
-                f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}"
-            )
+            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
         self._set_motors_fields("torque_limit", torque_limit)
 
     def set_pid(self, pid: Tuple[float, float, float]) -> None:
-        if (
-            isinstance(pid, tuple)
-            and len(pid) == 3
-            and all(isinstance(n, float | int) for n in pid)
-        ):
+        if isinstance(pid, tuple) and len(pid) == 3 and all(isinstance(n, float | int) for n in pid):
             for m in self._motors.values():
                 m._tmp_pid = pid
             self._update_loop("pid")
@@ -213,11 +195,7 @@ class Orbita3d:
             motor_1_gains = self.__motor_1._tmp_pid
             motor_2_gains = self.__motor_2._tmp_pid
             motor_3_gains = self.__motor_3._tmp_pid
-            if (
-                type(motor_1_gains) is tuple
-                and type(motor_2_gains) is tuple
-                and type(motor_3_gains) is tuple
-            ):
+            if type(motor_1_gains) is tuple and type(motor_2_gains) is tuple and type(motor_3_gains) is tuple:
                 return PID3D(
                     motor_1=PIDGains(
                         p=FloatValue(value=motor_1_gains[0]),
@@ -248,9 +226,7 @@ class Orbita3d:
     def __setattr__(self, __name: str, __value: Any) -> None:
         if __name == "compliant":
             if not isinstance(__value, bool):
-                raise ValueError(
-                    f"Expected bool for compliant value, got {type(__value).__name__}"
-                )
+                raise ValueError(f"Expected bool for compliant value, got {type(__value).__name__}")
             self._state[__name] = __value
 
             async def set_in_loop() -> None:
