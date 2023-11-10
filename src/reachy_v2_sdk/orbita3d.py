@@ -6,15 +6,18 @@ from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from grpc import Channel
 from pyquaternion import Quaternion as pyQuat
 from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
-from reachy_sdk_api_v2.kinematics_pb2 import (ExtEulerAngles, Quaternion,
-                                              Rotation3D)
-from reachy_sdk_api_v2.orbita3d_pb2 import (PID3D, Float3D, Orbita3DCommand,
-                                            Orbita3DGoal, Orbita3DState,
-                                            Vector3D)
+from reachy_sdk_api_v2.kinematics_pb2 import ExtEulerAngles, Quaternion, Rotation3D
+from reachy_sdk_api_v2.orbita3d_pb2 import (
+    PID3D,
+    Float3D,
+    Orbita3DCommand,
+    Orbita3DGoal,
+    Orbita3DState,
+    Vector3D,
+)
 from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
 
-from .orbita_utils import (OrbitaAxis, OrbitaJoint3D, OrbitaMotor,
-                           _to_internal_position)
+from .orbita_utils import OrbitaAxis, OrbitaJoint3D, OrbitaMotor, _to_internal_position
 from .register import Register
 
 

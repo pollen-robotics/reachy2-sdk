@@ -13,16 +13,28 @@ import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
 from reachy_sdk_api_v2.arm_pb2 import Arm as Arm_proto
-from reachy_sdk_api_v2.arm_pb2 import (ArmCartesianGoal, ArmEndEffector,
-                                       ArmFKRequest, ArmIKRequest,
-                                       ArmJointGoal, ArmLimits, ArmPosition,
-                                       ArmState, ArmTemperatures)
+from reachy_sdk_api_v2.arm_pb2 import (
+    ArmCartesianGoal,
+    ArmEndEffector,
+    ArmFKRequest,
+    ArmIKRequest,
+    ArmJointGoal,
+    ArmLimits,
+    ArmPosition,
+    ArmState,
+    ArmTemperatures,
+)
 from reachy_sdk_api_v2.arm_pb2_grpc import ArmServiceStub
-from reachy_sdk_api_v2.kinematics_pb2 import (ExtEulerAngles,
-                                              ExtEulerAnglesTolerances,
-                                              Matrix3x3, Matrix4x4, Point,
-                                              PointDistanceTolerances,
-                                              Quaternion, Rotation3D)
+from reachy_sdk_api_v2.kinematics_pb2 import (
+    ExtEulerAngles,
+    ExtEulerAnglesTolerances,
+    Matrix3x3,
+    Matrix4x4,
+    Point,
+    PointDistanceTolerances,
+    Quaternion,
+    Rotation3D,
+)
 from reachy_sdk_api_v2.orbita2d_pb2 import Pose2D
 from reachy_sdk_api_v2.part_pb2 import PartId
 
