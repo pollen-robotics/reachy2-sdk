@@ -33,12 +33,15 @@ from .orbita3d import Orbita3d
 from .reachy import ReachyInfo, get_config
 
 # from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
-
-
 # from .dynamixel_motor import DynamixelMotor
 
 
 def singleton(cls: Any, *args: Any, **kw: Any) -> Any:
+    """singleton decorator enables the creation of a single instance of a class.
+
+    Used to check only one connection to ReachySDK is open.
+    Raise ConnectionError if several a user attempts several connections.
+    """
     instances = {}
 
     def _singleton(*args: Any, **kw: Any) -> Any:
@@ -54,12 +57,12 @@ def singleton(cls: Any, *args: Any, **kw: Any) -> Any:
 @singleton
 class ReachySDK:
     """The ReachySDK class handles the connection with your robot.
+    Only one instance of this class can be created in a session.
 
-    It holds:
-
-    - all joints (can be accessed directly via their name or via the joints list).
-    - all force sensors (can be accessed directly via their name or via the force_sensors list).
-    - all fans (can be accessed directly via their name or via the fans list).
+    # It holds:
+    # - all joints (can be accessed directly via their name or via the joints list).
+    # - all force sensors (can be accessed directly via their name or via the force_sensors list).
+    # - all fans (can be accessed directly via their name or via the fans list).
 
     The synchronisation with the robot is automatically launched at instanciation and is handled in background automatically.
     """
@@ -157,6 +160,7 @@ is running and that the IP is correct."
 
     @property
     def enabled_parts(self) -> List[str]:
+        """Get existing parts of the robot the user can effectively control."""
         if self._grpc_status == "disconnected":
             print("Cannot get enabled parts, not connected to Reachy.")
             return []
@@ -164,6 +168,7 @@ is running and that the IP is correct."
 
     @property
     def disabled_parts(self) -> List[str]:
+        """Get existing parts of the robot that cannot be controlled by the user"""
         if self._grpc_status == "disconnected":
             print("Cannot get disabled parts, not connected to Reachy.")
             return []
@@ -171,7 +176,7 @@ is running and that the IP is correct."
 
     @property
     def grpc_status(self) -> str:
-        """Get the status of the connection with the robot.
+        """Get the status of the connection with the robot server.
 
         Can be either 'connected' or 'disconnected'.
         """
@@ -179,6 +184,7 @@ is running and that the IP is correct."
 
     @property
     def _grpc_status(self) -> str:
+        """Get the status of the connection with the robot server."""
         if self._grpc_connected:
             return "connected"
         else:
@@ -186,6 +192,7 @@ is running and that the IP is correct."
 
     @_grpc_status.setter
     def _grpc_status(self, status: str) -> None:
+        """Set the status of the connection with the robot server."""
         if status == "connected":
             self._grpc_connected = True
         elif status == "disconnected":
@@ -194,6 +201,13 @@ is running and that the IP is correct."
             raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
 
     def _get_info(self) -> None:
+        """Get main description of the robot.
+
+        First connection to the robot. Information get:
+        - robot's parts
+        - robot's sofware and hardware version
+        - robot's serial number
+        """
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         try:
             self._robot = config_stub.GetReachy(Empty())
@@ -211,6 +225,11 @@ is running and that the IP is correct."
             print("Failed to connect to audio server. ReachySDK.audio will not be available.")
 
     def _setup_parts(self) -> None:
+        """Setup all parts of the robot.
+
+        Get the state of each part of the robot, create an instance for each of them and add
+        it to the ReachySDK instance.
+        """
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
@@ -250,6 +269,7 @@ is running and that the IP is correct."
         raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
     async def _poll_waiting_2dcommands(self) -> Orbita2DsCommand:
+        """Poll registers to update for Orbita2d actuators of the robot."""
         tasks = []
 
         for part in self._enabled_parts.values():
@@ -276,6 +296,7 @@ is running and that the IP is correct."
             pass
 
     async def _poll_waiting_3dcommands(self) -> Orbita3DsCommand:
+        """Poll registers to update for Orbita3d actuators of the robot."""
         tasks = []
 
         for part in self._enabled_parts.values():
@@ -329,6 +350,7 @@ is running and that the IP is correct."
     #         pass
 
     def _start_sync_in_bg(self) -> None:
+        """Start the synchronization asyncio tasks with the robot in background."""
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
 
@@ -339,6 +361,12 @@ is running and that the IP is correct."
             print("Sync loop cancelled.")
 
     async def _sync_loop(self) -> None:
+        """Define the synchronization loop.
+
+        The synchronization loop is used to:
+            - stream commands to the robot
+            - update the state of the robot
+        """
         if hasattr(self, "r_arm"):
             for actuator in self.r_arm._actuators.values():
                 actuator._setup_sync_loop()
@@ -371,6 +399,7 @@ is running and that the IP is correct."
             print("Stopped streaming commands.")
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
+        """Update the state of the robot at a given frequency."""
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         try:
             async for state_update in reachy_stub.StreamReachyState(stream_req):
@@ -390,6 +419,12 @@ is running and that the IP is correct."
             raise ConnectionError("")
 
     async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2DServiceStub, freq: float) -> None:
+        """Stream commands for the 2d actuators of the robot at a given frequency.
+
+        Poll the waiting commands at a given frequency and stream them to the server.
+        Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
+        """
+
         async def command_poll_2d() -> Orbita2DsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
@@ -411,6 +446,12 @@ is running and that the IP is correct."
             pass
 
     async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3DServiceStub, freq: float) -> None:
+        """Stream commands for the 3d actuators of the robot at a given frequency.
+
+        Poll the waiting commands at a given frequency and stream them to the server.
+        Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
+        """
+
         async def command_poll_3d() -> Orbita3DsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
@@ -450,6 +491,10 @@ is running and that the IP is correct."
     #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
     def turn_on(self) -> None:
+        """Turn all motors of enabled parts on.
+
+        All enabled parts' motors will then be stiff.
+        """
         if self._grpc_status == "disconnected":
             print("Cannot turn on Reachy, not connected.")
             return
@@ -457,6 +502,10 @@ is running and that the IP is correct."
             part.turn_on()
 
     def turn_off(self) -> None:
+        """Turn all motors of enabled parts off.
+
+        All enabled parts' motors will then be compliant.
+        """
         if self._grpc_status == "disconnected":
             print("Cannot turn off Reachy, not connected.")
             return

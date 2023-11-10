@@ -41,7 +41,7 @@ class Head:
     """
 
     def __init__(self, head_msg: Head_proto, initial_state: HeadState, grpc_channel: grpc.Channel) -> None:
-        """Set up the head."""
+        """Initialize the head with its actuators."""
         self._grpc_channel = grpc_channel
         self._head_stub = HeadServiceStub(grpc_channel)
         self.part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
@@ -54,6 +54,10 @@ class Head:
         }
 
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
+        """Set up the head with its actuators.
+
+        It will create the actuators neck and antennas and set their initial state.
+        """
         description = head.description
         self.neck = Orbita3d(
             uid=description.neck.id.id,
@@ -82,10 +86,19 @@ class Head:
         }\n>"""
 
     def get_orientation(self) -> pyQuat:
+        """Get the current orientation of the head.
+
+        It will return the quaternion (x, y, z, w).
+        """
         quat = self._head_stub.GetOrientation(self.part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def forward_kinematics(self, rpy_position: Optional[Tuple[float, float, float]] = None) -> pyQuat:
+        """Compute the forward kinematics of the head.
+
+        It will return the quaternion (x, y, z, w).
+        You can either specify a given joints position, otherwise it will use the current robot position.
+        """
         if rpy_position is None:
             return self.get_orientation()
         else:
@@ -110,6 +123,15 @@ class Head:
         orientation: Optional[pyQuat] = None,
         rpy_q0: Optional[Tuple[float, float, float]] = None,
     ) -> Tuple[float, float, float]:
+        """Compute the inverse kinematics of the arm.
+
+        Given a goal quaternion (x, y, z, w)
+        it will try to compute a joint solution to reach this target (or get close).
+
+        It will raise a ValueError if no solution is found.
+
+        You can also specify a basic joint configuration as a prior for the solution.
+        """
         req_params = {
             "id": self.part_id,
         }
@@ -133,17 +155,25 @@ class Head:
         )
 
     def look_at(self, x: float, y: float, z: float, duration: float) -> None:
-        req = HeadLookAtGoal(
-            id=self.part_id,
-            point=Point(x=x, y=y, z=z),
-            duration=FloatValue(value=duration),
-        )
+        """Compute and send neck rpy position to look at the (x, y, z) point in Reachy cartesian space (torso frame).
+
+        X is forward, Y is left and Z is upward. They all expressed in meters.
+        """
+        req = HeadLookAtGoal(id=self.part_id, point=Point(x=x, y=y, z=z), duration=FloatValue(value=duration))
         self._head_stub.LookAt(req)
 
     def turn_on(self) -> None:
+        """Turn all motors of the part on.
+
+        All head's motors will then be stiff.
+        """
         self._head_stub.TurnOn(self.part_id)
 
     def turn_off(self) -> None:
+        """Turn all motors of the part off.
+
+        All head's motors will then be compliant.
+        """
         self._head_stub.TurnOff(self.part_id)
 
     def _update_with(self, new_state: HeadState) -> None:
@@ -154,10 +184,12 @@ class Head:
 
     @property
     def compliant(self) -> Dict[str, bool]:
+        """Get compliancy of all the part's actuators"""
         return {"neck": self.neck.compliant}  # , "l_antenna": self.l_antenna.compliant, "r_antenna": self.r_antenna.compliant}
 
     @compliant.setter
     def compliant(self, value: bool) -> None:
+        """Set compliancy of all the part's actuators"""
         if not isinstance(value, bool):
             raise ValueError("Expecting bool as compliant value")
         if value:

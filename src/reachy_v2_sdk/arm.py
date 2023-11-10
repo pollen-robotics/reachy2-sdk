@@ -1,3 +1,10 @@
+"""Reachy Arm module.
+
+Handles all specific method to an Arm (left and/or right) especially:
+- the forward kinematics
+- the inverse kinematics
+- goto functions
+"""
 from typing import Any, Dict, List, Optional, Tuple
 
 import grpc
@@ -36,7 +43,19 @@ from .orbita3d import Orbita3d
 
 
 class Arm:
+    """Arm class used for both left/right arms.
+
+    It exposes the kinematics functions for the arm:
+    - you can compute the forward and inverse kinematics
+    It also exposes movements functions.
+    Arm can be turned on and off.
+    """
+
     def __init__(self, arm_msg: Arm_proto, initial_state: ArmState, grpc_channel: grpc.Channel) -> None:
+        """Define an arm (left or right).
+
+        Connect to the arm's gRPC server stub and set up the arm's actuators.
+        """
         self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
         self.part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
@@ -49,6 +68,10 @@ class Arm:
         }
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
+        """Set up the arm.
+
+        Set up the arm's actuators (shoulder, elbow and wrist) with the arm's description and initial state.
+        """
         description = arm.description
         self.shoulder = Orbita2d(
             uid=description.shoulder.id.id,
@@ -74,9 +97,17 @@ class Arm:
         )
 
     def turn_on(self) -> None:
+        """Turn all motors of the part on.
+
+        All arm's motors will then be stiff.
+        """
         self._arm_stub.TurnOn(self.part_id)
 
     def turn_off(self) -> None:
+        """Turn all motors of the part off.
+
+        All arm's motors will then be compliant.
+        """
         self._arm_stub.TurnOff(self.part_id)
 
     def __repr__(self) -> str:
@@ -89,6 +120,11 @@ class Arm:
     def forward_kinematics(
         self, joints_positions: Optional[List[float]] = None, degrees: bool = True
     ) -> npt.NDArray[np.float64]:
+        """Compute the forward kinematics of the arm.
+
+        It will return the pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate systems.
+        You can either specify a given joints position, otherwise it will use the current robot position.
+        """
         req_params = {
             "id": self.part_id,
         }
@@ -117,6 +153,15 @@ class Arm:
         q0: Optional[List[float]] = None,
         degrees: bool = True,
     ) -> List[float]:
+        """Compute the inverse kinematics of the arm.
+
+        Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
+        it will try to compute a joint solution to reach this target (or get close).
+
+        It will raise a ValueError if no solution is found.
+
+        You can also specify a basic joint configuration as a prior for the solution.
+        """
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
 
@@ -144,6 +189,11 @@ class Arm:
         return self._arm_position_to_list(resp.arm_position)
 
     def _list_to_arm_position(self, positions: List[float], degrees: bool = True) -> ArmPosition:
+        """Convert a list of joint positions to an ArmPosition message.
+
+        This is used to send a joint position to the arm's gRPC server and to compute the forward
+        and inverse kinematics.
+        """
         if degrees:
             positions = self._convert_to_radians(positions)
         arm_pos = ArmPosition(
@@ -167,11 +217,16 @@ class Arm:
         return arm_pos
 
     def _convert_to_radians(self, my_list: List[float]) -> Any:
+        """Convert a list of angles from degrees to radians."""
         a = np.array(my_list)
         a = np.deg2rad(a)
         return a.tolist()
 
     def _arm_position_to_list(self, arm_pos: ArmPosition) -> List[float]:
+        """Convert an ArmPosition message to a list of joint positions.
+
+        It is used to convert the result of the inverse kinematics.
+        """
         positions = []
 
         for _, value in arm_pos.shoulder_position.ListFields():
@@ -184,6 +239,12 @@ class Arm:
         return positions
 
     def goto_from_matrix(self, target: npt.NDArray[np.float64], duration: float = 0) -> None:
+        """Move the arm to a matrix target (or get close).
+
+        Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
+        it will try to compute a joint solution to reach this target (or get close),
+        and move to this position in the defined duration.
+        """
         position = target[:3, 3]
         orientation = target[:3, :3]
         target = ArmCartesianGoal(
@@ -194,12 +255,13 @@ class Arm:
         )
         self._arm_stub.GoToCartesianPosition(target)
 
-    def goto_from_quaternion(
-        self,
-        position: Tuple[float, float, float],
-        orientation: pyQuat,
-        duration: float = 0,
-    ) -> None:
+    def goto_from_quaternion(self, position: Tuple[float, float, float], orientation: pyQuat, duration: float = 0) -> None:
+        """Move the arm so that the end effector reaches the given position and orientation.
+
+        Given a 3D position and a quaternion expressed in Reachy coordinate systems,
+        it will try to compute a joint solution to reach this target (or get close),
+        and move to this position in the defined duration.
+        """
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
@@ -216,6 +278,14 @@ class Arm:
         orientation_tol: Optional[Tuple[float, float, float]] = (0, 0, 0),
         duration: float = 0,
     ) -> None:
+        """Move the arm so that the end effector reaches the given position and orientation.
+
+        Given a 3D position and a rpy rotation expressed in Reachy coordinate systems,
+        it will try to compute a joint solution to reach this target (or get close),
+        and move to this position in the defined duration.
+
+        You can also defined tolerances for each axis of the position and of the orientation.
+        """
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
@@ -235,17 +305,24 @@ class Arm:
         self._arm_stub.GoToCartesianPosition(target)
 
     def goto_joints(self, positions: List[float], duration: float = 0, degrees: bool = True) -> None:
+        """Move the arm's joints to reach the given position.
+
+        Given a list of joint positions (exactly 7 joint positions),
+        it will move the arm to that position.
+        """
         arm_pos = self._list_to_arm_position(positions, degrees)
         goal = ArmJointGoal(id=self.part_id, position=arm_pos, duration=FloatValue(value=duration))
         self._arm_stub.GoToJointPosition(goal)
 
     @property
     def joints_limits(self) -> ArmLimits:
+        """Get limits of all the part's joints"""
         limits = self._arm_stub.GetJointsLimits(self.part_id)
         return limits
 
     @property
     def temperatures(self) -> ArmTemperatures:
+        """Get temperatures of all the part's motors"""
         temperatures = self._arm_stub.GetTemperatures(self.part_id)
         return temperatures
 
@@ -257,14 +334,12 @@ class Arm:
 
     @property
     def compliant(self) -> Dict[str, bool]:
-        return {
-            "shoulder": self.shoulder.compliant,
-            "elbow": self.elbow.compliant,
-            "wrist": self.wrist.compliant,
-        }
+        """Get compliancy of all the part's actuators"""
+        return {"shoulder": self.shoulder.compliant, "elbow": self.elbow.compliant, "wrist": self.wrist.compliant}
 
     @compliant.setter
     def compliant(self, value: bool) -> None:
+        """Set compliancy of all the part's actuators"""
         if not isinstance(value, bool):
             raise ValueError("Expecting bool as compliant value")
         if value:
