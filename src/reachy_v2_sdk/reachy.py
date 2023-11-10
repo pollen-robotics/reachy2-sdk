@@ -23,7 +23,15 @@ class ReachyInfo:
 
 
 def get_config(msg: Reachy) -> str:
-    if msg.HasField("l_arm"):
-        return "full_kit"
+    mobile_base_presence = ""
+    if msg.HasField("mobile_base"):
+        mobile_base_presence = " with mobile_base"
+    if msg.HasField("head"):
+        if msg.HasField("l_arm") and msg.HasField("r_arm"):
+            return "full_kit" + mobile_base_presence
+        elif msg.HasField("l_arm"):
+            return "starter_kit (left arm)" + mobile_base_presence
+        else:
+            return "starter_kit (right arm)" + mobile_base_presence
     else:
-        return "none"
+        return "custom_config"

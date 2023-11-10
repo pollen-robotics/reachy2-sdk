@@ -136,7 +136,10 @@ class Arm:
         return np.array(resp.end_effector.pose.data).reshape((4, 4))
 
     def inverse_kinematics(
-        self, target: npt.NDArray[np.float64], q0: Optional[List[float]] = None, degrees: bool = True
+        self,
+        target: npt.NDArray[np.float64],
+        q0: Optional[List[float]] = None,
+        degrees: bool = True,
     ) -> List[float]:
         """Compute the inverse kinematics of the arm.
 
@@ -182,8 +185,14 @@ class Arm:
         if degrees:
             positions = self._convert_to_radians(positions)
         arm_pos = ArmPosition(
-            shoulder_position=Pose2D(axis_1=FloatValue(value=positions[0]), axis_2=FloatValue(value=positions[1])),
-            elbow_position=Pose2D(axis_1=FloatValue(value=positions[2]), axis_2=FloatValue(value=positions[3])),
+            shoulder_position=Pose2D(
+                axis_1=FloatValue(value=positions[0]),
+                axis_2=FloatValue(value=positions[1]),
+            ),
+            elbow_position=Pose2D(
+                axis_1=FloatValue(value=positions[2]),
+                axis_2=FloatValue(value=positions[3]),
+            ),
             wrist_position=Rotation3D(
                 rpy=ExtEulerAngles(
                     roll=positions[4],
@@ -277,7 +286,9 @@ class Arm:
             )
         if orientation_tol is not None:
             target.orientation_tolerance = ExtEulerAnglesTolerances(
-                x_tol=orientation_tol[0], y_tol=orientation_tol[1], z_tol=orientation_tol[2]
+                x_tol=orientation_tol[0],
+                y_tol=orientation_tol[1],
+                z_tol=orientation_tol[2],
             )
         self._arm_stub.GoToCartesianPosition(target)
 

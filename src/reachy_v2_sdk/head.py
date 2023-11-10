@@ -110,7 +110,9 @@ class Head:
             return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def inverse_kinematics(
-        self, orientation: Optional[pyQuat] = None, rpy_q0: Optional[Tuple[float, float, float]] = None
+        self,
+        orientation: Optional[pyQuat] = None,
+        rpy_q0: Optional[Tuple[float, float, float]] = None,
     ) -> Tuple[float, float, float]:
         """Compute the inverse kinematics of the arm.
 
@@ -137,7 +139,11 @@ class Head:
             req_params["q0"] = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
         req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
-        return (rpy_pos.position.rpy.roll, rpy_pos.position.rpy.pitch, rpy_pos.position.rpy.yaw)
+        return (
+            rpy_pos.position.rpy.roll,
+            rpy_pos.position.rpy.pitch,
+            rpy_pos.position.rpy.yaw,
+        )
 
     def look_at(self, x: float, y: float, z: float, duration: float) -> None:
         """Compute and send neck rpy position to look at the (x, y, z) point in Reachy cartesian space (torso frame).

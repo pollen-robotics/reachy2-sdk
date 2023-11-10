@@ -41,16 +41,38 @@ class Orbita3d:
 
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
 
-    def __init__(self, uid: int, name: str, initial_state: Orbita3DState, grpc_channel: Channel):  # noqa: C901
+    def __init__(self, uid: int, name: str, initial_state: Orbita3DState, grpc_channel: Channel):
         """Initialize the Orbita2d with its joints, motors and axis."""
         self.name = name
         self.id = uid
         self._stub = Orbita3DServiceStub(grpc_channel)
 
         self._state: Dict[str, bool] = {}
-        init_state: Dict[str, Dict[str, float]] = {}
+        init_state: Dict[str, Dict[str, float]] = self._create_init_state(initial_state)
 
         self._register_needing_sync: List[str] = []
+
+        self.roll = OrbitaJoint3D(initial_state=init_state["roll"], axis_type="roll", actuator=self)
+        self.pitch = OrbitaJoint3D(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
+        self.yaw = OrbitaJoint3D(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
+        self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
+
+        self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
+        self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
+        self.__motor_3 = OrbitaMotor(initial_state=init_state["motor_3"], actuator=self)
+        self._motors = {
+            "motor_1": self.__motor_1,
+            "motor_2": self.__motor_2,
+            "motor_3": self.__motor_3,
+        }
+
+        self.__x = OrbitaAxis(initial_state=init_state["x"])
+        self.__y = OrbitaAxis(initial_state=init_state["y"])
+        self.__z = OrbitaAxis(initial_state=init_state["z"])
+        self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
+
+    def _create_init_state(self, initial_state: Orbita3DState) -> Dict[str, Dict[str, float]]:  # noqa: C901
+        init_state: Dict[str, Dict[str, float]] = {}
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
@@ -74,21 +96,7 @@ class Orbita3d:
                         if axis.name not in init_state:
                             init_state[axis.name] = {}
                         init_state[axis.name][field.name] = val
-
-        self.roll = OrbitaJoint3D(initial_state=init_state["roll"], axis_type="roll", actuator=self)
-        self.pitch = OrbitaJoint3D(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
-        self.yaw = OrbitaJoint3D(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
-        self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
-
-        self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
-        self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
-        self.__motor_3 = OrbitaMotor(initial_state=init_state["motor_3"], actuator=self)
-        self._motors = {"motor_1": self.__motor_1, "motor_2": self.__motor_2, "motor_3": self.__motor_3}
-
-        self.__x = OrbitaAxis(initial_state=init_state["x"])
-        self.__y = OrbitaAxis(initial_state=init_state["y"])
-        self.__z = OrbitaAxis(initial_state=init_state["z"])
-        self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
+        return init_state
 
     def __repr__(self) -> str:
         """Clean representation of an Orbita3D."""
