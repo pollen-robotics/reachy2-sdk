@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-from reachy_sdk_api_v2.component_pb2 import PIDGains
+from reachy2_sdk_api.component_pb2 import PIDGains
 
 from .register import Register
 

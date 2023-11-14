@@ -17,13 +17,13 @@ from typing import Any, Dict, List
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
-from reachy_sdk_api_v2 import reachy_pb2, reachy_pb2_grpc
-from reachy_sdk_api_v2.orbita2d_pb2 import Orbita2DsCommand
+from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
+from reachy2_sdk_api.orbita2d_pb2 import Orbita2DsCommand
 
-# from reachy_sdk_api_v2.dynamixel_motor_pb2 import DynamixelMotorsCommand
-from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
-from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DsCommand
-from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
+# from reachy2_sdk_api.dynamixel_motor_pb2 import DynamixelMotorsCommand
+from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2DServiceStub
+from reachy2_sdk_api.orbita3d_pb2 import Orbita3DsCommand
+from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3DServiceStub
 
 from .arm import Arm
 from .audio import Audio
@@ -32,7 +32,7 @@ from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
 from .reachy import ReachyInfo, get_config
 
-# from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
+# from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 # from .dynamixel_motor import DynamixelMotor
 
 

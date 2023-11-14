@@ -8,13 +8,13 @@ from typing import List
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
-from reachy_sdk_api_v2.sound_pb2 import (
+from reachy2_sdk_api.sound_pb2 import (
     RecordingRequest,
     SoundId,
     SoundRequest,
     VolumeRequest,
 )
-from reachy_sdk_api_v2.sound_pb2_grpc import SoundServiceStub
+from reachy2_sdk_api.sound_pb2_grpc import SoundServiceStub
 
 
 class Audio:
