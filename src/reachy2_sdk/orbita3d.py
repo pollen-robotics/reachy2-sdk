@@ -8,11 +8,11 @@ from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.component_pb2 import ComponentId, PIDGains
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Quaternion, Rotation3d
 from reachy2_sdk_api.orbita3d_pb2 import (
-    PID3d,
     Float3d,
     Orbita3dCommand,
     Orbita3dGoal,
     Orbita3dState,
+    PID3d,
     Vector3d,
 )
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub

@@ -6,11 +6,11 @@ from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from grpc import Channel
 from reachy2_sdk_api.component_pb2 import ComponentId, PIDGains
 from reachy2_sdk_api.orbita2d_pb2 import (
-    PID2d,
     Axis,
     Float2d,
     Orbita2dCommand,
     Orbita2dState,
+    PID2d,
     Pose2d,
     Vector2d,
 )
