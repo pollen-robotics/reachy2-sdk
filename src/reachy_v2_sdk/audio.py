@@ -9,7 +9,6 @@ from typing import List
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from reachy_sdk_api_v2.sound_pb2 import (
-    RecordingAck,
     RecordingRequest,
     SoundId,
     SoundRequest,
