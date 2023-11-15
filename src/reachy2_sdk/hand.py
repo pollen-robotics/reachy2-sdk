@@ -5,10 +5,10 @@ Handles all specific method to an Arm (left and/or right) especially:
 - the inverse kinematics
 """
 import grpc
-from reachy_sdk_api_v2.hand_pb2 import Hand as Hand_proto
-from reachy_sdk_api_v2.hand_pb2 import HandState
-from reachy_sdk_api_v2.hand_pb2_grpc import HandServiceStub
-from reachy_sdk_api_v2.part_pb2 import PartId
+from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
+from reachy2_sdk_api.hand_pb2 import HandState
+from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
+from reachy2_sdk_api.part_pb2 import PartId
 
 
 class Hand:

@@ -2,8 +2,8 @@
 
 This module provides main info of the robot.
 """
-from reachy_sdk_api_v2.reachy_pb2 import Reachy
-from reachy_sdk_api_v2.reachy_pb2 import ReachyInfo as ReachyInfo_proto
+from reachy2_sdk_api.reachy_pb2 import Reachy
+from reachy2_sdk_api.reachy_pb2 import ReachyInfo as ReachyInfo_proto
 
 
 class ReachyInfo:

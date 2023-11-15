@@ -1,29 +1,30 @@
-"""This module defines the Orbita2d class and its registers, joints, motors and axis."""
+"""This module defines the Orbita3d class and its registers, joints, motors and axis."""
 import asyncio
 from typing import Any, Dict, List, Tuple
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from grpc import Channel
-from reachy_sdk_api_v2.component_pb2 import ComponentId, PIDGains
-from reachy_sdk_api_v2.orbita2d_pb2 import (
-    PID2D,
-    Axis,
-    Float2D,
-    Orbita2DCommand,
-    Orbita2DState,
-    Pose2D,
-    Vector2D,
+from pyquaternion import Quaternion as pyQuat
+from reachy2_sdk_api.component_pb2 import ComponentId, PIDGains
+from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Quaternion, Rotation3d
+from reachy2_sdk_api.orbita3d_pb2 import (
+    Float3d,
+    Orbita3dCommand,
+    Orbita3dGoal,
+    Orbita3dState,
+    PID3d,
+    Vector3d,
 )
-from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
+from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
-from .orbita_utils import OrbitaAxis, OrbitaJoint2D, OrbitaMotor, _to_internal_position
+from .orbita_utils import OrbitaAxis, OrbitaJoint3d, OrbitaMotor, _to_internal_position
 from .register import Register
 
 
-class Orbita2d:
-    """The Orbita2d class represents any Orbita2d actuator and its registers, joints, motors and axis.
+class Orbita3d:
+    """The Orbita3d class represents any Orbita2d actuator and its registers, joints, motors and axis.
 
-    The Orbita2d class is used to store the up-to-date state of the actuator, especially:
+    The Orbita3d class is used to store the up-to-date state of the actuator, especially:
         - its compliancy
         - its joints state
         - its motors state
@@ -43,77 +44,67 @@ class Orbita2d:
 
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
 
-    def __init__(  # noqa: C901
-        self,
-        uid: int,
-        name: str,
-        axis1: Axis,
-        axis2: Axis,
-        initial_state: Orbita2DState,
-        grpc_channel: Channel,
-    ):
-        """Initialize the Orbita2d with its joints, motors and its two axis (either roll, pith or yaw for both)."""
+    def __init__(self, uid: int, name: str, initial_state: Orbita3dState, grpc_channel: Channel):
+        """Initialize the Orbita2d with its joints, motors and axis."""
         self.name = name
         self.id = uid
-        self._stub = Orbita2DServiceStub(grpc_channel)
-
-        axis1_name = Axis.DESCRIPTOR.values_by_number[axis1].name.lower()
-        axis2_name = Axis.DESCRIPTOR.values_by_number[axis2].name.lower()
+        self._stub = Orbita3dServiceStub(grpc_channel)
 
         self._state: Dict[str, bool] = {}
-        init_state: Dict[str, Dict[str, float]] = {}
+        init_state: Dict[str, Dict[str, float]] = self._create_init_state(initial_state)
 
         self._register_needing_sync: List[str] = []
+
+        self.roll = OrbitaJoint3d(initial_state=init_state["roll"], axis_type="roll", actuator=self)
+        self.pitch = OrbitaJoint3d(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
+        self.yaw = OrbitaJoint3d(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
+        self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
+
+        self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
+        self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
+        self.__motor_3 = OrbitaMotor(initial_state=init_state["motor_3"], actuator=self)
+        self._motors = {
+            "motor_1": self.__motor_1,
+            "motor_2": self.__motor_2,
+            "motor_3": self.__motor_3,
+        }
+
+        self.__x = OrbitaAxis(initial_state=init_state["x"])
+        self.__y = OrbitaAxis(initial_state=init_state["y"])
+        self.__z = OrbitaAxis(initial_state=init_state["z"])
+        self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
+
+    def _create_init_state(self, initial_state: Orbita3dState) -> Dict[str, Dict[str, float]]:  # noqa: C901
+        init_state: Dict[str, Dict[str, float]] = {}
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
                 self._state[field.name] = value
                 init_state["motor_1"][field.name] = value
                 init_state["motor_2"][field.name] = value
+                init_state["motor_3"][field.name] = value
             else:
-                if isinstance(value, Pose2D):
-                    for axis, val in value.ListFields():
-                        if axis.name not in init_state:
-                            init_state[axis.name] = {}
-                        init_state[axis.name][field.name] = val
-                if isinstance(value, Float2D | PID2D):
+                if isinstance(value, Rotation3d):
+                    for joint in ["roll", "pitch", "yaw"]:
+                        if joint not in init_state:
+                            init_state[joint] = {}
+                        init_state[joint][field.name] = getattr(value.rpy, joint)
+                if isinstance(value, Float3d | PID3d):
                     for motor, val in value.ListFields():
                         if motor.name not in init_state:
                             init_state[motor.name] = {}
                         init_state[motor.name][field.name] = val
-                if isinstance(value, Vector2D):
+                if isinstance(value, Vector3d):
                     for axis, val in value.ListFields():
                         if axis.name not in init_state:
                             init_state[axis.name] = {}
                         init_state[axis.name][field.name] = val
-
-        setattr(
-            self,
-            axis1_name,
-            OrbitaJoint2D(initial_state=init_state["axis_1"], axis_type=axis1_name, actuator=self),
-        )
-        setattr(
-            self,
-            axis2_name,
-            OrbitaJoint2D(initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self),
-        )
-        self._joints = {
-            "axis_1": getattr(self, axis1_name),
-            "axis_2": getattr(self, axis2_name),
-        }
-
-        self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
-        self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
-        self._motors = {"motor_1": self.__motor_1, "motor_2": self.__motor_2}
-
-        self.__x = OrbitaAxis(initial_state=init_state["x"])
-        self.__y = OrbitaAxis(initial_state=init_state["y"])
-        self._axis = {"x": self.__x, "y": self.__y}
+        return init_state
 
     def __repr__(self) -> str:
-        """Clean representation of an Orbita2D."""
-        s = "\n\t".join([str(joint) for joint in self._joints.values()])
-        return f"""<Orbita2D compliant={self.compliant} joints=\n\t{
+        """Clean representation of an Orbita3d."""
+        s = "\n\t".join([str(joint) for _, joint in self._joints.items()])
+        return f"""<Orbita3d compliant={self.compliant} joints=\n\t{
             s
         }\n>"""
 
@@ -151,23 +142,69 @@ class Orbita2d:
         """Get pid of all motors of the actuator"""
         return {motor_name: m.pid for motor_name, m in self._motors.items()}
 
+    def orient(self, q: pyQuat, duration: float) -> None:
+        """Orient the head to a given quaternion.
+
+        Goal orientation is reached in a defined duration"""
+        req = Orbita3dGoal(
+            id=ComponentId(id=self.id, name=self.name),
+            rotation=Rotation3d(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)),
+            duration=FloatValue(value=duration),
+        )
+        self._stub.GoToOrientation(req)
+
+    def rotate_to(self, roll: float, pitch: float, yaw: float, duration: float) -> None:
+        """Rotate the head to a given roll, pitch, yaw orientation.
+
+        Goal orientation is reached in a defined duration"""
+        req = Orbita3dGoal(
+            id=ComponentId(id=self.id, name=self.name),
+            rotation=Rotation3d(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)),
+            duration=FloatValue(value=duration),
+        )
+        self._stub.GoToOrientation(req)
+
     @property
     def temperatures(self) -> Dict[str, Register]:
         """Get temperatures of all the motors of the actuator"""
         return {motor_name: m.temperature for motor_name, m in self._motors.items()}
 
-    def _build_grpc_cmd_msg(self, field: str) -> Pose2D | PID2D | Float2D:
+    def _update_with(self, new_state: Orbita3dState) -> None:  # noqa: C901
+        """Update the orbita with a newly received (partial) state received from the gRPC server."""
+        for field, value in new_state.ListFields():
+            if field.name == "compliant":
+                self._state[field.name] = value
+                for m in self._motors.values():
+                    m._state[field.name] = value
+            else:
+                if isinstance(value, Rotation3d):
+                    self.roll._state[field.name] = value.rpy.roll
+                    self.pitch._state[field.name] = value.rpy.pitch
+                    self.yaw._state[field.name] = value.rpy.yaw
+                if isinstance(value, Float3d):
+                    for motor, val in value.ListFields():
+                        m = self._motors[motor.name]
+                        m._state[field.name] = val
+                if isinstance(value, Vector3d):
+                    for axis, val in value.ListFields():
+                        a = self._axis[axis.name]
+                        a._state[field.name] = val
+
+    def _build_grpc_cmd_msg(self, field: str) -> Float3d:
         """Build a gRPC message from the registers that need to be synced at the joints and
         motors level. Registers can either be goal_position, pid or speed_limit/torque_limit.
         """
         if field == "goal_position":
-            return Pose2D(
-                axis_1=self._joints["axis_1"]._state["goal_position"],
-                axis_2=self._joints["axis_2"]._state["goal_position"],
+            return Rotation3d(
+                rpy=ExtEulerAngles(
+                    roll=self.roll._state["goal_position"],
+                    pitch=self.pitch._state["goal_position"],
+                    yaw=self.yaw._state["goal_position"],
+                )
             )
 
         elif field == "pid":
-            return PID2D(
+            return PID3d(
                 motor_1=PIDGains(
                     p=self.__motor_1._state[field].p,
                     i=self.__motor_1._state[field].i,
@@ -178,21 +215,28 @@ class Orbita2d:
                     i=self.__motor_2._state[field].i,
                     d=self.__motor_2._state[field].d,
                 ),
+                motor_3=PIDGains(
+                    p=self.__motor_3._state[field].p,
+                    i=self.__motor_3._state[field].i,
+                    d=self.__motor_3._state[field].d,
+                ),
             )
 
-        return Float2D(
+        return Float3d(
             motor_1=self.__motor_1._state[field],
             motor_2=self.__motor_2._state[field],
+            motor_3=self.__motor_3._state[field],
         )
 
-    def _build_grpc_cmd_msg_actuator(self, field: str) -> Float2D:
+    def _build_grpc_cmd_msg_actuator(self, field: str) -> Float3d:
         """Build a gRPC message from the registers that need to be synced at the actuator level.
         Registers can either be compliant, pid, speed_limit or torque_limit."""
         if field == "pid":
             motor_1_gains = self.__motor_1._tmp_pid
             motor_2_gains = self.__motor_2._tmp_pid
-            if type(motor_1_gains) is tuple and type(motor_2_gains) is tuple:
-                return PID2D(
+            motor_3_gains = self.__motor_3._tmp_pid
+            if type(motor_1_gains) is tuple and type(motor_2_gains) is tuple and type(motor_3_gains) is tuple:
+                return PID3d(
                     motor_1=PIDGains(
                         p=FloatValue(value=motor_1_gains[0]),
                         i=FloatValue(value=motor_1_gains[1]),
@@ -203,28 +247,23 @@ class Orbita2d:
                         i=FloatValue(value=motor_2_gains[1]),
                         d=FloatValue(value=motor_2_gains[2]),
                     ),
+                    motor_3=PIDGains(
+                        p=FloatValue(value=motor_3_gains[0]),
+                        i=FloatValue(value=motor_3_gains[1]),
+                        d=FloatValue(value=motor_3_gains[2]),
+                    ),
                 )
 
         motor_1_value = self.__motor_1._tmp_fields[field]
         motor_2_value = self.__motor_2._tmp_fields[field]
-        return Float2D(
+        motor_3_value = self.__motor_3._tmp_fields[field]
+        return Float3d(
             motor_1=FloatValue(value=motor_1_value),
             motor_2=FloatValue(value=motor_2_value),
+            motor_3=FloatValue(value=motor_3_value),
         )
 
-    def _setup_sync_loop(self) -> None:
-        """Set up the async synchronisation loop.
-
-        The setup is done separately, as the async Event should be created in the same EventLoop than it will be used.
-
-        The _need_sync Event is used to inform the robot that some data need to be pushed to the real robot.
-        The _register_needing_sync stores a list of the register that need to be synced.
-        """
-        self._need_sync = asyncio.Event()
-        self._loop = asyncio.get_running_loop()
-
     def __setattr__(self, __name: str, __value: Any) -> None:
-        """Set the value of the register."""
         if __name == "compliant":
             if not isinstance(__value, bool):
                 raise ValueError(f"Expected bool for compliant value, got {type(__value).__name__}")
@@ -239,6 +278,17 @@ class Orbita2d:
 
         else:
             super().__setattr__(__name, __value)
+
+    def _setup_sync_loop(self) -> None:
+        """Set up the async synchronisation loop.
+
+        The setup is done separately, as the async Event should be created in the same EventLoop than it will be used.
+
+        The _need_sync Event is used to inform the robot that some data need to be pushed to the real robot.
+        The _register_needing_sync stores a list of the register that need to be synced.
+        """
+        self._need_sync = asyncio.Event()
+        self._loop = asyncio.get_running_loop()
 
     def _set_motors_fields(self, field: str, value: float) -> None:
         """Set the value of the register for all motors of the actuator.
@@ -264,7 +314,7 @@ class Orbita2d:
         fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
         fut.result()
 
-    def _pop_command(self) -> Orbita2DCommand:
+    def _pop_command(self) -> Orbita3dCommand:
         """Create a gRPC command from the registers that need to be synced."""
         values = {
             "id": ComponentId(id=self.id),
@@ -283,7 +333,7 @@ class Orbita2d:
         for reg in set_reg_to_update:
             values[reg] = self._build_grpc_cmd_msg(reg)
 
-        command = Orbita2DCommand(**values)
+        command = Orbita3dCommand(**values)
 
         self._register_needing_sync.clear()
         for obj in list(self._joints.values()) + list(self._motors.values()):
@@ -291,23 +341,3 @@ class Orbita2d:
         self._need_sync.clear()
 
         return command
-
-    def _update_with(self, new_state: Orbita2DState) -> None:
-        """Update the orbita with a newly received (partial) state received from the gRPC server."""
-        for field, value in new_state.ListFields():
-            if field.name == "compliant":
-                self._state[field.name] = value
-                for m in self._motors.values():
-                    m._state[field.name] = value
-            else:
-                if isinstance(value, Pose2D):
-                    for joint, val in value.ListFields():
-                        self._joints[joint.name]._state[field.name] = val
-
-                if isinstance(value, Float2D):
-                    for motor, val in value.ListFields():
-                        self._motors[motor.name]._state[field.name] = val
-
-                if isinstance(value, Vector2D):
-                    for axis, val in value.ListFields():
-                        self._axis[axis.name]._state[field.name] = val

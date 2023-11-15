@@ -9,12 +9,12 @@ from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from grpc import Channel
-from reachy_sdk_api_v2.component_pb2 import ComponentId
-from reachy_sdk_api_v2.dynamixel_motor_pb2 import (
+from reachy2_sdk_api.component_pb2 import ComponentId
+from reachy2_sdk_api.dynamixel_motor_pb2 import (
     DynamixelMotorCommand,
     DynamixelMotorState,
 )
-from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
+from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 
 from .register import Register
 
