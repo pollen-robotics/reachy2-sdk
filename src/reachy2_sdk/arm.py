@@ -33,9 +33,9 @@ from reachy2_sdk_api.kinematics_pb2 import (
     Point,
     PointDistanceTolerances,
     Quaternion,
-    Rotation3D,
+    Rotation3d,
 )
-from reachy2_sdk_api.orbita2d_pb2 import Pose2D
+from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 from reachy2_sdk_api.part_pb2 import PartId
 
 from .orbita2d import Orbita2d
@@ -197,15 +197,15 @@ class Arm:
         if degrees:
             positions = self._convert_to_radians(positions)
         arm_pos = ArmPosition(
-            shoulder_position=Pose2D(
+            shoulder_position=Pose2d(
                 axis_1=FloatValue(value=positions[0]),
                 axis_2=FloatValue(value=positions[1]),
             ),
-            elbow_position=Pose2D(
+            elbow_position=Pose2d(
                 axis_1=FloatValue(value=positions[2]),
                 axis_2=FloatValue(value=positions[3]),
             ),
-            wrist_position=Rotation3D(
+            wrist_position=Rotation3d(
                 rpy=ExtEulerAngles(
                     roll=positions[4],
                     pitch=positions[5],
@@ -250,7 +250,7 @@ class Arm:
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3D(matrix=Matrix3x3(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
+            target_orientation=Rotation3d(matrix=Matrix3x3(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
             duration=FloatValue(value=duration),
         )
         self._arm_stub.GoToCartesianPosition(target)
@@ -258,14 +258,14 @@ class Arm:
     def goto_from_quaternion(self, position: Tuple[float, float, float], orientation: pyQuat, duration: float = 0) -> None:
         """Move the arm so that the end effector reaches the given position and orientation.
 
-        Given a 3D position and a quaternion expressed in Reachy coordinate systems,
+        Given a 3d position and a quaternion expressed in Reachy coordinate systems,
         it will try to compute a joint solution to reach this target (or get close),
         and move to this position in the defined duration.
         """
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3D(q=Quaternion(w=orientation.w, x=orientation.x, y=orientation.y, z=orientation.z)),
+            target_orientation=Rotation3d(q=Quaternion(w=orientation.w, x=orientation.x, y=orientation.y, z=orientation.z)),
             duration=FloatValue(value=duration),
         )
         self._arm_stub.GoToCartesianPosition(target)
@@ -280,7 +280,7 @@ class Arm:
     ) -> None:
         """Move the arm so that the end effector reaches the given position and orientation.
 
-        Given a 3D position and a rpy rotation expressed in Reachy coordinate systems,
+        Given a 3d position and a rpy rotation expressed in Reachy coordinate systems,
         it will try to compute a joint solution to reach this target (or get close),
         and move to this position in the defined duration.
 
@@ -289,7 +289,7 @@ class Arm:
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3D(rpy=ExtEulerAngles(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
+            target_orientation=Rotation3d(rpy=ExtEulerAngles(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
             duration=FloatValue(value=duration),
         )
         if position_tol is not None:

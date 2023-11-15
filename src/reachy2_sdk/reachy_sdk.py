@@ -18,12 +18,12 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
-from reachy2_sdk_api.orbita2d_pb2 import Orbita2DsCommand
+from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
 # from reachy2_sdk_api.dynamixel_motor_pb2 import DynamixelMotorsCommand
-from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2DServiceStub
-from reachy2_sdk_api.orbita3d_pb2 import Orbita3DsCommand
-from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3DServiceStub
+from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
+from reachy2_sdk_api.orbita3d_pb2 import Orbita3dsCommand
+from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
 from .arm import Arm
 from .audio import Audio
@@ -268,7 +268,7 @@ is running and that the IP is correct."
             await asyncio.sleep(0.1)
         raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
-    async def _poll_waiting_2dcommands(self) -> Orbita2DsCommand:
+    async def _poll_waiting_2dcommands(self) -> Orbita2dsCommand:
         """Poll registers to update for Orbita2d actuators of the robot."""
         tasks = []
 
@@ -290,12 +290,12 @@ is running and that the IP is correct."
                     if isinstance(actuator, Orbita2d) and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
 
-            return Orbita2DsCommand(cmd=commands)
+            return Orbita2dsCommand(cmd=commands)
 
         else:
             pass
 
-    async def _poll_waiting_3dcommands(self) -> Orbita3DsCommand:
+    async def _poll_waiting_3dcommands(self) -> Orbita3dsCommand:
         """Poll registers to update for Orbita3d actuators of the robot."""
         tasks = []
 
@@ -318,7 +318,7 @@ is running and that the IP is correct."
                     if isinstance(actuator, Orbita3d) and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
 
-            return Orbita3DsCommand(cmd=commands)
+            return Orbita3dsCommand(cmd=commands)
 
         else:
             pass
@@ -381,8 +381,8 @@ is running and that the IP is correct."
 
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
         reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
-        orbita2d_stub = Orbita2DServiceStub(async_channel)
-        orbita3d_stub = Orbita3DServiceStub(async_channel)
+        orbita2d_stub = Orbita2dServiceStub(async_channel)
+        orbita3d_stub = Orbita3dServiceStub(async_channel)
         # dynamixel_motor_stub = DynamixelMotorServiceStub(async_channel)
 
         try:
@@ -418,14 +418,14 @@ is running and that the IP is correct."
         except grpc.aio._call.AioRpcError:
             raise ConnectionError("")
 
-    async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2DServiceStub, freq: float) -> None:
+    async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2dServiceStub, freq: float) -> None:
         """Stream commands for the 2d actuators of the robot at a given frequency.
 
         Poll the waiting commands at a given frequency and stream them to the server.
         Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
         """
 
-        async def command_poll_2d() -> Orbita2DsCommand:
+        async def command_poll_2d() -> Orbita2dsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
 
@@ -445,14 +445,14 @@ is running and that the IP is correct."
         except grpc.aio._call.AioRpcError:
             pass
 
-    async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3DServiceStub, freq: float) -> None:
+    async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3dServiceStub, freq: float) -> None:
         """Stream commands for the 3d actuators of the robot at a given frequency.
 
         Poll the waiting commands at a given frequency and stream them to the server.
         Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
         """
 
-        async def command_poll_3d() -> Orbita3DsCommand:
+        async def command_poll_3d() -> Orbita3dsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
 
