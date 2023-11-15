@@ -9,6 +9,7 @@ from typing import List
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from reachy_sdk_api_v2.sound_pb2 import (
+    RecordingAck,
     RecordingRequest,
     SoundId,
     SoundRequest,
@@ -59,7 +60,9 @@ class Audio:
         self._audio_stub.StopSound(self._speaker_id)
 
     def start_recording(self, sound_name: str) -> None:
-        self._audio_stub.StartRecording(RecordingRequest(micro=self._microphone_id, recording_id=SoundId(id=sound_name)))
+        ack = self._audio_stub.StartRecording(RecordingRequest(micro=self._microphone_id, recording_id=SoundId(id=sound_name)))
+        if ack.ack.success is False:
+            raise RuntimeError(f"Failed to starting recording.")
 
     def stop_recording(self) -> None:
         self._audio_stub.StopRecording(self._microphone_id)
