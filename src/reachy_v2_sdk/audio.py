@@ -59,7 +59,9 @@ class Audio:
         self._audio_stub.StopSound(self._speaker_id)
 
     def start_recording(self, sound_name: str) -> None:
-        self._audio_stub.StartRecording(RecordingRequest(micro=self._microphone_id, recording_id=SoundId(id=sound_name)))
+        ack = self._audio_stub.StartRecording(RecordingRequest(micro=self._microphone_id, recording_id=SoundId(id=sound_name)))
+        if ack.ack.success is False:
+            raise RuntimeError("Failed to starting recording.")
 
     def stop_recording(self) -> None:
         self._audio_stub.StopRecording(self._microphone_id)
