@@ -9,43 +9,39 @@ You can also send joint commands, compute forward or inverse kinematics.
 
 import asyncio
 import atexit
-
 import threading
-
 import time
-
-from typing import List
 from logging import getLogger
+from typing import Any, Dict, List
 
 import grpc
-
-from typing import Dict, Any
-
-from grpc._channel import _InactiveRpcError
 from google.protobuf.empty_pb2 import Empty
+from grpc._channel import _InactiveRpcError
+from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
+from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
-from reachy_sdk_api_v2 import reachy_pb2, reachy_pb2_grpc
-from reachy_sdk_api_v2.orbita2d_pb2 import Orbita2DsCommand
-from reachy_sdk_api_v2.orbita3d_pb2 import Orbita3DsCommand
+# from reachy2_sdk_api.dynamixel_motor_pb2 import DynamixelMotorsCommand
+from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
+from reachy2_sdk_api.orbita3d_pb2 import Orbita3dsCommand
+from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
-# from reachy_sdk_api_v2.dynamixel_motor_pb2 import DynamixelMotorsCommand
-from reachy_sdk_api_v2.orbita2d_pb2_grpc import Orbita2DServiceStub
-from reachy_sdk_api_v2.orbita3d_pb2_grpc import Orbita3DServiceStub
-
-# from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
-
-from .reachy import ReachyInfo, get_config
 from .arm import Arm
-
+from .audio import Audio
 from .head import Head
-
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
+from .reachy import ReachyInfo, get_config
 
+# from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 # from .dynamixel_motor import DynamixelMotor
 
 
 def singleton(cls: Any, *args: Any, **kw: Any) -> Any:
+    """singleton decorator enables the creation of a single instance of a class.
+
+    Used to check only one connection to ReachySDK is open.
+    Raise ConnectionError if several a user attempts several connections.
+    """
     instances = {}
 
     def _singleton(*args: Any, **kw: Any) -> Any:
@@ -61,12 +57,12 @@ def singleton(cls: Any, *args: Any, **kw: Any) -> Any:
 @singleton
 class ReachySDK:
     """The ReachySDK class handles the connection with your robot.
+    Only one instance of this class can be created in a session.
 
-    It holds:
-
-    - all joints (can be accessed directly via their name or via the joints list).
-    - all force sensors (can be accessed directly via their name or via the force_sensors list).
-    - all fans (can be accessed directly via their name or via the fans list).
+    # It holds:
+    # - all joints (can be accessed directly via their name or via the joints list).
+    # - all force sensors (can be accessed directly via their name or via the force_sensors list).
+    # - all fans (can be accessed directly via their name or via the fans list).
 
     The synchronisation with the robot is automatically launched at instanciation and is handled in background automatically.
     """
@@ -75,16 +71,28 @@ class ReachySDK:
         self,
         host: str,
         sdk_port: int = 50051,
+        audio_port: int = 50063,
     ) -> None:
         """Set up the connection with the robot."""
         self._logger = getLogger()
         self._host = host
         self._sdk_port = sdk_port
+        self._audio_port = audio_port
+
+        self._grpc_connected = False
+        self.connect()
+
+    def connect(self) -> None:
+        if self._grpc_status == "connected":
+            print("Already connected to Reachy.")
+            return
+
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
 
         self._enabled_parts: Dict[str, Any] = {}
         self._disabled_parts: List[str] = []
 
+        self._stop_flag = threading.Event()
         self._ready = threading.Event()
         self._pushed_2dcommand = threading.Event()
         self._pushed_3dcommand = threading.Event()
@@ -101,12 +109,47 @@ is running and that the IP is correct."
             return
 
         self._setup_parts()
+        self._setup_audio()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
         self._sync_thread.start()
 
+        self._grpc_status = "connected"
         _open_connection.append(self)
+        print("Connected to Reachy.")
+
+    def disconnect(self) -> None:
+        if self._grpc_status == "disconnected":
+            print("Already disconnected from Reachy.")
+            return
+
+        for part in self._enabled_parts.values():
+            for actuator in part._actuators.values():
+                actuator._need_sync.clear()
+
+        self._stop_flag.set()
+        time.sleep(0.1)
+        self._grpc_status = "disconnected"
+
+        self._grpc_channel.close()
+        attributs = [attr for attr in dir(self) if not attr.startswith("_")]
+        for attr in attributs:
+            if attr not in [
+                "grpc_status",
+                "connect",
+                "disconnect",
+                "turn_on",
+                "turn_off",
+                "enabled_parts",
+                "disabled_parts",
+            ]:
+                delattr(self, attr)
+
+        for task in asyncio.all_tasks(loop=self._loop):
+            task.cancel()
+
+        print("Disconnected from Reachy.")
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
@@ -117,6 +160,7 @@ is running and that the IP is correct."
 
     @property
     def enabled_parts(self) -> List[str]:
+        """Get existing parts of the robot the user can effectively control."""
         if self._grpc_status == "disconnected":
             print("Cannot get enabled parts, not connected to Reachy.")
             return []
@@ -124,6 +168,7 @@ is running and that the IP is correct."
 
     @property
     def disabled_parts(self) -> List[str]:
+        """Get existing parts of the robot that cannot be controlled by the user"""
         if self._grpc_status == "disconnected":
             print("Cannot get disabled parts, not connected to Reachy.")
             return []
@@ -131,7 +176,7 @@ is running and that the IP is correct."
 
     @property
     def grpc_status(self) -> str:
-        """Get the status of the connection with the robot.
+        """Get the status of the connection with the robot server.
 
         Can be either 'connected' or 'disconnected'.
         """
@@ -139,6 +184,7 @@ is running and that the IP is correct."
 
     @property
     def _grpc_status(self) -> str:
+        """Get the status of the connection with the robot server."""
         if self._grpc_connected:
             return "connected"
         else:
@@ -146,19 +192,22 @@ is running and that the IP is correct."
 
     @_grpc_status.setter
     def _grpc_status(self, status: str) -> None:
+        """Set the status of the connection with the robot server."""
         if status == "connected":
             self._grpc_connected = True
         elif status == "disconnected":
             self._grpc_connected = False
-            self._grpc_channel.close()
-            attributs = [attr for attr in dir(self) if not attr.startswith("_")]
-            for attr in attributs:
-                if attr not in ["grpc_status", "turn_on", "turn_off", "enabled_parts", "disabled_parts"]:
-                    delattr(self, attr)
         else:
             raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
 
     def _get_info(self) -> None:
+        """Get main description of the robot.
+
+        First connection to the robot. Information get:
+        - robot's parts
+        - robot's sofware and hardware version
+        - robot's serial number
+        """
         config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         try:
             self._robot = config_stub.GetReachy(Empty())
@@ -169,7 +218,18 @@ is running and that the IP is correct."
         self.config = get_config(self._robot)
         self._grpc_status = "connected"
 
+    def _setup_audio(self) -> None:
+        try:
+            self.audio = Audio(self._host, self._audio_port)
+        except Exception:
+            print("Failed to connect to audio server. ReachySDK.audio will not be available.")
+
     def _setup_parts(self) -> None:
+        """Setup all parts of the robot.
+
+        Get the state of each part of the robot, create an instance for each of them and add
+        it to the ReachySDK instance.
+        """
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
@@ -203,20 +263,26 @@ is running and that the IP is correct."
         # if self._robot.HasField("mobile_base"):
         #     pass
 
-    async def _poll_waiting_2dcommands(self) -> Orbita2DsCommand:
+    async def _wait_for_stop(self) -> None:
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(0.1)
+        raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
+
+    async def _poll_waiting_2dcommands(self) -> Orbita2dsCommand:
+        """Poll registers to update for Orbita2d actuators of the robot."""
         tasks = []
 
         for part in self._enabled_parts.values():
             for actuator in part._actuators.values():
                 if isinstance(actuator, Orbita2d):
-                    tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
+                    # tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
+                    tasks.append(asyncio.create_task(actuator._need_sync.wait()))
 
         if len(tasks) > 0:
             await asyncio.wait(
                 tasks,
                 return_when=asyncio.FIRST_COMPLETED,
             )
-
             commands = []
 
             for part in self._enabled_parts.values():
@@ -224,18 +290,20 @@ is running and that the IP is correct."
                     if isinstance(actuator, Orbita2d) and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
 
-            return Orbita2DsCommand(cmd=commands)
+            return Orbita2dsCommand(cmd=commands)
 
         else:
             pass
 
-    async def _poll_waiting_3dcommands(self) -> Orbita3DsCommand:
+    async def _poll_waiting_3dcommands(self) -> Orbita3dsCommand:
+        """Poll registers to update for Orbita3d actuators of the robot."""
         tasks = []
 
         for part in self._enabled_parts.values():
             for actuator in part._actuators.values():
                 if isinstance(actuator, Orbita3d):
-                    tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
+                    tasks.append(asyncio.create_task(actuator._need_sync.wait()))
+                    # tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
 
         if len(tasks) > 0:
             await asyncio.wait(
@@ -250,7 +318,7 @@ is running and that the IP is correct."
                     if isinstance(actuator, Orbita3d) and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
 
-            return Orbita3DsCommand(cmd=commands)
+            return Orbita3dsCommand(cmd=commands)
 
         else:
             pass
@@ -282,11 +350,23 @@ is running and that the IP is correct."
     #         pass
 
     def _start_sync_in_bg(self) -> None:
+        """Start the synchronization asyncio tasks with the robot in background."""
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
-        self._loop.run_until_complete(self._sync_loop())
+
+        try:
+            self._loop.run_until_complete(self._sync_loop())
+            self.disconnect()
+        except asyncio.CancelledError:
+            print("Sync loop cancelled.")
 
     async def _sync_loop(self) -> None:
+        """Define the synchronization loop.
+
+        The synchronization loop is used to:
+            - stream commands to the robot
+            - update the state of the robot
+        """
         if hasattr(self, "r_arm"):
             for actuator in self.r_arm._actuators.values():
                 actuator._setup_sync_loop()
@@ -301,18 +381,25 @@ is running and that the IP is correct."
 
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
         reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
-        orbita2d_stub = Orbita2DServiceStub(async_channel)
-        orbita3d_stub = Orbita3DServiceStub(async_channel)
+        orbita2d_stub = Orbita2dServiceStub(async_channel)
+        orbita3d_stub = Orbita3dServiceStub(async_channel)
         # dynamixel_motor_stub = DynamixelMotorServiceStub(async_channel)
 
-        await asyncio.gather(
-            self._stream_orbita2d_commands_loop(orbita2d_stub, freq=100),
-            self._stream_orbita3d_commands_loop(orbita3d_stub, freq=100),
-            # self._stream_dynamixel_motor_commands_loop(dynamixel_motor_stub, freq=100),
-            self._get_stream_update_loop(reachy_stub, freq=100),
-        )
+        try:
+            await asyncio.gather(
+                self._stream_orbita2d_commands_loop(orbita2d_stub, freq=100),
+                self._stream_orbita3d_commands_loop(orbita3d_stub, freq=100),
+                # self._stream_dynamixel_motor_commands_loop(dynamixel_motor_stub, freq=100),
+                self._get_stream_update_loop(reachy_stub, freq=1),
+                self._wait_for_stop(),
+            )
+        except ConnectionError:
+            print("Connection with Reachy lost, check the sdk server status.")
+        except asyncio.CancelledError:
+            print("Stopped streaming commands.")
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
+        """Update the state of the robot at a given frequency."""
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         try:
             async for state_update in reachy_stub.StreamReachyState(stream_req):
@@ -329,11 +416,16 @@ is running and that the IP is correct."
                 if hasattr(self, "mobile_base"):
                     self.mobile_base._update_with(state_update.mobile_base_state)
         except grpc.aio._call.AioRpcError:
-            print("Connection with Reachy lost, check the sdk server status.")
-            self._grpc_status = "disconnected"
+            raise ConnectionError("")
 
-    async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2DServiceStub, freq: float) -> None:
-        async def command_poll_2d() -> Orbita2DsCommand:
+    async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2dServiceStub, freq: float) -> None:
+        """Stream commands for the 2d actuators of the robot at a given frequency.
+
+        Poll the waiting commands at a given frequency and stream them to the server.
+        Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
+        """
+
+        async def command_poll_2d() -> Orbita2dsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
 
@@ -351,10 +443,16 @@ is running and that the IP is correct."
         try:
             await orbita2d_stub.StreamCommand(command_poll_2d())
         except grpc.aio._call.AioRpcError:
-            self._grpc_status = "disconnected"
+            pass
 
-    async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3DServiceStub, freq: float) -> None:
-        async def command_poll_3d() -> Orbita3DsCommand:
+    async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3dServiceStub, freq: float) -> None:
+        """Stream commands for the 3d actuators of the robot at a given frequency.
+
+        Poll the waiting commands at a given frequency and stream them to the server.
+        Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
+        """
+
+        async def command_poll_3d() -> Orbita3dsCommand:
             last_pub = 0.0
             dt = 1.0 / freq
 
@@ -372,7 +470,7 @@ is running and that the IP is correct."
         try:
             await orbita3d_stub.StreamCommand(command_poll_3d())
         except grpc.aio._call.AioRpcError:
-            self._grpc_status = "disconnected"
+            pass
 
     # async def _stream_dynamixel_motor_commands_loop(self, dynamixel_motor_stub: DynamixelMotorServiceStub, freq: float) -> None:  # noqa: E501
     #     async def command_poll_dm() -> DynamixelMotorsCommand:
@@ -393,6 +491,10 @@ is running and that the IP is correct."
     #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
     def turn_on(self) -> None:
+        """Turn all motors of enabled parts on.
+
+        All enabled parts' motors will then be stiff.
+        """
         if self._grpc_status == "disconnected":
             print("Cannot turn on Reachy, not connected.")
             return
@@ -400,6 +502,10 @@ is running and that the IP is correct."
             part.turn_on()
 
     def turn_off(self) -> None:
+        """Turn all motors of enabled parts off.
+
+        All enabled parts' motors will then be compliant.
+        """
         if self._grpc_status == "disconnected":
             print("Cannot turn off Reachy, not connected.")
             return

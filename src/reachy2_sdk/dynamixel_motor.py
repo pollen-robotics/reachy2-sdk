@@ -1,18 +1,33 @@
-from grpc import Channel
-import asyncio
+"""
+This module defines the DynamixelMotor class.
 
+This class is used to represent a single Dynamixel motor on the robot.
+It is used to send commands to the motor and to read its state.
+"""
+import asyncio
 from typing import Any, Dict, List
+
+from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
+from grpc import Channel
+from reachy2_sdk_api.component_pb2 import ComponentId
+from reachy2_sdk_api.dynamixel_motor_pb2 import (
+    DynamixelMotorCommand,
+    DynamixelMotorState,
+)
+from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 
 from .register import Register
 
-from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-
-from reachy_sdk_api_v2.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
-from reachy_sdk_api_v2.dynamixel_motor_pb2 import DynamixelMotorState, DynamixelMotorCommand
-from reachy_sdk_api_v2.component_pb2 import ComponentId
-
 
 class DynamixelMotor:
+    """DynamixelMotor class.
+
+    This class is used to represent a single Dynamixel motor on the robot.
+    It is used to send commands to the motor and to read its state.
+
+    The DynamixelMotor class is used in parts using Dynamixel motors (hand and head).
+    """
+
     compliant = Register(readonly=False, type=BoolValue, label="compliant")
     present_position = Register(readonly=True, type=FloatValue, label="present_position")
     present_speed = Register(readonly=True, type=FloatValue, label="present_speed")
@@ -22,7 +37,13 @@ class DynamixelMotor:
     speed_limit = Register(readonly=False, type=FloatValue, label="speed_limit")
     torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
 
-    def __init__(self, uid: int, name: str, initial_state: DynamixelMotorState, grpc_channel: Channel):
+    def __init__(
+        self,
+        uid: int,
+        name: str,
+        initial_state: DynamixelMotorState,
+        grpc_channel: Channel,
+    ):
         self.id = uid
         self.name = name
         self._stub = DynamixelMotorServiceStub(grpc_channel)
@@ -59,6 +80,7 @@ class DynamixelMotor:
             self._state[field.name] = value
 
     def set_position(self, goal_position: float, duration: float) -> None:
+        """Set the goal position of the motor. The movement will be done in the given duration (in seconds)."""
         self._stub.SetPosition(id=self.id, goal_position=goal_position, duration=FloatValue(value=duration))
 
     def _setup_sync_loop(self) -> None:

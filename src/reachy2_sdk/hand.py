@@ -1,11 +1,8 @@
 import grpc
-import numpy as np
-
-from google.protobuf.wrappers_pb2 import FloatValue, BoolValue
-
-from reachy_sdk_api_v2.hand_pb2_grpc import HandServiceStub
-from reachy_sdk_api_v2.hand_pb2 import Hand as Hand_proto, HandState
-from reachy_sdk_api_v2.part_pb2 import PartId
+from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
+from reachy2_sdk_api.hand_pb2 import HandState
+from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
+from reachy2_sdk_api.part_pb2 import PartId
 
 from register import Register
 from typing import Any
