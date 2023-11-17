@@ -61,4 +61,4 @@ class Hand:
             if isinstance(value, BoolValue):
                 setattr(self, field.name, value.value)
             if isinstance(value, HandPosition):
-                setattr(self, field.name, value.position.parallel_gripper.position)
+                setattr(self, field.name, value.parallel_gripper.position)

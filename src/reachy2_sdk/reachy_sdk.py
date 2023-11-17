@@ -411,11 +411,11 @@ is running and that the IP is correct."
             async for state_update in reachy_stub.StreamReachyState(stream_req):
                 if hasattr(self, "l_arm"):
                     self.l_arm._update_with(state_update.l_arm_state)
-                    if hasattr(self.l_arm, "l_hand"):
+                    if hasattr(self.l_arm, "gripper"):
                         self.l_arm.gripper._update_with(state_update.l_hand_state)
                 if hasattr(self, "r_arm"):
                     self.r_arm._update_with(state_update.r_arm_state)
-                    if hasattr(self, "r_hand"):
+                    if hasattr(self.r_arm, "gripper"):
                         self.r_arm.gripper._update_with(state_update.r_hand_state)
                 if hasattr(self, "head"):
                     self.head._update_with(state_update.head_state)
