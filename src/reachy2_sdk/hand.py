@@ -1,22 +1,13 @@
 import grpc
+import numpy as np
+
+from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
-from reachy2_sdk_api.hand_pb2 import HandState
-from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
+from reachy2_sdk_api.hand_pb2 import HandPosition, HandPositionRequest, HandState, ParallelGripperPosition
 from reachy2_sdk_api.part_pb2 import PartId
+from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
 
-from register import Register
 from typing import Any
-
-
-def _to_position(internal_pos: float) -> Any:
-    return round(np.rad2deg(internal_pos), 2)
-
-
-def _to_internal_position(pos: float) -> Any:
-    try:
-        return np.deg2rad(pos)
-    except TypeError:
-        raise TypeError(f"Excepted one of: int, float, got {type(pos).__name__}")
 
 
 class Hand:
@@ -24,26 +15,38 @@ class Hand:
         """Set up the arm with its kinematics."""
         self._hand_stub = HandServiceStub(grpc_channel)
         self.type = "gripper"
-        self.part_id = PartId(id=hand_msg.part_id)
-        self.joints = []
-        self.motors = []
+        self.part_id = PartId(id=hand_msg.part_id.id)
 
     def __repr__(self) -> str:
         return ""
 
-    def open(self, percentage: float) -> None:
-        if not percentage:
+    def open(self, percentage: float = 100) -> None:
+        if not 0.0 <= percentage <= 100.0:
+            raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
+
+        if percentage == 100.0:
             self._hand_stub.OpenHand(self.part_id)
         else:
-            # Compute goal position depending on percentage
-            pass
+            self._hand_stub.SetHandPosition(
+                HandPositionRequest(
+                    id=self.part_id,
+                    position=HandPosition(parallel_gripper=ParallelGripperPosition(position=percentage/100.0))
+                )
+            )
 
-    def close(self, percentage: float) -> None:
-        if not percentage:
+    def close(self, percentage: float = 100) -> None:
+        if not 0.0 <= percentage <= 100.0:
+            raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
+
+        if percentage == 100.0:
             self._hand_stub.CloseHand(self.part_id)
         else:
-            # Compute goal position depending on percentage
-            pass
+            self._hand_stub.SetHandPosition(
+                HandPositionRequest(
+                    id=self.part_id,
+                    position=HandPosition(parallel_gripper=ParallelGripperPosition(position=(100-percentage)/100.0))
+                )
+            )
 
     def turn_on(self) -> None:
         self._hand_stub.TurnOn(self.part_id)
@@ -52,39 +55,10 @@ class Hand:
         self._hand_stub.TurnOff(self.part_id)
 
     def _update_with(self, new_state: HandState) -> None:
-        pass
-
-    @property
-    def is_holding_object(self) -> bool:
-        return False
-
-    @property
-    def force_sensor(self) -> float:
-        return 1.0
-
-
-class HandJoint:
-    goal_position = Register(readonly=False, type=float, label="goal_position")
-    present_position = Register(readonly=True, type=float, label="present_position")
-
-    def __init__(self) -> None:
-        pass
-
-
-class HandMotor:
-    temperature = Register(readonly=True, type=FloatValue, label="temperature")
-    speed_limit = Register(
-        readonly=False, type=FloatValue, label="speed_limit", conversion=(_to_internal_position, _to_position)
-    )
-    torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
-    compliant = Register(readonly=True, type=BoolValue, label="compliant")
-
-    # pid = Register(readonly=False, type=PIDGains, label="pid")
-
-    def __init__(self) -> None:
-        pass
-
-
-class ForceSensor:
-    def __init__(self) -> None:
-        pass
+        for field, value in new_state.ListFields():
+            if isinstance(value, FloatValue):
+                setattr(self, field.name, value.value)
+            if isinstance(value, BoolValue):
+                setattr(self, field.name, value.value)
+            if isinstance(value, HandPosition):
+                setattr(self, field.name, value.position.parallel_gripper.position)
