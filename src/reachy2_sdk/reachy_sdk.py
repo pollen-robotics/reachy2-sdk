@@ -27,6 +27,7 @@ from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
 from .arm import Arm
 from .audio import Audio
+from .hand import Hand
 from .head import Head
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
@@ -238,9 +239,10 @@ is running and that the IP is correct."
                 r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel)
                 setattr(self, "r_arm", r_arm)
                 self._enabled_parts["r_arm"] = getattr(self, "r_arm")
-                # if self._robot.HasField("r_hand"):
-                #     right_hand = Hand(self._grpc_channel, self._robot.r_hand)
-                #     setattr(self.r_arm, "gripper", right_hand)
+                if self._robot.HasField("r_hand"):
+                    right_hand = Hand(self._robot.r_hand, initial_state.r_hand_state, self._grpc_channel)
+                    r_arm = getattr(self, "r_arm")
+                    setattr(r_arm, "gripper", right_hand)
             else:
                 self._disabled_parts.append("r_arm")
 
@@ -249,6 +251,10 @@ is running and that the IP is correct."
                 l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel)
                 setattr(self, "l_arm", l_arm)
                 self._enabled_parts["l_arm"] = getattr(self, "l_arm")
+                if self._robot.HasField("l_hand"):
+                    left_hand = Hand(self._robot.l_hand, initial_state.l_hand_state, self._grpc_channel)
+                    l_arm = getattr(self, "l_arm")
+                    setattr(l_arm, "gripper", left_hand)
             else:
                 self._disabled_parts.append("l_arm")
 
