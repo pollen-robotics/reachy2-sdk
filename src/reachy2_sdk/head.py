@@ -9,8 +9,8 @@ from typing import Dict, Optional, Tuple
 import grpc
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
-from reachy_sdk_api_v2.head_pb2 import Head as Head_proto
-from reachy_sdk_api_v2.head_pb2 import (
+from reachy2_sdk_api.head_pb2 import Head as Head_proto
+from reachy2_sdk_api.head_pb2 import (
     HeadLookAtGoal,
     HeadPosition,
     HeadState,
@@ -18,14 +18,9 @@ from reachy_sdk_api_v2.head_pb2 import (
     NeckIKRequest,
     NeckOrientation,
 )
-from reachy_sdk_api_v2.head_pb2_grpc import HeadServiceStub
-from reachy_sdk_api_v2.kinematics_pb2 import (
-    ExtEulerAngles,
-    Point,
-    Quaternion,
-    Rotation3D,
-)
-from reachy_sdk_api_v2.part_pb2 import PartId
+from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
+from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
+from reachy2_sdk_api.part_pb2 import PartId
 
 from .orbita3d import Orbita3d
 
@@ -105,7 +100,7 @@ class Head:
             req = NeckFKRequest(
                 id=self.part_id,
                 position=HeadPosition(
-                    neck_position=Rotation3D(
+                    neck_position=Rotation3d(
                         rpy=ExtEulerAngles(
                             roll=rpy_position[0],
                             pitch=rpy_position[1],
@@ -145,7 +140,7 @@ class Head:
                 )
             )
         if rpy_q0 is not None:
-            req_params["q0"] = Rotation3D(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
+            req_params["q0"] = Rotation3d(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
         req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
         return (

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-from reachy_sdk_api_v2.component_pb2 import PIDGains
+from reachy2_sdk_api.component_pb2 import PIDGains
 
 from .register import Register
 
@@ -25,10 +25,10 @@ def _to_internal_position(pos: float) -> Any:
         raise TypeError(f"Excepted one of: int, float, got {type(pos).__name__}")
 
 
-class OrbitaJoint2D:
-    """The OrbitaJoint2D class represents any Orbita2d joint.
+class OrbitaJoint2d:
+    """The OrbitaJoint2d class represents any Orbita2d joint.
 
-    The OrbitaJoint2D class is used to store the up-to-date state of the joint, especially:
+    The OrbitaJoint2d class is used to store the up-to-date state of the joint, especially:
         - its present_position (RO)
         - its goal_position (RW)
     """
@@ -59,13 +59,13 @@ class OrbitaJoint2D:
         self._register_needing_sync: List[str] = []
 
     def __repr__(self) -> str:
-        return f'<OrbitaJoint2D axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
+        return f'<OrbitaJoint2d axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
 
 
-class OrbitaJoint3D:
-    """The OrbitaJoint3D class represents any Orbita3d joint.
+class OrbitaJoint3d:
+    """The OrbitaJoint3d class represents any Orbita3d joint.
 
-    The OrbitaJoint3D class is used to store the up-to-date state of the joint, especially:
+    The OrbitaJoint3d class is used to store the up-to-date state of the joint, especially:
         - its present position (RO)
         - its goal position (RW)
     """
@@ -98,7 +98,7 @@ class OrbitaJoint3D:
 
     def __repr__(self) -> str:
         """Return a clean representation of an Orbita 3d joint."""
-        return f'<OrbitaJoint3D axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
+        return f'<OrbitaJoint3d axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
 
 
 class OrbitaMotor:

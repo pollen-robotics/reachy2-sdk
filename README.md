@@ -1,4 +1,4 @@
-# Python SDK for Reachy v2
+# Python SDK for Reachy 2
 
 ## Install
 
