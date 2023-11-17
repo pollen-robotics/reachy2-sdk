@@ -12,6 +12,7 @@ from reachy2_sdk_api.sound_pb2 import (
     RecordingRequest,
     SoundId,
     SoundRequest,
+    TextRequest,
     VolumeRequest,
 )
 from reachy2_sdk_api.sound_pb2_grpc import SoundServiceStub
@@ -70,3 +71,6 @@ class Audio:
         if not 0 <= volume <= 1:
             raise ValueError(f"Volume should be between 0 and 1, got {volume}")
         self._audio_stub.ChangeVolume(VolumeRequest(id=self._speaker_id, volume=volume))
+
+    def say_text(self, text: str) -> None:
+        self._audio_stub.SayText(TextRequest(text=text))
