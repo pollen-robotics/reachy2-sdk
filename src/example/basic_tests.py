@@ -66,6 +66,9 @@ def main_test():
     reachy = ReachySDK(host="localhost")
 
     time.sleep(1.0)
+    if reachy.grpc_status == "disconnected":
+        print("Failed to connect to Reachy, exiting...")
+        return
 
     print("Putting each joint at 0 degrees angle")
     time.sleep(0.5)
