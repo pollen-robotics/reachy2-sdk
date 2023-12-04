@@ -38,9 +38,9 @@ from reachy2_sdk_api.kinematics_pb2 import (
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 from reachy2_sdk_api.part_pb2 import PartId
 
-from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
+from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 
 
 class Arm:

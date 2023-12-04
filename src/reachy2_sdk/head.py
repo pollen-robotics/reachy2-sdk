@@ -22,8 +22,8 @@ from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
 from reachy2_sdk_api.part_pb2 import PartId
 
-from .orbita_utils import OrbitaJoint3d
 from .orbita3d import Orbita3d
+from .orbita_utils import OrbitaJoint3d
 
 # from .dynamixel_motor import DynamixelMotor
 
