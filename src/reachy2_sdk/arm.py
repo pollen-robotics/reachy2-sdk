@@ -40,6 +40,7 @@ from reachy2_sdk_api.part_pb2 import PartId
 
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
+from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 
 
 class Arm:
@@ -61,11 +62,11 @@ class Arm:
         self.part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
 
         self._setup_arm(arm_msg, initial_state)
-        self._actuators = {
-            "shoulder": self.shoulder,
-            "elbow": self.elbow,
-            "wrist": self.wrist,
-        }
+
+        self._actuators: Dict[str, Orbita2d | Orbita3d] = {}
+        self._actuators["shoulder"] = self.shoulder
+        self._actuators["elbow"] = self.elbow
+        self._actuators["wrist"] = self.wrist
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
         """Set up the arm.
@@ -95,6 +96,20 @@ class Arm:
             initial_state=initial_state.wrist_state,
             grpc_channel=self._grpc_channel,
         )
+
+    @property
+    def actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
+        """Get all the arm's actuators."""
+        return self._actuators
+
+    @property
+    def joints(self) -> Dict[str, OrbitaJoint2d | OrbitaJoint3d]:
+        """Get all the arm's joints."""
+        _joints: Dict[str, OrbitaJoint2d | OrbitaJoint3d] = {}
+        for actuator_name, actuator in self._actuators.items():
+            for joint in actuator._joints.values():
+                _joints[actuator_name + "_" + joint.axis_type] = joint
+        return _joints
 
     def turn_on(self) -> None:
         """Turn all motors of the part on.
@@ -130,9 +145,7 @@ class Arm:
         }
         if joints_positions is None:
             present_joints_positions = [
-                joint.present_position
-                for orbita in self._actuators.values()
-                for joint in orbita._joints.values()  # type: ignore
+                joint.present_position for orbita in self._actuators.values() for joint in orbita._joints.values()
             ]
             req_params["position"] = self._list_to_arm_position(present_joints_positions, degrees)
 

@@ -31,6 +31,7 @@ from .hand import Hand
 from .head import Head
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
+from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 from .reachy import ReachyInfo, get_config
 
 # from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
@@ -144,6 +145,8 @@ is running and that the IP is correct."
                 "turn_off",
                 "enabled_parts",
                 "disabled_parts",
+                "joints",
+                "actuators",
             ]:
                 delattr(self, attr)
 
@@ -174,6 +177,32 @@ is running and that the IP is correct."
             print("Cannot get disabled parts, not connected to Reachy.")
             return []
         return self._disabled_parts
+
+    @property
+    def joints(self) -> Dict[str, OrbitaJoint2d | OrbitaJoint3d]:
+        """Get all joints of the robot."""
+        if self._grpc_status == "disconnected":
+            print("Cannot get joints, not connected to Reachy.")
+            return {}
+        _joints: Dict[str, OrbitaJoint2d | OrbitaJoint3d] = {}
+        for part_name in self.enabled_parts:
+            part = getattr(self, part_name)
+            for joint_name, joint in part.joints.items():
+                _joints[part_name + "_" + joint_name] = joint
+        return _joints
+
+    @property
+    def actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
+        """Get all actuators of the robot."""
+        if self._grpc_status == "disconnected":
+            print("Cannot get actuators, not connected to Reachy.")
+            return {}
+        _actuators: Dict[str, Orbita2d | Orbita3d] = {}
+        for part_name in self.enabled_parts:
+            part = getattr(self, part_name)
+            for actuator_name, actuator in part.actuators.items():
+                _actuators[part_name + "_" + actuator_name] = actuator
+        return _actuators
 
     @property
     def grpc_status(self) -> str:
