@@ -38,9 +38,9 @@ from reachy2_sdk_api.kinematics_pb2 import (
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 from reachy2_sdk_api.part_pb2 import PartId
 
-from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
+from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 
 
 class Arm:
@@ -147,7 +147,7 @@ class Arm:
             present_joints_positions = [
                 joint.present_position
                 for orbita in self._actuators.values()
-                for joint in orbita._joints.values()  # type: ignore
+                for joint in orbita._joints.values()
             ]
             req_params["position"] = self._list_to_arm_position(present_joints_positions, degrees)
 
@@ -200,7 +200,7 @@ class Arm:
             present_joints_positions = [
                 joint.present_position
                 for orbita in self._actuators.values()
-                for joint in orbita._joints.values()  # type: ignore
+                for joint in orbita._joints.values()
             ]
             req_params["q0"] = self._list_to_arm_position(present_joints_positions, degrees)
 
