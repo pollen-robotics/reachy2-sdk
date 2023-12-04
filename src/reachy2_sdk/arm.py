@@ -38,9 +38,9 @@ from reachy2_sdk_api.kinematics_pb2 import (
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 from reachy2_sdk_api.part_pb2 import PartId
 
+from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
-from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 
 
 class Arm:
@@ -145,7 +145,9 @@ class Arm:
         }
         if joints_positions is None:
             present_joints_positions = [
-                joint.present_position for orbita in self._actuators.values() for joint in orbita._joints.values()
+                joint.present_position
+                for orbita in self._actuators.values()
+                for joint in orbita._joints.values()  # type: ignore
             ]
             req_params["position"] = self._list_to_arm_position(present_joints_positions, degrees)
 
@@ -187,11 +189,20 @@ class Arm:
         req_params = {
             "target": ArmEndEffector(
                 pose=Matrix4x4(data=target.flatten().tolist()),
-            )
+            ),
+            "id": self.part_id,
         }
 
         if q0 is not None:
             req_params["q0"] = self._list_to_arm_position(q0, degrees)
+
+        else:
+            present_joints_positions = [
+                joint.present_position
+                for orbita in self._actuators.values()
+                for joint in orbita._joints.values()  # type: ignore
+            ]
+            req_params["q0"] = self._list_to_arm_position(present_joints_positions, degrees)
 
         req = ArmIKRequest(**req_params)
         resp = self._arm_stub.ComputeArmIK(req)
@@ -233,12 +244,23 @@ class Arm:
         """Convert a list of angles from degrees to radians."""
         a = np.array(my_list)
         a = np.deg2rad(a)
+
+        a = np.round(a, 3)
         return a.tolist()
 
-    def _arm_position_to_list(self, arm_pos: ArmPosition) -> List[float]:
-        """Convert an ArmPosition message to a list of joint positions.
+    def _convert_to_degrees(self, my_list: List[float]) -> Any:
+        """Convert a list of angles from radians to degrees."""
+        a = np.array(my_list)
+        a = np.rad2deg(a)
+
+        a = np.round(a, 2)
+        return a.tolist()
+
+    def _arm_position_to_list(self, arm_pos: ArmPosition, degrees: bool = True) -> List[float]:
+        """Convert an ArmPosition message to a list of joint positions in degrees.
 
         It is used to convert the result of the inverse kinematics.
+        By default, it will return the result in degrees.
         """
         positions = []
 
@@ -247,7 +269,10 @@ class Arm:
         for _, value in arm_pos.elbow_position.ListFields():
             positions.append(value.value)
         for _, value in arm_pos.wrist_position.rpy.ListFields():
-            positions.append(value.value)
+            positions.append(value)
+
+        if degrees:
+            positions = self._convert_to_degrees(positions)
 
         return positions
 
