@@ -29,9 +29,9 @@ from .arm import Arm
 from .audio import Audio
 from .hand import Hand
 from .head import Head
-from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
+from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 from .reachy import ReachyInfo, get_config
 
 # from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
