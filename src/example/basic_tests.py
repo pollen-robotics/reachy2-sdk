@@ -25,7 +25,7 @@ def follow_square(reachy: ReachySDK):
 
     # Going from A to B
     for z in np.arange(-0.3, 0.1, 0.01):
-        jacobian = build_jacobian_matrix(0.3, -0.4, z)
+        jacobian = build_pose_matrix(0.3, -0.4, z)
         ik = reachy.r_arm.inverse_kinematics(jacobian)
 
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
