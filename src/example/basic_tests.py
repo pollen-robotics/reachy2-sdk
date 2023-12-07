@@ -5,7 +5,7 @@ import numpy as np
 from reachy2_sdk import ReachySDK
 
 
-def build_jacobian_matrix(x: float, y: float, z: float):
+def build_pose_matrix(x: float, y: float, z: float):
     # The effector is always at the same orientation in the world frame
     return np.array(
         [
