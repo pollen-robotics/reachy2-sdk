@@ -70,6 +70,8 @@ def main_test():
         print("Failed to connect to Reachy, exiting...")
         return
 
+
+    reachy.turn_on()
     print("Putting each joint at 0 degrees angle")
     time.sleep(0.5)
     for joint in reachy.joints.values():
