@@ -11,6 +11,9 @@ import grpc
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
+from google.protobuf.empty_pb2 import Empty
+
+
 from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (
@@ -40,6 +43,8 @@ from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
     JointsGoal,
     GoToId,
+    GoToGoalStatus,
+    GoToAck,
 )
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 from reachy2_sdk_api.part_pb2 import PartId
@@ -59,12 +64,12 @@ class Arm:
     """
 
     def __init__(
-            self,
-            arm_msg: Arm_proto,
-            initial_state: ArmState,
-            grpc_channel: grpc.Channel,
-            goto_stub: GoToServiceStub,
-            ) -> None:
+        self,
+        arm_msg: Arm_proto,
+        initial_state: ArmState,
+        grpc_channel: grpc.Channel,
+        goto_stub: GoToServiceStub,
+    ) -> None:
         """Define an arm (left or right).
 
         Connect to the arm's gRPC server stub and set up the arm's actuators.
@@ -358,8 +363,22 @@ class Arm:
         it will move the arm to that position.
         """
         arm_pos = self._list_to_arm_position(positions, degrees)
-        goal = JointsGoal(arm_joint_goal=ArmJointGoal(id=self.part_id, joints_goal=arm_pos, duration=FloatValue(value=duration)))
+        goal = JointsGoal(
+            arm_joint_goal=ArmJointGoal(id=self.part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
+        )
         response = self._goto_stub.GoToJoints(goal)
+        return response
+
+    def get_goto_state(self, goto_id: int) -> GoToGoalStatus:
+        response = self._goto_stub.GetGoToState(goto_id)
+        return response
+
+    def cancel_goto_by_id(self, goto_id: int) -> GoToAck:
+        response = self._goto_stub.CancelGoTo(goto_id)
+        return response
+
+    def cancel_all_goto(self) -> GoToAck:
+        response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
     @property
