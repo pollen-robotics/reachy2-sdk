@@ -285,22 +285,22 @@ class Arm:
 
         return positions
 
-    def goto_from_matrix(self, target: npt.NDArray[np.float64], duration: float = 0) -> None:
+    def goto_from_matrix(self, target: npt.NDArray[np.float64], duration: float = 0) -> GoToId:
         """Move the arm to a matrix target (or get close).
 
         Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
         it will try to compute a joint solution to reach this target (or get close),
         and move to this position in the defined duration.
         """
-        position = target[:3, 3]
-        orientation = target[:3, :3]
-        target = ArmCartesianGoal(
-            id=self.part_id,
-            target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3d(matrix=Matrix3x3(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
-            duration=FloatValue(value=duration),
+        target = CartesianGoal(
+            arm_cartesian_goal=ArmCartesianGoal(
+                id=self.part_id,
+                goal_pose=Matrix4x4(data=target.flatten().tolist()),
+                duration=FloatValue(value=duration),
+            )
         )
-        self._goto_stub.GoToCartesian(target)
+        response = self._goto_stub.GoToCartesian(target)
+        return response
 
     def goto_from_quaternion(self, position: Tuple[float, float, float], orientation: pyQuat, duration: float = 0) -> None:
         """Move the arm so that the end effector reaches the given position and orientation.
