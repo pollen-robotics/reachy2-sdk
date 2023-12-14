@@ -1,3 +1,4 @@
+from cgi import test
 import time
 
 import numpy as np
@@ -59,7 +60,7 @@ def test_goto_joint(reachy: ReachySDK):
     # In D position, the effector is at (0.3, -0.1, -0.3) in the world frame
 
     pose = build_pose_matrix(0.3, -0.4, -0.3)
-    reachy.r_arm.inverse_kinematics(pose)
+    ik = reachy.r_arm.inverse_kinematics(pose)
     reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
 
     pose = build_pose_matrix(0.3, -0.4, 0.0)
@@ -76,6 +77,55 @@ def test_goto_joint(reachy: ReachySDK):
 
     time.sleep(1.0)
     init_pose(reachy)
+
+
+def test_both_arms(reachy: ReachySDK):
+    # In A position, the effector is at (0.3, -0,4, -0.3) in the world frame
+    # In B position, the effector is at (0.3, -0.4, 0) in the world frame
+    # In C position, the effector is at (0.3, -0.1, 0.0) in the world frame
+    # In D position, the effector is at (0.3, -0.1, -0.3) in the world frame
+
+    pose = build_pose_matrix(0.3, -0.4, -0.3)
+    ik = reachy.r_arm.inverse_kinematics(pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    time.sleep(1.0)
+    pose = build_pose_matrix(0.3, 0.4, -0.3)
+    ik = reachy.l_arm.inverse_kinematics(pose)
+    reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
+
+    pose = build_pose_matrix(0.3, -0.4, 0.0)
+    ik = reachy.r_arm.inverse_kinematics(pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    pose = build_pose_matrix(0.3, 0.4, 0.0)
+    ik = reachy.l_arm.inverse_kinematics(pose)
+    reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
+
+    pose = build_pose_matrix(0.3, -0.1, 0.0)
+    ik = reachy.r_arm.inverse_kinematics(pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    pose = build_pose_matrix(0.3, 0.1, 0.0)
+    ik = reachy.l_arm.inverse_kinematics(pose)
+    reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
+
+    pose = build_pose_matrix(0.3, -0.1, -0.3)
+    ik = reachy.r_arm.inverse_kinematics(pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    pose = build_pose_matrix(0.3, 0.1, -0.3)
+    ik = reachy.l_arm.inverse_kinematics(pose)
+    id = reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
+
+    while is_goto_finised(reachy, id) == False:
+        time.sleep(0.1)
+    init_pose(reachy)
+
+
+def is_goto_finised(reachy: ReachySDK, id: int):
+    state = reachy.r_arm.get_goto_state(id)
+    return (
+        state.goal_status == GoalStatus.STATUS_ABORTED
+        or state.goal_status == GoalStatus.STATUS_CANCELED
+        or state.goal_status == GoalStatus.STATUS_SUCCEEDED
+    )
 
 
 def test_state(reachy: ReachySDK):
@@ -102,6 +152,7 @@ def test_state(reachy: ReachySDK):
 def init_pose(reachy: ReachySDK):
     print("Putting each joint at 0 degrees angle with a goto")
     reachy.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 1.0, degrees=True)
+    reachy.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 1.0, degrees=True)
     time.sleep(1.01)
 
 
@@ -157,14 +208,17 @@ def main_test():
 
     init_pose(reachy)
 
-    print("Testing the goto_joints function")
-    test_goto_joint(reachy)
+    # print("Testing the goto_joints function")
+    # test_goto_joint(reachy)
 
-    print("Testing the get_goto_state function")
-    test_state(reachy)
+    # print("Testing the get_goto_state function")
+    # test_state(reachy)
 
-    print("Testing the goto_cancel function")
-    test_goto_cancel(reachy)
+    # print("Testing the goto_cancel function")
+    # test_goto_cancel(reachy)
+
+    print("Testing both arms")
+    test_both_arms(reachy)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
