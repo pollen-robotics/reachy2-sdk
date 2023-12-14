@@ -290,7 +290,7 @@ class Arm:
 
         return positions
 
-    def goto_from_matrix(self, target: npt.NDArray[np.float64], duration: float = 0) -> GoToId:
+    def goto_from_matrix(self, target: npt.NDArray[np.float64], duration: float = 2) -> GoToId:
         """Move the arm to a matrix target (or get close).
 
         Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
@@ -307,7 +307,7 @@ class Arm:
         response = self._goto_stub.GoToCartesian(target)
         return response
 
-    def goto_from_quaternion(self, position: Tuple[float, float, float], orientation: pyQuat, duration: float = 0) -> None:
+    def goto_from_quaternion(self, position: Tuple[float, float, float], orientation: pyQuat, duration: float = 2) -> None:
         """Move the arm so that the end effector reaches the given position and orientation.
 
         Given a 3d position and a quaternion expressed in Reachy coordinate systems,
@@ -328,7 +328,7 @@ class Arm:
         orientation: Tuple[float, float, float],
         position_tol: Optional[Tuple[float, float, float]] = (0, 0, 0),
         orientation_tol: Optional[Tuple[float, float, float]] = (0, 0, 0),
-        duration: float = 0,
+        duration: float = 2,
     ) -> None:
         """Move the arm so that the end effector reaches the given position and orientation.
 
@@ -336,7 +336,7 @@ class Arm:
         it will try to compute a joint solution to reach this target (or get close),
         and move to this position in the defined duration.
 
-        You can also defined tolerances for each axis of the position and of the orientation.
+        You can also define tolerances for each axis of the position and of the orientation.
         """
         target = ArmCartesianGoal(
             id=self.part_id,
@@ -356,7 +356,7 @@ class Arm:
             )
         self._goto_stub.GoToCartesian(target)
 
-    def goto_joints(self, positions: List[float], duration: float = 0, degrees: bool = True) -> GoToId:
+    def goto_joints(self, positions: List[float], duration: float = 2, degrees: bool = True) -> GoToId:
         """Move the arm's joints to reach the given position.
 
         Given a list of joint positions (exactly 7 joint positions),

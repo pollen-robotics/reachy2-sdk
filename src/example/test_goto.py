@@ -125,6 +125,7 @@ def is_goto_finised(reachy: ReachySDK, id: int):
         state.goal_status == GoalStatus.STATUS_ABORTED
         or state.goal_status == GoalStatus.STATUS_CANCELED
         or state.goal_status == GoalStatus.STATUS_SUCCEEDED
+        or state.goal_status == GoalStatus.STATUS_UNKNOWN
     )
 
 
@@ -135,11 +136,12 @@ def test_state(reachy: ReachySDK):
     print(f"goto id={id}")
     while True:
         state = reachy.r_arm.get_goto_state(id)
-        print(f"{state}")
+        print(f"Checking state: {state}")
         if (
             state.goal_status == GoalStatus.STATUS_ABORTED
             or state.goal_status == GoalStatus.STATUS_CANCELED
             or state.goal_status == GoalStatus.STATUS_SUCCEEDED
+            or state.goal_status == GoalStatus.STATUS_UNKNOWN
         ):
             print("End of status test!")
             break
@@ -151,9 +153,10 @@ def test_state(reachy: ReachySDK):
 
 def init_pose(reachy: ReachySDK):
     print("Putting each joint at 0 degrees angle with a goto")
-    reachy.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 1.0, degrees=True)
-    reachy.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 1.0, degrees=True)
-    time.sleep(1.01)
+    id1 = reachy.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 1.0, degrees=True)
+    id2 = reachy.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 1.0, degrees=True)
+    while is_goto_finised(reachy, id1) == False or is_goto_finised(reachy, id2) == False:
+        time.sleep(0.1)
 
 
 def test_goto_cancel(reachy: ReachySDK):
@@ -196,6 +199,19 @@ def test_goto_cancel(reachy: ReachySDK):
     print("End of cancel test!")
 
 
+def test_goto_cartesian(reachy: ReachySDK):
+    id = reachy.r_arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), 2.0)
+    while is_goto_finised(reachy, id) is False:
+        time.sleep(0.1)
+    init_pose(reachy)
+
+    # id = reachy.r_arm.goto([0.3, -0.4, -0.3], [0, 0, 0], duration=2.0)
+    # while is_goto_finised(reachy, id) is False:
+    #     time.sleep(0.1)
+    # init_pose(reachy)
+    print("End of cartesian goto test!")
+
+
 def main_test():
     print("Trying to connect on localhost Reachy...")
     time.sleep(1.0)
@@ -208,17 +224,20 @@ def main_test():
 
     init_pose(reachy)
 
-    # print("Testing the goto_joints function")
-    # test_goto_joint(reachy)
+    print("Testing the goto_joints function")
+    test_goto_joint(reachy)
 
-    # print("Testing the get_goto_state function")
-    # test_state(reachy)
+    print("Testing the get_goto_state function")
+    test_state(reachy)
 
-    # print("Testing the goto_cancel function")
-    # test_goto_cancel(reachy)
+    print("Testing the goto_cancel function")
+    test_goto_cancel(reachy)
 
     print("Testing both arms")
     test_both_arms(reachy)
+
+    # print("Testing the goto_cartesian function")
+    # test_goto_cartesian(reachy)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
