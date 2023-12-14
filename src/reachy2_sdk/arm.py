@@ -25,6 +25,7 @@ from reachy2_sdk_api.arm_pb2 import (
     ArmTemperatures,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
+from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.kinematics_pb2 import (
     ExtEulerAngles,
     ExtEulerAnglesTolerances,
@@ -34,6 +35,11 @@ from reachy2_sdk_api.kinematics_pb2 import (
     PointDistanceTolerances,
     Quaternion,
     Rotation3d,
+)
+from reachy2_sdk_api.goto_pb2 import (
+    CartesianGoal,
+    JointsGoal,
+    GoToId,
 )
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 from reachy2_sdk_api.part_pb2 import PartId
@@ -52,13 +58,20 @@ class Arm:
     Arm can be turned on and off.
     """
 
-    def __init__(self, arm_msg: Arm_proto, initial_state: ArmState, grpc_channel: grpc.Channel) -> None:
+    def __init__(
+            self,
+            arm_msg: Arm_proto,
+            initial_state: ArmState,
+            grpc_channel: grpc.Channel,
+            goto_stub: GoToServiceStub,
+            ) -> None:
         """Define an arm (left or right).
 
         Connect to the arm's gRPC server stub and set up the arm's actuators.
         """
         self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
+        self._goto_stub = goto_stub
         self.part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
 
         self._setup_arm(arm_msg, initial_state)
@@ -287,7 +300,7 @@ class Arm:
             target_orientation=Rotation3d(matrix=Matrix3x3(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
             duration=FloatValue(value=duration),
         )
-        self._arm_stub.GoToCartesianPosition(target)
+        self._goto_stub.GoToCartesian(target)
 
     def goto_from_quaternion(self, position: Tuple[float, float, float], orientation: pyQuat, duration: float = 0) -> None:
         """Move the arm so that the end effector reaches the given position and orientation.
@@ -302,7 +315,7 @@ class Arm:
             target_orientation=Rotation3d(q=Quaternion(w=orientation.w, x=orientation.x, y=orientation.y, z=orientation.z)),
             duration=FloatValue(value=duration),
         )
-        self._arm_stub.GoToCartesianPosition(target)
+        self._goto_stub.GoToCartesian(target)
 
     def goto(
         self,
@@ -336,17 +349,18 @@ class Arm:
                 y_tol=orientation_tol[1],
                 z_tol=orientation_tol[2],
             )
-        self._arm_stub.GoToCartesianPosition(target)
+        self._goto_stub.GoToCartesian(target)
 
-    def goto_joints(self, positions: List[float], duration: float = 0, degrees: bool = True) -> None:
+    def goto_joints(self, positions: List[float], duration: float = 0, degrees: bool = True) -> GoToId:
         """Move the arm's joints to reach the given position.
 
         Given a list of joint positions (exactly 7 joint positions),
         it will move the arm to that position.
         """
         arm_pos = self._list_to_arm_position(positions, degrees)
-        goal = ArmJointGoal(id=self.part_id, position=arm_pos, duration=FloatValue(value=duration))
-        self._arm_stub.GoToJointPosition(goal)
+        goal = JointsGoal(arm_joint_goal=ArmJointGoal(id=self.part_id, joints_goal=arm_pos, duration=FloatValue(value=duration)))
+        response = self._goto_stub.GoToJoints(goal)
+        return response
 
     @property
     def joints_limits(self) -> ArmLimits:

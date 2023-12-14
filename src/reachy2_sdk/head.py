@@ -9,6 +9,7 @@ from typing import Dict, Optional, Tuple
 import grpc
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
+from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
     HeadLookAtGoal,
@@ -36,9 +37,16 @@ class Head:
     expressed in Reachy's coordinate system.
     """
 
-    def __init__(self, head_msg: Head_proto, initial_state: HeadState, grpc_channel: grpc.Channel) -> None:
+    def __init__(
+        self,
+        head_msg: Head_proto,
+        initial_state: HeadState,
+        grpc_channel: grpc.Channel,
+        goto_stub: GoToServiceStub,
+    ) -> None:
         """Initialize the head with its actuators."""
         self._grpc_channel = grpc_channel
+        self._goto_stub = goto_stub
         self._head_stub = HeadServiceStub(grpc_channel)
         self.part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
 
