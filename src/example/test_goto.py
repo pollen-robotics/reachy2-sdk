@@ -214,6 +214,13 @@ def test_goto_rejection(reachy: ReachySDK):
     init_pose(reachy)
 
 
+def test_goto_head(reachy: ReachySDK):
+    id = reachy.head.goto_joints([0, 0, 30], 1.0, degrees=True)
+    while is_goto_finised(reachy, id, verbose=True) is False:
+        time.sleep(0.1)
+    # reachy.head.look_at(0.3, 0.0, 0.0, 1.0)
+
+
 def main_test():
     print("Trying to connect on localhost Reachy...")
     time.sleep(1.0)
@@ -226,7 +233,7 @@ def main_test():
 
     init_pose(reachy)
 
-    print("\n###1)Testing the goto_joints function")
+    print("\n###1)Testing the goto_joints function, drawing a square")
     test_goto_joint(reachy)
 
     print("\n###2)Testing the get_goto_state function")
@@ -243,6 +250,9 @@ def main_test():
 
     print("\n###6)Testing goto REJECTION")
     test_goto_rejection(reachy)
+
+    # print("\n###7)Testing the goto_head function")
+    # test_goto_head(reachy)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
