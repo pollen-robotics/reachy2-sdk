@@ -338,22 +338,7 @@ class Arm:
         response = self._goto_stub.GoToCartesian(request)
         return response
 
-    def goto_from_quaternion(self, position: Tuple[float, float, float], orientation: pyQuat, duration: float = 2) -> None:
-        """Move the arm so that the end effector reaches the given position and orientation.
-
-        Given a 3d position and a quaternion expressed in Reachy coordinate systems,
-        it will try to compute a joint solution to reach this target (or get close),
-        and move to this position in the defined duration.
-        """
-        target = ArmCartesianGoal(
-            id=self.part_id,
-            target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3d(q=Quaternion(w=orientation.w, x=orientation.x, y=orientation.y, z=orientation.z)),
-            duration=FloatValue(value=duration),
-        )
-        self._goto_stub.GoToCartesian(target)
-
-    def goto(
+    def goto_position_orientation(
         self,
         position: Tuple[float, float, float],
         orientation: Tuple[float, float, float],
