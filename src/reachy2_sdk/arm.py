@@ -405,6 +405,9 @@ class Arm:
         Given a list of joint positions (exactly 7 joint positions),
         it will move the arm to that position.
         """
+        if len(positions) != 7:
+            raise ValueError(f"positions should be length 7 (got {len(positions)} instead)!")
+
         arm_pos = self._list_to_arm_position(positions, degrees)
         request = GoToRequest(
             joints_goal=JointsGoal(
