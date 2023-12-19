@@ -45,6 +45,9 @@ from reachy2_sdk_api.goto_pb2 import (
     GoToId,
     GoToGoalStatus,
     GoToAck,
+    GoToRequest,
+    GoToInterpolation,
+    InterpolationMode,
 )
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 from reachy2_sdk_api.part_pb2 import PartId
@@ -290,21 +293,49 @@ class Arm:
 
         return positions
 
-    def goto_from_matrix(self, target: npt.NDArray[np.float64], duration: float = 2) -> GoToId:
+    def goto_from_matrix(
+        self,
+        target: npt.NDArray[np.float64],
+        duration: float = 2,
+        interpolation_mode: str = "minimum_jerk",
+        q0: Optional[List[float]] = None,
+    ) -> GoToId:
         """Move the arm to a matrix target (or get close).
 
         Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
         it will try to compute a joint solution to reach this target (or get close),
         and move to this position in the defined duration.
         """
-        target = CartesianGoal(
-            arm_cartesian_goal=ArmCartesianGoal(
-                id=self.part_id,
-                goal_pose=Matrix4x4(data=target.flatten().tolist()),
-                duration=FloatValue(value=duration),
+        if target.shape != (4, 4):
+            raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
+        if q0 is not None and (len(q0) != 7):
+            raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
+
+        if q0 is not None:
+            q0 = self._list_to_arm_position(q0)
+            request = GoToRequest(
+                cartesian_goal=CartesianGoal(
+                    arm_cartesian_goal=ArmCartesianGoal(
+                        id=self.part_id,
+                        goal_pose=Matrix4x4(data=target.flatten().tolist()),
+                        duration=FloatValue(value=duration),
+                        q0=q0,
+                    )
+                ),
+                interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
             )
-        )
-        response = self._goto_stub.GoToCartesian(target)
+        else:
+            request = GoToRequest(
+                cartesian_goal=CartesianGoal(
+                    arm_cartesian_goal=ArmCartesianGoal(
+                        id=self.part_id,
+                        goal_pose=Matrix4x4(data=target.flatten().tolist()),
+                        duration=FloatValue(value=duration),
+                    )
+                ),
+                interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
+            )
+        response = self._goto_stub.GoToCartesian(request)
         return response
 
     def goto_from_quaternion(self, position: Tuple[float, float, float], orientation: pyQuat, duration: float = 2) -> None:
@@ -329,6 +360,7 @@ class Arm:
         position_tol: Optional[Tuple[float, float, float]] = (0, 0, 0),
         orientation_tol: Optional[Tuple[float, float, float]] = (0, 0, 0),
         duration: float = 2,
+        interpolation_mode: str = "minimum_jerk",
     ) -> None:
         """Move the arm so that the end effector reaches the given position and orientation.
 
@@ -354,20 +386,46 @@ class Arm:
                 y_tol=orientation_tol[1],
                 z_tol=orientation_tol[2],
             )
-        self._goto_stub.GoToCartesian(target)
 
-    def goto_joints(self, positions: List[float], duration: float = 2, degrees: bool = True) -> GoToId:
+        request = GoToRequest(
+            cartesian_goal=target,
+            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
+        )
+        self._goto_stub.GoToCartesian(request)
+
+    def goto_joints(
+            self,
+            positions: List[float],
+            duration: float = 2,
+            degrees: bool = True,
+            interpolation_mode: str = "minimum_jerk"
+            ) -> GoToId:
         """Move the arm's joints to reach the given position.
 
         Given a list of joint positions (exactly 7 joint positions),
         it will move the arm to that position.
         """
         arm_pos = self._list_to_arm_position(positions, degrees)
-        goal = JointsGoal(
-            arm_joint_goal=ArmJointGoal(id=self.part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
+        request = GoToRequest(
+            joints_goal=JointsGoal(
+                arm_joint_goal=ArmJointGoal(id=self.part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
+            ),
+            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
         )
-        response = self._goto_stub.GoToJoints(goal)
+        response = self._goto_stub.GoToJoints(request)
         return response
+
+    def _get_grpc_interpolation_mode(self, interpolation_mode: str) -> GoToInterpolation:
+        if interpolation_mode not in ["minimum_jerk", "linear"]:
+            raise ValueError(
+                f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'"
+            )
+
+        if interpolation_mode == "minimum_jerk":
+            interpolation_mode = InterpolationMode.MINIMUM_JERK
+        else:
+            interpolation_mode = InterpolationMode.LINEAR
+        return GoToInterpolation(interpolation_type=interpolation_mode)
 
     def get_goto_state(self, goto_id: int) -> GoToGoalStatus:
         response = self._goto_stub.GetGoToState(goto_id)
