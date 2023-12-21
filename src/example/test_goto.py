@@ -59,24 +59,47 @@ def test_goto_joint(reachy: ReachySDK):
     # In C position, the effector is at (0.3, -0.1, 0.0) in the world frame
     # In D position, the effector is at (0.3, -0.1, -0.3) in the world frame
 
+    print("With interpolation_mode='minimum_jerk'")
+
     pose = build_pose_matrix(0.3, -0.4, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
 
     pose = build_pose_matrix(0.3, -0.4, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
 
     pose = build_pose_matrix(0.3, -0.1, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
 
     pose = build_pose_matrix(0.3, -0.1, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
 
     time.sleep(1.0)
     init_pose(reachy)
+
+    print("With interpolation_mode='linear'")
+
+    pose = build_pose_matrix(0.3, -0.4, -0.3)
+    ik = reachy.r_arm.inverse_kinematics(pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="linear")
+
+    pose = build_pose_matrix(0.3, -0.4, 0.0)
+    ik = reachy.r_arm.inverse_kinematics(pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="linear")
+
+    pose = build_pose_matrix(0.3, -0.1, 0.0)
+    ik = reachy.r_arm.inverse_kinematics(pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="linear")
+
+    pose = build_pose_matrix(0.3, -0.1, -0.3)
+    ik = reachy.r_arm.inverse_kinematics(pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="linear")
+
+    time.sleep(1.0)
+    # init_pose(reachy)
 
 
 def test_both_arms(reachy: ReachySDK):
@@ -194,12 +217,16 @@ def test_goto_cartesian(reachy: ReachySDK):
     id = reachy.r_arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), 2.0)
     while is_goto_finised(reachy, id) is False:
         time.sleep(0.1)
+
+    print("Trying with weird q0")
+    q0 = [np.pi / 2, -np.pi / 2, np.pi / 2, -np.pi / 2, np.pi / 2, -np.pi / 2, np.pi / 2]
+    id = reachy.r_arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), 2.0, q0=q0)
+    while is_goto_finised(reachy, id) is False:
+        time.sleep(0.1)
+
+    time.sleep(1.0)
     init_pose(reachy)
 
-    # id = reachy.r_arm.goto([0.3, -0.4, -0.3], [0, 0, 0], duration=2.0)
-    # while is_goto_finised(reachy, id) is False:
-    #     time.sleep(0.1)
-    # init_pose(reachy)
     print("End of cartesian goto test!")
 
 
@@ -247,9 +274,12 @@ def main_test():
 
     print("\n###5)Testing the goto_cartesian function")
     test_goto_cartesian(reachy)
-
     print("\n###6)Testing goto REJECTION")
     test_goto_rejection(reachy)
+
+    while True:
+        print("\n###X)Testing both arms ad vitam eternam")
+        test_both_arms(reachy)
 
     # print("\n###7)Testing the goto_head function")
     # test_goto_head(reachy)

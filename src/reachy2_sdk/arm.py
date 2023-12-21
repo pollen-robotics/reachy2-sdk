@@ -379,12 +379,8 @@ class Arm:
         self._goto_stub.GoToCartesian(request)
 
     def goto_joints(
-            self,
-            positions: List[float],
-            duration: float = 2,
-            degrees: bool = True,
-            interpolation_mode: str = "minimum_jerk"
-            ) -> GoToId:
+        self, positions: List[float], duration: float = 2, degrees: bool = True, interpolation_mode: str = "minimum_jerk"
+    ) -> GoToId:
         """Move the arm's joints to reach the given position.
 
         Given a list of joint positions (exactly 7 joint positions),
@@ -405,9 +401,7 @@ class Arm:
 
     def _get_grpc_interpolation_mode(self, interpolation_mode: str) -> GoToInterpolation:
         if interpolation_mode not in ["minimum_jerk", "linear"]:
-            raise ValueError(
-                f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'"
-            )
+            raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
 
         if interpolation_mode == "minimum_jerk":
             interpolation_mode = InterpolationMode.MINIMUM_JERK
