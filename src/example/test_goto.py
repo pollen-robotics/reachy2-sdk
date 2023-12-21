@@ -241,11 +241,31 @@ def test_goto_rejection(reachy: ReachySDK):
     init_pose(reachy)
 
 
-def test_goto_head(reachy: ReachySDK):
-    id = reachy.head.goto_joints([0, 0, 30], 1.0, degrees=True)
+def test_head_orient(reachy: ReachySDK):
+    id = reachy.head.orient(0, 0, 0.5, duration=1.0, interpolation_mode="minimum_jerk")
     while is_goto_finised(reachy, id, verbose=True) is False:
         time.sleep(0.1)
-    # reachy.head.look_at(0.3, 0.0, 0.0, 1.0)
+    id = reachy.head.orient(0, 0.5, 0.5, duration=1.0, interpolation_mode="minimum_jerk")
+    while is_goto_finised(reachy, id, verbose=True) is False:
+        time.sleep(0.1)
+    id = reachy.head.orient(0.5, 0.5, 0.5, duration=1.0, interpolation_mode="minimum_jerk")
+    while is_goto_finised(reachy, id, verbose=True) is False:
+        time.sleep(0.1)
+    id = reachy.head.orient(0.5, 0.5, 0.0, duration=1.0, interpolation_mode="minimum_jerk")
+    while is_goto_finised(reachy, id, verbose=True) is False:
+        time.sleep(0.1)
+    id = reachy.head.orient(0.5, 0.0, 0.0, duration=1.0, interpolation_mode="minimum_jerk")
+    while is_goto_finised(reachy, id, verbose=True) is False:
+        time.sleep(0.1)
+    id = reachy.head.orient(0.0, 0.0, 0.0, duration=1.0, interpolation_mode="minimum_jerk")
+    while is_goto_finised(reachy, id, verbose=True) is False:
+        time.sleep(0.1)
+
+
+def test_head_look_at(reachy: ReachySDK):
+    id = reachy.head.look_at(1.0, 0.2, -0.5, duration=1.0, interpolation_mode="minimum_jerk")
+    while is_goto_finised(reachy, id, verbose=True) is False:
+        time.sleep(0.1)
 
 
 def main_test():
@@ -281,8 +301,11 @@ def main_test():
         print("\n###X)Testing both arms ad vitam eternam")
         test_both_arms(reachy)
 
-    # print("\n###7)Testing the goto_head function")
-    # test_goto_head(reachy)
+    print("\n###7)Testing the goto_head function")
+    test_head_orient(reachy)
+
+    # print("\n###8)Testing the look_at function")
+    # test_head_look_at(reachy)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
