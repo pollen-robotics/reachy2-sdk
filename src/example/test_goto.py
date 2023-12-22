@@ -297,12 +297,12 @@ def main_test():
     print("\n###6)Testing goto REJECTION")
     test_goto_rejection(reachy)
 
+    print("\n###7)Testing the goto_head function")
+    test_head_orient(reachy)
+
     while True:
         print("\n###X)Testing both arms ad vitam eternam")
         test_both_arms(reachy)
-
-    print("\n###7)Testing the goto_head function")
-    test_head_orient(reachy)
 
     # print("\n###8)Testing the look_at function")
     # test_head_look_at(reachy)
