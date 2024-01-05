@@ -9,7 +9,6 @@ from typing import Dict, Optional, Tuple
 import grpc
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
-from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
     GoToId,
@@ -18,14 +17,15 @@ from reachy2_sdk_api.goto_pb2 import (
     InterpolationMode,
     JointsGoal,
 )
+from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
     HeadPosition,
     HeadState,
-    NeckFKRequest,
     NeckCartesianGoal,
-    NeckJointGoal,
+    NeckFKRequest,
     NeckIKRequest,
+    NeckJointGoal,
     NeckOrientation,
 )
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub

@@ -18,9 +18,7 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
-
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
-
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
 # from reachy2_sdk_api.dynamixel_motor_pb2 import DynamixelMotorsCommand

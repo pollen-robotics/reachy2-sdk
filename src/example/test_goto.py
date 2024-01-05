@@ -1,10 +1,7 @@
-from cgi import test
 import time
+from cgi import test
 
 import numpy as np
-
-from reachy2_sdk import ReachySDK
-
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
@@ -18,6 +15,14 @@ from reachy2_sdk_api.arm_pb2 import (
     ArmTemperatures,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
+from reachy2_sdk_api.goto_pb2 import (
+    CartesianGoal,
+    GoalStatus,
+    GoToAck,
+    GoToGoalStatus,
+    GoToId,
+    JointsGoal,
+)
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.kinematics_pb2 import (
     ExtEulerAngles,
@@ -29,16 +34,10 @@ from reachy2_sdk_api.kinematics_pb2 import (
     Quaternion,
     Rotation3d,
 )
-from reachy2_sdk_api.goto_pb2 import (
-    CartesianGoal,
-    JointsGoal,
-    GoToId,
-    GoToGoalStatus,
-    GoToAck,
-    GoalStatus,
-)
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 from reachy2_sdk_api.part_pb2 import PartId
+
+from reachy2_sdk import ReachySDK
 
 
 def build_pose_matrix(x: float, y: float, z: float):

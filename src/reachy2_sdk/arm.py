@@ -10,10 +10,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import grpc
 import numpy as np
 import numpy.typing as npt
-from google.protobuf.wrappers_pb2 import FloatValue
 from google.protobuf.empty_pb2 import Empty
-
-
+from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (
@@ -28,6 +26,16 @@ from reachy2_sdk_api.arm_pb2 import (
     ArmTemperatures,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
+from reachy2_sdk_api.goto_pb2 import (
+    CartesianGoal,
+    GoToAck,
+    GoToGoalStatus,
+    GoToId,
+    GoToInterpolation,
+    GoToRequest,
+    InterpolationMode,
+    JointsGoal,
+)
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.kinematics_pb2 import (
     ExtEulerAngles,
@@ -38,16 +46,6 @@ from reachy2_sdk_api.kinematics_pb2 import (
     PointDistanceTolerances,
     Quaternion,
     Rotation3d,
-)
-from reachy2_sdk_api.goto_pb2 import (
-    CartesianGoal,
-    JointsGoal,
-    GoToId,
-    GoToGoalStatus,
-    GoToAck,
-    GoToRequest,
-    GoToInterpolation,
-    InterpolationMode,
 )
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 from reachy2_sdk_api.part_pb2 import PartId
