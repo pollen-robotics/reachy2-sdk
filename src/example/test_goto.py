@@ -98,7 +98,7 @@ def test_goto_joint(reachy: ReachySDK):
     reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="linear")
 
     time.sleep(1.0)
-    # init_pose(reachy)
+    init_pose(reachy)
 
 
 def test_both_arms(reachy: ReachySDK):
@@ -107,32 +107,32 @@ def test_both_arms(reachy: ReachySDK):
     # In C position, the effector is at (0.3, -0.1, 0.0) in the world frame
     # In D position, the effector is at (0.3, -0.1, -0.3) in the world frame
 
-    pose = build_pose_matrix(0.3, -0.4, -0.3)
+    pose = build_pose_matrix(0.3, -0.45, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
     reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
     time.sleep(1.0)
-    pose = build_pose_matrix(0.3, 0.4, -0.3)
+    pose = build_pose_matrix(0.3, 0.45, -0.3)
     ik = reachy.l_arm.inverse_kinematics(pose)
     reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
 
-    pose = build_pose_matrix(0.3, -0.4, 0.0)
+    pose = build_pose_matrix(0.3, -0.45, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
     reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
-    pose = build_pose_matrix(0.3, 0.4, 0.0)
+    pose = build_pose_matrix(0.3, 0.45, 0.0)
     ik = reachy.l_arm.inverse_kinematics(pose)
     reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
 
-    pose = build_pose_matrix(0.3, -0.1, 0.0)
+    pose = build_pose_matrix(0.3, -0.25, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
     reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
-    pose = build_pose_matrix(0.3, 0.1, 0.0)
+    pose = build_pose_matrix(0.3, 0.25, 0.0)
     ik = reachy.l_arm.inverse_kinematics(pose)
     reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
 
-    pose = build_pose_matrix(0.3, -0.1, -0.3)
+    pose = build_pose_matrix(0.3, -0.15, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
     reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
-    pose = build_pose_matrix(0.3, 0.1, -0.3)
+    pose = build_pose_matrix(0.3, 0.15, -0.3)
     ik = reachy.l_arm.inverse_kinematics(pose)
     id = reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
 
@@ -166,8 +166,8 @@ def test_state(reachy: ReachySDK):
 
 def init_pose(reachy: ReachySDK):
     print("Putting each joint at 0 degrees angle with a goto")
-    id1 = reachy.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 1.0, degrees=True)
-    id2 = reachy.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 1.0, degrees=True)
+    id1 = reachy.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 2.0, degrees=True)
+    id2 = reachy.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 2.0, degrees=True)
     while is_goto_finised(reachy, id1) == False or is_goto_finised(reachy, id2) == False:
         time.sleep(0.1)
 
@@ -277,6 +277,7 @@ def main_test():
         print("Failed to connect to Reachy, exiting...")
         return
 
+    reachy.turn_on()
     init_pose(reachy)
 
     print("\n###1)Testing the goto_joints function, drawing a square")
