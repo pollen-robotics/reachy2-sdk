@@ -180,14 +180,7 @@ class Head:
             rpy_pos.position.rpy.yaw,
         )
 
-    def look_at(
-        self,
-        x: float,
-        y: float,
-        z: float,
-        duration: float = 2.0,
-        interpolation_mode: str = "minimum_jerk"
-        ) -> GoToId:
+    def look_at(self, x: float, y: float, z: float, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
         """Compute and send neck rpy position to look at the (x, y, z) point in Reachy cartesian space (torso frame).
 
         X is forward, Y is left and Z is upward. They all expressed in meters.
@@ -198,43 +191,32 @@ class Head:
                     id=self.part_id,
                     point=Point(x=x, y=y, z=z),
                     duration=FloatValue(value=duration),
-                    )
+                )
             ),
-            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode)    
+            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToCartesian(request)
         return response
 
     def orient(
-        self,
-        roll: float,
-        pitch: float,
-        yaw: float,
-        duration: float = 2.0,
-        interpolation_mode: str = "minimum_jerk"
+        self, roll: float, pitch: float, yaw: float, duration: float = 2.0, interpolation_mode: str = "minimum_jerk"
     ) -> GoToId:
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
                     id=self.part_id,
-                    joints_goal=NeckOrientation(
-                        rotation=Rotation3d(
-                            rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)
-                        )
-                    ),
+                    joints_goal=NeckOrientation(rotation=Rotation3d(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw))),
                     duration=FloatValue(value=duration),
                 )
             ),
-            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode)       
+            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
         return response
 
     def _get_grpc_interpolation_mode(self, interpolation_mode: str) -> GoToInterpolation:
         if interpolation_mode not in ["minimum_jerk", "linear"]:
-            raise ValueError(
-                f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'"
-            )
+            raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
 
         if interpolation_mode == "minimum_jerk":
             interpolation_mode = InterpolationMode.MINIMUM_JERK
