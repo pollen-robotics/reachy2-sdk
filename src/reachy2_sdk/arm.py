@@ -12,7 +12,6 @@ import numpy as np
 import numpy.typing as npt
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import FloatValue
-from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
@@ -40,11 +39,9 @@ from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.kinematics_pb2 import (
     ExtEulerAngles,
     ExtEulerAnglesTolerances,
-    Matrix3x3,
     Matrix4x4,
     Point,
     PointDistanceTolerances,
-    Quaternion,
     Rotation3d,
 )
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d

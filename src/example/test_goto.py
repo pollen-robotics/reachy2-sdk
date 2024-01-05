@@ -1,41 +1,7 @@
 import time
-from cgi import test
 
 import numpy as np
-from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
-from reachy2_sdk_api.arm_pb2 import (
-    ArmCartesianGoal,
-    ArmEndEffector,
-    ArmFKRequest,
-    ArmIKRequest,
-    ArmJointGoal,
-    ArmLimits,
-    ArmPosition,
-    ArmState,
-    ArmTemperatures,
-)
-from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
-from reachy2_sdk_api.goto_pb2 import (
-    CartesianGoal,
-    GoalStatus,
-    GoToAck,
-    GoToGoalStatus,
-    GoToId,
-    JointsGoal,
-)
-from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
-from reachy2_sdk_api.kinematics_pb2 import (
-    ExtEulerAngles,
-    ExtEulerAnglesTolerances,
-    Matrix3x3,
-    Matrix4x4,
-    Point,
-    PointDistanceTolerances,
-    Quaternion,
-    Rotation3d,
-)
-from reachy2_sdk_api.orbita2d_pb2 import Pose2d
-from reachy2_sdk_api.part_pb2 import PartId
+from reachy2_sdk_api.goto_pb2 import GoalStatus
 
 from reachy2_sdk import ReachySDK
 
@@ -136,7 +102,7 @@ def test_both_arms(reachy: ReachySDK):
     ik = reachy.l_arm.inverse_kinematics(pose)
     id = reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
 
-    while is_goto_finised(reachy, id) == False:
+    while is_goto_finised(reachy, id) is False:
         time.sleep(0.1)
     init_pose(reachy)
 
@@ -157,7 +123,7 @@ def test_state(reachy: ReachySDK):
     ik = reachy.r_arm.inverse_kinematics(pose)
     id = reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
     print(f"goto id={id}")
-    while is_goto_finised(reachy, id, verbose=True) == False:
+    while is_goto_finised(reachy, id, verbose=True) is False:
         time.sleep(0.1)
 
     time.sleep(1.0)
@@ -168,7 +134,7 @@ def init_pose(reachy: ReachySDK):
     print("Putting each joint at 0 degrees angle with a goto")
     id1 = reachy.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 2.0, degrees=True)
     id2 = reachy.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 2.0, degrees=True)
-    while is_goto_finised(reachy, id1) == False or is_goto_finised(reachy, id2) == False:
+    while is_goto_finised(reachy, id1) is False or is_goto_finised(reachy, id2) is False:
         time.sleep(0.1)
 
 

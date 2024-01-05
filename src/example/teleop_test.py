@@ -4,7 +4,7 @@ import numpy as np
 from basic_tests import build_pose_matrix
 from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.arm_pb2 import ArmCartesianGoal
-from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Matrix4x4, Point, Rotation3d
+from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 
 from reachy2_sdk import ReachySDK
 
@@ -25,11 +25,6 @@ def goto(x, y, z):
             [0, 0, 0, 1],
         ]
     )
-    goal_dict = {
-        "id": {"id": 1, "name": "r_arm"},
-        "goal_pose": goal,
-        "duration": FloatValue(value=1.0),
-    }
     # target = ArmCartesianGoal(
     #     id=reachy.r_arm.part_id,
     #     goal_pose=goal,
