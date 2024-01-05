@@ -1,12 +1,14 @@
 import time
 
 import numpy as np
+import numpy.typing as npt
+
 from reachy2_sdk_api.goto_pb2 import GoalStatus
 
 from reachy2_sdk import ReachySDK
 
 
-def build_pose_matrix(x: float, y: float, z: float):
+def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
     # The effector is always at the same orientation in the world frame
     return np.array(
         [
@@ -18,7 +20,7 @@ def build_pose_matrix(x: float, y: float, z: float):
     )
 
 
-def test_goto_joint(reachy: ReachySDK):
+def test_goto_joint(reachy: ReachySDK) -> None:
     # In A position, the effector is at (0.3, -0,4, -0.3) in the world frame
     # In B position, the effector is at (0.3, -0.4, 0) in the world frame
     # In C position, the effector is at (0.3, -0.1, 0.0) in the world frame
@@ -67,7 +69,7 @@ def test_goto_joint(reachy: ReachySDK):
     init_pose(reachy)
 
 
-def test_both_arms(reachy: ReachySDK):
+def test_both_arms(reachy: ReachySDK) -> None:
     # In A position, the effector is at (0.3, -0,4, -0.3) in the world frame
     # In B position, the effector is at (0.3, -0.4, 0) in the world frame
     # In C position, the effector is at (0.3, -0.1, 0.0) in the world frame
@@ -107,7 +109,7 @@ def test_both_arms(reachy: ReachySDK):
     init_pose(reachy)
 
 
-def is_goto_finised(reachy: ReachySDK, id: int, verbose: bool = False):
+def is_goto_finised(reachy: ReachySDK, id: int, verbose: bool = False) -> bool:
     state = reachy.r_arm.get_goto_state(id)
     if verbose:
         print(f"State fo goal {id}: {state}")
@@ -118,7 +120,7 @@ def is_goto_finised(reachy: ReachySDK, id: int, verbose: bool = False):
     )
 
 
-def test_state(reachy: ReachySDK):
+def test_state(reachy: ReachySDK) -> None:
     pose = build_pose_matrix(0.3, -0.4, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
     id = reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
@@ -130,7 +132,7 @@ def test_state(reachy: ReachySDK):
     init_pose(reachy)
 
 
-def init_pose(reachy: ReachySDK):
+def init_pose(reachy: ReachySDK) -> None:
     print("Putting each joint at 0 degrees angle with a goto")
     id1 = reachy.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 2.0, degrees=True)
     id2 = reachy.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 2.0, degrees=True)
@@ -138,7 +140,7 @@ def init_pose(reachy: ReachySDK):
         time.sleep(0.1)
 
 
-def test_goto_cancel(reachy: ReachySDK):
+def test_goto_cancel(reachy: ReachySDK) -> None:
     pose = build_pose_matrix(0.3, -0.4, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
     id = reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
@@ -178,7 +180,7 @@ def test_goto_cancel(reachy: ReachySDK):
     print("End of cancel test!")
 
 
-def test_goto_cartesian(reachy: ReachySDK):
+def test_goto_cartesian(reachy: ReachySDK) -> None:
     id = reachy.r_arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), 2.0)
     while is_goto_finised(reachy, id) is False:
         time.sleep(0.1)
@@ -195,7 +197,7 @@ def test_goto_cartesian(reachy: ReachySDK):
     print("End of cartesian goto test!")
 
 
-def test_goto_rejection(reachy: ReachySDK):
+def test_goto_rejection(reachy: ReachySDK) -> None:
     print("Trying a goto with duration 0.0")
     id = reachy.r_arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), 0.0)
     print(f"goto id={id}")
@@ -206,7 +208,7 @@ def test_goto_rejection(reachy: ReachySDK):
     init_pose(reachy)
 
 
-def test_head_orient(reachy: ReachySDK):
+def test_head_orient(reachy: ReachySDK) -> None:
     id = reachy.head.orient(0, 0, 0.5, duration=1.0, interpolation_mode="minimum_jerk")
     while is_goto_finised(reachy, id, verbose=True) is False:
         time.sleep(0.1)
@@ -227,13 +229,13 @@ def test_head_orient(reachy: ReachySDK):
         time.sleep(0.1)
 
 
-def test_head_look_at(reachy: ReachySDK):
+def test_head_look_at(reachy: ReachySDK) -> None:
     id = reachy.head.look_at(1.0, 0.2, -0.5, duration=1.0, interpolation_mode="minimum_jerk")
     while is_goto_finised(reachy, id, verbose=True) is False:
         time.sleep(0.1)
 
 
-def main_test():
+def main_test() -> None:
     print("Trying to connect on localhost Reachy...")
     time.sleep(1.0)
     reachy = ReachySDK(host="localhost")

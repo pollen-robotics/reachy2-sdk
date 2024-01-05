@@ -16,7 +16,8 @@ goal = build_pose_matrix(1, 1, 0)
 reachy.r_arm._arm_stub.TurnOn(reachy.r_arm.part_id)
 
 
-def goto(x, y, z):
+# add hints
+def goto(x: float, y: float, z: float) -> None:
     goal = np.array(
         [
             [0, 0, 1, x],
