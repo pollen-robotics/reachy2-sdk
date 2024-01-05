@@ -2,7 +2,6 @@ import time
 
 import numpy as np
 import numpy.typing as npt
-
 from reachy2_sdk_api.goto_pb2 import GoalStatus
 
 from reachy2_sdk import ReachySDK
@@ -113,11 +112,12 @@ def is_goto_finised(reachy: ReachySDK, id: int, verbose: bool = False) -> bool:
     state = reachy.r_arm.get_goto_state(id)
     if verbose:
         print(f"State fo goal {id}: {state}")
-    return (
+    result = bool(
         state.goal_status == GoalStatus.STATUS_ABORTED
         or state.goal_status == GoalStatus.STATUS_CANCELED
         or state.goal_status == GoalStatus.STATUS_SUCCEEDED
     )
+    return result
 
 
 def test_state(reachy: ReachySDK) -> None:
