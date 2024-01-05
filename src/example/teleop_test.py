@@ -1,14 +1,17 @@
-from reachy2_sdk import ReachySDK
-from reachy2_sdk_api.arm_pb2 import ArmCartesianGoal
-from reachy2_sdk_api.kinematics_pb2 import Point, Rotation3d, ExtEulerAngles, Matrix4x4
-from google.protobuf.wrappers_pb2 import FloatValue
-from basic_tests import build_pose_matrix
-import numpy as np
 import time
+
+import numpy as np
+from basic_tests import build_pose_matrix
+from google.protobuf.wrappers_pb2 import FloatValue
+from reachy2_sdk_api.arm_pb2 import ArmCartesianGoal
+from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Matrix4x4, Point, Rotation3d
+
+from reachy2_sdk import ReachySDK
+
 reachy = ReachySDK(host="localhost")
 
 
-goal = build_pose_matrix(1,1,0)
+goal = build_pose_matrix(1, 1, 0)
 
 reachy.r_arm._arm_stub.TurnOn(reachy.r_arm.part_id)
 
@@ -41,15 +44,15 @@ def goto(x, y, z):
     reachy.r_arm._arm_stub.SendArmCartesianGoal(target)
 
 
-goto(1,1,0)
+goto(1, 1, 0)
 
-print('coucou')
+print("coucou")
 radius = 0.5  # Circle radius
 fixed_x = 1  # Fixed x-coordinate
 center_y, center_z = 0, 0  # Center of the circle in y-z plane
 num_steps = 200  # Number of steps to complete the circle
 frequency = 2  # Update frequency in Hz
-step = 0 # Current step
+step = 0  # Current step
 # for step in range(num_steps):
 while True:
     # Calculate angle for this step
