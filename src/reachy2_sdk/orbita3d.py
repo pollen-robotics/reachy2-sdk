@@ -9,6 +9,7 @@ from reachy2_sdk_api.component_pb2 import ComponentId, PIDGains
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Quaternion, Rotation3d
 from reachy2_sdk_api.orbita3d_pb2 import (
     Float3d,
+    Limits3d,
     Orbita3dCommand,
     Orbita3dGoal,
     Orbita3dState,
@@ -89,6 +90,11 @@ class Orbita3d:
                         if joint not in init_state:
                             init_state[joint] = {}
                         init_state[joint][field.name] = getattr(value.rpy, joint)
+                if isinstance(value, Limits3d):
+                    for joint, val in value.ListFields():
+                        if getattr(joint, "name") not in init_state:
+                            init_state[joint] = {}
+                        init_state[getattr(joint, "name")][field.name] = val
                 if isinstance(value, Float3d | PID3d):
                     for motor, val in value.ListFields():
                         if motor.name not in init_state:

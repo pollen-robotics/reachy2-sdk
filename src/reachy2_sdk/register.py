@@ -7,6 +7,7 @@ import asyncio
 from typing import Any, Callable, Optional, Tuple, Type
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue, UInt32Value
+from reachy2_sdk_api.component_pb2 import JointLimits
 
 
 class Register:
@@ -21,12 +22,17 @@ class Register:
         readonly: bool,
         type: Type[Any],
         label: str,
+        lower_limit: Optional[float] = None,
+        upper_limit: Optional[float] = None,
         conversion: Optional[Tuple[Callable[[Any], Any], Callable[[Any], Any]]] = None,
     ) -> None:
         """Initialize a register with its type and label and if necessary, its conversion functions."""
         self.readonly = readonly
         self.internal_class = type
         self.label = label
+
+        self.lower_limit = lower_limit
+        self.upper_limit = upper_limit
 
         self.cvt_to_internal: Optional[Callable[[Any], Any]] = None
         self.cvt_to_external: Optional[Callable[[Any], Any]] = None
@@ -42,8 +48,10 @@ class Register:
         if instance is None:
             return self
         value = self.unwrapped_value(instance._state[self.label])
-        if self.internal_class != BoolValue:
-            if self.cvt_to_external is not None:
+        if self.cvt_to_external is not None:
+            if self.internal_class == JointLimits:
+                value = (self.cvt_to_external(value[0]), self.cvt_to_external(value[1]))
+            elif self.internal_class != BoolValue:
                 value = self.cvt_to_external(value)
         return value
 
@@ -60,7 +68,7 @@ class Register:
             raise AttributeError("can't set attribute")
         if self.cvt_to_internal is not None:
             value = self.cvt_to_internal(value)
-        instance._state[self.label] = self.wrapped_value(value)
+        instance._state[self.label] = self.wrapped_value(self.bound(value, instance))
 
         async def set_in_loop() -> None:
             instance._register_needing_sync.append(self.label)
@@ -75,6 +83,8 @@ class Register:
             return value.value
         elif self.internal_class.__name__ == "PIDGains":
             return (value.p.value, value.i.value, value.d.value)
+        elif self.internal_class.__name__ == "JointLimits":
+            return (value.min.value, value.max.value)
         return value
 
     def wrapped_value(self, value: Any) -> Any:
@@ -87,5 +97,28 @@ class Register:
                 i=FloatValue(value=value[1]),
                 d=FloatValue(value=value[2]),
             )
-
+        elif self.internal_class.__name__ == "JointLimits":
+            return self.internal_class(min=FloatValue(value=value[0]), max=FloatValue(value=value[1]))
         return value
+
+    def bound(self, value: float, instance: Any) -> float:
+        new_value = value
+        if self.label == "goal_position":
+            if self.cvt_to_internal is not None:
+                self.lower_limit = self.cvt_to_internal(instance.joint_limit[0])
+                self.upper_limit = self.cvt_to_internal(instance.joint_limit[1])
+        if self.upper_limit is not None and self.lower_limit is not None:
+            new_value = max(self.lower_limit, min(self.upper_limit, value))
+            if new_value != value:
+                if self.cvt_to_external is not None:
+                    print(
+                        f"""{self.label} should be in \
+{self.cvt_to_external(self.lower_limit), self.cvt_to_external(self.upper_limit)}. \
+Got {self.cvt_to_external(value)}, set {self.cvt_to_external(new_value)}"""
+                                    )
+                else:
+                    print(
+                        f"""{self.label} should be in {self.lower_limit, self.upper_limit}. \
+Got {value}, set {new_value}"""
+                    )
+        return new_value

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-from reachy2_sdk_api.component_pb2 import PIDGains
+from reachy2_sdk_api.component_pb2 import PIDGains, JointLimits
 
 from .register import Register
 
@@ -39,6 +39,12 @@ class OrbitaJoint2d:
         label="present_position",
         conversion=(_to_internal_position, _to_position),
     )
+    joint_limit = Register(
+        readonly=True,
+        type=JointLimits,
+        label="joint_limit",
+        conversion=(_to_internal_position, _to_position),
+    )
     goal_position = Register(
         readonly=False,
         type=FloatValue,
@@ -46,15 +52,10 @@ class OrbitaJoint2d:
         conversion=(_to_internal_position, _to_position),
     )
 
-    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
+    def __init__(self, initial_state: Dict[str, Any], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
-
-        for field in dir(self):
-            value = getattr(self, field)
-            if isinstance(value, Register):
-                value.label = field
 
         self._register_needing_sync: List[str] = []
 
@@ -76,6 +77,12 @@ class OrbitaJoint3d:
         label="present_position",
         conversion=(_to_internal_position, _to_position),
     )
+    joint_limit = Register(
+        readonly=True,
+        type=JointLimits,
+        label="joint_limit",
+        conversion=(_to_internal_position, _to_position),
+    )
     goal_position = Register(
         readonly=False,
         type=float,
@@ -83,7 +90,7 @@ class OrbitaJoint3d:
         conversion=(_to_internal_position, _to_position),
     )
 
-    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
+    def __init__(self, initial_state: Dict[str, Any], axis_type: str, actuator: Any) -> None:
         """Initialize the joint with its initial state and its axis type (either roll, pitch or yaw)."""
         self._actuator = actuator
         self.axis_type = axis_type
@@ -119,7 +126,7 @@ class OrbitaMotor:
         label="speed_limit",
         conversion=(_to_internal_position, _to_position),
     )
-    torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
+    torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit", lower_limit=0, upper_limit=100)
     compliant = Register(readonly=True, type=BoolValue, label="compliant")
 
     pid = Register(readonly=False, type=PIDGains, label="pid")

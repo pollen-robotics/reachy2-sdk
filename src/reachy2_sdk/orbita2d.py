@@ -8,6 +8,7 @@ from reachy2_sdk_api.component_pb2 import ComponentId, PIDGains
 from reachy2_sdk_api.orbita2d_pb2 import (
     Axis,
     Float2d,
+    Limits2d,
     Orbita2dCommand,
     Orbita2dState,
     PID2d,
@@ -71,7 +72,7 @@ class Orbita2d:
                 init_state["motor_1"][field.name] = value
                 init_state["motor_2"][field.name] = value
             else:
-                if isinstance(value, Pose2d):
+                if isinstance(value, Pose2d | Limits2d):
                     for axis, val in value.ListFields():
                         if axis.name not in init_state:
                             init_state[axis.name] = {}
