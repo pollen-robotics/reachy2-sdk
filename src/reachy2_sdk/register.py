@@ -115,7 +115,7 @@ class Register:
                         f"""{self.label} should be in \
 {self.cvt_to_external(self.lower_limit), self.cvt_to_external(self.upper_limit)}. \
 Got {self.cvt_to_external(value)}, set {self.cvt_to_external(new_value)}"""
-                                    )
+                    )
                 else:
                     print(
                         f"""{self.label} should be in {self.lower_limit, self.upper_limit}. \
