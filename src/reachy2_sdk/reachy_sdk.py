@@ -245,7 +245,7 @@ is running and that the IP is correct."
         except _InactiveRpcError:
             raise ConnectionError()
 
-        self.info = ReachyInfo(self._host, self._robot.info)
+        self.info = ReachyInfo(self._robot.info)
         self.config = get_config(self._robot)
         self._grpc_status = "connected"
 

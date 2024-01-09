@@ -14,7 +14,7 @@ def test_ReachyInfo() -> None:
     version_soft = "1.2"
     robot_info = ReachyInfo_proto(serial_number=serial_number, version_hard=version_hard, version_soft=version_soft)
 
-    ri = ReachyInfo("dummy", robot_info)
+    ri = ReachyInfo(robot_info)
 
     assert ri.robot_serial_number == serial_number
     assert ri.hardware_version == version_hard
