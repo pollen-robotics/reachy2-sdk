@@ -67,7 +67,7 @@ class OrbitaJoint2d:
         new_goal = np.clip(initial_goal, self.joint_limits[0], self.joint_limits[1])
         if new_goal != initial_goal:
             print(
-                f"{self._actuator.name}.{self.axis_type}.joint_limits are {self.joint_limits}. Got {initial_goal}, set {new_goal}"
+                f"{self._actuator.name}.{self.axis_type}.joint_limits are {self.joint_limits}. Got {initial_goal}, set {new_goal}"  # noqa: E501
             )
         return float(new_goal)
 
@@ -121,7 +121,7 @@ class OrbitaJoint3d:
         new_goal = np.clip(initial_goal, self.joint_limits[0], self.joint_limits[1])
         if new_goal != initial_goal:
             print(
-                f"{self._actuator.name}.{self.axis_type}.joint_limits are {self.joint_limits}. Got {initial_goal}, set {new_goal}"
+                f"{self._actuator.name}.{self.axis_type}.joint_limits are {self.joint_limits}. Got {initial_goal}, set {new_goal}"  # noqa: E501
             )
         return float(new_goal)
 
