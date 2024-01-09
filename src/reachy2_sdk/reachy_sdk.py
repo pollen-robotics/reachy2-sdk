@@ -49,6 +49,8 @@ class Singleton(type, t.Generic[_T]):
     def __call__(cls, *args: t.Any, **kwargs: t.Any) -> _T:
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)
+        else:
+            raise ConnectionError("Cannot open 2 robot connections in the same kernel.")
         return cls._instances[cls]
 
 
