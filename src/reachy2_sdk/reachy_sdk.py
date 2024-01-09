@@ -53,6 +53,9 @@ class Singleton(type, t.Generic[_T]):
             raise ConnectionError("Cannot open 2 robot connections in the same kernel.")
         return cls._instances[cls]
 
+    def clear(cls) -> None:
+        del cls._instances[cls]
+
 
 class ReachySDK(metaclass=Singleton):
     """The ReachySDK class handles the connection with your robot.
