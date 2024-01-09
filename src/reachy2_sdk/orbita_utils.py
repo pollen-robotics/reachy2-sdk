@@ -39,10 +39,10 @@ class OrbitaJoint2d:
         label="present_position",
         conversion=(_to_internal_position, _to_position),
     )
-    joint_limit = Register(
+    joint_limits = Register(
         readonly=True,
         type=JointLimits,
-        label="joint_limit",
+        label="joint_limits",
         conversion=(_to_internal_position, _to_position),
     )
     goal_position = Register(
@@ -77,10 +77,10 @@ class OrbitaJoint3d:
         label="present_position",
         conversion=(_to_internal_position, _to_position),
     )
-    joint_limit = Register(
+    joint_limits = Register(
         readonly=True,
         type=JointLimits,
-        label="joint_limit",
+        label="joint_limits",
         conversion=(_to_internal_position, _to_position),
     )
     goal_position = Register(

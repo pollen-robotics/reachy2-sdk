@@ -105,8 +105,8 @@ class Register:
         new_value = value
         if self.label == "goal_position":
             if self.cvt_to_internal is not None:
-                self.lower_limit = self.cvt_to_internal(instance.joint_limit[0])
-                self.upper_limit = self.cvt_to_internal(instance.joint_limit[1])
+                self.lower_limit = self.cvt_to_internal(instance.joint_limits[0])
+                self.upper_limit = self.cvt_to_internal(instance.joint_limits[1])
         if self.upper_limit is not None and self.lower_limit is not None:
             new_value = max(self.lower_limit, min(self.upper_limit, value))
             if new_value != value:
