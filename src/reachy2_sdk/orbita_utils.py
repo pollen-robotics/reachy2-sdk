@@ -62,6 +62,13 @@ class OrbitaJoint2d:
     def __repr__(self) -> str:
         return f'<OrbitaJoint2d axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
 
+    def _bound_joint(self, initial_goal: float) -> float:
+        "Bound joints values in joint limits. Values are expected in degrees"
+        new_goal = np.clip(initial_goal, self.joint_limits[0], self.joint_limits[1])
+        if new_goal != initial_goal:
+            print(f"{self._actuator.name}.{self.axis_type}.joint_limits are {self.joint_limits}. Got {initial_goal}, set {new_goal}")
+        return float(new_goal)
+
 
 class OrbitaJoint3d:
     """The OrbitaJoint3d class represents any Orbita3d joint.
@@ -106,6 +113,13 @@ class OrbitaJoint3d:
     def __repr__(self) -> str:
         """Return a clean representation of an Orbita 3d joint."""
         return f'<OrbitaJoint3d axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
+
+    def _bound_joint(self, initial_goal: float) -> float:
+        "Bound joints values in joint limits. Values are expected in degrees"
+        new_goal = np.clip(initial_goal, self.joint_limits[0], self.joint_limits[1])
+        if new_goal != initial_goal:
+            print(f"{self._actuator.name}.{self.axis_type}.joint_limits are {self.joint_limits}. Got {initial_goal}, set {new_goal}")
+        return float(new_goal)
 
 
 class OrbitaMotor:

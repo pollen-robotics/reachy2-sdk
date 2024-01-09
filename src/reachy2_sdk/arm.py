@@ -384,6 +384,7 @@ class Arm:
         if len(positions) != 7:
             raise ValueError(f"positions should be length 7 (got {len(positions)} instead)!")
 
+        positions = self._bound_goto_joints_values(positions)
         arm_pos = self._list_to_arm_position(positions, degrees)
         request = GoToRequest(
             joints_goal=JointsGoal(
@@ -393,6 +394,21 @@ class Arm:
         )
         response = self._goto_stub.GoToJoints(request)
         return response
+
+    def _bound_goto_joints_values(self, positions: List[float], degrees: bool = True) -> List[float]:
+        if not degrees:
+            positions = self._convert_to_degrees(positions)
+        positions[0] = getattr(self.shoulder, "pitch")._bound_joint(positions[0])
+        positions[1] = getattr(self.shoulder, "roll")._bound_joint(positions[1])
+        positions[2] = getattr(self.elbow, "yaw")._bound_joint(positions[2])
+        positions[3] = getattr(self.elbow, "pitch")._bound_joint(positions[3])
+        positions[4] = getattr(self.wrist, "roll")._bound_joint(positions[4])
+        positions[5] = getattr(self.wrist, "pitch")._bound_joint(positions[5])
+        positions[6] = getattr(self.wrist, "yaw")._bound_joint(positions[6])
+
+        if not degrees:
+            positions = self._convert_to_radians(positions)
+        return positions
 
     def _get_grpc_interpolation_mode(self, interpolation_mode: str) -> GoToInterpolation:
         if interpolation_mode not in ["minimum_jerk", "linear"]:
