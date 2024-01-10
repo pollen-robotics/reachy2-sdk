@@ -17,9 +17,7 @@ from typing import Any, Dict, List
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
-
 from mobile_base_sdk import MobileBaseSDK
-
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
@@ -302,7 +300,6 @@ is running and that the IP is correct."
 
         if self._robot.HasField("mobile_base"):
             self.mobile_base = MobileBaseSDK(self._host)
-            
 
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
