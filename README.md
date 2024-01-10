@@ -1,5 +1,7 @@
 # Python SDK for Reachy 2
 
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![linter](https://github.com/pollen-robotics/reachy2-sdk/actions/workflows/lint.yml/badge.svg) ![pytest](https://github.com/pollen-robotics/reachy2-sdk/actions/workflows/unit_tests.yml/badge.svg) ![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/FabienDanieau/92452aca5c894f95fb934dc2a7a6815f/raw/covbadge.json)
+
 ## Install
 
 Use the following command to install:
