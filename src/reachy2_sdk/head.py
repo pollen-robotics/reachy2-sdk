@@ -11,6 +11,7 @@ from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
+    GoToAck,
     GoToId,
     GoToInterpolation,
     GoToRequest,
@@ -212,6 +213,10 @@ class Head:
             interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
+        return response
+
+    def cancel_goto_by_id(self, goto_id: int) -> GoToAck:
+        response = self._goto_stub.CancelGoTo(goto_id)
         return response
 
     def _get_grpc_interpolation_mode(self, interpolation_mode: str) -> GoToInterpolation:
