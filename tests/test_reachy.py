@@ -8,6 +8,7 @@ from reachy2_sdk_api.reachy_pb2 import ReachyInfo as ReachyInfo_proto
 from src.reachy2_sdk.reachy import ReachyInfo, get_config
 
 
+@pytest.mark.offline
 def test_ReachyInfo() -> None:
     serial_number = "Reachy-12345"
     version_hard = "1.1"
@@ -21,6 +22,7 @@ def test_ReachyInfo() -> None:
     assert ri.core_software_version == version_soft
 
 
+@pytest.mark.offline
 def test_getconfig() -> None:
     robot = Reachy()
     config = get_config(robot)

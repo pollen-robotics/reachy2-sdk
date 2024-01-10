@@ -25,8 +25,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev,pollen]
       - name: Unit tests
-        run: |
-          coverage run -m pytest
+        # running offline tests only
+        run: |        
+          coverage run -m pytest -m offline
           coverage xml
           coverage json
           coverage html
