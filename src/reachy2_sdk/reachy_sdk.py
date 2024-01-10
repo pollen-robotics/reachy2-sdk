@@ -76,7 +76,7 @@ class ReachySDK(metaclass=Singleton):
         audio_port: int = 50063,
     ) -> None:
         """Set up the connection with the robot."""
-        self._logger = getLogger()
+        self._logger = getLogger(__name__)
         self._host = host
         self._sdk_port = sdk_port
         self._audio_port = audio_port
