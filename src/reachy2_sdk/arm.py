@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import grpc
 import numpy as np
 import numpy.typing as npt
-from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (
