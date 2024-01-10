@@ -157,6 +157,7 @@ is running and that the IP is correct."
                 "head",
                 "r_arm",
                 "l_arm",
+                "cancel_all_goto",
             ]:
                 delattr(self, attr)
 
