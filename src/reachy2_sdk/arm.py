@@ -412,10 +412,6 @@ class Arm:
         response = self._goto_stub.CancelGoTo(goto_id)
         return response
 
-    def cancel_all_goto(self) -> GoToAck:
-        response = self._goto_stub.CancelAllGoTo(Empty())
-        return response
-
     @property
     def joints_limits(self) -> ArmLimits:
         """Get limits of all the part's joints"""
