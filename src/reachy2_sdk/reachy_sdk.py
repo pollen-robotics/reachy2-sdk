@@ -7,12 +7,17 @@ You can also send joint commands, compute forward or inverse kinematics.
 
 """
 
+# from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
+# from .dynamixel_motor import DynamixelMotor
+from __future__ import annotations
+
 import asyncio
 import atexit
 import threading
 import time
+import typing as t
 from logging import getLogger
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
@@ -35,30 +40,24 @@ from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
 from .reachy import ReachyInfo, get_config
 
-# from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
-# from .dynamixel_motor import DynamixelMotor
+_T = t.TypeVar("_T")
 
 
-def singleton(cls: Any, *args: Any, **kw: Any) -> Any:
-    """singleton decorator enables the creation of a single instance of a class.
+class Singleton(type, t.Generic[_T]):
+    _instances: Dict[Singleton[_T], _T] = {}
 
-    Used to check only one connection to ReachySDK is open.
-    Raise ConnectionError if several a user attempts several connections.
-    """
-    instances = {}
-
-    def _singleton(*args: Any, **kw: Any) -> Any:
-        if cls not in instances:
-            instances[cls] = cls(*args, **kw)
+    def __call__(cls, *args: t.Any, **kwargs: t.Any) -> _T:
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
         else:
             raise ConnectionError("Cannot open 2 robot connections in the same kernel.")
-        return instances[cls]
+        return cls._instances[cls]
 
-    return _singleton
+    def clear(cls) -> None:
+        del cls._instances[cls]
 
 
-@singleton
-class ReachySDK:
+class ReachySDK(metaclass=Singleton):
     """The ReachySDK class handles the connection with your robot.
     Only one instance of this class can be created in a session.
 
@@ -83,6 +82,12 @@ class ReachySDK:
         self._audio_port = audio_port
 
         self._grpc_connected = False
+
+        # declared to help mypy. actually filled in self._setup_parts()
+        self._r_arm: Optional[Arm] = None
+        self._l_arm: Optional[Arm] = None
+        self._head: Optional[Head] = None
+
         self.connect()
 
     def connect(self) -> None:
@@ -148,8 +153,15 @@ is running and that the IP is correct."
                 "disabled_parts",
                 "joints",
                 "actuators",
+                "head",
+                "r_arm",
+                "l_arm",
             ]:
                 delattr(self, attr)
+
+        self._head = None
+        self._r_arm = None
+        self._l_arm = None
 
         for task in asyncio.all_tasks(loop=self._loop):
             task.cancel()
@@ -162,6 +174,24 @@ is running and that the IP is correct."
         return f"""<Reachy host="{self._host}"\n grpc_status={self.grpc_status} \n enabled_parts=\n\t{
             s
         }\n\tdisabled_parts={self._disabled_parts}\n>"""
+
+    @property
+    def head(self) -> Optional[Head]:
+        if self._head is None:
+            raise AttributeError("head does not exist with this configuration")
+        return self._head
+
+    @property
+    def r_arm(self) -> Optional[Arm]:
+        if self._r_arm is None:
+            raise AttributeError("r_arm does not exist with this configuration")
+        return self._r_arm
+
+    @property
+    def l_arm(self) -> Optional[Arm]:
+        if self._l_arm is None:
+            raise AttributeError("l_arm does not exist with this configuration")
+        return self._l_arm
 
     @property
     def enabled_parts(self) -> List[str]:
@@ -245,7 +275,7 @@ is running and that the IP is correct."
         except _InactiveRpcError:
             raise ConnectionError()
 
-        self.info = ReachyInfo(self._host, self._robot.info)
+        self.info = ReachyInfo(self._robot.info)
         self.config = get_config(self._robot)
         self._grpc_status = "connected"
 
@@ -268,32 +298,30 @@ is running and that the IP is correct."
         if self._robot.HasField("r_arm"):
             if initial_state.r_arm_state.activated:
                 r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel, goto_stub)
-                setattr(self, "r_arm", r_arm)
-                self._enabled_parts["r_arm"] = getattr(self, "r_arm")
+                self._r_arm = r_arm
+                self._enabled_parts["r_arm"] = self._r_arm
                 if self._robot.HasField("r_hand"):
                     right_hand = Hand(self._robot.r_hand, initial_state.r_hand_state, self._grpc_channel)
-                    r_arm = getattr(self, "r_arm")
-                    setattr(r_arm, "gripper", right_hand)
+                    setattr(self.r_arm, "gripper", right_hand)
             else:
                 self._disabled_parts.append("r_arm")
 
         if self._robot.HasField("l_arm"):
             if initial_state.l_arm_state.activated:
                 l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel, goto_stub)
-                setattr(self, "l_arm", l_arm)
-                self._enabled_parts["l_arm"] = getattr(self, "l_arm")
+                self._l_arm = l_arm
+                self._enabled_parts["l_arm"] = self._l_arm
                 if self._robot.HasField("l_hand"):
                     left_hand = Hand(self._robot.l_hand, initial_state.l_hand_state, self._grpc_channel)
-                    l_arm = getattr(self, "l_arm")
-                    setattr(l_arm, "gripper", left_hand)
+                    setattr(self.l_arm, "gripper", left_hand)
             else:
                 self._disabled_parts.append("l_arm")
 
         if self._robot.HasField("head"):
             if initial_state.head_state.activated:
                 head = Head(self._robot.head, initial_state.head_state, self._grpc_channel, goto_stub)
-                setattr(self, "head", head)
-                self._enabled_parts["head"] = getattr(self, "head")
+                self._head = head
+                self._enabled_parts["head"] = self._head
             else:
                 self._disabled_parts.append("head")
 
@@ -404,16 +432,16 @@ is running and that the IP is correct."
             - stream commands to the robot
             - update the state of the robot
         """
-        if hasattr(self, "r_arm"):
-            for actuator in self.r_arm._actuators.values():
+        if self._r_arm is not None:
+            for actuator in self._r_arm._actuators.values():
                 actuator._setup_sync_loop()
 
-        if hasattr(self, "l_arm"):
-            for actuator in self.l_arm._actuators.values():
+        if self._l_arm is not None:
+            for actuator in self._l_arm._actuators.values():
                 actuator._setup_sync_loop()
 
-        if hasattr(self, "head"):
-            for actuator in self.head._actuators.values():
+        if self._head is not None:
+            for actuator in self._head._actuators.values():
                 actuator._setup_sync_loop()
 
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
@@ -440,16 +468,16 @@ is running and that the IP is correct."
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         try:
             async for state_update in reachy_stub.StreamReachyState(stream_req):
-                if hasattr(self, "l_arm"):
-                    self.l_arm._update_with(state_update.l_arm_state)
-                    if hasattr(self.l_arm, "gripper"):
-                        self.l_arm.gripper._update_with(state_update.l_hand_state)
-                if hasattr(self, "r_arm"):
-                    self.r_arm._update_with(state_update.r_arm_state)
-                    if hasattr(self.r_arm, "gripper"):
-                        self.r_arm.gripper._update_with(state_update.r_hand_state)
-                if hasattr(self, "head"):
-                    self.head._update_with(state_update.head_state)
+                if self._l_arm is not None:
+                    self._l_arm._update_with(state_update.l_arm_state)
+                    if hasattr(self._l_arm, "gripper"):
+                        self._l_arm.gripper._update_with(state_update.l_hand_state)
+                if self._r_arm is not None:
+                    self._r_arm._update_with(state_update.r_arm_state)
+                    if hasattr(self._r_arm, "gripper"):
+                        self._r_arm.gripper._update_with(state_update.r_hand_state)
+                if self._head is not None:
+                    self._head._update_with(state_update.head_state)
                 if hasattr(self, "mobile_base"):
                     self.mobile_base._update_with(state_update.mobile_base_state)
         except grpc.aio._call.AioRpcError:
@@ -527,27 +555,31 @@ is running and that the IP is correct."
 
     #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
-    def turn_on(self) -> None:
+    def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.
 
         All enabled parts' motors will then be stiff.
         """
         if self._grpc_status == "disconnected":
             print("Cannot turn on Reachy, not connected.")
-            return
+            return False
         for part in self._enabled_parts.values():
             part.turn_on()
 
-    def turn_off(self) -> None:
+        return True
+
+    def turn_off(self) -> bool:
         """Turn all motors of enabled parts off.
 
         All enabled parts' motors will then be compliant.
         """
         if self._grpc_status == "disconnected":
             print("Cannot turn off Reachy, not connected.")
-            return
+            return False
         for part in self._enabled_parts.values():
             part.turn_off()
+
+        return True
 
 
 _open_connection: List[ReachySDK] = []
