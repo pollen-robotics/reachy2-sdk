@@ -15,7 +15,7 @@ class ReachyInfo:
         - the robot's core software version, that will not change during a session
     """
 
-    def __init__(self, host: str, info_msg: ReachyInfo_proto) -> None:
+    def __init__(self, info_msg: ReachyInfo_proto) -> None:
         self.robot_serial_number = info_msg.serial_number
 
         self.hardware_version = info_msg.version_hard

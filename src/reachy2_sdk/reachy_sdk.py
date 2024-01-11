@@ -275,7 +275,7 @@ is running and that the IP is correct."
         except _InactiveRpcError:
             raise ConnectionError()
 
-        self.info = ReachyInfo(self._host, self._robot.info)
+        self.info = ReachyInfo(self._robot.info)
         self.config = get_config(self._robot)
         self._grpc_status = "connected"
 
@@ -555,27 +555,31 @@ is running and that the IP is correct."
 
     #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
-    def turn_on(self) -> None:
+    def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.
 
         All enabled parts' motors will then be stiff.
         """
         if self._grpc_status == "disconnected":
             print("Cannot turn on Reachy, not connected.")
-            return
+            return False
         for part in self._enabled_parts.values():
             part.turn_on()
 
-    def turn_off(self) -> None:
+        return True
+
+    def turn_off(self) -> bool:
         """Turn all motors of enabled parts off.
 
         All enabled parts' motors will then be compliant.
         """
         if self._grpc_status == "disconnected":
             print("Cannot turn off Reachy, not connected.")
-            return
+            return False
         for part in self._enabled_parts.values():
             part.turn_off()
+
+        return True
 
 
 _open_connection: List[ReachySDK] = []
