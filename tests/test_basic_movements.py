@@ -5,6 +5,7 @@ import numpy.typing as npt
 import pytest
 
 from src.reachy2_sdk.reachy_sdk import ReachySDK
+from pyquaternion import Quaternion
 
 
 @pytest.mark.online
@@ -109,6 +110,35 @@ def test_square() -> None:
     A = build_pose_matrix(0.3, -0.4, -0.3)
     current_pos = reachy.r_arm.forward_kinematics()
     assert np.allclose(current_pos, A, atol=1e-01)
+
+    assert reachy.turn_off()
+
+    reachy.disconnect()
+    ReachySDK.clear()
+
+
+@pytest.mark.online
+def test_head_movements() -> None:
+    reachy = ReachySDK(host="localhost")
+    assert reachy.grpc_status == "connected"
+
+    assert reachy.turn_on()
+
+    q0 = Quaternion(axis=[1, 0, 0], angle=np.pi / 6.0)  # Rotate 30 about X
+    reachy.head.orient(q0, duration=1)
+
+    time.sleep(1)
+
+    q1 = reachy.head.get_orientation()
+
+    assert Quaternion.distance(q0, q1) < 1e-05
+
+    reachy.head.rotate_to(roll=0, pitch=60, yaw=0, duration=1)
+    q2 = Quaternion(axis=[0, 1, 0], angle=np.pi / 3.0)  # Rotate 60 about Y
+
+    time.sleep(1)
+    q3 = reachy.head.get_orientation()
+    assert Quaternion.distance(q2, q3) < 1e-05
 
     assert reachy.turn_off()
 
