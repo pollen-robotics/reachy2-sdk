@@ -195,13 +195,17 @@ class Orbita3d:
         motors level. Registers can either be goal_position, pid or speed_limit/torque_limit.
         """
         if field == "goal_position":
-            return Rotation3d(
-                rpy=ExtEulerAngles(
-                    roll=self.roll._state["goal_position"],
-                    pitch=self.pitch._state["goal_position"],
-                    yaw=self.yaw._state["goal_position"],
-                )
-            )
+            req = {}
+            if len(self.roll._register_needing_sync) != 0:
+                req["roll"] = self.roll._tmp_state["goal_position"]
+                self.roll._register_needing_sync.clear()
+            if len(self.pitch._register_needing_sync) != 0:
+                req["pitch"] = self.pitch._tmp_state["goal_position"]
+                self.pitch._register_needing_sync.clear()
+            if len(self.yaw._register_needing_sync) != 0:
+                req["yaw"] = self.yaw._tmp_state["goal_position"]
+                self.yaw._register_needing_sync.clear()
+            return Rotation3d(rpy=ExtEulerAngles(**req))
 
         elif field == "pid":
             return PID3d(
@@ -336,8 +340,8 @@ class Orbita3d:
         command = Orbita3dCommand(**values)
 
         self._register_needing_sync.clear()
-        for obj in list(self._joints.values()) + list(self._motors.values()):
-            obj._register_needing_sync.clear()
+        # for obj in list(self._joints.values()) + list(self._motors.values()):
+        #     obj._register_needing_sync.clear()
         self._need_sync.clear()
 
         return command

@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
+from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 
 from .register import Register
 
@@ -50,6 +51,7 @@ class OrbitaJoint2d:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
+        self._tmp_state = initial_state.copy()
 
         for field in dir(self):
             value = getattr(self, field)
@@ -88,6 +90,7 @@ class OrbitaJoint3d:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
+        self._tmp_state = initial_state.copy()
 
         for field in dir(self):
             value = getattr(self, field)

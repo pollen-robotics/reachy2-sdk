@@ -457,7 +457,7 @@ is running and that the IP is correct."
                 self._stream_orbita2d_commands_loop(orbita2d_stub, freq=100),
                 self._stream_orbita3d_commands_loop(orbita3d_stub, freq=100),
                 # self._stream_dynamixel_motor_commands_loop(dynamixel_motor_stub, freq=100),
-                self._get_stream_update_loop(reachy_stub, freq=1),
+                self._get_stream_update_loop(reachy_stub, freq=100),
                 self._wait_for_stop(),
             )
         except ConnectionError:
@@ -502,6 +502,7 @@ is running and that the IP is correct."
                     await asyncio.sleep(dt - elapsed_time)
 
                 commands = await self._poll_waiting_2dcommands()
+                print(commands)
                 yield commands
                 self._pushed_2dcommand.set()
                 self._pushed_2dcommand.clear()

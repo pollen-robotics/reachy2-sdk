@@ -161,10 +161,14 @@ class Orbita2d:
         motors level. Registers can either be goal_position, pid or speed_limit/torque_limit.
         """
         if field == "goal_position":
-            return Pose2d(
-                axis_1=self._joints["axis_1"]._state["goal_position"],
-                axis_2=self._joints["axis_2"]._state["goal_position"],
-            )
+            req = {}
+            if len(self._joints["axis_1"]._register_needing_sync) != 0:
+                req["axis_1"] = self._joints["axis_1"]._tmp_state["goal_position"]
+                self._joints["axis_1"]._register_needing_sync.clear()
+            if len(self._joints["axis_2"]._register_needing_sync) != 0:
+                req["axis_2"] = self._joints["axis_2"]._tmp_state["goal_position"]
+                self._joints["axis_2"]._register_needing_sync.clear()
+            return Pose2d(**req)
 
         elif field == "pid":
             return PID2d(
@@ -286,8 +290,8 @@ class Orbita2d:
         command = Orbita2dCommand(**values)
 
         self._register_needing_sync.clear()
-        for obj in list(self._joints.values()) + list(self._motors.values()):
-            obj._register_needing_sync.clear()
+        # for obj in list(self._joints.values()) + list(self._motors.values()):
+        #     obj._register_needing_sync.clear()
         self._need_sync.clear()
 
         return command
