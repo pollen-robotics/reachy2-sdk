@@ -4,13 +4,11 @@ from typing import Any, Dict, List, Tuple
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from grpc import Channel
-from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.component_pb2 import ComponentId, PIDGains
-from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Quaternion, Rotation3d
+from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita3d_pb2 import (
     Float3d,
     Orbita3dCommand,
-    Orbita3dGoal,
     Orbita3dState,
     PID3d,
     Vector3d,
@@ -141,28 +139,6 @@ class Orbita3d:
     def get_pid(self) -> Dict[str, Tuple[float, float, float]]:
         """Get pid of all motors of the actuator"""
         return {motor_name: m.pid for motor_name, m in self._motors.items()}
-
-    def orient(self, q: pyQuat, duration: float) -> None:
-        """Orient the head to a given quaternion.
-
-        Goal orientation is reached in a defined duration"""
-        req = Orbita3dGoal(
-            id=ComponentId(id=self.id, name=self.name),
-            rotation=Rotation3d(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z)),
-            duration=FloatValue(value=duration),
-        )
-        self._stub.GoToOrientation(req)
-
-    def rotate_to(self, roll: float, pitch: float, yaw: float, duration: float) -> None:
-        """Rotate the head to a given roll, pitch, yaw orientation.
-
-        Goal orientation is reached in a defined duration"""
-        req = Orbita3dGoal(
-            id=ComponentId(id=self.id, name=self.name),
-            rotation=Rotation3d(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw)),
-            duration=FloatValue(value=duration),
-        )
-        self._stub.GoToOrientation(req)
 
     @property
     def temperatures(self) -> Dict[str, Register]:

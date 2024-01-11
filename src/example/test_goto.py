@@ -172,7 +172,7 @@ def test_goto_cancel(reachy: ReachySDK) -> None:
 
     time.sleep(1.0)
     print("Canceling all gotos!")
-    reachy.r_arm.cancel_all_goto()
+    reachy.cancel_all_goto()
     print("The arm should be stopped now.")
     time.sleep(1.0)
     init_pose(reachy)
@@ -277,6 +277,7 @@ def main_test() -> None:
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
+
     reachy.disconnect()
 
 

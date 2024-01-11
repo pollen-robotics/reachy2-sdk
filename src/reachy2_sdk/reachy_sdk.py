@@ -23,6 +23,7 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
+from reachy2_sdk_api.goto_pb2 import GoToAck
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
@@ -156,6 +157,7 @@ is running and that the IP is correct."
                 "head",
                 "r_arm",
                 "l_arm",
+                "cancel_all_goto",
             ]:
                 delattr(self, attr)
 
@@ -275,7 +277,7 @@ is running and that the IP is correct."
         except _InactiveRpcError:
             raise ConnectionError()
 
-        self.info = ReachyInfo(self._host, self._robot.info)
+        self.info = ReachyInfo(self._robot.info)
         self.config = get_config(self._robot)
         self._grpc_status = "connected"
 
@@ -292,12 +294,12 @@ is running and that the IP is correct."
         it to the ReachySDK instance.
         """
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
-        goto_stub = GoToServiceStub(self._grpc_channel)
+        self._goto_stub = GoToServiceStub(self._grpc_channel)
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
         if self._robot.HasField("r_arm"):
             if initial_state.r_arm_state.activated:
-                r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel, goto_stub)
+                r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel, self._goto_stub)
                 self._r_arm = r_arm
                 self._enabled_parts["r_arm"] = self._r_arm
                 if self._robot.HasField("r_hand"):
@@ -308,7 +310,7 @@ is running and that the IP is correct."
 
         if self._robot.HasField("l_arm"):
             if initial_state.l_arm_state.activated:
-                l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel, goto_stub)
+                l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel, self._goto_stub)
                 self._l_arm = l_arm
                 self._enabled_parts["l_arm"] = self._l_arm
                 if self._robot.HasField("l_hand"):
@@ -319,7 +321,7 @@ is running and that the IP is correct."
 
         if self._robot.HasField("head"):
             if initial_state.head_state.activated:
-                head = Head(self._robot.head, initial_state.head_state, self._grpc_channel, goto_stub)
+                head = Head(self._robot.head, initial_state.head_state, self._grpc_channel, self._goto_stub)
                 self._head = head
                 self._enabled_parts["head"] = self._head
             else:
@@ -555,27 +557,35 @@ is running and that the IP is correct."
 
     #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
-    def turn_on(self) -> None:
+    def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.
 
         All enabled parts' motors will then be stiff.
         """
         if self._grpc_status == "disconnected":
             self._logger.warning("Cannot turn on Reachy, not connected.")
-            return
+            return False
         for part in self._enabled_parts.values():
             part.turn_on()
 
-    def turn_off(self) -> None:
+        return True
+
+    def turn_off(self) -> bool:
         """Turn all motors of enabled parts off.
 
         All enabled parts' motors will then be compliant.
         """
         if self._grpc_status == "disconnected":
             self._logger.warning("Cannot turn off Reachy, not connected.")
-            return
+            return False
         for part in self._enabled_parts.values():
             part.turn_off()
+
+        return True
+
+    def cancel_all_goto(self) -> GoToAck:
+        response = self._goto_stub.CancelAllGoTo(Empty())
+        return response
 
 
 _open_connection: List[ReachySDK] = []
