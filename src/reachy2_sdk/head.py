@@ -208,6 +208,10 @@ class Head:
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
     ) -> GoToId:
+        """Send neck to rpy position.
+
+        Rotation is done in order roll, pitch, yaw.
+        """
         if degrees:
             roll = np.deg2rad(roll)
             pitch = np.deg2rad(pitch)
@@ -226,6 +230,7 @@ class Head:
         return response
 
     def orient(self, q: pyQuat, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
+        """Send neck to the orientation given as a quaternion."""
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
