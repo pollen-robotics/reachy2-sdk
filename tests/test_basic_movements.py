@@ -3,9 +3,9 @@ import time
 import numpy as np
 import numpy.typing as npt
 import pytest
+from pyquaternion import Quaternion
 
 from src.reachy2_sdk.reachy_sdk import ReachySDK
-from pyquaternion import Quaternion
 
 
 @pytest.mark.online
