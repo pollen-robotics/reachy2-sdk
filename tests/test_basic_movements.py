@@ -141,6 +141,7 @@ def test_head_movements() -> None:
     reachy.disconnect()
     ReachySDK.clear()
 
+
 @pytest.mark.online
 def test_cancel_goto() -> None:
     reachy = ReachySDK(host="localhost")
