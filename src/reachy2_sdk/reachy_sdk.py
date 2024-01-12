@@ -23,6 +23,7 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
+from reachy2_sdk_api.goto_pb2 import GoToAck
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
@@ -76,7 +77,7 @@ class ReachySDK(metaclass=Singleton):
         audio_port: int = 50063,
     ) -> None:
         """Set up the connection with the robot."""
-        self._logger = getLogger()
+        self._logger = getLogger(__name__)
         self._host = host
         self._sdk_port = sdk_port
         self._audio_port = audio_port
@@ -92,7 +93,7 @@ class ReachySDK(metaclass=Singleton):
 
     def connect(self) -> None:
         if self._grpc_status == "connected":
-            print("Already connected to Reachy.")
+            self._logger.warning("Already connected to Reachy.")
             return
 
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
@@ -109,7 +110,7 @@ class ReachySDK(metaclass=Singleton):
         try:
             self._get_info()
         except ConnectionError:
-            print(
+            self._logger.error(
                 f"Could not connect to Reachy with on IP address {self._host}, check that the sdk server \
 is running and that the IP is correct."
             )
@@ -125,11 +126,11 @@ is running and that the IP is correct."
 
         self._grpc_status = "connected"
         _open_connection.append(self)
-        print("Connected to Reachy.")
+        self._logger.info("Connected to Reachy.")
 
     def disconnect(self) -> None:
         if self._grpc_status == "disconnected":
-            print("Already disconnected from Reachy.")
+            self._logger.warning("Already disconnected from Reachy.")
             return
 
         for part in self._enabled_parts.values():
@@ -156,6 +157,7 @@ is running and that the IP is correct."
                 "head",
                 "r_arm",
                 "l_arm",
+                "cancel_all_goto",
             ]:
                 delattr(self, attr)
 
@@ -166,7 +168,7 @@ is running and that the IP is correct."
         for task in asyncio.all_tasks(loop=self._loop):
             task.cancel()
 
-        print("Disconnected from Reachy.")
+        self._logger.info("Disconnected from Reachy.")
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
@@ -197,7 +199,7 @@ is running and that the IP is correct."
     def enabled_parts(self) -> List[str]:
         """Get existing parts of the robot the user can effectively control."""
         if self._grpc_status == "disconnected":
-            print("Cannot get enabled parts, not connected to Reachy.")
+            self._logger.warning("Cannot get enabled parts, not connected to Reachy.")
             return []
         return list(self._enabled_parts.keys())
 
@@ -205,7 +207,7 @@ is running and that the IP is correct."
     def disabled_parts(self) -> List[str]:
         """Get existing parts of the robot that cannot be controlled by the user"""
         if self._grpc_status == "disconnected":
-            print("Cannot get disabled parts, not connected to Reachy.")
+            self._logger.warning("Cannot get disabled parts, not connected to Reachy.")
             return []
         return self._disabled_parts
 
@@ -213,7 +215,7 @@ is running and that the IP is correct."
     def joints(self) -> Dict[str, OrbitaJoint2d | OrbitaJoint3d]:
         """Get all joints of the robot."""
         if self._grpc_status == "disconnected":
-            print("Cannot get joints, not connected to Reachy.")
+            self._logger.warning("Cannot get joints, not connected to Reachy.")
             return {}
         _joints: Dict[str, OrbitaJoint2d | OrbitaJoint3d] = {}
         for part_name in self.enabled_parts:
@@ -226,7 +228,7 @@ is running and that the IP is correct."
     def actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
         """Get all actuators of the robot."""
         if self._grpc_status == "disconnected":
-            print("Cannot get actuators, not connected to Reachy.")
+            self._logger.warning("Cannot get actuators, not connected to Reachy.")
             return {}
         _actuators: Dict[str, Orbita2d | Orbita3d] = {}
         for part_name in self.enabled_parts:
@@ -275,7 +277,7 @@ is running and that the IP is correct."
         except _InactiveRpcError:
             raise ConnectionError()
 
-        self.info = ReachyInfo(self._host, self._robot.info)
+        self.info = ReachyInfo(self._robot.info)
         self.config = get_config(self._robot)
         self._grpc_status = "connected"
 
@@ -283,7 +285,7 @@ is running and that the IP is correct."
         try:
             self.audio = Audio(self._host, self._audio_port)
         except Exception:
-            print("Failed to connect to audio server. ReachySDK.audio will not be available.")
+            self._logger.error("Failed to connect to audio server. ReachySDK.audio will not be available.")
 
     def _setup_parts(self) -> None:
         """Setup all parts of the robot.
@@ -292,12 +294,12 @@ is running and that the IP is correct."
         it to the ReachySDK instance.
         """
         setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
-        goto_stub = GoToServiceStub(self._grpc_channel)
+        self._goto_stub = GoToServiceStub(self._grpc_channel)
         initial_state = setup_stub.GetReachyState(self._robot.id)
 
         if self._robot.HasField("r_arm"):
             if initial_state.r_arm_state.activated:
-                r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel, goto_stub)
+                r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel, self._goto_stub)
                 self._r_arm = r_arm
                 self._enabled_parts["r_arm"] = self._r_arm
                 if self._robot.HasField("r_hand"):
@@ -308,7 +310,7 @@ is running and that the IP is correct."
 
         if self._robot.HasField("l_arm"):
             if initial_state.l_arm_state.activated:
-                l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel, goto_stub)
+                l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel, self._goto_stub)
                 self._l_arm = l_arm
                 self._enabled_parts["l_arm"] = self._l_arm
                 if self._robot.HasField("l_hand"):
@@ -319,7 +321,7 @@ is running and that the IP is correct."
 
         if self._robot.HasField("head"):
             if initial_state.head_state.activated:
-                head = Head(self._robot.head, initial_state.head_state, self._grpc_channel, goto_stub)
+                head = Head(self._robot.head, initial_state.head_state, self._grpc_channel, self._goto_stub)
                 self._head = head
                 self._enabled_parts["head"] = self._head
             else:
@@ -423,7 +425,7 @@ is running and that the IP is correct."
             self._loop.run_until_complete(self._sync_loop())
             self.disconnect()
         except asyncio.CancelledError:
-            print("Sync loop cancelled.")
+            self._logger.error("Sync loop cancelled.")
 
     async def _sync_loop(self) -> None:
         """Define the synchronization loop.
@@ -459,9 +461,9 @@ is running and that the IP is correct."
                 self._wait_for_stop(),
             )
         except ConnectionError:
-            print("Connection with Reachy lost, check the sdk server status.")
+            self._logger.error("Connection with Reachy lost, check the sdk server status.")
         except asyncio.CancelledError:
-            print("Stopped streaming commands.")
+            self._logger.error("Stopped streaming commands.")
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         """Update the state of the robot at a given frequency."""
@@ -555,27 +557,35 @@ is running and that the IP is correct."
 
     #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
-    def turn_on(self) -> None:
+    def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.
 
         All enabled parts' motors will then be stiff.
         """
         if self._grpc_status == "disconnected":
-            print("Cannot turn on Reachy, not connected.")
-            return
+            self._logger.warning("Cannot turn on Reachy, not connected.")
+            return False
         for part in self._enabled_parts.values():
             part.turn_on()
 
-    def turn_off(self) -> None:
+        return True
+
+    def turn_off(self) -> bool:
         """Turn all motors of enabled parts off.
 
         All enabled parts' motors will then be compliant.
         """
         if self._grpc_status == "disconnected":
-            print("Cannot turn off Reachy, not connected.")
-            return
+            self._logger.warning("Cannot turn off Reachy, not connected.")
+            return False
         for part in self._enabled_parts.values():
             part.turn_off()
+
+        return True
+
+    def cancel_all_goto(self) -> GoToAck:
+        response = self._goto_stub.CancelAllGoTo(Empty())
+        return response
 
 
 _open_connection: List[ReachySDK] = []
