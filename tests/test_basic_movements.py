@@ -140,3 +140,27 @@ def test_head_movements() -> None:
 
     reachy.disconnect()
     ReachySDK.clear()
+
+@pytest.mark.online
+def test_cancel_goto() -> None:
+    reachy = ReachySDK(host="localhost")
+    assert reachy.grpc_status == "connected"
+
+    assert reachy.turn_on()
+
+    reachy.head.rotate_to(0, 0, 0, duration=1.0)
+    time.sleep(1)
+    req = reachy.head.rotate_to(0, 40, 0, duration=10)
+    time.sleep(1)
+    cancel = reachy.head.cancel_goto_by_id(req)
+    assert cancel.ack
+
+    req2 = reachy.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10)
+    time.sleep(1)
+    cancel2 = reachy.head.cancel_goto_by_id(req2)
+    assert cancel2.ack
+
+    assert reachy.turn_off()
+
+    reachy.disconnect()
+    ReachySDK.clear()
