@@ -1,6 +1,7 @@
 """This module defines the utils class to describe Orbita2d and Orbita3d joints, motors and axis."""
 from __future__ import annotations
 
+from logging import getLogger
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 import numpy as np
@@ -62,6 +63,7 @@ class OrbitaJoint2d:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
+        self._logger = getLogger(__name__)
 
         self._register_needing_sync: List[str] = []
 
@@ -72,7 +74,7 @@ class OrbitaJoint2d:
         "Bound joints values in joint limits. Values are expected in degrees"
         new_goal = np.clip(initial_goal, self.joint_limits[0], self.joint_limits[1])
         if new_goal != initial_goal:
-            print(
+            self._logger.warning(
                 f"{self._actuator.name}.{self.axis_type}.joint_limits are {self.joint_limits}. Got {initial_goal}, set {new_goal}"  # noqa: E501
             )
         return float(new_goal)
@@ -110,6 +112,7 @@ class OrbitaJoint3d:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
+        self._logger = getLogger(__name__)
 
         for field in dir(self):
             value = getattr(self, field)
@@ -126,7 +129,7 @@ class OrbitaJoint3d:
         "Bound joints values in joint limits. Values are expected in degrees"
         new_goal = np.clip(initial_goal, self.joint_limits[0], self.joint_limits[1])
         if new_goal != initial_goal:
-            print(
+            self._logger.warning(
                 f"{self._actuator.name}.{self.axis_type}.joint_limits are {self.joint_limits}. Got {initial_goal}, set {new_goal}"  # noqa: E501
             )
         return float(new_goal)

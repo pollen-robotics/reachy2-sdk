@@ -4,6 +4,7 @@ The Register class is used to define the registers of the motors and joints of t
 such as the goal position, the present position, the speed limit, etc.
 """
 import asyncio
+from logging import getLogger
 from typing import Any, Callable, Optional, Tuple, Type
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue, UInt32Value
@@ -38,6 +39,8 @@ class Register:
         self.cvt_to_external: Optional[Callable[[Any], Any]] = None
         if conversion is not None:
             self.cvt_to_internal, self.cvt_to_external = conversion
+
+        self._logger = getLogger(__name__)
 
     def __get__(self, instance, owner):  # type: ignore
         """Get the value of the register.
@@ -111,13 +114,13 @@ class Register:
             new_value = max(self.lower_limit, min(self.upper_limit, value))
             if new_value != value:
                 if self.cvt_to_external is not None:
-                    print(
+                    self._logger.warning(
                         f"""{self.label} should be in \
 {self.cvt_to_external(self.lower_limit), self.cvt_to_external(self.upper_limit)}. \
 Got {self.cvt_to_external(value)}, set {self.cvt_to_external(new_value)}"""
                     )
                 else:
-                    print(
+                    self._logger.warning(
                         f"""{self.label} should be in {self.lower_limit, self.upper_limit}. \
 Got {value}, set {new_value}"""
                     )
