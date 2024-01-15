@@ -39,6 +39,8 @@ def test_class() -> None:
     )
     orbita3d = Orbita3d(uid=0, name="unit_test", initial_state=orbita3d_state, grpc_channel=grpc_channel)
 
+    assert orbita3d.compliant
+
     # use _to_position()  to convert radian to degree
     assert orbita3d.roll.goal_position == _to_position(goal_rot.rpy.roll)
     assert orbita3d.roll.present_position == _to_position(present_rot.rpy.roll)
