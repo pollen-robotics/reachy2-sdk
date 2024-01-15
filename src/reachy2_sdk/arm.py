@@ -383,7 +383,7 @@ class Arm:
         if len(positions) != 7:
             raise ValueError(f"positions should be length 7 (got {len(positions)} instead)!")
 
-        positions = self._bound_goto_joints_values(positions)
+        positions = self._bound_goto_joints_values(positions, degrees)
         arm_pos = self._list_to_arm_position(positions, degrees)
         request = GoToRequest(
             joints_goal=JointsGoal(
@@ -395,6 +395,10 @@ class Arm:
         return response
 
     def _bound_goto_joints_values(self, positions: List[float], degrees: bool = True) -> List[float]:
+        """Check goto_joints values are clipped in joints limits.
+
+        Bounding is made in degrees, list is returned in its initial unit.
+        """
         if not degrees:
             positions = self._convert_to_degrees(positions)
         positions[0] = getattr(self.shoulder, "pitch")._bound_joint(positions[0])
