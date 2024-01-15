@@ -46,6 +46,7 @@ def test_class() -> None:
     )
 
     assert orbita2d.compliant
+    # use _to_position()  to convert radian to degree
     assert orbita2d.roll.goal_position == _to_position(goal_position.axis_2.value)
     assert orbita2d.roll.present_position == _to_position(present_position.axis_2.value)
     assert orbita2d.pitch.goal_position == _to_position(goal_position.axis_1.value)

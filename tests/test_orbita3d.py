@@ -14,18 +14,18 @@ def test_class() -> None:
     grpc_channel = grpc.insecure_channel("dummy:5050")
     compliance = BoolValue(value=True)
     pid = PID3d(
-        motor_1=PIDGains(p=FloatValue(value=0), i=FloatValue(value=0), d=FloatValue(value=0)),
-        motor_2=PIDGains(p=FloatValue(value=0), i=FloatValue(value=0), d=FloatValue(value=0)),
-        motor_3=PIDGains(p=FloatValue(value=0), i=FloatValue(value=0), d=FloatValue(value=0)),
+        motor_1=PIDGains(p=FloatValue(value=1), i=FloatValue(value=2), d=FloatValue(value=3)),
+        motor_2=PIDGains(p=FloatValue(value=4), i=FloatValue(value=5), d=FloatValue(value=6)),
+        motor_3=PIDGains(p=FloatValue(value=7), i=FloatValue(value=8), d=FloatValue(value=9)),
     )
 
-    temperature = Float3d(motor_1=FloatValue(value=0), motor_2=FloatValue(value=0), motor_3=FloatValue(value=0))
-    speed_limit = Float3d(motor_1=FloatValue(value=0), motor_2=FloatValue(value=0), motor_3=FloatValue(value=0))
-    torque_limit = Float3d(motor_1=FloatValue(value=0), motor_2=FloatValue(value=0), motor_3=FloatValue(value=0))
-    present_speed = Vector3d(x=FloatValue(value=0), y=FloatValue(value=0), z=FloatValue(value=0))
-    present_load = Vector3d(x=FloatValue(value=0), y=FloatValue(value=0), z=FloatValue(value=0))
-    present_rot = Rotation3d(rpy=ExtEulerAngles(roll=1, pitch=2, yaw=3))
-    goal_rot = Rotation3d(rpy=ExtEulerAngles(roll=4, pitch=5, yaw=6))
+    temperature = Float3d(motor_1=FloatValue(value=10), motor_2=FloatValue(value=11), motor_3=FloatValue(value=12))
+    speed_limit = Float3d(motor_1=FloatValue(value=13), motor_2=FloatValue(value=14), motor_3=FloatValue(value=15))
+    torque_limit = Float3d(motor_1=FloatValue(value=16), motor_2=FloatValue(value=17), motor_3=FloatValue(value=18))
+    present_speed = Vector3d(x=FloatValue(value=19), y=FloatValue(value=20), z=FloatValue(value=21))
+    present_load = Vector3d(x=FloatValue(value=22), y=FloatValue(value=23), z=FloatValue(value=24))
+    present_rot = Rotation3d(rpy=ExtEulerAngles(roll=25, pitch=26, yaw=27))
+    goal_rot = Rotation3d(rpy=ExtEulerAngles(roll=28, pitch=29, yaw=30))
     orbita3d_state = Orbita3dState(
         compliant=compliance,
         present_position=present_rot,
@@ -48,3 +48,30 @@ def test_class() -> None:
     assert orbita3d.pitch.present_position == _to_position(present_rot.rpy.pitch)
     assert orbita3d.yaw.goal_position == _to_position(goal_rot.rpy.yaw)
     assert orbita3d.yaw.present_position == _to_position(present_rot.rpy.yaw)
+
+    pid_set = orbita3d.get_pid()
+    assert pid_set["motor_1"][0] == pid.motor_1.p.value
+    assert pid_set["motor_1"][1] == pid.motor_1.i.value
+    assert pid_set["motor_1"][2] == pid.motor_1.d.value
+
+    assert pid_set["motor_2"][0] == pid.motor_2.p.value
+    assert pid_set["motor_2"][1] == pid.motor_2.i.value
+    assert pid_set["motor_2"][2] == pid.motor_2.d.value
+
+    assert pid_set["motor_3"][0] == pid.motor_3.p.value
+    assert pid_set["motor_3"][1] == pid.motor_3.i.value
+    assert pid_set["motor_3"][2] == pid.motor_3.d.value
+
+    torques_set = orbita3d.get_torque_limit()
+    assert torques_set["motor_1"] == torque_limit.motor_1.value
+    assert torques_set["motor_2"] == torque_limit.motor_2.value
+    assert torques_set["motor_3"] == torque_limit.motor_3.value
+
+    speed_set = orbita3d.get_speed_limit()
+    assert speed_set["motor_1"] == _to_position(speed_limit.motor_1.value)
+    assert speed_set["motor_2"] == _to_position(speed_limit.motor_2.value)
+    assert speed_set["motor_3"] == _to_position(speed_limit.motor_3.value)
+
+    orbita3d.temperatures["motor_1"] == temperature.motor_1.value
+    orbita3d.temperatures["motor_2"] == temperature.motor_1.value
+    orbita3d.temperatures["motor_3"] == temperature.motor_3.value
