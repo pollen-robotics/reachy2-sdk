@@ -1,9 +1,15 @@
 """This module defines the utils class to describe Orbita2d and Orbita3d joints, motors and axis."""
-from typing import Any, Dict, List, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import JointLimits, PIDGains
+
+if TYPE_CHECKING:
+    from .orbita2d import Orbita2d
+    from .orbita3d import Orbita3d
 
 from .register import Register
 
@@ -52,7 +58,7 @@ class OrbitaJoint2d:
         conversion=(_to_internal_position, _to_position),
     )
 
-    def __init__(self, initial_state: Dict[str, Any], axis_type: str, actuator: Any) -> None:
+    def __init__(self, initial_state: Dict[str, FloatValue | JointLimits], axis_type: str, actuator: Orbita2d) -> None:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
@@ -99,7 +105,7 @@ class OrbitaJoint3d:
         conversion=(_to_internal_position, _to_position),
     )
 
-    def __init__(self, initial_state: Dict[str, Any], axis_type: str, actuator: Any) -> None:
+    def __init__(self, initial_state: Dict[str, float | JointLimits], axis_type: str, actuator: Orbita3d) -> None:
         """Initialize the joint with its initial state and its axis type (either roll, pitch or yaw)."""
         self._actuator = actuator
         self.axis_type = axis_type
@@ -149,7 +155,7 @@ class OrbitaMotor:
 
     pid = Register(readonly=False, type=PIDGains, label="pid")
 
-    def __init__(self, initial_state: Dict[str, Any], actuator: Any) -> None:
+    def __init__(self, initial_state: Dict[str, FloatValue | BoolValue | PIDGains], actuator: Orbita2d | Orbita3d) -> None:
         """Initialize the motor with its initial state."""
         self._actuator = actuator
 
@@ -184,7 +190,7 @@ class OrbitaAxis:
     )
     present_load = Register(readonly=True, type=FloatValue, label="present_load")
 
-    def __init__(self, initial_state: Dict[str, float]) -> None:
+    def __init__(self, initial_state: Dict[str, FloatValue]) -> None:
         """Initialize the axis with its initial state."""
         self._state = initial_state
 

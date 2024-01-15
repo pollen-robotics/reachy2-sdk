@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from grpc import Channel
-from reachy2_sdk_api.component_pb2 import ComponentId, PIDGains
+from reachy2_sdk_api.component_pb2 import ComponentId, JointLimits, PIDGains
 from reachy2_sdk_api.orbita2d_pb2 import (
     Axis,
     Float2d,
@@ -62,53 +62,55 @@ class Orbita2d:
         axis2_name = Axis.DESCRIPTOR.values_by_number[axis2].name.lower()
 
         self._state: Dict[str, bool] = {}
-        init_state: Dict[str, Dict[str, float]] = {}
+        init_joint_state: Dict[str, Dict[str, FloatValue | JointLimits]] = {}
+        init_motor_state: Dict[str, Dict[str, FloatValue | BoolValue | PIDGains]] = {}
+        init_axis_state: Dict[str, Dict[str, FloatValue]] = {}
 
         self._register_needing_sync: List[str] = []
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
                 self._state[field.name] = value
-                init_state["motor_1"][field.name] = value
-                init_state["motor_2"][field.name] = value
+                init_motor_state["motor_1"][field.name] = value
+                init_motor_state["motor_2"][field.name] = value
             else:
                 if isinstance(value, Pose2d | Limits2d):
                     for axis, val in value.ListFields():
-                        if axis.name not in init_state:
-                            init_state[axis.name] = {}
-                        init_state[axis.name][field.name] = val
+                        if axis.name not in init_joint_state:
+                            init_joint_state[axis.name] = {}
+                        init_joint_state[axis.name][field.name] = val
                 if isinstance(value, Float2d | PID2d):
                     for motor, val in value.ListFields():
-                        if motor.name not in init_state:
-                            init_state[motor.name] = {}
-                        init_state[motor.name][field.name] = val
+                        if motor.name not in init_motor_state:
+                            init_motor_state[motor.name] = {}
+                        init_motor_state[motor.name][field.name] = val
                 if isinstance(value, Vector2d):
                     for axis, val in value.ListFields():
-                        if axis.name not in init_state:
-                            init_state[axis.name] = {}
-                        init_state[axis.name][field.name] = val
+                        if axis.name not in init_axis_state:
+                            init_axis_state[axis.name] = {}
+                        init_axis_state[axis.name][field.name] = val
 
         setattr(
             self,
             axis1_name,
-            OrbitaJoint2d(initial_state=init_state["axis_1"], axis_type=axis1_name, actuator=self),
+            OrbitaJoint2d(initial_state=init_joint_state["axis_1"], axis_type=axis1_name, actuator=self),
         )
         setattr(
             self,
             axis2_name,
-            OrbitaJoint2d(initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self),
+            OrbitaJoint2d(initial_state=init_joint_state["axis_2"], axis_type=axis2_name, actuator=self),
         )
         self._joints = {
             "axis_1": getattr(self, axis1_name),
             "axis_2": getattr(self, axis2_name),
         }
 
-        self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
-        self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
+        self.__motor_1 = OrbitaMotor(initial_state=init_motor_state["motor_1"], actuator=self)
+        self.__motor_2 = OrbitaMotor(initial_state=init_motor_state["motor_2"], actuator=self)
         self._motors = {"motor_1": self.__motor_1, "motor_2": self.__motor_2}
 
-        self.__x = OrbitaAxis(initial_state=init_state["x"])
-        self.__y = OrbitaAxis(initial_state=init_state["y"])
+        self.__x = OrbitaAxis(initial_state=init_axis_state["x"])
+        self.__y = OrbitaAxis(initial_state=init_axis_state["y"])
         self._axis = {"x": self.__x, "y": self.__y}
 
     def __repr__(self) -> str:
@@ -168,18 +170,19 @@ class Orbita2d:
             )
 
         elif field == "pid":
-            return PID2d(
-                motor_1=PIDGains(
-                    p=self.__motor_1._state[field].p,
-                    i=self.__motor_1._state[field].i,
-                    d=self.__motor_1._state[field].d,
-                ),
-                motor_2=PIDGains(
-                    p=self.__motor_2._state[field].p,
-                    i=self.__motor_2._state[field].i,
-                    d=self.__motor_2._state[field].d,
-                ),
-            )
+            if type(self.__motor_1._state[field]) is PIDGains:
+                return PID2d(
+                    motor_1=PIDGains(
+                        p=getattr(self.__motor_1._state[field], "p"),
+                        i=getattr(self.__motor_1._state[field], "i"),
+                        d=getattr(self.__motor_1._state[field], "d"),
+                    ),
+                    motor_2=PIDGains(
+                        p=getattr(self.__motor_2._state[field], "p"),
+                        i=getattr(self.__motor_2._state[field], "i"),
+                        d=getattr(self.__motor_2._state[field], "d"),
+                    ),
+                )
 
         return Float2d(
             motor_1=self.__motor_1._state[field],

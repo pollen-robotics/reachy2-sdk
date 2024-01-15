@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from grpc import Channel
-from reachy2_sdk_api.component_pb2 import ComponentId, PIDGains
+from reachy2_sdk_api.component_pb2 import ComponentId, JointLimits, PIDGains
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita3d_pb2 import (
     Float3d,
@@ -50,60 +50,71 @@ class Orbita3d:
         self._stub = Orbita3dServiceStub(grpc_channel)
 
         self._state: Dict[str, bool] = {}
-        init_state: Dict[str, Dict[str, float]] = self._create_init_state(initial_state)
+        init_joint_state: Dict[str, Dict[str, float | FloatValue | JointLimits]]
+        init_motor_state: Dict[str, Dict[str, FloatValue | BoolValue | PIDGains]]
+        init_axis_state: Dict[str, Dict[str, FloatValue]]
+        init_joint_state, init_motor_state, init_axis_state = self._create_init_state(initial_state)
 
         self._register_needing_sync: List[str] = []
 
-        self.roll = OrbitaJoint3d(initial_state=init_state["roll"], axis_type="roll", actuator=self)
-        self.pitch = OrbitaJoint3d(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
-        self.yaw = OrbitaJoint3d(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
+        self.roll = OrbitaJoint3d(initial_state=init_joint_state["roll"], axis_type="roll", actuator=self)
+        self.pitch = OrbitaJoint3d(initial_state=init_joint_state["pitch"], axis_type="pitch", actuator=self)
+        self.yaw = OrbitaJoint3d(initial_state=init_joint_state["yaw"], axis_type="yaw", actuator=self)
         self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
 
-        self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
-        self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
-        self.__motor_3 = OrbitaMotor(initial_state=init_state["motor_3"], actuator=self)
+        self.__motor_1 = OrbitaMotor(initial_state=init_motor_state["motor_1"], actuator=self)
+        self.__motor_2 = OrbitaMotor(initial_state=init_motor_state["motor_2"], actuator=self)
+        self.__motor_3 = OrbitaMotor(initial_state=init_motor_state["motor_3"], actuator=self)
         self._motors = {
             "motor_1": self.__motor_1,
             "motor_2": self.__motor_2,
             "motor_3": self.__motor_3,
         }
 
-        self.__x = OrbitaAxis(initial_state=init_state["x"])
-        self.__y = OrbitaAxis(initial_state=init_state["y"])
-        self.__z = OrbitaAxis(initial_state=init_state["z"])
+        self.__x = OrbitaAxis(initial_state=init_axis_state["x"])
+        self.__y = OrbitaAxis(initial_state=init_axis_state["y"])
+        self.__z = OrbitaAxis(initial_state=init_axis_state["z"])
         self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
 
-    def _create_init_state(self, initial_state: Orbita3dState) -> Dict[str, Dict[str, float]]:  # noqa: C901
-        init_state: Dict[str, Dict[str, float]] = {}
+    def _create_init_state(  # noqa: C901
+        self, initial_state: Orbita3dState
+    ) -> Tuple[
+        Dict[str, Dict[str, float | FloatValue | JointLimits]],
+        Dict[str, Dict[str, FloatValue | BoolValue | PIDGains]],
+        Dict[str, Dict[str, FloatValue]],
+    ]:
+        init_joint_state: Dict[str, Dict[str, float | FloatValue | JointLimits]] = {}
+        init_motor_state: Dict[str, Dict[str, FloatValue | BoolValue | PIDGains]] = {}
+        init_axis_state: Dict[str, Dict[str, FloatValue]] = {}
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
                 self._state[field.name] = value
-                init_state["motor_1"][field.name] = value
-                init_state["motor_2"][field.name] = value
-                init_state["motor_3"][field.name] = value
+                init_motor_state["motor_1"][field.name] = value
+                init_motor_state["motor_2"][field.name] = value
+                init_motor_state["motor_3"][field.name] = value
             else:
                 if isinstance(value, Rotation3d):
                     for joint in ["roll", "pitch", "yaw"]:
-                        if joint not in init_state:
-                            init_state[joint] = {}
-                        init_state[joint][field.name] = getattr(value.rpy, joint)
+                        if joint not in init_joint_state:
+                            init_joint_state[joint] = {}
+                        init_joint_state[joint][field.name] = getattr(value.rpy, joint)
                 if isinstance(value, Limits3d):
                     for joint, val in value.ListFields():
-                        if getattr(joint, "name") not in init_state:
-                            init_state[joint] = {}
-                        init_state[getattr(joint, "name")][field.name] = val
+                        if getattr(joint, "name") not in init_joint_state:
+                            init_joint_state[joint] = {}
+                        init_joint_state[getattr(joint, "name")][field.name] = val
                 if isinstance(value, Float3d | PID3d):
                     for motor, val in value.ListFields():
-                        if motor.name not in init_state:
-                            init_state[motor.name] = {}
-                        init_state[motor.name][field.name] = val
+                        if motor.name not in init_motor_state:
+                            init_motor_state[motor.name] = {}
+                        init_motor_state[motor.name][field.name] = val
                 if isinstance(value, Vector3d):
                     for axis, val in value.ListFields():
-                        if axis.name not in init_state:
-                            init_state[axis.name] = {}
-                        init_state[axis.name][field.name] = val
-        return init_state
+                        if axis.name not in init_axis_state:
+                            init_axis_state[axis.name] = {}
+                        init_axis_state[axis.name][field.name] = val
+        return init_joint_state, init_motor_state, init_axis_state
 
     def __repr__(self) -> str:
         """Clean representation of an Orbita3d."""
@@ -188,19 +199,19 @@ class Orbita3d:
         elif field == "pid":
             return PID3d(
                 motor_1=PIDGains(
-                    p=self.__motor_1._state[field].p,
-                    i=self.__motor_1._state[field].i,
-                    d=self.__motor_1._state[field].d,
+                    p=getattr(self.__motor_1._state[field], "p"),
+                    i=getattr(self.__motor_1._state[field], "i"),
+                    d=getattr(self.__motor_1._state[field], "d"),
                 ),
                 motor_2=PIDGains(
-                    p=self.__motor_2._state[field].p,
-                    i=self.__motor_2._state[field].i,
-                    d=self.__motor_2._state[field].d,
+                    p=getattr(self.__motor_2._state[field], "p"),
+                    i=getattr(self.__motor_2._state[field], "i"),
+                    d=getattr(self.__motor_2._state[field], "d"),
                 ),
                 motor_3=PIDGains(
-                    p=self.__motor_3._state[field].p,
-                    i=self.__motor_3._state[field].i,
-                    d=self.__motor_3._state[field].d,
+                    p=getattr(self.__motor_3._state[field], "p"),
+                    i=getattr(self.__motor_3._state[field], "i"),
+                    d=getattr(self.__motor_3._state[field], "d"),
                 ),
             )
 
