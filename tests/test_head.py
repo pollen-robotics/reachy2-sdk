@@ -12,7 +12,7 @@ from src.reachy2_sdk.orbita_utils import _to_position
 
 
 @pytest.mark.offline
-def test_format() -> None:
+def test_class() -> None:
     grpc_channel = grpc.insecure_channel("dummy:5050")
 
     compliance = BoolValue(value=True)
