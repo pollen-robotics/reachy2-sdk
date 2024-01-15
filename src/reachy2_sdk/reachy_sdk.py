@@ -481,8 +481,6 @@ is running and that the IP is correct."
                         self._r_arm.gripper._update_with(state_update.r_hand_state)
                 if self._head is not None:
                     self._head._update_with(state_update.head_state)
-                if hasattr(self, "mobile_base"):
-                    self.mobile_base._update_with(state_update.mobile_base_state)
         except grpc.aio._call.AioRpcError:
             raise ConnectionError("")
 
