@@ -7,10 +7,12 @@ Handles all specific method to an Head:
 from typing import Dict, Optional, Tuple
 
 import grpc
+import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
+    GoToAck,
     GoToId,
     GoToInterpolation,
     GoToRequest,
@@ -198,14 +200,47 @@ class Head:
         response = self._goto_stub.GoToCartesian(request)
         return response
 
-    def orient(
-        self, roll: float, pitch: float, yaw: float, duration: float = 2.0, interpolation_mode: str = "minimum_jerk"
+    def rotate_to(
+        self,
+        roll: float,
+        pitch: float,
+        yaw: float,
+        duration: float = 2.0,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
     ) -> GoToId:
+        """Send neck to rpy position.
+
+        Rotation is done in order roll, pitch, yaw.
+        """
+        if degrees:
+            roll = np.deg2rad(roll)
+            pitch = np.deg2rad(pitch)
+            yaw = np.deg2rad(yaw)
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
                     id=self.part_id,
                     joints_goal=NeckOrientation(rotation=Rotation3d(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw))),
+                    duration=FloatValue(value=duration),
+                )
+            ),
+            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
+        )
+        response = self._goto_stub.GoToJoints(request)
+        return response
+
+    def cancel_goto_by_id(self, goto_id: int) -> GoToAck:
+        response = self._goto_stub.CancelGoTo(goto_id)
+        return response
+
+    def orient(self, q: pyQuat, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
+        """Send neck to the orientation given as a quaternion."""
+        request = GoToRequest(
+            joints_goal=JointsGoal(
+                neck_joint_goal=NeckJointGoal(
+                    id=self.part_id,
+                    joints_goal=NeckOrientation(rotation=Rotation3d(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z))),
                     duration=FloatValue(value=duration),
                 )
             ),

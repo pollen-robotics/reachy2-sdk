@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import grpc
 import numpy as np
 import numpy.typing as npt
-from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (
@@ -426,10 +425,6 @@ class Arm:
 
     def cancel_goto_by_id(self, goto_id: int) -> GoToAck:
         response = self._goto_stub.CancelGoTo(goto_id)
-        return response
-
-    def cancel_all_goto(self) -> GoToAck:
-        response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
     @property
