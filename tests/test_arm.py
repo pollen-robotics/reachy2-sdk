@@ -15,7 +15,6 @@ from src.reachy2_sdk.arm import Arm
 from src.reachy2_sdk.orbita2d import (
     Axis,
     Float2d,
-    Orbita2d,
     Orbita2dState,
     PID2d,
     Pose2d,
@@ -113,3 +112,46 @@ def test_class() -> None:
 
     with pytest.raises(AttributeError):
         arm.elbow.roll
+
+    assert arm.wrist.compliant
+
+    assert arm.wrist.roll.goal_position == _to_position(goal_rot.rpy.roll)
+    assert arm.wrist.roll.present_position == _to_position(present_rot.rpy.roll)
+    assert arm.wrist.pitch.goal_position == _to_position(goal_rot.rpy.pitch)
+    assert arm.wrist.pitch.present_position == _to_position(present_rot.rpy.pitch)
+    assert arm.wrist.yaw.goal_position == _to_position(goal_rot.rpy.yaw)
+    assert arm.wrist.yaw.present_position == _to_position(present_rot.rpy.yaw)
+
+    assert arm.joints["shoulder_pitch"].axis_type == "pitch"
+    assert arm.joints["shoulder_pitch"].goal_position == _to_position(goal_position.axis_1.value)
+    assert arm.joints["shoulder_pitch"].present_position == _to_position(present_position.axis_1.value)
+
+    assert arm.joints["shoulder_roll"].axis_type == "roll"
+    assert arm.joints["shoulder_roll"].goal_position == _to_position(goal_position.axis_2.value)
+    assert arm.joints["shoulder_roll"].present_position == _to_position(present_position.axis_2.value)
+
+    with pytest.raises(KeyError):
+        arm.joints["shoulder_yaw"]
+
+    assert arm.joints["elbow_pitch"].axis_type == "pitch"
+    assert arm.joints["elbow_pitch"].goal_position == _to_position(goal_position.axis_1.value)
+    assert arm.joints["elbow_pitch"].present_position == _to_position(present_position.axis_1.value)
+
+    assert arm.joints["elbow_yaw"].axis_type == "yaw"
+    assert arm.joints["elbow_yaw"].goal_position == _to_position(goal_position.axis_2.value)
+    assert arm.joints["elbow_yaw"].present_position == _to_position(present_position.axis_2.value)
+
+    with pytest.raises(KeyError):
+        arm.joints["elbow_roll"]
+
+    assert arm.joints["wrist_pitch"].axis_type == "pitch"
+    assert arm.joints["wrist_pitch"].goal_position == _to_position(goal_rot.rpy.pitch)
+    assert arm.joints["wrist_pitch"].present_position == _to_position(present_rot.rpy.pitch)
+
+    assert arm.joints["wrist_yaw"].axis_type == "yaw"
+    assert arm.joints["wrist_yaw"].goal_position == _to_position(goal_rot.rpy.yaw)
+    assert arm.joints["wrist_yaw"].present_position == _to_position(present_rot.rpy.yaw)
+
+    assert arm.joints["wrist_roll"].axis_type == "roll"
+    assert arm.joints["wrist_roll"].goal_position == _to_position(goal_rot.rpy.roll)
+    assert arm.joints["wrist_roll"].present_position == _to_position(present_rot.rpy.roll)

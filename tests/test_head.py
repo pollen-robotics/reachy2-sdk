@@ -54,3 +54,15 @@ def test_class() -> None:
     assert head.neck.pitch.present_position == _to_position(present_rot.rpy.pitch)
     assert head.neck.yaw.goal_position == _to_position(goal_rot.rpy.yaw)
     assert head.neck.yaw.present_position == _to_position(present_rot.rpy.yaw)
+
+    assert head.joints["pitch"].axis_type == "pitch"
+    assert head.joints["pitch"].goal_position == _to_position(goal_rot.rpy.pitch)
+    assert head.joints["pitch"].present_position == _to_position(present_rot.rpy.pitch)
+
+    assert head.joints["yaw"].axis_type == "yaw"
+    assert head.joints["yaw"].goal_position == _to_position(goal_rot.rpy.yaw)
+    assert head.joints["yaw"].present_position == _to_position(present_rot.rpy.yaw)
+
+    assert head.joints["roll"].axis_type == "roll"
+    assert head.joints["roll"].goal_position == _to_position(goal_rot.rpy.roll)
+    assert head.joints["roll"].present_position == _to_position(present_rot.rpy.roll)
