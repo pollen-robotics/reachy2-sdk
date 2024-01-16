@@ -23,3 +23,13 @@ $ pytest [-m offline|online]
 ```
 
 Note that only **offline tests** are executed by the Continuous Integration/Continuous Deployment (CI/CD) pipeline, as they don't require a gRPC connection.
+
+
+## Logs
+
+The SDK relies on the [python logging system](https://docs.python.org/3/howto/logging.html). Set the desired debug level to see messages from the SDK.
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
