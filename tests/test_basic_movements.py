@@ -151,10 +151,13 @@ def test_cancel_goto() -> None:
 
     reachy.head.rotate_to(0, 0, 0, duration=1.0)
     time.sleep(1)
-    req = reachy.head.rotate_to(0, 40, 0, duration=10)
-    time.sleep(1)
+    req = reachy.head.rotate_to(0, 40, 0, duration=10, interpolation_mode="linear")
+    time.sleep(2)
     cancel = reachy.head.cancel_goto_by_id(req)
     assert cancel.ack
+    assert abs(reachy.head.neck.pitch.present_position - 8.0) < 1
+    assert reachy.head.neck.roll.present_position < 1e-04
+    assert reachy.head.neck.yaw.present_position < 1e-04
 
     req2 = reachy.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10)
     time.sleep(1)
