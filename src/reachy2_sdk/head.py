@@ -135,9 +135,9 @@ class Head:
                 position=HeadPosition(
                     neck_position=Rotation3d(
                         rpy=ExtEulerAngles(
-                            roll=rpy_position[0],
-                            pitch=rpy_position[1],
-                            yaw=rpy_position[2],
+                            roll=FloatValue(value=rpy_position[0]),
+                            pitch=FloatValue(value=rpy_position[1]),
+                            yaw=FloatValue(value=rpy_position[2]),
                         )
                     )
                 ),
@@ -173,13 +173,17 @@ class Head:
                 )
             )
         if rpy_q0 is not None:
-            req_params["q0"] = Rotation3d(rpy=ExtEulerAngles(roll=rpy_q0[0], pitch=rpy_q0[1], yaw=rpy_q0[2]))
+            req_params["q0"] = Rotation3d(
+                rpy=ExtEulerAngles(
+                    roll=FloatValue(value=rpy_q0[0]), pitch=FloatValue(value=rpy_q0[1]), yaw=FloatValue(value=rpy_q0[2])
+                )
+            )
         req = NeckIKRequest(**req_params)
         rpy_pos = self._head_stub.ComputeNeckIK(req)
         return (
-            rpy_pos.position.rpy.roll,
-            rpy_pos.position.rpy.pitch,
-            rpy_pos.position.rpy.yaw,
+            rpy_pos.position.rpy.roll.value,
+            rpy_pos.position.rpy.pitch.value,
+            rpy_pos.position.rpy.yaw.value,
         )
 
     def look_at(self, x: float, y: float, z: float, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
@@ -221,7 +225,13 @@ class Head:
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
                     id=self.part_id,
-                    joints_goal=NeckOrientation(rotation=Rotation3d(rpy=ExtEulerAngles(roll=roll, pitch=pitch, yaw=yaw))),
+                    joints_goal=NeckOrientation(
+                        rotation=Rotation3d(
+                            rpy=ExtEulerAngles(
+                                roll=FloatValue(value=roll), pitch=FloatValue(value=pitch), yaw=FloatValue(value=yaw)
+                            )
+                        )
+                    ),
                     duration=FloatValue(value=duration),
                 )
             ),

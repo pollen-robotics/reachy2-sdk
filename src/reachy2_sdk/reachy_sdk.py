@@ -501,7 +501,6 @@ is running and that the IP is correct."
                     await asyncio.sleep(dt - elapsed_time)
 
                 commands = await self._poll_waiting_2dcommands()
-                print(commands)
                 yield commands
                 self._pushed_2dcommand.set()
                 self._pushed_2dcommand.clear()

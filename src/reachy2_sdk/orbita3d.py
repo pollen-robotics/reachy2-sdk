@@ -49,7 +49,7 @@ class Orbita3d:
         self._stub = Orbita3dServiceStub(grpc_channel)
 
         self._state: Dict[str, bool] = {}
-        init_state: Dict[str, Dict[str, float]] = self._create_init_state(initial_state)
+        init_state: Dict[str, Dict[str, FloatValue]] = self._create_init_state(initial_state)
 
         self._register_needing_sync: List[str] = []
 
@@ -72,8 +72,8 @@ class Orbita3d:
         self.__z = OrbitaAxis(initial_state=init_state["z"])
         self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
 
-    def _create_init_state(self, initial_state: Orbita3dState) -> Dict[str, Dict[str, float]]:  # noqa: C901
-        init_state: Dict[str, Dict[str, float]] = {}
+    def _create_init_state(self, initial_state: Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:  # noqa: C901
+        init_state: Dict[str, Dict[str, FloatValue]] = {}
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":

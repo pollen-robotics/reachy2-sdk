@@ -242,9 +242,9 @@ class Arm:
             ),
             wrist_position=Rotation3d(
                 rpy=ExtEulerAngles(
-                    roll=positions[4],
-                    pitch=positions[5],
-                    yaw=positions[6],
+                    roll=FloatValue(value=positions[4]),
+                    pitch=FloatValue(value=positions[5]),
+                    yaw=FloatValue(value=positions[6]),
                 )
             ),
         )
@@ -280,7 +280,7 @@ class Arm:
         for _, value in arm_pos.elbow_position.ListFields():
             positions.append(value.value)
         for _, value in arm_pos.wrist_position.rpy.ListFields():
-            positions.append(value)
+            positions.append(value.value)
 
         if degrees:
             positions = self._convert_to_degrees(positions)
@@ -352,7 +352,13 @@ class Arm:
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3d(rpy=ExtEulerAngles(roll=orientation[0], pitch=orientation[1], yaw=orientation[2])),
+            target_orientation=Rotation3d(
+                rpy=ExtEulerAngles(
+                    roll=FloatValue(value=orientation[0]),
+                    pitch=FloatValue(value=orientation[1]),
+                    yaw=FloatValue(value=orientation[2]),
+                )
+            ),
             duration=FloatValue(value=duration),
         )
         if position_tol is not None:

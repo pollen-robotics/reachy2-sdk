@@ -61,7 +61,7 @@ class Orbita2d:
         axis2_name = Axis.DESCRIPTOR.values_by_number[axis2].name.lower()
 
         self._state: Dict[str, bool] = {}
-        init_state: Dict[str, Dict[str, float]] = {}
+        init_state: Dict[str, Dict[str, FloatValue]] = {}
 
         self._register_needing_sync: List[str] = []
 

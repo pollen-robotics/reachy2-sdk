@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
-from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 
 from .register import Register
 
@@ -47,7 +46,7 @@ class OrbitaJoint2d:
         conversion=(_to_internal_position, _to_position),
     )
 
-    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
+    def __init__(self, initial_state: Dict[str, FloatValue], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
         self.axis_type = axis_type
         self._state = initial_state
@@ -74,18 +73,18 @@ class OrbitaJoint3d:
 
     present_position = Register(
         readonly=True,
-        type=float,
+        type=FloatValue,
         label="present_position",
         conversion=(_to_internal_position, _to_position),
     )
     goal_position = Register(
         readonly=False,
-        type=float,
+        type=FloatValue,
         label="goal_position",
         conversion=(_to_internal_position, _to_position),
     )
 
-    def __init__(self, initial_state: Dict[str, float], axis_type: str, actuator: Any) -> None:
+    def __init__(self, initial_state: Dict[str, FloatValue], axis_type: str, actuator: Any) -> None:
         """Initialize the joint with its initial state and its axis type (either roll, pitch or yaw)."""
         self._actuator = actuator
         self.axis_type = axis_type
@@ -162,7 +161,7 @@ class OrbitaAxis:
     )
     present_load = Register(readonly=True, type=FloatValue, label="present_load")
 
-    def __init__(self, initial_state: Dict[str, float]) -> None:
+    def __init__(self, initial_state: Dict[str, FloatValue]) -> None:
         """Initialize the axis with its initial state."""
         self._state = initial_state
 
