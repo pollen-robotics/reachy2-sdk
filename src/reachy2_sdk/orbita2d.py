@@ -16,7 +16,7 @@ from reachy2_sdk_api.orbita2d_pb2 import (
 )
 from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 
-from .orbita_utils import OrbitaAxis, OrbitaJoint2d, OrbitaMotor, _to_internal_position
+from .orbita_utils import OrbitaAxis, OrbitaJoint, OrbitaMotor, _to_internal_position
 from .register import Register
 
 
@@ -90,12 +90,12 @@ class Orbita2d:
         setattr(
             self,
             axis1_name,
-            OrbitaJoint2d(initial_state=init_state["axis_1"], axis_type=axis1_name, actuator=self),
+            OrbitaJoint(initial_state=init_state["axis_1"], axis_type=axis1_name, actuator=self),
         )
         setattr(
             self,
             axis2_name,
-            OrbitaJoint2d(initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self),
+            OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self),
         )
         self._joints = {
             "axis_1": getattr(self, axis1_name),

@@ -25,10 +25,10 @@ def _to_internal_position(pos: float) -> Any:
         raise TypeError(f"Excepted one of: int, float, got {type(pos).__name__}")
 
 
-class OrbitaJoint2d:
-    """The OrbitaJoint2d class represents any Orbita2d joint.
+class OrbitaJoint:
+    """The OrbitaJoint class represents any Orbita2d or Orbita 3d joint.
 
-    The OrbitaJoint2d class is used to store the up-to-date state of the joint, especially:
+    The OrbitaJoint class is used to store the up-to-date state of the joint, especially:
         - its present_position (RO)
         - its goal_position (RW)
     """
@@ -60,47 +60,7 @@ class OrbitaJoint2d:
         self._register_needing_sync: List[str] = []
 
     def __repr__(self) -> str:
-        return f'<OrbitaJoint2d axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
-
-
-class OrbitaJoint3d:
-    """The OrbitaJoint3d class represents any Orbita3d joint.
-
-    The OrbitaJoint3d class is used to store the up-to-date state of the joint, especially:
-        - its present position (RO)
-        - its goal position (RW)
-    """
-
-    present_position = Register(
-        readonly=True,
-        type=FloatValue,
-        label="present_position",
-        conversion=(_to_internal_position, _to_position),
-    )
-    goal_position = Register(
-        readonly=False,
-        type=FloatValue,
-        label="goal_position",
-        conversion=(_to_internal_position, _to_position),
-    )
-
-    def __init__(self, initial_state: Dict[str, FloatValue], axis_type: str, actuator: Any) -> None:
-        """Initialize the joint with its initial state and its axis type (either roll, pitch or yaw)."""
-        self._actuator = actuator
-        self.axis_type = axis_type
-        self._state = initial_state
-        self._tmp_state = initial_state.copy()
-
-        for field in dir(self):
-            value = getattr(self, field)
-            if isinstance(value, Register):
-                value.label = field
-
-        self._register_needing_sync: List[str] = []
-
-    def __repr__(self) -> str:
-        """Return a clean representation of an Orbita 3d joint."""
-        return f'<OrbitaJoint3d axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
+        return f'<OrbitaJoint axis_type="{self.axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
 
 
 class OrbitaMotor:

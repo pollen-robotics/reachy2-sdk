@@ -39,7 +39,7 @@ from .hand import Hand
 from .head import Head
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
-from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
+from .orbita_utils import OrbitaJoint
 from .reachy import ReachyInfo, get_config
 
 _T = t.TypeVar("_T")
@@ -213,12 +213,12 @@ is running and that the IP is correct."
         return self._disabled_parts
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint2d | OrbitaJoint3d]:
+    def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all joints of the robot."""
         if self._grpc_status == "disconnected":
             self._logger.warning("Cannot get joints, not connected to Reachy.")
             return {}
-        _joints: Dict[str, OrbitaJoint2d | OrbitaJoint3d] = {}
+        _joints: Dict[str, OrbitaJoint] = {}
         for part_name in self.enabled_parts:
             part = getattr(self, part_name)
             for joint_name, joint in part.joints.items():

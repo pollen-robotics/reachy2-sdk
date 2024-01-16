@@ -48,7 +48,7 @@ from reachy2_sdk_api.part_pb2 import PartId
 
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
-from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
+from .orbita_utils import OrbitaJoint
 
 
 class Arm:
@@ -118,9 +118,9 @@ class Arm:
         return self._actuators
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint2d | OrbitaJoint3d]:
+    def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all the arm's joints."""
-        _joints: Dict[str, OrbitaJoint2d | OrbitaJoint3d] = {}
+        _joints: Dict[str, OrbitaJoint] = {}
         for actuator_name, actuator in self._actuators.items():
             for joint in actuator._joints.values():
                 _joints[actuator_name + "_" + joint.axis_type] = joint

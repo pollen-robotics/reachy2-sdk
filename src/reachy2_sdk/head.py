@@ -35,7 +35,7 @@ from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Ro
 from reachy2_sdk_api.part_pb2 import PartId
 
 from .orbita3d import Orbita3d
-from .orbita_utils import OrbitaJoint3d
+from .orbita_utils import OrbitaJoint
 
 # from .dynamixel_motor import DynamixelMotor
 
@@ -106,9 +106,9 @@ class Head:
         return self._actuators
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint3d]:
+    def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all the arm's joints."""
-        _joints: Dict[str, OrbitaJoint3d] = {}
+        _joints: Dict[str, OrbitaJoint] = {}
         for actuator in self._actuators.values():
             _joints.update(actuator._joints)
         return _joints

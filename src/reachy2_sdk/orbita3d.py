@@ -15,7 +15,7 @@ from reachy2_sdk_api.orbita3d_pb2 import (
 )
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
-from .orbita_utils import OrbitaAxis, OrbitaJoint3d, OrbitaMotor, _to_internal_position
+from .orbita_utils import OrbitaAxis, OrbitaJoint, OrbitaMotor, _to_internal_position
 from .register import Register
 
 
@@ -53,9 +53,9 @@ class Orbita3d:
 
         self._register_needing_sync: List[str] = []
 
-        self.roll = OrbitaJoint3d(initial_state=init_state["roll"], axis_type="roll", actuator=self)
-        self.pitch = OrbitaJoint3d(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
-        self.yaw = OrbitaJoint3d(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
+        self.roll = OrbitaJoint(initial_state=init_state["roll"], axis_type="roll", actuator=self)
+        self.pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
+        self.yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
         self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
