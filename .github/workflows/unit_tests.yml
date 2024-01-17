@@ -32,12 +32,12 @@ jobs:
           coverage json
           coverage html
       - name: Archive code coverage html report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: code-coverage-report
           path: htmlcov
       - name: Get Cover 
-        uses: orgoro/coverage@v3
+        uses: orgoro/coverage@v3.1
         with:
           coverageFile: coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -47,7 +47,7 @@ jobs:
           echo "total=$TOTAL" >> $GITHUB_ENV
           echo "### Total coverage: ${TOTAL}%" >> $GITHUB_STEP_SUMMARY
       - name: Make badge
-        uses: schneegans/dynamic-badges-action@v1.6.0
+        uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           # GIST_TOKEN is a GitHub personal access token with scope "gist".
           auth: ${{ secrets.GIST_TOKEN }}
