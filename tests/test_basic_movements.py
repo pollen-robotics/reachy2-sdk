@@ -159,10 +159,19 @@ def test_cancel_goto() -> None:
     assert reachy.head.neck.roll.present_position < 1e-04
     assert reachy.head.neck.yaw.present_position < 1e-04
 
-    req2 = reachy.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10)
+    req2 = reachy.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=1, interpolation_mode="linear")
     time.sleep(1)
+    req2 = reachy.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
+    time.sleep(2)
     cancel2 = reachy.head.cancel_goto_by_id(req2)
     assert cancel2.ack
+    assert abs(reachy.l_arm.shoulder.pitch.present_position - 3.0) < 1
+    assert abs(reachy.l_arm.shoulder.roll.present_position - 2.0) < 1
+    assert abs(reachy.l_arm.elbow.yaw.present_position - 4.0) < 1
+    assert abs(reachy.l_arm.elbow.pitch.present_position + 10.0) < 1
+    assert abs(reachy.l_arm.wrist.roll.present_position - 2.0) < 1
+    assert abs(reachy.l_arm.wrist.pitch.present_position - 2.0) < 1
+    assert abs(reachy.l_arm.wrist.yaw.present_position - 4.0) < 1
 
     assert reachy.turn_off()
 
