@@ -54,8 +54,6 @@ def test_square(reachy_sdk: ReachySDK) -> None:
         joint.goal_position = 0
         time.sleep(0.01)
 
-    time.sleep(2)
-
     # In A position, the effector is at (0.3, -0,4, -0.3) in the world frame
     # In B position, the effector is at (0.3, -0.4, 0) in the world frame
     # In C position, the effector is at (0.3, -0.1, 0.0) in the world frame
@@ -66,14 +64,14 @@ def test_square(reachy_sdk: ReachySDK) -> None:
         target_pose = build_pose_matrix(0.3, -0.4, z)
         ik = reachy_sdk.r_arm.inverse_kinematics(target_pose)
 
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+        for joint, goal_pos in zip(reachy_sdk.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
         time.sleep(0.1)
 
     time.sleep(2)
 
     B = build_pose_matrix(0.3, -0.4, 0)
-    current_pos = reachy.r_arm.forward_kinematics()
+    current_pos = reachy_sdk.r_arm.forward_kinematics()
     assert np.allclose(current_pos, B, atol=1e-03)
 
     # Going from B to C
@@ -81,14 +79,14 @@ def test_square(reachy_sdk: ReachySDK) -> None:
         target_pose = build_pose_matrix(0.3, y, 0.0)
         ik = reachy_sdk.r_arm.inverse_kinematics(target_pose)
 
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+        for joint, goal_pos in zip(reachy_sdk.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
         time.sleep(0.1)
 
     time.sleep(2)
 
     C = build_pose_matrix(0.3, -0.1, 0)
-    current_pos = reachy.r_arm.forward_kinematics()
+    current_pos = reachy_sdk.r_arm.forward_kinematics()
     assert np.allclose(current_pos, C, atol=1e-03)
 
     # Going from C to D
@@ -96,14 +94,14 @@ def test_square(reachy_sdk: ReachySDK) -> None:
         target_pose = build_pose_matrix(0.3, -0.1, z)
         ik = reachy_sdk.r_arm.inverse_kinematics(target_pose)
 
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+        for joint, goal_pos in zip(reachy_sdk.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
         time.sleep(0.1)
 
     time.sleep(2)
 
     D = build_pose_matrix(0.3, -0.1, -0.3)
-    current_pos = reachy.r_arm.forward_kinematics()
+    current_pos = reachy_sdk.r_arm.forward_kinematics()
     assert np.allclose(current_pos, D, atol=1e-03)
 
     # Going from D to A
@@ -111,7 +109,7 @@ def test_square(reachy_sdk: ReachySDK) -> None:
         target_pose = build_pose_matrix(0.3, y, -0.3)
         ik = reachy_sdk.r_arm.inverse_kinematics(target_pose)
 
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+        for joint, goal_pos in zip(reachy_sdk.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
         time.sleep(0.1)
 
