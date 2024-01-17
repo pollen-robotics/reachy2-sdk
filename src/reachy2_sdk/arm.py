@@ -8,6 +8,8 @@ Handles all specific method to an Arm (left and/or right) especially:
 from typing import Any, Dict, List, Optional, Tuple
 
 import grpc
+from grpc._channel import _InactiveRpcError
+from logging import getLogger
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
@@ -82,6 +84,8 @@ class Arm:
         self._actuators["shoulder"] = self.shoulder
         self._actuators["elbow"] = self.elbow
         self._actuators["wrist"] = self.wrist
+
+        self._logger = getLogger(__name__)
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
         """Set up the arm.
@@ -381,7 +385,10 @@ class Arm:
         it will move the arm to that position.
         """
         if len(positions) != 7:
-            raise ValueError(f"positions should be length 7 (got {len(positions)} instead)!")
+            raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
+        
+        if duration == 0:
+            raise ValueError(f"duration cannot be set to 0.")
 
         arm_pos = self._list_to_arm_position(positions, degrees)
         request = GoToRequest(
@@ -390,7 +397,13 @@ class Arm:
             ),
             interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
         )
-        response = self._goto_stub.GoToJoints(request)
+        try:
+            response = self._goto_stub.GoToJoints(request)
+        except _InactiveRpcError as e:
+            self._logger.error(e)
+            self._logger.error("=========")
+            self._logger.error(e.details)
+            return GoToId(id=-1)
         return response
 
     def _get_grpc_interpolation_mode(self, interpolation_mode: str) -> GoToInterpolation:
