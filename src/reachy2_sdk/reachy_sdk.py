@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
+from mobile_base_sdk import MobileBaseSDK
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2 import GoToAck
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
@@ -327,8 +328,8 @@ is running and that the IP is correct."
             else:
                 self._disabled_parts.append("head")
 
-        # if self._robot.HasField("mobile_base"):
-        #     pass
+        if self._robot.HasField("mobile_base"):
+            self.mobile_base = MobileBaseSDK(self._host)
 
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
@@ -480,8 +481,6 @@ is running and that the IP is correct."
                         self._r_arm.gripper._update_with(state_update.r_hand_state)
                 if self._head is not None:
                     self._head._update_with(state_update.head_state)
-                if hasattr(self, "mobile_base"):
-                    self.mobile_base._update_with(state_update.mobile_base_state)
         except grpc.aio._call.AioRpcError:
             raise ConnectionError("")
 
