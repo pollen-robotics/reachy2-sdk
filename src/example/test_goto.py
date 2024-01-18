@@ -1,5 +1,4 @@
 import time
-from math import degrees
 
 import numpy as np
 import numpy.typing as npt
