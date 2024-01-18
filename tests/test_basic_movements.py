@@ -160,3 +160,21 @@ def test_cancel_goto(reachy_sdk: ReachySDK) -> None:
     assert abs(reachy_sdk.l_arm.wrist.roll.present_position - 2.0) < 1
     assert abs(reachy_sdk.l_arm.wrist.pitch.present_position - 2.0) < 1
     assert abs(reachy_sdk.l_arm.wrist.yaw.present_position - 4.0) < 1
+
+
+@pytest.mark.online
+def test_goal_position_for_all(reachy_sdk: ReachySDK) -> None:
+    reachy_sdk.head.rotate_to(20, 20, 20)
+    reachy_sdk.r_arm.goto_joints([20, 20, 20, -90, 20, 20, 20])
+    reachy_sdk.l_arm.goto_joints([20, 20, 20, -90, 20, 20, 20])
+
+    time.sleep(2)
+
+    for joint in reachy_sdk.joints.values():
+        joint.goal_position = 0
+
+    time.sleep(0.1)
+
+    for joint in reachy_sdk.joints.values():
+        assert joint.goal_position == 0
+        assert joint.present_position == 0

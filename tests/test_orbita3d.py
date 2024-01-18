@@ -24,8 +24,10 @@ def test_class() -> None:
     torque_limit = Float3d(motor_1=FloatValue(value=16), motor_2=FloatValue(value=17), motor_3=FloatValue(value=18))
     present_speed = Vector3d(x=FloatValue(value=19), y=FloatValue(value=20), z=FloatValue(value=21))
     present_load = Vector3d(x=FloatValue(value=22), y=FloatValue(value=23), z=FloatValue(value=24))
-    present_rot = Rotation3d(rpy=ExtEulerAngles(roll=25, pitch=26, yaw=27))
-    goal_rot = Rotation3d(rpy=ExtEulerAngles(roll=28, pitch=29, yaw=30))
+    present_rot = Rotation3d(
+        rpy=ExtEulerAngles(roll=FloatValue(value=25), pitch=FloatValue(value=26), yaw=FloatValue(value=27))
+    )
+    goal_rot = Rotation3d(rpy=ExtEulerAngles(roll=FloatValue(value=28), pitch=FloatValue(value=29), yaw=FloatValue(value=30)))
     orbita3d_state = Orbita3dState(
         compliant=compliance,
         present_position=present_rot,
@@ -42,12 +44,12 @@ def test_class() -> None:
     assert orbita3d.compliant
 
     # use _to_position()  to convert radian to degree
-    assert orbita3d.roll.goal_position == _to_position(goal_rot.rpy.roll)
-    assert orbita3d.roll.present_position == _to_position(present_rot.rpy.roll)
-    assert orbita3d.pitch.goal_position == _to_position(goal_rot.rpy.pitch)
-    assert orbita3d.pitch.present_position == _to_position(present_rot.rpy.pitch)
-    assert orbita3d.yaw.goal_position == _to_position(goal_rot.rpy.yaw)
-    assert orbita3d.yaw.present_position == _to_position(present_rot.rpy.yaw)
+    assert orbita3d.roll.goal_position == _to_position(goal_rot.rpy.roll.value)
+    assert orbita3d.roll.present_position == _to_position(present_rot.rpy.roll.value)
+    assert orbita3d.pitch.goal_position == _to_position(goal_rot.rpy.pitch.value)
+    assert orbita3d.pitch.present_position == _to_position(present_rot.rpy.pitch.value)
+    assert orbita3d.yaw.goal_position == _to_position(goal_rot.rpy.yaw.value)
+    assert orbita3d.yaw.present_position == _to_position(present_rot.rpy.yaw.value)
 
     pid_set = orbita3d.get_pid()
     assert pid_set["motor_1"][0] == pid.motor_1.p.value

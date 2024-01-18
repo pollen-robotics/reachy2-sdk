@@ -15,7 +15,7 @@ from reachy2_sdk_api.orbita3d_pb2 import (
 )
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
-from .orbita_utils import OrbitaAxis, OrbitaJoint3d, OrbitaMotor, _to_internal_position
+from .orbita_utils import OrbitaAxis, OrbitaJoint, OrbitaMotor, _to_internal_position
 from .register import Register
 
 
@@ -49,13 +49,13 @@ class Orbita3d:
         self._stub = Orbita3dServiceStub(grpc_channel)
 
         self._state: Dict[str, bool] = {}
-        init_state: Dict[str, Dict[str, float]] = self._create_init_state(initial_state)
+        init_state: Dict[str, Dict[str, FloatValue]] = self._create_init_state(initial_state)
 
         self._register_needing_sync: List[str] = []
 
-        self.roll = OrbitaJoint3d(initial_state=init_state["roll"], axis_type="roll", actuator=self)
-        self.pitch = OrbitaJoint3d(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
-        self.yaw = OrbitaJoint3d(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
+        self.roll = OrbitaJoint(initial_state=init_state["roll"], axis_type="roll", actuator=self)
+        self.pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
+        self.yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
         self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
@@ -72,8 +72,8 @@ class Orbita3d:
         self.__z = OrbitaAxis(initial_state=init_state["z"])
         self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
 
-    def _create_init_state(self, initial_state: Orbita3dState) -> Dict[str, Dict[str, float]]:  # noqa: C901
-        init_state: Dict[str, Dict[str, float]] = {}
+    def _create_init_state(self, initial_state: Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:  # noqa: C901
+        init_state: Dict[str, Dict[str, FloatValue]] = {}
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
@@ -171,13 +171,17 @@ class Orbita3d:
         motors level. Registers can either be goal_position, pid or speed_limit/torque_limit.
         """
         if field == "goal_position":
-            return Rotation3d(
-                rpy=ExtEulerAngles(
-                    roll=self.roll._state["goal_position"],
-                    pitch=self.pitch._state["goal_position"],
-                    yaw=self.yaw._state["goal_position"],
-                )
-            )
+            req = {}
+            if len(self.roll._register_needing_sync) != 0:
+                req["roll"] = self.roll._tmp_state["goal_position"]
+                self.roll._register_needing_sync.clear()
+            if len(self.pitch._register_needing_sync) != 0:
+                req["pitch"] = self.pitch._tmp_state["goal_position"]
+                self.pitch._register_needing_sync.clear()
+            if len(self.yaw._register_needing_sync) != 0:
+                req["yaw"] = self.yaw._tmp_state["goal_position"]
+                self.yaw._register_needing_sync.clear()
+            return Rotation3d(rpy=ExtEulerAngles(**req))
 
         elif field == "pid":
             return PID3d(
@@ -312,7 +316,7 @@ class Orbita3d:
         command = Orbita3dCommand(**values)
 
         self._register_needing_sync.clear()
-        for obj in list(self._joints.values()) + list(self._motors.values()):
+        for obj in list(self._motors.values()):
             obj._register_needing_sync.clear()
         self._need_sync.clear()
 

@@ -60,7 +60,7 @@ class Register:
             raise AttributeError("can't set attribute")
         if self.cvt_to_internal is not None:
             value = self.cvt_to_internal(value)
-        instance._state[self.label] = self.wrapped_value(value)
+        instance._tmp_state[self.label] = self.wrapped_value(value)
 
         async def set_in_loop() -> None:
             instance._register_needing_sync.append(self.label)
