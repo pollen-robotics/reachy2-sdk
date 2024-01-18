@@ -173,11 +173,6 @@ def test_cancel_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.isclose(reachy_sdk_zeroed.head.neck.roll.present_position, 0)
     assert np.isclose(reachy_sdk_zeroed.head.neck.yaw.present_position, 0)
 
-    req2 = reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=1, interpolation_mode="linear")
-
-    while not is_goto_finished(reachy_sdk_zeroed, req2):
-        time.sleep(0.1)
-
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
     time.sleep(2)
     cancel2 = reachy_sdk_zeroed.head.cancel_goto_by_id(req2)
