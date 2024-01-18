@@ -290,8 +290,8 @@ class Orbita2d:
         command = Orbita2dCommand(**values)
 
         self._register_needing_sync.clear()
-        # for obj in list(self._joints.values()) + list(self._motors.values()):
-        #     obj._register_needing_sync.clear()
+        for obj in list(self._motors.values()):
+            obj._register_needing_sync.clear()
         self._need_sync.clear()
 
         return command
