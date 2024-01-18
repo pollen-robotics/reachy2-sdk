@@ -150,3 +150,26 @@ def test_head_movements() -> None:
 
     reachy.disconnect()
     ReachySDK.clear()
+
+
+@pytest.mark.online
+def test_goal_position_for_all() -> None:
+    reachy = ReachySDK(host="localhost")
+    assert reachy.grpc_status == "connected"
+
+    assert reachy.turn_on()
+
+    reachy.head.rotate_to(20, 20, 20)
+    reachy.r_arm.goto_joints([20, 20, 20, -90, 20, 20, 20])
+    reachy.l_arm.goto_joints([20, 20, 20, -90, 20, 20, 20])
+
+    time.sleep(2)
+
+    for joint in reachy.joints.values():
+        joint.goal_position = 0
+
+    time.sleep(0.1)
+
+    for joint in reachy.joints.values():
+        assert joint.goal_position == 0
+        assert joint.present_position == 0

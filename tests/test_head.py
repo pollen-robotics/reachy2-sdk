@@ -28,8 +28,8 @@ def test_class() -> None:
     torque_limit = Float3d(motor_1=FloatValue(value=0), motor_2=FloatValue(value=0), motor_3=FloatValue(value=0))
     present_speed = Vector3d(x=FloatValue(value=0), y=FloatValue(value=0), z=FloatValue(value=0))
     present_load = Vector3d(x=FloatValue(value=0), y=FloatValue(value=0), z=FloatValue(value=0))
-    present_rot = Rotation3d(rpy=ExtEulerAngles(roll=1, pitch=2, yaw=3))
-    goal_rot = Rotation3d(rpy=ExtEulerAngles(roll=4, pitch=5, yaw=6))
+    present_rot = Rotation3d(rpy=ExtEulerAngles(roll=FloatValue(value=1), pitch=FloatValue(value=2), yaw=FloatValue(value=3)))
+    goal_rot = Rotation3d(rpy=ExtEulerAngles(roll=FloatValue(value=4), pitch=FloatValue(value=5), yaw=FloatValue(value=6)))
     neck_state = Orbita3dState(
         compliant=compliance,
         present_position=present_rot,
@@ -48,21 +48,21 @@ def test_class() -> None:
     assert head.neck.compliant
 
     # use _to_position()  to convert radian to degree
-    assert head.neck.roll.goal_position == _to_position(goal_rot.rpy.roll)
-    assert head.neck.roll.present_position == _to_position(present_rot.rpy.roll)
-    assert head.neck.pitch.goal_position == _to_position(goal_rot.rpy.pitch)
-    assert head.neck.pitch.present_position == _to_position(present_rot.rpy.pitch)
-    assert head.neck.yaw.goal_position == _to_position(goal_rot.rpy.yaw)
-    assert head.neck.yaw.present_position == _to_position(present_rot.rpy.yaw)
+    assert head.neck.roll.goal_position == _to_position(goal_rot.rpy.roll.value)
+    assert head.neck.roll.present_position == _to_position(present_rot.rpy.roll.value)
+    assert head.neck.pitch.goal_position == _to_position(goal_rot.rpy.pitch.value)
+    assert head.neck.pitch.present_position == _to_position(present_rot.rpy.pitch.value)
+    assert head.neck.yaw.goal_position == _to_position(goal_rot.rpy.yaw.value)
+    assert head.neck.yaw.present_position == _to_position(present_rot.rpy.yaw.value)
 
     assert head.joints["pitch"].axis_type == "pitch"
-    assert head.joints["pitch"].goal_position == _to_position(goal_rot.rpy.pitch)
-    assert head.joints["pitch"].present_position == _to_position(present_rot.rpy.pitch)
+    assert head.joints["pitch"].goal_position == _to_position(goal_rot.rpy.pitch.value)
+    assert head.joints["pitch"].present_position == _to_position(present_rot.rpy.pitch.value)
 
     assert head.joints["yaw"].axis_type == "yaw"
-    assert head.joints["yaw"].goal_position == _to_position(goal_rot.rpy.yaw)
-    assert head.joints["yaw"].present_position == _to_position(present_rot.rpy.yaw)
+    assert head.joints["yaw"].goal_position == _to_position(goal_rot.rpy.yaw.value)
+    assert head.joints["yaw"].present_position == _to_position(present_rot.rpy.yaw.value)
 
     assert head.joints["roll"].axis_type == "roll"
-    assert head.joints["roll"].goal_position == _to_position(goal_rot.rpy.roll)
-    assert head.joints["roll"].present_position == _to_position(present_rot.rpy.roll)
+    assert head.joints["roll"].goal_position == _to_position(goal_rot.rpy.roll.value)
+    assert head.joints["roll"].present_position == _to_position(present_rot.rpy.roll.value)

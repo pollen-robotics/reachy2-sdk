@@ -16,7 +16,7 @@ from reachy2_sdk_api.orbita2d_pb2 import (
 )
 from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 
-from .orbita_utils import OrbitaAxis, OrbitaJoint2d, OrbitaMotor, _to_internal_position
+from .orbita_utils import OrbitaAxis, OrbitaJoint, OrbitaMotor, _to_internal_position
 from .register import Register
 
 
@@ -61,7 +61,7 @@ class Orbita2d:
         axis2_name = Axis.DESCRIPTOR.values_by_number[axis2].name.lower()
 
         self._state: Dict[str, bool] = {}
-        init_state: Dict[str, Dict[str, float]] = {}
+        init_state: Dict[str, Dict[str, FloatValue]] = {}
 
         self._register_needing_sync: List[str] = []
 
@@ -90,12 +90,12 @@ class Orbita2d:
         setattr(
             self,
             axis1_name,
-            OrbitaJoint2d(initial_state=init_state["axis_1"], axis_type=axis1_name, actuator=self),
+            OrbitaJoint(initial_state=init_state["axis_1"], axis_type=axis1_name, actuator=self),
         )
         setattr(
             self,
             axis2_name,
-            OrbitaJoint2d(initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self),
+            OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self),
         )
         self._joints = {
             "axis_1": getattr(self, axis1_name),
@@ -161,10 +161,14 @@ class Orbita2d:
         motors level. Registers can either be goal_position, pid or speed_limit/torque_limit.
         """
         if field == "goal_position":
-            return Pose2d(
-                axis_1=self._joints["axis_1"]._state["goal_position"],
-                axis_2=self._joints["axis_2"]._state["goal_position"],
-            )
+            req = {}
+            if len(self._joints["axis_1"]._register_needing_sync) != 0:
+                req["axis_1"] = self._joints["axis_1"]._tmp_state["goal_position"]
+                self._joints["axis_1"]._register_needing_sync.clear()
+            if len(self._joints["axis_2"]._register_needing_sync) != 0:
+                req["axis_2"] = self._joints["axis_2"]._tmp_state["goal_position"]
+                self._joints["axis_2"]._register_needing_sync.clear()
+            return Pose2d(**req)
 
         elif field == "pid":
             return PID2d(
@@ -286,7 +290,7 @@ class Orbita2d:
         command = Orbita2dCommand(**values)
 
         self._register_needing_sync.clear()
-        for obj in list(self._joints.values()) + list(self._motors.values()):
+        for obj in list(self._motors.values()):
             obj._register_needing_sync.clear()
         self._need_sync.clear()
 
