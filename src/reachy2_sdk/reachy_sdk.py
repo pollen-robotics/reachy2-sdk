@@ -41,6 +41,7 @@ from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint
 from .reachy import ReachyInfo, get_config
+from .video import Video
 
 _T = t.TypeVar("_T")
 
@@ -120,6 +121,7 @@ is running and that the IP is correct."
 
         self._setup_parts()
         self._setup_audio()
+        self._setup_video()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
@@ -287,6 +289,12 @@ is running and that the IP is correct."
             self.audio = Audio(self._host, self._audio_port)
         except Exception:
             self._logger.error("Failed to connect to audio server. ReachySDK.audio will not be available.")
+
+    def _setup_video(self) -> None:
+        try:
+            self.video = Video(self._host, self._audio_port)
+        except Exception as e:
+            self._logger.error(f"Failed to connect to video server. ReachySDK.video will not be available {e}.")
 
     def _setup_parts(self) -> None:
         """Setup all parts of the robot.
