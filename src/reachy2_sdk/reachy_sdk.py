@@ -586,6 +586,10 @@ is running and that the IP is correct."
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
+    def home(self) -> None:
+        # TODO
+        return
+
 
 _open_connection: List[ReachySDK] = []
 
