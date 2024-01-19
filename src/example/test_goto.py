@@ -209,30 +209,35 @@ def test_goto_rejection(reachy: ReachySDK) -> None:
 
 
 def test_head_orient(reachy: ReachySDK) -> None:
-    id = reachy.head.orient(0, 0, 0.5, duration=1.0, interpolation_mode="minimum_jerk")
+    id = reachy.head.rotate_to(0, 0, 0.5, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finised(reachy, id, verbose=True) is False:
         time.sleep(0.1)
-    id = reachy.head.orient(0, 0.5, 0.5, duration=1.0, interpolation_mode="minimum_jerk")
+    id = reachy.head.rotate_to(0, 0.5, 0.5, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finised(reachy, id, verbose=True) is False:
         time.sleep(0.1)
-    id = reachy.head.orient(0.5, 0.5, 0.5, duration=1.0, interpolation_mode="minimum_jerk")
+    id = reachy.head.rotate_to(0.5, 0.5, 0.5, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finised(reachy, id, verbose=True) is False:
         time.sleep(0.1)
-    id = reachy.head.orient(0.5, 0.5, 0.0, duration=1.0, interpolation_mode="minimum_jerk")
+    id = reachy.head.rotate_to(0.5, 0.5, 0.0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finised(reachy, id, verbose=True) is False:
         time.sleep(0.1)
-    id = reachy.head.orient(0.5, 0.0, 0.0, duration=1.0, interpolation_mode="minimum_jerk")
+    id = reachy.head.rotate_to(0.5, 0.0, 0.0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finised(reachy, id, verbose=True) is False:
         time.sleep(0.1)
-    id = reachy.head.orient(0.0, 0.0, 0.0, duration=1.0, interpolation_mode="minimum_jerk")
+    id = reachy.head.rotate_to(0.0, 0.0, 0.0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finised(reachy, id, verbose=True) is False:
         time.sleep(0.1)
 
 
 def test_head_look_at(reachy: ReachySDK) -> None:
-    id = reachy.head.look_at(1.0, 0.2, -0.5, duration=1.0, interpolation_mode="minimum_jerk")
-    while is_goto_finised(reachy, id, verbose=True) is False:
-        time.sleep(0.1)
+    list_of_poses = [[1.0, 0.0, 0.0], [1.0, 0.2, -0.5], [1.0, -0.5, 0.3]]
+    for pose in list_of_poses:
+        id = reachy.head.look_at(pose[0], pose[1], pose[2], duration=1.0, interpolation_mode="minimum_jerk")
+        if id.id < 0:
+            print("The goto was rejected!")
+            return
+        while is_goto_finised(reachy, id, verbose=True) is False:
+            time.sleep(0.1)
 
 
 def main_test() -> None:
@@ -281,5 +286,57 @@ def main_test() -> None:
     reachy.disconnect()
 
 
+def head_test() -> None:
+    print("Trying to connect on localhost Reachy...")
+    time.sleep(1.0)
+    reachy = ReachySDK(host="localhost")
+
+    time.sleep(1.0)
+    if reachy.grpc_status == "disconnected":
+        print("Failed to connect to Reachy, exiting...")
+        return
+
+    print("Turning on...")
+
+    reachy.turn_on()
+    print("Init pose...")
+
+    init_pose(reachy)
+
+    # print("\n###7)Testing the goto_head function")
+    test_head_orient(reachy)
+
+    print("\n###8)Testing the look_at function")
+    test_head_look_at(reachy)
+
+    print("Finished testing, disconnecting from Reachy...")
+    time.sleep(0.5)
+
+    reachy.disconnect()
+    ReachySDK.clear()
+
+
+def deco_test() -> None:
+    print("Trying to connect on localhost Reachy...")
+    time.sleep(1.0)
+    reachy = ReachySDK(host="localhost")
+
+    time.sleep(1.0)
+
+    reachy.disconnect()
+    ReachySDK.clear()
+
+    print("Trying AGAIN to connect on localhost Reachy...")
+    time.sleep(1.0)
+    reachy = ReachySDK(host="localhost")
+
+    time.sleep(1.0)
+
+    reachy.disconnect()
+    ReachySDK.clear()
+
+
 if __name__ == "__main__":
-    main_test()
+    head_test()
+    # main_test()
+    # deco_test()
