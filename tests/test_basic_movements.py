@@ -153,6 +153,24 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     q3 = reachy_sdk_zeroed.head.get_orientation()
     assert np.isclose(Quaternion.distance(q2, q3), 0, atol=1e-04)
 
+    id = reachy_sdk_zeroed.head.look_at(10000, 10000, 0, duration=1)
+    q4 = Quaternion(axis=[0, 0, 1], angle=np.pi / 4.0)  # Rotate 45 about Z
+
+    while not is_goto_finished(reachy_sdk_zeroed, id):
+        time.sleep(0.1)
+
+    q5 = reachy_sdk_zeroed.head.get_orientation()
+    assert np.isclose(Quaternion.distance(q4, q5), 0, atol=1e-04)
+
+    id = reachy_sdk_zeroed.head.look_at(10000, 0, -10000, duration=1)
+    q6 = Quaternion(axis=[0, 1, 0], angle=np.pi / 4.0)  # Rotate 45 about Y
+
+    while not is_goto_finished(reachy_sdk_zeroed, id):
+        time.sleep(0.1)
+
+    q7 = reachy_sdk_zeroed.head.get_orientation()
+    assert np.isclose(Quaternion.distance(q6, q7), 0, atol=1e-04)
+
 
 @pytest.mark.online
 def test_cancel_goto(reachy_sdk_zeroed: ReachySDK) -> None:
