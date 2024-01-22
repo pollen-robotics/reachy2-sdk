@@ -77,12 +77,14 @@ class ReachySDK(metaclass=Singleton):
         host: str,
         sdk_port: int = 50051,
         audio_port: int = 50063,
+        video_port: int = 50065,
     ) -> None:
         """Set up the connection with the robot."""
         self._logger = getLogger(__name__)
         self._host = host
         self._sdk_port = sdk_port
         self._audio_port = audio_port
+        self._video_port = video_port
 
         self._grpc_connected = False
 
@@ -292,7 +294,7 @@ is running and that the IP is correct."
 
     def _setup_video(self) -> None:
         try:
-            self.video = Video(self._host, self._audio_port)
+            self.video = Video(self._host, self._video_port)
         except Exception as e:
             self._logger.error(f"Failed to connect to video server. ReachySDK.video will not be available {e}.")
 
