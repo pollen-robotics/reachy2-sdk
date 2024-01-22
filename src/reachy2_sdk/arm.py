@@ -30,6 +30,7 @@ from reachy2_sdk_api.goto_pb2 import (
     GoToGoalStatus,
     GoToId,
     GoToInterpolation,
+    GoToQueue,
     GoToRequest,
     InterpolationMode,
     JointsGoal,
@@ -397,6 +398,22 @@ class Arm:
             interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
+        return response
+
+    def get_goto_playing(self) -> GoToId:
+        """Returns the id of the goto currently playing on the arm"""
+        print(self.part_id)
+        response = self._goto_stub.GetPartGoToPlaying(self.part_id)
+        return response
+
+    def get_goto_queue(self) -> GoToQueue:
+        """Returns the list of all goto ids waiting to be played on the arm"""
+        response = self._goto_stub.GetPartGoToQueue(self.part_id)
+        return response
+
+    def cancel_all_goto(self) -> GoToAck:
+        """Asks the cancellation of all waiting goto on the arm"""
+        response = self._goto_stub.CancelPartAllGoTo(self.part_id)
         return response
 
     def _get_grpc_interpolation_mode(self, interpolation_mode: str) -> GoToInterpolation:
