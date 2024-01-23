@@ -22,6 +22,12 @@ def test_unconnected() -> None:
     with pytest.raises(ConnectionError):
         rsdk._get_info()
 
+    with pytest.raises(AttributeError):
+        rsdk.audio
+
+    with pytest.raises(AttributeError):
+        rsdk.video
+
     assert len(rsdk.enabled_parts) == 0
 
     assert len(rsdk.disabled_parts) == 0

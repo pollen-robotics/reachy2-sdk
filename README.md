@@ -24,6 +24,15 @@ $ pytest [-m offline|online]
 
 Note that only **offline tests** are executed by the Continuous Integration/Continuous Deployment (CI/CD) pipeline, as they don't require a gRPC connection.
 
+### Camera tests
+
+Additional marks to the online tests enable the unit tests of the selected cameras connected to the server. It can be *no_camera* or, *sr_camera* and/or *teleop_camera*.
+
+```console
+$ pytest -m online -m [no_camera | sr_camera | teleop_camera]
+```
+
+
 
 ## Logs
 
