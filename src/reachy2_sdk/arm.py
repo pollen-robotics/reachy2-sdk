@@ -5,6 +5,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 - the inverse kinematics
 - goto functions
 """
+from collections import namedtuple
 from typing import Any, Dict, List, Optional, Tuple
 
 import grpc
@@ -30,7 +31,6 @@ from reachy2_sdk_api.goto_pb2 import (
     GoToGoalStatus,
     GoToId,
     GoToInterpolation,
-    GoToQueue,
     GoToRequest,
     InterpolationMode,
     JointsGoal,
@@ -50,6 +50,8 @@ from reachy2_sdk_api.part_pb2 import PartId
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint
+
+SimplifiedRequest = namedtuple("SimplifiedRequest", ["goal_positions", "duration", "mode"])
 
 
 class Arm:
@@ -415,6 +417,19 @@ class Arm:
         response = self._goto_stub.CancelPartAllGoTo(self.part_id)
         return response
 
+    def get_goto_joints_request(self, goto_id: GoToId) -> SimplifiedRequest:
+        """Returns the joints goal positions, duration and mode of the corresponding GoToId"""
+        response = self._goto_stub.GetGoToRequest(goto_id)
+        mode = self._get_interpolation_mode(response.interpolation_mode.interpolation_type)
+        goal_positions = self._arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
+        duration = response.joints_goal.arm_joint_goal.duration.value
+        request = SimplifiedRequest(
+            goal_positions=goal_positions,
+            duration=duration,
+            mode=mode,
+        )
+        return request
+
     def _get_grpc_interpolation_mode(self, interpolation_mode: str) -> GoToInterpolation:
         if interpolation_mode not in ["minimum_jerk", "linear"]:
             raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
@@ -425,11 +440,21 @@ class Arm:
             interpolation_mode = InterpolationMode.LINEAR
         return GoToInterpolation(interpolation_type=interpolation_mode)
 
-    def get_goto_state(self, goto_id: int) -> GoToGoalStatus:
+    def _get_interpolation_mode(self, interpolation_mode: InterpolationMode) -> str:
+        if interpolation_mode not in [InterpolationMode.MINIMUM_JERK, InterpolationMode.LINEAR]:
+            raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
+
+        if interpolation_mode == InterpolationMode.MINIMUM_JERK:
+            mode = "minimum_jerk"
+        else:
+            mode = "linear"
+        return mode
+
+    def get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
         response = self._goto_stub.GetGoToState(goto_id)
         return response
 
-    def cancel_goto_by_id(self, goto_id: int) -> GoToAck:
+    def cancel_goto_by_id(self, goto_id: GoToId) -> GoToAck:
         response = self._goto_stub.CancelGoTo(goto_id)
         return response
 
