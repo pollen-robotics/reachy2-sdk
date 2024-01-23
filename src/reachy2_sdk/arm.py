@@ -405,10 +405,10 @@ class Arm:
         response = self._goto_stub.GetPartGoToPlaying(self.part_id)
         return response
 
-    def get_goto_queue(self) -> GoToQueue:
+    def get_goto_queue(self) -> List[GoToId]:
         """Returns the list of all goto ids waiting to be played on the arm"""
         response = self._goto_stub.GetPartGoToQueue(self.part_id)
-        return response
+        return [goal_id for goal_id in response.goto_ids]
 
     def cancel_all_goto(self) -> GoToAck:
         """Asks the cancellation of all waiting goto on the arm"""
