@@ -81,7 +81,7 @@ def ext_euler_angles_to_list(euler_angles: ExtEulerAngles, degrees: bool = True)
 
     By default, it will return the result in degrees.
     """
-    positions = [euler_angles.roll, euler_angles.pitch, euler_angles.yaw]
+    positions = [euler_angles.roll.value, euler_angles.pitch.value, euler_angles.yaw.value]
 
     if degrees:
         positions = convert_to_degrees(positions)
