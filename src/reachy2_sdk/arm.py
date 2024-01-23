@@ -402,7 +402,6 @@ class Arm:
 
     def get_goto_playing(self) -> GoToId:
         """Returns the id of the goto currently playing on the arm"""
-        print(self.part_id)
         response = self._goto_stub.GetPartGoToPlaying(self.part_id)
         return response
 
