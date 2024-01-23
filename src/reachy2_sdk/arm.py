@@ -350,6 +350,12 @@ class Arm:
         response = self._goto_stub.CancelPartAllGoTo(self.part_id)
         return response
 
+    def get_joints_positions(self) -> List[float]:
+        """Return the current joints positions of the arm in degrees"""
+        response = self._arm_stub.GetJointPosition(self.part_id)
+        positions = arm_position_to_list(response)
+        return positions
+
     @property
     def joints_limits(self) -> ArmLimits:
         """Get limits of all the part's joints"""
