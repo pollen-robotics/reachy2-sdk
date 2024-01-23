@@ -4,7 +4,7 @@ Handles all specific method to an Head:
 - the inverse kinematics
 - look_at function
 """
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import grpc
 import numpy as np
@@ -34,7 +34,6 @@ from reachy2_sdk_api.part_pb2 import PartId
 
 from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint
-
 from .utils import get_grpc_interpolation_mode
 
 # from .dynamixel_motor import DynamixelMotor
@@ -240,10 +239,6 @@ class Head:
         response = self._goto_stub.GoToJoints(request)
         return response
 
-    def cancel_goto_by_id(self, goto_id: int) -> GoToAck:
-        response = self._goto_stub.CancelGoTo(goto_id)
-        return response
-
     def orient(self, q: pyQuat, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
         """Send neck to the orientation given as a quaternion."""
         request = GoToRequest(
@@ -272,6 +267,21 @@ class Head:
         All head's motors will then be compliant.
         """
         self._head_stub.TurnOff(self.part_id)
+
+    def get_goto_playing(self) -> GoToId:
+        """Return the id of the goto currently playing on the head"""
+        response = self._goto_stub.GetPartGoToPlaying(self.part_id)
+        return response
+
+    def get_goto_queue(self) -> List[GoToId]:
+        """Return the list of all goto ids waiting to be played on the head"""
+        response = self._goto_stub.GetPartGoToQueue(self.part_id)
+        return [goal_id for goal_id in response.goto_ids]
+
+    def cancel_all_goto(self) -> GoToAck:
+        """Ask the cancellation of all waiting goto on the head"""
+        response = self._goto_stub.CancelPartAllGoTo(self.part_id)
+        return response
 
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state received from the gRPC server."""

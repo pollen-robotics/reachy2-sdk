@@ -10,13 +10,13 @@ You can also send joint commands, compute forward or inverse kinematics.
 # from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 # from .dynamixel_motor import DynamixelMotor
 from __future__ import annotations
-from collections import namedtuple
 
 import asyncio
 import atexit
 import threading
 import time
 import typing as t
+from collections import namedtuple
 from logging import getLogger
 from typing import Any, Dict, List, Optional
 
@@ -25,7 +25,7 @@ from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from mobile_base_sdk import MobileBaseSDK
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
-from reachy2_sdk_api.goto_pb2 import GoToAck, GoToId
+from reachy2_sdk_api.goto_pb2 import GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
@@ -42,7 +42,11 @@ from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint
 from .reachy import ReachyInfo, get_config
-from .utils import get_interpolation_mode, arm_position_to_list, ext_euler_angles_to_list
+from .utils import (
+    arm_position_to_list,
+    ext_euler_angles_to_list,
+    get_interpolation_mode,
+)
 
 SimplifiedRequest = namedtuple("SimplifiedRequest", ["goal_positions", "duration", "mode"])
 
@@ -588,6 +592,16 @@ is running and that the IP is correct."
 
     def cancel_all_goto(self) -> GoToAck:
         response = self._goto_stub.CancelAllGoTo(Empty())
+        return response
+
+    def get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
+        """Return the current state of a goto, given its id."""
+        response = self._goto_stub.GetGoToState(goto_id)
+        return response
+
+    def cancel_goto_by_id(self, goto_id: GoToId) -> GoToAck:
+        """Ask the cancellation of a single goto on the arm, given its id"""
+        response = self._goto_stub.CancelGoTo(goto_id)
         return response
 
     def get_goto_joints_request(self, goto_id: GoToId) -> SimplifiedRequest:

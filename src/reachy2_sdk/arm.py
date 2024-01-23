@@ -26,7 +26,6 @@ from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
     GoToAck,
-    GoToGoalStatus,
     GoToId,
     GoToRequest,
     JointsGoal,
@@ -45,7 +44,11 @@ from reachy2_sdk_api.part_pb2 import PartId
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint
-from .utils import list_to_arm_position, arm_position_to_list, get_grpc_interpolation_mode
+from .utils import (
+    arm_position_to_list,
+    get_grpc_interpolation_mode,
+    list_to_arm_position,
+)
 
 
 class Arm:
@@ -333,26 +336,18 @@ class Arm:
         return response
 
     def get_goto_playing(self) -> GoToId:
-        """Returns the id of the goto currently playing on the arm"""
+        """Return the id of the goto currently playing on the arm"""
         response = self._goto_stub.GetPartGoToPlaying(self.part_id)
         return response
 
     def get_goto_queue(self) -> List[GoToId]:
-        """Returns the list of all goto ids waiting to be played on the arm"""
+        """Return the list of all goto ids waiting to be played on the arm"""
         response = self._goto_stub.GetPartGoToQueue(self.part_id)
         return [goal_id for goal_id in response.goto_ids]
 
     def cancel_all_goto(self) -> GoToAck:
-        """Asks the cancellation of all waiting goto on the arm"""
+        """Ask the cancellation of all waiting goto on the arm"""
         response = self._goto_stub.CancelPartAllGoTo(self.part_id)
-        return response
-
-    def get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
-        response = self._goto_stub.GetGoToState(goto_id)
-        return response
-
-    def cancel_goto_by_id(self, goto_id: GoToId) -> GoToAck:
-        response = self._goto_stub.CancelGoTo(goto_id)
         return response
 
     @property

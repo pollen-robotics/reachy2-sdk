@@ -2,17 +2,9 @@ from typing import Any, List
 
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
-from reachy2_sdk_api.arm_pb2 import (
-    ArmPosition,
-)
-from reachy2_sdk_api.goto_pb2 import (
-    GoToInterpolation,
-    InterpolationMode,
-)
-from reachy2_sdk_api.kinematics_pb2 import (
-    ExtEulerAngles,
-    Rotation3d,
-)
+from reachy2_sdk_api.arm_pb2 import ArmPosition
+from reachy2_sdk_api.goto_pb2 import GoToInterpolation, InterpolationMode
+from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 
 
