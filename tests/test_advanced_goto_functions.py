@@ -96,8 +96,8 @@ def test_cancel_all_goto(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_cancel_part_all_goto(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.rotate_to(0, 40, 0, duration=10, interpolation_mode="linear")
-    req2 = reachy_sdk_zeroed.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
+    _ = reachy_sdk_zeroed.head.rotate_to(0, 40, 0, duration=10, interpolation_mode="linear")
+    _ = reachy_sdk_zeroed.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
     time.sleep(2)
     cancel = reachy_sdk_zeroed.head.cancel_all_goto()
     assert cancel.ack
