@@ -69,9 +69,11 @@ def test_sr_camera(reachy_sdk: ReachySDK) -> None:
     assert frame is not None
     assert frame.dtype == np.uint8
 
-    frame = reachy_sdk.video.get_depth_frame(cam_info=cam_info, view=View.RIGHT)
-    assert frame is not None
-    assert frame.dtype == np.uint8
+    frame_right = reachy_sdk.video.get_depth_frame(cam_info=cam_info, view=View.RIGHT)
+    assert frame_right is not None
+    assert frame_right.dtype == np.uint8
+
+    assert not np.array_equal(frame, frame_right)
 
     frame = reachy_sdk.video.get_depthmap(cam_info=cam_info)
     assert frame is not None
