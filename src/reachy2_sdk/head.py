@@ -14,9 +14,7 @@ from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
     GoToAck,
     GoToId,
-    GoToInterpolation,
     GoToRequest,
-    InterpolationMode,
     JointsGoal,
 )
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
@@ -36,6 +34,8 @@ from reachy2_sdk_api.part_pb2 import PartId
 
 from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint
+
+from .utils import get_grpc_interpolation_mode
 
 # from .dynamixel_motor import DynamixelMotor
 
@@ -199,7 +199,7 @@ class Head:
                     duration=FloatValue(value=duration),
                 )
             ),
-            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToCartesian(request)
         return response
@@ -235,7 +235,7 @@ class Head:
                     duration=FloatValue(value=duration),
                 )
             ),
-            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
         return response
@@ -254,20 +254,10 @@ class Head:
                     duration=FloatValue(value=duration),
                 )
             ),
-            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
         return response
-
-    def _get_grpc_interpolation_mode(self, interpolation_mode: str) -> GoToInterpolation:
-        if interpolation_mode not in ["minimum_jerk", "linear"]:
-            raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
-
-        if interpolation_mode == "minimum_jerk":
-            interpolation_mode = InterpolationMode.MINIMUM_JERK
-        else:
-            interpolation_mode = InterpolationMode.LINEAR
-        return GoToInterpolation(interpolation_type=interpolation_mode)
 
     def turn_on(self) -> None:
         """Turn all motors of the part on.
