@@ -48,7 +48,7 @@ from .utils import (
     get_interpolation_mode,
 )
 
-SimplifiedRequest = namedtuple("SimplifiedRequest", ["goal_positions", "duration", "mode"])
+SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
 
 _T = t.TypeVar("_T")
 
@@ -608,13 +608,19 @@ is running and that the IP is correct."
         return response
 
     def get_goto_joints_request(self, goto_id: GoToId) -> SimplifiedRequest:
-        """Returns the joints goal positions, duration and mode of the corresponding GoToId"""
+        """Returns the part affected, the joints goal positions, duration and mode of the corresponding GoToId
+
+        Part can be either 'r_arm', 'l_arm' or 'head'
+        Goal_position is returned as a list in degrees
+        """
         response = self._goto_stub.GetGoToRequest(goto_id)
         if response.joints_goal.HasField("arm_joint_goal"):
+            part = response.joints_goal.arm_joint_goal.id.name
             mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
             goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
             duration = response.joints_goal.arm_joint_goal.duration.value
         elif response.joints_goal.HasField("neck_joint_goal"):
+            part = response.joints_goal.neck_joint_goal.id.name
             mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
             goal_positions = ext_euler_angles_to_list(
                 response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
@@ -622,6 +628,7 @@ is running and that the IP is correct."
             duration = response.joints_goal.neck_joint_goal.duration.value
 
         request = SimplifiedRequest(
+            part=part,
             goal_positions=goal_positions,
             duration=duration,
             mode=mode,
