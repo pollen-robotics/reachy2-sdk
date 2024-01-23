@@ -167,6 +167,9 @@ is running and that the IP is correct."
                 "r_arm",
                 "l_arm",
                 "cancel_all_goto",
+                "cancel_goto_by_id",
+                "get_goto_state",
+                "get_goto_joints_request",
             ]:
                 delattr(self, attr)
 
