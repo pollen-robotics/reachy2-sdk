@@ -91,7 +91,7 @@ def test_sr_camera(reachy_sdk: ReachySDK) -> None:
 
 @pytest.mark.teleop_camera
 @pytest.mark.online
-def test_sr_camera(reachy_sdk: ReachySDK) -> None:
+def test_teleop_camera(reachy_sdk: ReachySDK) -> None:
     list_cam = reachy_sdk.video.get_all_cameras()
 
     assert (len(list_cam)) > 0
