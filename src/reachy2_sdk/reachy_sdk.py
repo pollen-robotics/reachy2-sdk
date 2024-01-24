@@ -16,6 +16,7 @@ import atexit
 import threading
 import time
 import typing as t
+from collections import namedtuple
 from logging import getLogger
 from typing import Any, Dict, List, Optional
 
@@ -24,7 +25,7 @@ from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from mobile_base_sdk import MobileBaseSDK
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
-from reachy2_sdk_api.goto_pb2 import GoToAck
+from reachy2_sdk_api.goto_pb2 import GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
@@ -41,6 +42,13 @@ from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint
 from .reachy import ReachyInfo, get_config
+from .utils import (
+    arm_position_to_list,
+    ext_euler_angles_to_list,
+    get_interpolation_mode,
+)
+
+SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
 
 _T = t.TypeVar("_T")
 
@@ -159,6 +167,9 @@ is running and that the IP is correct."
                 "r_arm",
                 "l_arm",
                 "cancel_all_goto",
+                "cancel_goto_by_id",
+                "get_goto_state",
+                "get_goto_joints_request",
             ]:
                 delattr(self, attr)
 
@@ -585,6 +596,44 @@ is running and that the IP is correct."
     def cancel_all_goto(self) -> GoToAck:
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
+
+    def get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
+        """Return the current state of a goto, given its id."""
+        response = self._goto_stub.GetGoToState(goto_id)
+        return response
+
+    def cancel_goto_by_id(self, goto_id: GoToId) -> GoToAck:
+        """Ask the cancellation of a single goto on the arm, given its id"""
+        response = self._goto_stub.CancelGoTo(goto_id)
+        return response
+
+    def get_goto_joints_request(self, goto_id: GoToId) -> SimplifiedRequest:
+        """Returns the part affected, the joints goal positions, duration and mode of the corresponding GoToId
+
+        Part can be either 'r_arm', 'l_arm' or 'head'
+        Goal_position is returned as a list in degrees
+        """
+        response = self._goto_stub.GetGoToRequest(goto_id)
+        if response.joints_goal.HasField("arm_joint_goal"):
+            part = response.joints_goal.arm_joint_goal.id.name
+            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+            goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
+            duration = response.joints_goal.arm_joint_goal.duration.value
+        elif response.joints_goal.HasField("neck_joint_goal"):
+            part = response.joints_goal.neck_joint_goal.id.name
+            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+            goal_positions = ext_euler_angles_to_list(
+                response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
+            )
+            duration = response.joints_goal.neck_joint_goal.duration.value
+
+        request = SimplifiedRequest(
+            part=part,
+            goal_positions=goal_positions,
+            duration=duration,
+            mode=mode,
+        )
+        return request
 
 
 _open_connection: List[ReachySDK] = []
