@@ -5,6 +5,7 @@ Handles all specific method related to video especially:
 - get depth frame
 """
 import logging
+from enum import Enum
 from typing import List, Optional
 
 import cv2
@@ -14,6 +15,12 @@ import numpy.typing as npt
 from google.protobuf.empty_pb2 import Empty
 from reachy2_sdk_api.video_pb2 import CameraInfo, VideoAck, View, ViewRequest
 from reachy2_sdk_api.video_pb2_grpc import VideoServiceStub
+
+
+class Camera(Enum):
+    # values defined in pollen-vision
+    TELEOP = "teleop_head"
+    SR = "other"
 
 
 class Video:
@@ -89,3 +96,15 @@ class Video:
             return False
         else:
             return True
+
+    def get_camera_info(self, list_cam_info: List[CameraInfo], cam_type: Camera) -> Optional[CameraInfo]:
+        cam = None
+        for c in list_cam_info:
+            if c.name == cam_type.value:
+                cam = c
+            break
+
+        if cam is None:
+            self._logger.warning(f"There is no camera {cam_type.value}")
+
+        return cam
