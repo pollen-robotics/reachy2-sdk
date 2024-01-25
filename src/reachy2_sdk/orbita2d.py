@@ -152,16 +152,16 @@ class Orbita2d:
         return {motor_name: m.pid for motor_name, m in self._motors.items()}
 
     def turn_on(self) -> None:
-        """Turn all motors of the hand on.
+        """Turn all motors of the orbita2d on.
 
-        All hand's motors will then be stiff.
+        All orbita2d's motors will then be stiff.
         """
         self._compliant = False
 
     def turn_off(self) -> None:
-        """Turn all motors of the hand on.
+        """Turn all motors of the orbita2d on.
 
-        All hand's motors will then be stiff.
+        All orbita2d's motors will then be stiff.
         """
         self._compliant = True
 
