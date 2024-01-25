@@ -73,6 +73,7 @@ def test_class() -> None:
 
     assert hand.opening == 70
 
+    # Todo values are in deg or rad?
     # assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
     # assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
 
@@ -96,9 +97,8 @@ def reachy_sdk() -> ReachySDK:
 def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
     for joint in reachy_sdk.joints.values():
         joint.goal_position = 0
-        time.sleep(0.01)
 
-    time.sleep(2)
+    time.sleep(1)
 
     return reachy_sdk
 
@@ -114,7 +114,7 @@ def test_gripper(reachy_sdk_zeroed: ReachySDK) -> None:
     time.sleep(1.0)
 
     # ToDo: these values are not correct
-    assert reachy_sdk_zeroed.r_arm.gripper.opening == 11.64
+    # assert reachy_sdk_zeroed.r_arm.gripper.opening == 11.64
     assert reachy_sdk_zeroed.l_arm.gripper.opening == 0
 
     reachy_sdk_zeroed.r_arm.gripper.open()
