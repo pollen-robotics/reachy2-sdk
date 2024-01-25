@@ -254,7 +254,7 @@ class Orbita2d:
             self._state["compliant"] = __value
 
             async def set_in_loop() -> None:
-                self._register_needing_sync.append(__name)
+                self._register_needing_sync.append("compliant")
                 self._need_sync.set()
 
             fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
