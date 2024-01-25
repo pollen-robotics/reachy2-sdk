@@ -49,6 +49,7 @@ from .utils import (
 )
 
 SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
+GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 
 _T = t.TypeVar("_T")
 
@@ -157,6 +158,7 @@ is running and that the IP is correct."
                 "grpc_status",
                 "connect",
                 "disconnect",
+                "home",
                 "turn_on",
                 "turn_off",
                 "enabled_parts",
@@ -593,13 +595,28 @@ is running and that the IP is correct."
 
         return True
 
+    def home(self, wait_for_goto_end: bool = True, duration: float = 2, interpolation_mode: str = "minimum_jerk") -> GoToHomeId:
+        head_id = None
+        r_arm_id = None
+        l_arm_id = None
+        if not wait_for_goto_end:
+            self.cancel_all_goto()
+        if self.head is not None:
+            head_id = self.head.rotate_to(0, 0, 0, duration, interpolation_mode)
+        if self.r_arm is not None:
+            r_arm_id = self.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration, interpolation_mode)
+        if self.l_arm is not None:
+            l_arm_id = self.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration, interpolation_mode)
+        ids = GoToHomeId(
+            head=head_id,
+            r_arm=r_arm_id,
+            l_arm=l_arm_id,
+        )
+        return ids
+
     def cancel_all_goto(self) -> GoToAck:
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
-
-    def home(self) -> None:
-        # TODO
-        return
 
     def get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
         """Return the current state of a goto, given its id."""
