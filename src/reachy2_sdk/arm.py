@@ -5,7 +5,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 - the inverse kinematics
 - goto functions
 """
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import grpc
 import numpy as np
@@ -19,7 +19,6 @@ from reachy2_sdk_api.arm_pb2 import (
     ArmIKRequest,
     ArmJointGoal,
     ArmLimits,
-    ArmPosition,
     ArmState,
     ArmTemperatures,
 )
@@ -27,11 +26,8 @@ from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
     GoToAck,
-    GoToGoalStatus,
     GoToId,
-    GoToInterpolation,
     GoToRequest,
-    InterpolationMode,
     JointsGoal,
 )
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
@@ -43,12 +39,16 @@ from reachy2_sdk_api.kinematics_pb2 import (
     PointDistanceTolerances,
     Rotation3d,
 )
-from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 from reachy2_sdk_api.part_pb2 import PartId
 
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint
+from .utils import (
+    arm_position_to_list,
+    get_grpc_interpolation_mode,
+    list_to_arm_position,
+)
 
 
 class Arm:
@@ -162,12 +162,12 @@ class Arm:
             present_joints_positions = [
                 joint.present_position for orbita in self._actuators.values() for joint in orbita._joints.values()
             ]
-            req_params["position"] = self._list_to_arm_position(present_joints_positions, degrees)
+            req_params["position"] = list_to_arm_position(present_joints_positions, degrees)
 
         else:
             if len(joints_positions) != 7:
                 raise ValueError(f"joints_positions should be length 7 (got {len(joints_positions)} instead)!")
-            req_params["position"] = self._list_to_arm_position(joints_positions, degrees)
+            req_params["position"] = list_to_arm_position(joints_positions, degrees)
         req = ArmFKRequest(**req_params)
         resp = self._arm_stub.ComputeArmFK(req)
         if not resp.success:
@@ -207,13 +207,13 @@ class Arm:
         }
 
         if q0 is not None:
-            req_params["q0"] = self._list_to_arm_position(q0, degrees)
+            req_params["q0"] = list_to_arm_position(q0, degrees)
 
         else:
             present_joints_positions = [
                 joint.present_position for orbita in self._actuators.values() for joint in orbita._joints.values()
             ]
-            req_params["q0"] = self._list_to_arm_position(present_joints_positions, degrees)
+            req_params["q0"] = list_to_arm_position(present_joints_positions, degrees)
 
         req = ArmIKRequest(**req_params)
         resp = self._arm_stub.ComputeArmIK(req)
@@ -221,71 +221,7 @@ class Arm:
         if not resp.success:
             raise ValueError(f"No solution found for the given target ({target})!")
 
-        return self._arm_position_to_list(resp.arm_position)
-
-    def _list_to_arm_position(self, positions: List[float], degrees: bool = True) -> ArmPosition:
-        """Convert a list of joint positions to an ArmPosition message.
-
-        This is used to send a joint position to the arm's gRPC server and to compute the forward
-        and inverse kinematics.
-        """
-        if degrees:
-            positions = self._convert_to_radians(positions)
-        arm_pos = ArmPosition(
-            shoulder_position=Pose2d(
-                axis_1=FloatValue(value=positions[0]),
-                axis_2=FloatValue(value=positions[1]),
-            ),
-            elbow_position=Pose2d(
-                axis_1=FloatValue(value=positions[2]),
-                axis_2=FloatValue(value=positions[3]),
-            ),
-            wrist_position=Rotation3d(
-                rpy=ExtEulerAngles(
-                    roll=FloatValue(value=positions[4]),
-                    pitch=FloatValue(value=positions[5]),
-                    yaw=FloatValue(value=positions[6]),
-                )
-            ),
-        )
-
-        return arm_pos
-
-    def _convert_to_radians(self, my_list: List[float]) -> Any:
-        """Convert a list of angles from degrees to radians."""
-        a = np.array(my_list)
-        a = np.deg2rad(a)
-
-        a = np.round(a, 3)
-        return a.tolist()
-
-    def _convert_to_degrees(self, my_list: List[float]) -> Any:
-        """Convert a list of angles from radians to degrees."""
-        a = np.array(my_list)
-        a = np.rad2deg(a)
-
-        a = np.round(a, 2)
-        return a.tolist()
-
-    def _arm_position_to_list(self, arm_pos: ArmPosition, degrees: bool = True) -> List[float]:
-        """Convert an ArmPosition message to a list of joint positions in degrees.
-
-        It is used to convert the result of the inverse kinematics.
-        By default, it will return the result in degrees.
-        """
-        positions = []
-
-        for _, value in arm_pos.shoulder_position.ListFields():
-            positions.append(value.value)
-        for _, value in arm_pos.elbow_position.ListFields():
-            positions.append(value.value)
-        for _, value in arm_pos.wrist_position.rpy.ListFields():
-            positions.append(value.value)
-
-        if degrees:
-            positions = self._convert_to_degrees(positions)
-
-        return positions
+        return arm_position_to_list(resp.arm_position)
 
     def goto_from_matrix(
         self,
@@ -306,7 +242,7 @@ class Arm:
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
 
         if q0 is not None:
-            q0 = self._list_to_arm_position(q0)
+            q0 = list_to_arm_position(q0)
             request = GoToRequest(
                 cartesian_goal=CartesianGoal(
                     arm_cartesian_goal=ArmCartesianGoal(
@@ -316,7 +252,7 @@ class Arm:
                         q0=q0,
                     )
                 ),
-                interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
+                interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
             )
         else:
             request = GoToRequest(
@@ -327,7 +263,7 @@ class Arm:
                         duration=FloatValue(value=duration),
                     )
                 ),
-                interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
+                interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
             )
         response = self._goto_stub.GoToCartesian(request)
         return response
@@ -374,7 +310,7 @@ class Arm:
 
         request = GoToRequest(
             cartesian_goal=target,
-            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         self._goto_stub.GoToCartesian(request)
 
@@ -389,33 +325,36 @@ class Arm:
         if len(positions) != 7:
             raise ValueError(f"positions should be length 7 (got {len(positions)} instead)!")
 
-        arm_pos = self._list_to_arm_position(positions, degrees)
+        arm_pos = list_to_arm_position(positions, degrees)
         request = GoToRequest(
             joints_goal=JointsGoal(
                 arm_joint_goal=ArmJointGoal(id=self.part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
             ),
-            interpolation_mode=self._get_grpc_interpolation_mode(interpolation_mode),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
         return response
 
-    def _get_grpc_interpolation_mode(self, interpolation_mode: str) -> GoToInterpolation:
-        if interpolation_mode not in ["minimum_jerk", "linear"]:
-            raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
-
-        if interpolation_mode == "minimum_jerk":
-            interpolation_mode = InterpolationMode.MINIMUM_JERK
-        else:
-            interpolation_mode = InterpolationMode.LINEAR
-        return GoToInterpolation(interpolation_type=interpolation_mode)
-
-    def get_goto_state(self, goto_id: int) -> GoToGoalStatus:
-        response = self._goto_stub.GetGoToState(goto_id)
+    def get_goto_playing(self) -> GoToId:
+        """Return the id of the goto currently playing on the arm"""
+        response = self._goto_stub.GetPartGoToPlaying(self.part_id)
         return response
 
-    def cancel_goto_by_id(self, goto_id: int) -> GoToAck:
-        response = self._goto_stub.CancelGoTo(goto_id)
+    def get_goto_queue(self) -> List[GoToId]:
+        """Return the list of all goto ids waiting to be played on the arm"""
+        response = self._goto_stub.GetPartGoToQueue(self.part_id)
+        return [goal_id for goal_id in response.goto_ids]
+
+    def cancel_all_goto(self) -> GoToAck:
+        """Ask the cancellation of all waiting goto on the arm"""
+        response = self._goto_stub.CancelPartAllGoTo(self.part_id)
         return response
+
+    def get_joints_positions(self) -> List[float]:
+        """Return the current joints positions of the arm in degrees"""
+        response = self._arm_stub.GetJointPosition(self.part_id)
+        positions = arm_position_to_list(response)
+        return positions
 
     @property
     def joints_limits(self) -> ArmLimits:
