@@ -1,8 +1,11 @@
+from typing import List
+
 import numpy as np
 import pytest
 from reachy2_sdk_api.video_pb2 import CameraInfo, View
 
 from src.reachy2_sdk.reachy_sdk import ReachySDK
+from src.reachy2_sdk.video import Camera, Video
 
 
 @pytest.fixture(scope="module")
@@ -131,3 +134,29 @@ def test_teleop_camera(reachy_sdk: ReachySDK) -> None:
     assert reachy_sdk.video.close_camera(cam_info)
 
     assert not reachy_sdk.video.capture(cam_info)
+
+
+@pytest.mark.offline
+def test_get_cam_info() -> None:
+    list_cam: List[CameraInfo] = []
+
+    cam_type = Camera.TELEOP
+
+    cam = Video.get_camera_info(list_cam, cam_type)
+
+    assert cam is None
+
+    cam_teleop = CameraInfo(mxid="fakemixid_tel", name="teleop_head", stereo=True, depth=False)
+    list_cam.append(cam_teleop)
+
+    cam = Video.get_camera_info(list_cam, cam_type)
+
+    assert cam is cam_teleop
+
+    cam_sr = CameraInfo(mxid="fakemixid_sr", name="other", stereo=False, depth=True)
+    list_cam.append(cam_sr)
+
+    cam_type = Camera.SR
+    cam = Video.get_camera_info(list_cam, cam_type)
+
+    assert cam is cam_sr

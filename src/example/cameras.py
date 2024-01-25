@@ -5,7 +5,7 @@ import cv2
 from reachy2_sdk_api.video_pb2 import CameraInfo, View
 
 from reachy2_sdk import ReachySDK
-from reachy2_sdk.video import Camera
+from reachy2_sdk.video import Camera, Video
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     cam_type = Camera.TELEOP
     # cam_type = Camera.SR
 
-    cam = reachy.video.get_camera_info(list_cam, cam_type)
+    cam = Video.get_camera_info(list_cam, cam_type)
 
     if cam is None:
         exit("Camera was not found")

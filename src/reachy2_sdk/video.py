@@ -97,14 +97,15 @@ class Video:
         else:
             return True
 
-    def get_camera_info(self, list_cam_info: List[CameraInfo], cam_type: Camera) -> Optional[CameraInfo]:
+    @staticmethod
+    def get_camera_info(list_cam_info: List[CameraInfo], cam_type: Camera) -> Optional[CameraInfo]:
         cam = None
         for c in list_cam_info:
             if c.name == cam_type.value:
                 cam = c
-            break
+                break
 
         if cam is None:
-            self._logger.warning(f"There is no camera {cam_type.value}")
+            logging.warning(f"There is no camera {cam_type.value}")
 
         return cam
