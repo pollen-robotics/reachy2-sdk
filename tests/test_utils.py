@@ -36,6 +36,17 @@ def test_arm_position_to_list() -> None:
 
     assert np.allclose(arm_position_float_ref, arm_position_float, atol=1e-01)
 
+    """
+    # Todo: this should be equivalent
+
+    arm_position_float_ref = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    arm_position = list_to_arm_position(arm_position_float_ref)
+
+    arm_position_float = arm_position_to_list(arm_position)
+
+    assert np.array_equal(arm_position_float_ref, arm_position_float)
+    """
+
 
 @pytest.mark.offline
 def test_ext_euler_angles_list() -> None:

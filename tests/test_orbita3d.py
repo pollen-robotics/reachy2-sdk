@@ -41,6 +41,8 @@ def test_class() -> None:
     )
     orbita3d = Orbita3d(uid=0, name="unit_test", initial_state=orbita3d_state, grpc_channel=grpc_channel)
 
+    assert orbita3d.__repr__() != ""
+
     assert orbita3d.compliant
 
     with pytest.raises(ValueError):

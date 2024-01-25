@@ -45,10 +45,16 @@ def test_class() -> None:
     head_state = HeadState(neck_state=neck_state)
     head = Head(head_msg=head_proto, initial_state=head_state, grpc_channel=grpc_channel, goto_stub=None)
 
+    assert head.__repr__() != ""
+
     assert head.neck.compliant
+    assert head.compliant
 
     with pytest.raises(ValueError):
         head.neck.compliant = 2.5
+
+    with pytest.raises(ValueError):
+        head.compliant = 2.5
 
     assert len(head.actuators) == 1
     assert isinstance(head.actuators, dict)

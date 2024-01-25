@@ -40,6 +40,8 @@ def test_class() -> None:
 
     hand = Hand(hand_msg=hand_proto, initial_state=hand_state, grpc_channel=grpc_channel)
 
+    assert hand.__repr__() != ""
+
     assert hand.opening == 20
 
     with pytest.raises(ValueError):

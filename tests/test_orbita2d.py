@@ -45,6 +45,8 @@ def test_class() -> None:
         uid=0, name="unit_test", axis1=Axis.PITCH, axis2=Axis.ROLL, initial_state=orbita2d_state, grpc_channel=grpc_channel
     )
 
+    assert orbita2d.__repr__() != ""
+
     assert orbita2d.compliant
     # use _to_position()  to convert radian to degree
     assert orbita2d.roll.goal_position == _to_position(goal_position.axis_2.value)
