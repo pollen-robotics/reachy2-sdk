@@ -106,11 +106,14 @@ def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
 @pytest.mark.online
 def test_gripper(reachy_sdk_zeroed: ReachySDK) -> None:
     # https://github.com/pollen-robotics/reachy2_sdk_server/pull/80#issuecomment-1907665226
+    # https://github.com/pollen-robotics/reachy2_sdk_server/issues/102
+
     reachy_sdk_zeroed.r_arm.gripper.close()
     reachy_sdk_zeroed.l_arm.gripper.close()
 
     time.sleep(1.0)
 
+    # ToDo: these values are not correct
     assert reachy_sdk_zeroed.r_arm.gripper.opening == 11.64
     assert reachy_sdk_zeroed.l_arm.gripper.opening == 0
 
