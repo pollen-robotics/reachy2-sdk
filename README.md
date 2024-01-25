@@ -26,10 +26,10 @@ Note that only **offline tests** are executed by the Continuous Integration/Cont
 
 ### Camera tests
 
-Additional marks to the online tests enable the unit tests of the selected cameras connected to the server. It can be *no_camera* or, *sr_camera* and/or *teleop_camera*.
+Camera tests have their own marks because it requires the camera to be plugged to the sdk server (*sr_camera* and/or *teleop_camera*). 
 
 ```console
-$ pytest -m online -m [no_camera | sr_camera | teleop_camera]
+$ pytest -m [sr_camera | teleop_camera]
 ```
 
 

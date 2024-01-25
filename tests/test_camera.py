@@ -23,7 +23,6 @@ def reachy_sdk() -> ReachySDK:
     ReachySDK.clear()
 
 
-@pytest.mark.no_camera
 @pytest.mark.online
 def test_no_camera(reachy_sdk: ReachySDK) -> None:
     list_cam = reachy_sdk.video.get_all_cameras()
@@ -46,7 +45,6 @@ def test_no_camera(reachy_sdk: ReachySDK) -> None:
 
 
 @pytest.mark.sr_camera
-@pytest.mark.online
 def test_sr_camera(reachy_sdk: ReachySDK) -> None:
     list_cam = reachy_sdk.video.get_all_cameras()
 
@@ -93,7 +91,6 @@ def test_sr_camera(reachy_sdk: ReachySDK) -> None:
 
 
 @pytest.mark.teleop_camera
-@pytest.mark.online
 def test_teleop_camera(reachy_sdk: ReachySDK) -> None:
     list_cam = reachy_sdk.video.get_all_cameras()
 
