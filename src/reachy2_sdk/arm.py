@@ -378,13 +378,3 @@ class Arm:
     def compliant(self) -> Dict[str, bool]:
         """Get compliancy of all the part's actuators"""
         return {"shoulder": self.shoulder.compliant, "elbow": self.elbow.compliant, "wrist": self.wrist.compliant}
-
-    @compliant.setter
-    def compliant(self, value: bool) -> None:
-        """Set compliancy of all the part's actuators"""
-        if not isinstance(value, bool):
-            raise ValueError("Expecting bool as compliant value")
-        if value:
-            self._arm_stub.TurnOff(self.part_id)
-        else:
-            self._arm_stub.TurnOn(self.part_id)
