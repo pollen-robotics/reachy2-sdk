@@ -596,6 +596,7 @@ is running and that the IP is correct."
         return True
 
     def is_goto_finished(self, id: GoToId) -> bool:
+        """Return True if goto has been played and has been cancelled, False otherwise."""
         state = self.get_goto_state(id)
         result = bool(
             state.goal_status == GoalStatus.STATUS_ABORTED
@@ -605,6 +606,7 @@ is running and that the IP is correct."
         return result
 
     def is_goto_playing(self, id: GoToId) -> bool:
+        """Return True if goto is currently playing, False otherwise."""
         state = self.get_goto_state(id)
         return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
 
