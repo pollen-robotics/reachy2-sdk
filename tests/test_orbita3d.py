@@ -138,6 +138,7 @@ def test_class() -> None:
     assert orbita3d.yaw.goal_position == _to_position(goal_rot.rpy.yaw.value)
     assert orbita3d.yaw.present_position == _to_position(present_rot.rpy.yaw.value)
 
+    # pid not changed. testing against old values
     pid_set = orbita3d.get_pid()
     assert pid_set["motor_1"][0] == pid.motor_1.p.value
     assert pid_set["motor_1"][1] == pid.motor_1.i.value
