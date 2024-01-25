@@ -336,7 +336,37 @@ def deco_test() -> None:
     ReachySDK.clear()
 
 
+def multi_test():
+    print("Trying to connect on localhost Reachy...")
+    time.sleep(1.0)
+    reachy = ReachySDK(host="localhost")
+
+    time.sleep(1.0)
+    if reachy.grpc_status == "disconnected":
+        print("Failed to connect to Reachy, exiting...")
+        return
+
+    print("Turning on...")
+
+    reachy.turn_on()
+    for joint in reachy.joints.values():
+        joint.goal_position = 0
+
+    reachy.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=3, interpolation_mode="linear")
+    time.sleep(4)
+
+    for joint in reachy.joints.values():
+        joint.goal_position = 0
+    time.sleep(1)
+
+    reachy.head.rotate_to(0, 40, 0)
+
+    reachy.disconnect()
+    ReachySDK.clear()
+
+
 if __name__ == "__main__":
-    head_test()
-    # main_test()
+    # head_test()
+    main_test()
     # deco_test()
+    # multi_test()

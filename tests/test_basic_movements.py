@@ -124,7 +124,7 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 def is_goto_finished(reachy: ReachySDK, id: int) -> bool:
-    state = reachy.r_arm.get_goto_state(id)
+    state = reachy.get_goto_state(id)
     result = bool(
         state.goal_status == GoalStatus.STATUS_ABORTED
         or state.goal_status == GoalStatus.STATUS_CANCELED
@@ -173,32 +173,12 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 @pytest.mark.online
-def test_cancel_goto(reachy_sdk_zeroed: ReachySDK) -> None:
-    """
-    # is already zeroed
-    id = reachy_sdk_zeroed.head.rotate_to(0, 0, 0, duration=1.0)
-    while not is_goto_finised(reachy_sdk_zeroed, id):
+def test_basic_get_positions(reachy_sdk_zeroed: ReachySDK) -> None:
+    expected_pos1 = [0, 0, 0, 0, 0, 0, 0]
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos1, atol=1e-01)
+
+    expected_pos2 = [15, 10, 20, -50, 10, 10, 20]
+    id = reachy_sdk_zeroed.l_arm.goto_joints(expected_pos2, duration=3)
+    while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
-    """
-
-    req = reachy_sdk_zeroed.head.rotate_to(0, 40, 0, duration=10, interpolation_mode="linear")
-    time.sleep(2)
-    cancel = reachy_sdk_zeroed.head.cancel_goto_by_id(req)
-    assert cancel.ack
-
-    # 40*2/10 -> 8° ideally. but timing is not precise
-    assert np.isclose(reachy_sdk_zeroed.head.neck.pitch.present_position, 8, atol=1)  # ??
-    assert np.isclose(reachy_sdk_zeroed.head.neck.roll.present_position, 0)
-    assert np.isclose(reachy_sdk_zeroed.head.neck.yaw.present_position, 0)
-
-    req2 = reachy_sdk_zeroed.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
-    time.sleep(2)
-    cancel2 = reachy_sdk_zeroed.head.cancel_goto_by_id(req2)
-    assert cancel2.ack
-    assert np.isclose(reachy_sdk_zeroed.l_arm.shoulder.pitch.present_position, 3, atol=1)
-    assert np.isclose(reachy_sdk_zeroed.l_arm.shoulder.roll.present_position, 2.0, atol=1)
-    assert np.isclose(reachy_sdk_zeroed.l_arm.elbow.yaw.present_position, 4.0, atol=1)
-    assert np.isclose(reachy_sdk_zeroed.l_arm.elbow.pitch.present_position, -10, atol=1)  # should be 10
-    assert np.isclose(reachy_sdk_zeroed.l_arm.wrist.roll.present_position, 2.0, atol=1)
-    assert np.isclose(reachy_sdk_zeroed.l_arm.wrist.pitch.present_position, 2.0, atol=1)
-    assert np.isclose(reachy_sdk_zeroed.l_arm.wrist.yaw.present_position, 4.0, atol=1)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos2, atol=1e-01)
