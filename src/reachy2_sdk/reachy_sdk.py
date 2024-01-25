@@ -466,8 +466,8 @@ is running and that the IP is correct."
 
         try:
             await asyncio.gather(
-                self._stream_orbita2d_commands_loop(orbita2d_stub, freq=100),
-                self._stream_orbita3d_commands_loop(orbita3d_stub, freq=100),
+                self._stream_orbita2d_commands_loop(orbita2d_stub, freq=80),
+                self._stream_orbita3d_commands_loop(orbita3d_stub, freq=80),
                 # self._stream_dynamixel_motor_commands_loop(dynamixel_motor_stub, freq=100),
                 self._get_stream_update_loop(reachy_stub, freq=100),
                 self._wait_for_stop(),
