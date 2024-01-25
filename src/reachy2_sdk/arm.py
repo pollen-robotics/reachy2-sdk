@@ -140,6 +140,20 @@ class Arm:
         """
         self._arm_stub.TurnOff(self.part_id)
 
+    def is_on(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for actuator in self._actuators.values():
+            if actuator.compliant:
+                return False
+        return True
+
+    def is_off(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for actuator in self._actuators.values():
+            if not actuator.compliant:
+                return False
+        return True
+
     def __repr__(self) -> str:
         """Clean representation of an Arm."""
         s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
@@ -374,7 +388,3 @@ class Arm:
         self.elbow._update_with(new_state.elbow_state)
         self.wrist._update_with(new_state.wrist_state)
 
-    @property
-    def compliant(self) -> Dict[str, bool]:
-        """Get compliancy of all the part's actuators"""
-        return {"shoulder": self.shoulder.compliant, "elbow": self.elbow.compliant, "wrist": self.wrist.compliant}

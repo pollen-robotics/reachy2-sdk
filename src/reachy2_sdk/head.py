@@ -268,6 +268,20 @@ class Head:
         """
         self._head_stub.TurnOff(self.part_id)
 
+    def is_on(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for actuator in self._actuators.values():
+            if actuator.compliant:
+                return False
+        return True
+
+    def is_off(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for actuator in self._actuators.values():
+            if not actuator.compliant:
+                return False
+        return True
+
     def get_goto_playing(self) -> GoToId:
         """Return the id of the goto currently playing on the head"""
         response = self._goto_stub.GetPartGoToPlaying(self.part_id)
