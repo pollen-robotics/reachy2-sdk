@@ -6,6 +6,13 @@ jobs:
   build-docs:
     runs-on: ubuntu-22.04
     steps:
+    - name: Install SSH_KEYS
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_REACHY2_SDK_API }}
+
+
     - name: Checkout Repository
       uses: actions/checkout@v3
 
