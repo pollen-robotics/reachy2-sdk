@@ -1,0 +1,29 @@
+name: Generate Python Documentation
+
+on: [pull_request]
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .[dev]
+
+    - name: Generate Documentation
+      run: pdoc --html reachy2_sdk --output-dir docs --logo "https://www.pollen-robotics.com/img/company/logo/pollen_logo_square_black.svg"
+
+    - name: Archive Documentation
+      uses: actions/upload-artifact@v2
+      with:
+        name: documentation
+        path: docs/
