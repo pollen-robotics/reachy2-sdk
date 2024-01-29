@@ -25,7 +25,7 @@ from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from mobile_base_sdk import MobileBaseSDK
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
-from reachy2_sdk_api.goto_pb2 import GoToAck, GoToGoalStatus, GoToId
+from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
@@ -170,6 +170,8 @@ is running and that the IP is correct."
                 "cancel_goto_by_id",
                 "get_goto_state",
                 "get_goto_joints_request",
+                "is_goto_finished",
+                "is_goto_playing",
             ]:
                 delattr(self, attr)
 
@@ -592,6 +594,21 @@ is running and that the IP is correct."
             part.turn_off()
 
         return True
+
+    def is_goto_finished(self, id: GoToId) -> bool:
+        """Return True if goto has been played and has been cancelled, False otherwise."""
+        state = self.get_goto_state(id)
+        result = bool(
+            state.goal_status == GoalStatus.STATUS_ABORTED
+            or state.goal_status == GoalStatus.STATUS_CANCELED
+            or state.goal_status == GoalStatus.STATUS_SUCCEEDED
+        )
+        return result
+
+    def is_goto_playing(self, id: GoToId) -> bool:
+        """Return True if goto is currently playing, False otherwise."""
+        state = self.get_goto_state(id)
+        return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
 
     def cancel_all_goto(self) -> GoToAck:
         response = self._goto_stub.CancelAllGoTo(Empty())

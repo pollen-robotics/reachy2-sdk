@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 from pyquaternion import Quaternion
-from reachy2_sdk_api.goto_pb2 import GoalStatus
+from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 
 from src.reachy2_sdk.reachy_sdk import ReachySDK
 
@@ -26,6 +26,7 @@ def reachy_sdk() -> ReachySDK:
 
 @pytest.fixture
 def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
+    reachy_sdk.cancel_all_goto()
     for joint in reachy_sdk.joints.values():
         joint.goal_position = 0
         time.sleep(0.01)
@@ -123,7 +124,7 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.allclose(current_pos, A, atol=1e-03)
 
 
-def is_goto_finished(reachy: ReachySDK, id: int) -> bool:
+def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
     state = reachy.get_goto_state(id)
     result = bool(
         state.goal_status == GoalStatus.STATUS_ABORTED
