@@ -2,6 +2,7 @@ import time
 
 import numpy as np
 import pytest
+from pyquaternion import Quaternion
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 
 from src.reachy2_sdk.reachy_sdk import ReachySDK
@@ -285,6 +286,109 @@ def test_get_goto_joints_request(reachy_sdk_zeroed: ReachySDK) -> None:
 
     cancel = reachy_sdk_zeroed.cancel_all_goto()
     assert cancel.ack
+
+
+@pytest.mark.online
+def test_reachy_home(reachy_sdk_zeroed: ReachySDK) -> None:
+    zero_arm = [0, 0, 0, 0, 0, 0, 0]
+    zero_head = Quaternion(axis=[1, 0, 0], angle=0.0)
+
+    # Test waiting for part's gotos to end
+
+    req1 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=4)
+    req2 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=5)
+    req3 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=6)
+
+    time.sleep(2)
+
+    req_h, req_r, req_l = reachy_sdk_zeroed.home()
+
+    assert reachy_sdk_zeroed.get_goto_state(req1).goal_status == GoalStatus.STATUS_EXECUTING
+    assert reachy_sdk_zeroed.get_goto_state(req2).goal_status == GoalStatus.STATUS_EXECUTING
+    assert reachy_sdk_zeroed.get_goto_state(req3).goal_status == GoalStatus.STATUS_EXECUTING
+
+    assert (reachy_sdk_zeroed.get_goto_state(req_h).goal_status == GoalStatus.STATUS_ACCEPTED) | (
+        reachy_sdk_zeroed.get_goto_state(req_h).goal_status == GoalStatus.STATUS_UNKNOWN
+    )  # should be ACCEPTED ?
+    assert (reachy_sdk_zeroed.get_goto_state(req_r).goal_status == GoalStatus.STATUS_ACCEPTED) | (
+        reachy_sdk_zeroed.get_goto_state(req_r).goal_status == GoalStatus.STATUS_UNKNOWN
+    )  # should be ACCEPTED ?
+    assert (reachy_sdk_zeroed.get_goto_state(req_l).goal_status == GoalStatus.STATUS_ACCEPTED) | (
+        reachy_sdk_zeroed.get_goto_state(req_l).goal_status == GoalStatus.STATUS_UNKNOWN
+    )  # should be ACCEPTED ?
+
+    while not is_goto_finished(reachy_sdk_zeroed, req2):
+        time.sleep(0.1)
+
+    assert reachy_sdk_zeroed.get_goto_state(req1).goal_status == GoalStatus.STATUS_SUCCEEDED
+    assert reachy_sdk_zeroed.get_goto_state(req2).goal_status == GoalStatus.STATUS_SUCCEEDED
+    assert reachy_sdk_zeroed.get_goto_state(req3).goal_status == GoalStatus.STATUS_EXECUTING
+
+    assert reachy_sdk_zeroed.get_goto_state(req_h).goal_status == GoalStatus.STATUS_EXECUTING
+    assert reachy_sdk_zeroed.get_goto_state(req_r).goal_status == GoalStatus.STATUS_EXECUTING
+    assert (reachy_sdk_zeroed.get_goto_state(req_l).goal_status == GoalStatus.STATUS_ACCEPTED) | (
+        reachy_sdk_zeroed.get_goto_state(req_l).goal_status == GoalStatus.STATUS_UNKNOWN
+    )  # should be ACCEPTED ?
+
+    while not is_goto_finished(reachy_sdk_zeroed, req_l):
+        time.sleep(0.1)
+
+    ans_r = reachy_sdk_zeroed.get_goto_joints_request(req_r)
+    assert ans_r.part == "r_arm"
+    assert np.allclose(ans_r.goal_positions, zero_arm, atol=1e-01)
+    assert ans_r.duration == 2
+    assert ans_r.mode == "minimum_jerk"
+
+    assert reachy_sdk_zeroed.get_goto_state(req_h).goal_status == GoalStatus.STATUS_SUCCEEDED
+    assert reachy_sdk_zeroed.get_goto_state(req_r).goal_status == GoalStatus.STATUS_SUCCEEDED
+    assert reachy_sdk_zeroed.get_goto_state(req_l).goal_status == GoalStatus.STATUS_SUCCEEDED
+    assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-04)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_arm, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_arm, atol=1e-01)
+
+    cancel = reachy_sdk_zeroed.cancel_all_goto()
+    assert cancel.ack
+
+    # Test without waiting for part's gotos to end
+
+    req4 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=4)
+    req5 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=5)
+    req6 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=6)
+
+    time.sleep(2)
+
+    req_h2, req_r2, req_l2 = reachy_sdk_zeroed.home(wait_for_goto_end=False, duration=1, interpolation_mode="linear")
+
+    assert (reachy_sdk_zeroed.get_goto_state(req4).goal_status == GoalStatus.STATUS_CANCELING) | (
+        reachy_sdk_zeroed.get_goto_state(req4).goal_status == GoalStatus.STATUS_CANCELED
+    )
+    assert (reachy_sdk_zeroed.get_goto_state(req5).goal_status == GoalStatus.STATUS_CANCELING) | (
+        reachy_sdk_zeroed.get_goto_state(req5).goal_status == GoalStatus.STATUS_CANCELED
+    )
+    assert (reachy_sdk_zeroed.get_goto_state(req6).goal_status == GoalStatus.STATUS_CANCELING) | (
+        reachy_sdk_zeroed.get_goto_state(req6).goal_status == GoalStatus.STATUS_CANCELED
+    )
+    assert reachy_sdk_zeroed.get_goto_state(req_h2).goal_status == GoalStatus.STATUS_EXECUTING
+    assert reachy_sdk_zeroed.get_goto_state(req_r2).goal_status == GoalStatus.STATUS_EXECUTING
+    assert reachy_sdk_zeroed.get_goto_state(req_l2).goal_status == GoalStatus.STATUS_EXECUTING
+
+    while not is_goto_finished(reachy_sdk_zeroed, req_l2):
+        time.sleep(0.1)
+
+    ans_l2 = reachy_sdk_zeroed.get_goto_joints_request(req_l2)
+    assert ans_l2.part == "l_arm"
+    assert np.allclose(ans_l2.goal_positions, zero_arm, atol=1e-01)
+    assert ans_l2.duration == 1
+    assert ans_l2.mode == "linear"
+
+    assert reachy_sdk_zeroed.get_goto_state(req_h).goal_status == GoalStatus.STATUS_SUCCEEDED
+    assert reachy_sdk_zeroed.get_goto_state(req_r).goal_status == GoalStatus.STATUS_SUCCEEDED
+    assert reachy_sdk_zeroed.get_goto_state(req_l).goal_status == GoalStatus.STATUS_SUCCEEDED
+    assert np.isclose(
+        Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-03
+    )  # why not 1e-04 here?
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_arm, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_arm, atol=1e-01)
 
 
 @pytest.mark.online

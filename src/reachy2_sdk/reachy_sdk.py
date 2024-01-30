@@ -49,6 +49,7 @@ from .utils import (
 )
 
 SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
+GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 
 _T = t.TypeVar("_T")
 
@@ -157,6 +158,7 @@ is running and that the IP is correct."
                 "grpc_status",
                 "connect",
                 "disconnect",
+                "home",
                 "turn_on",
                 "turn_off",
                 "enabled_parts",
@@ -594,6 +596,30 @@ is running and that the IP is correct."
             part.turn_off()
 
         return True
+
+    def home(self, wait_for_goto_end: bool = True, duration: float = 2, interpolation_mode: str = "minimum_jerk") -> GoToHomeId:
+        """Send all joints to 0 in specified duration.
+
+        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the 0 commands.
+        Otherwise, the 0 commands will be sent to a part when all gotos of its queue has been played.
+        """
+        head_id = None
+        r_arm_id = None
+        l_arm_id = None
+        if not wait_for_goto_end:
+            self.cancel_all_goto()
+        if self.head is not None:
+            head_id = self.head.rotate_to(0, 0, 0, duration, interpolation_mode)
+        if self.r_arm is not None:
+            r_arm_id = self.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration, interpolation_mode)
+        if self.l_arm is not None:
+            l_arm_id = self.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration, interpolation_mode)
+        ids = GoToHomeId(
+            head=head_id,
+            r_arm=r_arm_id,
+            l_arm=l_arm_id,
+        )
+        return ids
 
     def is_goto_finished(self, id: GoToId) -> bool:
         """Return True if goto has been played and has been cancelled, False otherwise."""
