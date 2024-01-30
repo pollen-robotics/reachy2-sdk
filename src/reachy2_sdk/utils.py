@@ -1,3 +1,10 @@
+"""Reachy utils module.
+
+This module contains various useful functions especially:
+- angle conversion from/to degree/radian
+- enum conversion to string
+"""
+
 from typing import Any, List
 
 import numpy as np
