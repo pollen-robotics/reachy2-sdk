@@ -49,12 +49,14 @@ from .utils import (
 )
 
 SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
+"""Named tuple for easy access to request variables"""
 
 _T = t.TypeVar("_T")
 
 
 class Singleton(type, t.Generic[_T]):
     """
+    @private.
     Singleton pattern. Only one robot can be instancied by python kernel.
     """
 
