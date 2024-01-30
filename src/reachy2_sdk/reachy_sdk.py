@@ -54,6 +54,10 @@ _T = t.TypeVar("_T")
 
 
 class Singleton(type, t.Generic[_T]):
+    """
+    Singleton pattern. Only one robot can be instancied by python kernel.
+    """
+
     _instances: Dict[Singleton[_T], _T] = {}
 
     def __call__(cls, *args: t.Any, **kwargs: t.Any) -> _T:
@@ -71,10 +75,10 @@ class ReachySDK(metaclass=Singleton):
     """The ReachySDK class handles the connection with your robot.
     Only one instance of this class can be created in a session.
 
-    # It holds:
-    # - all joints (can be accessed directly via their name or via the joints list).
-    # - all force sensors (can be accessed directly via their name or via the force_sensors list).
-    # - all fans (can be accessed directly via their name or via the fans list).
+    It holds:
+    - all joints (can be accessed directly via their name or via the joints list).
+    - all force sensors (can be accessed directly via their name or via the force_sensors list).
+    - all fans (can be accessed directly via their name or via the fans list).
 
     The synchronisation with the robot is automatically launched at instanciation and is handled in background automatically.
     """
@@ -101,6 +105,7 @@ class ReachySDK(metaclass=Singleton):
         self.connect()
 
     def connect(self) -> None:
+        """Connects the SDK to the server."""
         if self._grpc_status == "connected":
             self._logger.warning("Already connected to Reachy.")
             return
@@ -138,6 +143,7 @@ is running and that the IP is correct."
         self._logger.info("Connected to Reachy.")
 
     def disconnect(self) -> None:
+        """Disconnects the SDK from the server."""
         if self._grpc_status == "disconnected":
             self._logger.warning("Already disconnected from Reachy.")
             return
@@ -191,18 +197,21 @@ is running and that the IP is correct."
 
     @property
     def head(self) -> Optional[Head]:
+        """Get Reachy's head."""
         if self._head is None:
             raise AttributeError("head does not exist with this configuration")
         return self._head
 
     @property
     def r_arm(self) -> Optional[Arm]:
+        """Get Reachy's right arm."""
         if self._r_arm is None:
             raise AttributeError("r_arm does not exist with this configuration")
         return self._r_arm
 
     @property
     def l_arm(self) -> Optional[Arm]:
+        """Get Reachy's left arm."""
         if self._l_arm is None:
             raise AttributeError("l_arm does not exist with this configuration")
         return self._l_arm
@@ -294,6 +303,7 @@ is running and that the IP is correct."
         self._grpc_status = "connected"
 
     def _setup_audio(self) -> None:
+        """Internal function to set up the audio server."""
         try:
             self.audio = Audio(self._host, self._audio_port)
         except Exception:
@@ -594,6 +604,7 @@ is running and that the IP is correct."
         return True
 
     def cancel_all_goto(self) -> GoToAck:
+        """Cancel all the goto tasks."""
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
