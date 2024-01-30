@@ -25,7 +25,7 @@ from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from mobile_base_sdk import MobileBaseSDK
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
-from reachy2_sdk_api.goto_pb2 import GoToAck, GoToGoalStatus, GoToId
+from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
@@ -50,6 +50,9 @@ from .utils import (
 
 SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
 """Named tuple for easy access to request variables"""
+
+GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
+"""Named tuple for easy access to goto request on full body"""
 
 _T = t.TypeVar("_T")
 
@@ -165,6 +168,7 @@ is running and that the IP is correct."
                 "grpc_status",
                 "connect",
                 "disconnect",
+                "home",
                 "turn_on",
                 "turn_off",
                 "enabled_parts",
@@ -178,6 +182,8 @@ is running and that the IP is correct."
                 "cancel_goto_by_id",
                 "get_goto_state",
                 "get_goto_joints_request",
+                "is_goto_finished",
+                "is_goto_playing",
             ]:
                 delattr(self, attr)
 
@@ -604,6 +610,45 @@ is running and that the IP is correct."
             part.turn_off()
 
         return True
+
+    def home(self, wait_for_goto_end: bool = True, duration: float = 2, interpolation_mode: str = "minimum_jerk") -> GoToHomeId:
+        """Send all joints to 0 in specified duration.
+
+        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the 0 commands.
+        Otherwise, the 0 commands will be sent to a part when all gotos of its queue has been played.
+        """
+        head_id = None
+        r_arm_id = None
+        l_arm_id = None
+        if not wait_for_goto_end:
+            self.cancel_all_goto()
+        if self.head is not None:
+            head_id = self.head.rotate_to(0, 0, 0, duration, interpolation_mode)
+        if self.r_arm is not None:
+            r_arm_id = self.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration, interpolation_mode)
+        if self.l_arm is not None:
+            l_arm_id = self.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration, interpolation_mode)
+        ids = GoToHomeId(
+            head=head_id,
+            r_arm=r_arm_id,
+            l_arm=l_arm_id,
+        )
+        return ids
+
+    def is_goto_finished(self, id: GoToId) -> bool:
+        """Return True if goto has been played and has been cancelled, False otherwise."""
+        state = self.get_goto_state(id)
+        result = bool(
+            state.goal_status == GoalStatus.STATUS_ABORTED
+            or state.goal_status == GoalStatus.STATUS_CANCELED
+            or state.goal_status == GoalStatus.STATUS_SUCCEEDED
+        )
+        return result
+
+    def is_goto_playing(self, id: GoToId) -> bool:
+        """Return True if goto is currently playing, False otherwise."""
+        state = self.get_goto_state(id)
+        return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
 
     def cancel_all_goto(self) -> GoToAck:
         """Cancel all the goto tasks."""
