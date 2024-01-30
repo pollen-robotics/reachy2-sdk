@@ -29,9 +29,8 @@ def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
     reachy_sdk.cancel_all_goto()
     for joint in reachy_sdk.joints.values():
         joint.goal_position = 0
-        time.sleep(0.01)
 
-    time.sleep(2)
+    time.sleep(1)
 
     return reachy_sdk
 
@@ -40,7 +39,7 @@ def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
 def test_basic(reachy_sdk_zeroed: ReachySDK) -> None:
     goal_position = -90
     reachy_sdk_zeroed.r_arm.elbow.pitch.goal_position = goal_position
-    time.sleep(2)
+    time.sleep(1)
     assert reachy_sdk_zeroed.r_arm.elbow.pitch.present_position == goal_position
 
 
@@ -70,7 +69,6 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
 
         for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
 
     time.sleep(2)
 
@@ -85,7 +83,6 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
 
         for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
 
     time.sleep(2)
 
@@ -100,7 +97,6 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
 
         for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
 
     time.sleep(2)
 
@@ -115,7 +111,6 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
 
         for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
 
     time.sleep(2)
 

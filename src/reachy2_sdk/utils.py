@@ -22,7 +22,7 @@ def convert_to_degrees(my_list: List[float]) -> Any:
     a = np.array(my_list)
     a = np.rad2deg(a)
 
-    a = np.round(a, 2)
+    a = np.round(a, 3)
     return a.tolist()
 
 

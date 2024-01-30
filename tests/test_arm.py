@@ -1,4 +1,5 @@
 import grpc
+import numpy as np
 import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
@@ -95,6 +96,13 @@ def test_class() -> None:
     arm = Arm(arm_msg=arm_proto, initial_state=arm_state, grpc_channel=grpc_channel, goto_stub=None)
 
     assert arm.shoulder.compliant
+    assert arm.compliant["shoulder"]
+
+    with pytest.raises(ValueError):
+        arm.compliant = "false"
+
+    assert len(arm.actuators) == 3
+    assert isinstance(arm.actuators, dict)
 
     # use _to_position()  to convert radian to degree
     assert arm.shoulder.roll.goal_position == _to_position(goal_position.axis_2.value)
@@ -106,6 +114,7 @@ def test_class() -> None:
         arm.shoulder.yaw
 
     assert arm.elbow.compliant
+    assert arm.compliant["elbow"]
 
     assert arm.elbow.yaw.goal_position == _to_position(goal_position.axis_2.value)
     assert arm.elbow.yaw.present_position == _to_position(present_position.axis_2.value)
@@ -116,6 +125,7 @@ def test_class() -> None:
         arm.elbow.roll
 
     assert arm.wrist.compliant
+    assert arm.compliant["wrist"]
 
     assert arm.wrist.roll.goal_position == _to_position(goal_rot.rpy.roll.value)
     assert arm.wrist.roll.present_position == _to_position(present_rot.rpy.roll.value)
@@ -157,3 +167,21 @@ def test_class() -> None:
     assert arm.joints["wrist_roll"].axis_type == "roll"
     assert arm.joints["wrist_roll"].goal_position == _to_position(goal_rot.rpy.roll.value)
     assert arm.joints["wrist_roll"].present_position == _to_position(present_rot.rpy.roll.value)
+
+    with pytest.raises(ValueError):
+        arm.inverse_kinematics(target=np.zeros((1, 1)))
+
+    with pytest.raises(ValueError):
+        arm.inverse_kinematics(target=np.zeros((4, 4)), q0=[0.0])
+
+    with pytest.raises(ValueError):
+        arm.inverse_kinematics(target=np.zeros((4, 4)), q0=np.zeros((4, 4)))
+
+    with pytest.raises(ValueError):
+        arm.goto_from_matrix(target=np.zeros((3, 3)))
+
+    with pytest.raises(ValueError):
+        arm.goto_from_matrix(target=np.zeros((4, 4)), q0=[0.0])
+
+    with pytest.raises(ValueError):
+        arm.goto_joints(positions=[0.0])
