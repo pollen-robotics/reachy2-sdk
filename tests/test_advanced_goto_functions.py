@@ -391,6 +391,7 @@ def test_reachy_home(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_arm, atol=1e-01)
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_arm, atol=1e-01)
 
+
 @pytest.mark.online
 def test_is_goto_finished(reachy_sdk_zeroed: ReachySDK) -> None:
     req1 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=2)
@@ -431,6 +432,7 @@ def test_is_goto_finished(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed.is_goto_finished(req4)
     assert reachy_sdk_zeroed.is_goto_finished(req5)
     assert not reachy_sdk_zeroed.is_goto_finished(req6)
+
 
 @pytest.mark.online
 def test_is_goto_playing(reachy_sdk_zeroed: ReachySDK) -> None:
