@@ -12,7 +12,7 @@ from reachy2_sdk.orbita.orbita2d import (
     Pose2d,
     Vector2d,
 )
-from reachy2_sdk.orbita.utils import _to_position
+from reachy2_sdk.orbita.utils import to_position
 
 
 @pytest.mark.offline
@@ -48,11 +48,11 @@ def test_class() -> None:
     assert orbita2d.__repr__() != ""
 
     assert orbita2d.compliant
-    # use _to_position()  to convert radian to degree
-    assert orbita2d.roll.goal_position == _to_position(goal_position.axis_2.value)
-    assert orbita2d.roll.present_position == _to_position(present_position.axis_2.value)
-    assert orbita2d.pitch.goal_position == _to_position(goal_position.axis_1.value)
-    assert orbita2d.pitch.present_position == _to_position(present_position.axis_1.value)
+    # use to_position()  to convert radian to degree
+    assert orbita2d.roll.goal_position == to_position(goal_position.axis_2.value)
+    assert orbita2d.roll.present_position == to_position(present_position.axis_2.value)
+    assert orbita2d.pitch.goal_position == to_position(goal_position.axis_1.value)
+    assert orbita2d.pitch.present_position == to_position(present_position.axis_1.value)
 
     with pytest.raises(AttributeError):
         orbita2d.yaw
@@ -71,8 +71,8 @@ def test_class() -> None:
     assert torques_set["motor_2"] == torque_limit.motor_2.value
 
     speed_set = orbita2d.get_speed_limit()
-    assert speed_set["motor_1"] == _to_position(speed_limit.motor_1.value)
-    assert speed_set["motor_2"] == _to_position(speed_limit.motor_2.value)
+    assert speed_set["motor_1"] == to_position(speed_limit.motor_1.value)
+    assert speed_set["motor_2"] == to_position(speed_limit.motor_2.value)
 
     orbita2d.temperatures["motor_1"] == temperature.motor_1.value
     orbita2d.temperatures["motor_2"] == temperature.motor_1.value
@@ -135,10 +135,10 @@ def test_class() -> None:
 
     assert not orbita2d.compliant
 
-    assert orbita2d.roll.goal_position == _to_position(goal_position.axis_2.value)
-    assert orbita2d.roll.present_position == _to_position(present_position.axis_2.value)
-    assert orbita2d.pitch.goal_position == _to_position(goal_position.axis_1.value)
-    assert orbita2d.pitch.present_position == _to_position(present_position.axis_1.value)
+    assert orbita2d.roll.goal_position == to_position(goal_position.axis_2.value)
+    assert orbita2d.roll.present_position == to_position(present_position.axis_2.value)
+    assert orbita2d.pitch.goal_position == to_position(goal_position.axis_1.value)
+    assert orbita2d.pitch.present_position == to_position(present_position.axis_1.value)
 
     # pid not changed. testing against old values
     pid_set = orbita2d.get_pid()
@@ -155,8 +155,8 @@ def test_class() -> None:
     assert torques_set["motor_2"] == torque_limit.motor_2.value
 
     speed_set = orbita2d.get_speed_limit()
-    assert speed_set["motor_1"] == _to_position(speed_limit.motor_1.value)
-    assert speed_set["motor_2"] == _to_position(speed_limit.motor_2.value)
+    assert speed_set["motor_1"] == to_position(speed_limit.motor_1.value)
+    assert speed_set["motor_2"] == to_position(speed_limit.motor_2.value)
 
     orbita2d.temperatures["motor_1"] == temperature.motor_1.value
     orbita2d.temperatures["motor_2"] == temperature.motor_1.value

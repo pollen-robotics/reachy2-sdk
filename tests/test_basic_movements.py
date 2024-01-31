@@ -171,6 +171,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
 @pytest.mark.online
 def test_basic_get_positions(reachy_sdk_zeroed: ReachySDK) -> None:
     expected_pos1 = [0, 0, 0, 0, 0, 0, 0]
+
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos1, atol=1e-01)
 
     expected_pos2 = [15, 10, 20, -50, 10, 10, 20]
