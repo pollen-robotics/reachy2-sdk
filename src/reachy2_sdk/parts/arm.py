@@ -43,7 +43,6 @@ from reachy2_sdk_api.kinematics_pb2 import (
 )
 from reachy2_sdk_api.part_pb2 import PartId
 
-from .hand import Hand
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
 from ..orbita.orbita_joint import OrbitaJoint
@@ -52,6 +51,7 @@ from ..utils.utils import (
     get_grpc_interpolation_mode,
     list_to_arm_position,
 )
+from .hand import Hand
 
 
 class Arm:
@@ -399,4 +399,3 @@ class Arm:
         self.shoulder._update_with(new_state.shoulder_state)
         self.elbow._update_with(new_state.elbow_state)
         self.wrist._update_with(new_state.wrist_state)
-

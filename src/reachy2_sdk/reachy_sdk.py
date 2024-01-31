@@ -39,7 +39,6 @@ from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
-from .parts.hand import Hand
 from .parts.head import Head
 from .utils.singleton import Singleton
 from .utils.utils import (
