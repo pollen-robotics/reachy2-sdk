@@ -268,6 +268,20 @@ class Head:
         """
         self._head_stub.TurnOff(self.part_id)
 
+    def is_on(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for actuator in self._actuators.values():
+            if actuator.compliant:
+                return False
+        return True
+
+    def is_off(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for actuator in self._actuators.values():
+            if not actuator.compliant:
+                return False
+        return True
+
     def get_goto_playing(self) -> GoToId:
         """Return the id of the goto currently playing on the head"""
         response = self._goto_stub.GetPartGoToPlaying(self.part_id)
@@ -293,13 +307,3 @@ class Head:
     def compliant(self) -> Dict[str, bool]:
         """Get compliancy of all the part's actuators"""
         return {"neck": self.neck.compliant}  # , "l_antenna": self.l_antenna.compliant, "r_antenna": self.r_antenna.compliant}
-
-    @compliant.setter
-    def compliant(self, value: bool) -> None:
-        """Set compliancy of all the part's actuators"""
-        if not isinstance(value, bool):
-            raise ValueError("Expecting bool as compliant value")
-        if value:
-            self._head_stub.TurnOff(self.part_id)
-        else:
-            self._head_stub.TurnOn(self.part_id)

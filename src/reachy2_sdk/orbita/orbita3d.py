@@ -41,6 +41,8 @@ class Orbita3d(Orbita):
     - temperatures (temperatures of all motors of the actuator)
     """
 
+    _compliant = Register(readonly=False, type=BoolValue, label="compliant")
+
     def __init__(self, uid: int, name: str, initial_state: Orbita3dState, grpc_channel: Channel):
         """Initialize the Orbita2d with its joints, motors and axis."""
         super().__init__(uid, name, "3d", Orbita3dServiceStub(grpc_channel))

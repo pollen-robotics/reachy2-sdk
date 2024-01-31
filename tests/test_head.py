@@ -48,13 +48,11 @@ def test_class() -> None:
     assert head.__repr__() != ""
 
     assert head.neck.compliant
-    assert head.compliant
+    assert head.is_off()
+    assert not head.is_on()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AttributeError):
         head.neck.compliant = 2.5
-
-    with pytest.raises(ValueError):
-        head.compliant = 2.5
 
     assert len(head.actuators) == 1
     assert isinstance(head.actuators, dict)
