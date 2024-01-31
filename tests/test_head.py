@@ -7,8 +7,8 @@ from reachy2_sdk_api.head_pb2 import HeadState
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState, PID3d, Vector3d
 
+from reachy2_sdk.orbita.utils import _to_position
 from src.reachy2_sdk.head import Head
-from src.reachy2_sdk.orbita_utils import _to_position
 
 
 @pytest.mark.offline

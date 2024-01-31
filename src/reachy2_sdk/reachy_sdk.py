@@ -38,9 +38,9 @@ from .arm import Arm
 from .audio import Audio
 from .hand import Hand
 from .head import Head
-from .orbita2d import Orbita2d
-from .orbita3d import Orbita3d
-from .orbita_utils import OrbitaJoint
+from .orbita.orbita2d import Orbita2d
+from .orbita.orbita3d import Orbita3d
+from .orbita.utils import OrbitaJoint
 from .reachy import ReachyInfo, get_config
 from .utils import (
     arm_position_to_list,

@@ -5,7 +5,7 @@ import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
 
-from .register import Register
+from ..register import Register
 
 
 def _to_position(internal_pos: float) -> Any:

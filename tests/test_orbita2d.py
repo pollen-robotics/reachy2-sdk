@@ -3,7 +3,7 @@ import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
 
-from src.reachy2_sdk.orbita2d import (
+from reachy2_sdk.orbita.orbita2d import (
     Axis,
     Float2d,
     Orbita2d,
@@ -12,7 +12,7 @@ from src.reachy2_sdk.orbita2d import (
     Pose2d,
     Vector2d,
 )
-from src.reachy2_sdk.orbita_utils import _to_position
+from reachy2_sdk.orbita.utils import _to_position
 
 
 @pytest.mark.offline

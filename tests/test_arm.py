@@ -12,8 +12,7 @@ from reachy2_sdk_api.orbita2d_pb2 import Orbita2dState, Pose2d
 from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState, PID3d, Vector3d
 from reachy2_sdk_api.part_pb2 import PartId
 
-from src.reachy2_sdk.arm import Arm
-from src.reachy2_sdk.orbita2d import (
+from reachy2_sdk.orbita.orbita2d import (
     Axis,
     Float2d,
     Orbita2dState,
@@ -21,7 +20,8 @@ from src.reachy2_sdk.orbita2d import (
     Pose2d,
     Vector2d,
 )
-from src.reachy2_sdk.orbita_utils import _to_position
+from reachy2_sdk.orbita.utils import _to_position
+from src.reachy2_sdk.arm import Arm
 
 
 @pytest.mark.offline

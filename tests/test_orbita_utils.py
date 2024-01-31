@@ -1,6 +1,6 @@
 import pytest
 
-from src.reachy2_sdk.orbita_utils import _to_internal_position
+from reachy2_sdk.orbita.utils import _to_internal_position
 
 
 @pytest.mark.offline
