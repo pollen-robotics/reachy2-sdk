@@ -42,9 +42,7 @@ class Orbita2d(Orbita):
     - temperatures (temperatures of all motors of the actuator)
     """
 
-    _compliant = Register(readonly=False, type=BoolValue, label="compliant")
-
-    def __init__(  # noqa: C901
+    def __init__(
         self,
         uid: int,
         name: str,
