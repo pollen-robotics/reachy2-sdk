@@ -31,6 +31,8 @@ from reachy2_sdk_api.goto_pb2 import (
     JointsGoal,
 )
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
+from reachy2_sdk_api.hand_pb2 import Hand as HandState
+from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
 from reachy2_sdk_api.kinematics_pb2 import (
     ExtEulerAngles,
     ExtEulerAnglesTolerances,
@@ -41,6 +43,7 @@ from reachy2_sdk_api.kinematics_pb2 import (
 )
 from reachy2_sdk_api.part_pb2 import PartId
 
+from .hand import Hand
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint
@@ -111,6 +114,9 @@ class Arm:
             initial_state=initial_state.wrist_state,
             grpc_channel=self._grpc_channel,
         )
+
+    def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
+        self.gripper = Hand(hand, hand_initial_state, self._grpc_channel)
 
     @property
     def actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
