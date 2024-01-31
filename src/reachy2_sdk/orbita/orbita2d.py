@@ -17,7 +17,10 @@ from reachy2_sdk_api.orbita2d_pb2 import (
 from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 
 from ..register import Register
-from .utils import OrbitaAxis, OrbitaJoint, OrbitaMotor, _to_internal_position
+from .orbita_axis import OrbitaAxis
+from .orbita_joint import OrbitaJoint
+from .orbita_motor import OrbitaMotor
+from .utils import to_internal_position
 
 
 class Orbita2d:
@@ -121,7 +124,7 @@ class Orbita2d:
         """Set a speed_limit on all motors of the actuator"""
         if not isinstance(speed_limit, float | int):
             raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
-        speed_limit = _to_internal_position(speed_limit)
+        speed_limit = to_internal_position(speed_limit)
         self._set_motors_fields("speed_limit", speed_limit)
 
     def set_torque_limit(self, torque_limit: float) -> None:
