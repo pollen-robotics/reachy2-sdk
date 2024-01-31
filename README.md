@@ -33,3 +33,11 @@ The SDK relies on the [python logging system](https://docs.python.org/3/howto/lo
 import logging
 logging.basicConfig(level=logging.DEBUG)
 ```
+
+
+## Documentation
+
+Documentation is generated via pdoc. It can be generated locally with:
+```console
+pdoc reachy2_sdk --output-dir docs --logo "https://www.pollen-robotics.com/img/company/logo/pollen_logo_square_black.svg"
+```

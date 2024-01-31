@@ -329,7 +329,7 @@ class Arm:
         self._goto_stub.GoToCartesian(request)
 
     def goto_joints(
-        self, positions: List[float], duration: float = 2, degrees: bool = True, interpolation_mode: str = "minimum_jerk"
+        self, positions: List[float], duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
     ) -> GoToId:
         """Move the arm's joints to reach the given position.
 

@@ -25,7 +25,7 @@ from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from mobile_base_sdk import MobileBaseSDK
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
-from reachy2_sdk_api.goto_pb2 import GoToAck, GoToGoalStatus, GoToId
+from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
@@ -49,11 +49,20 @@ from .utils import (
 )
 
 SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
+"""Named tuple for easy access to request variables"""
+
+GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
+"""Named tuple for easy access to goto request on full body"""
 
 _T = t.TypeVar("_T")
 
 
 class Singleton(type, t.Generic[_T]):
+    """
+    @private.
+    Singleton pattern. Only one robot can be instancied by python kernel.
+    """
+
     _instances: Dict[Singleton[_T], _T] = {}
 
     def __call__(cls, *args: t.Any, **kwargs: t.Any) -> _T:
@@ -71,10 +80,10 @@ class ReachySDK(metaclass=Singleton):
     """The ReachySDK class handles the connection with your robot.
     Only one instance of this class can be created in a session.
 
-    # It holds:
-    # - all joints (can be accessed directly via their name or via the joints list).
-    # - all force sensors (can be accessed directly via their name or via the force_sensors list).
-    # - all fans (can be accessed directly via their name or via the fans list).
+    It holds:
+    - all joints (can be accessed directly via their name or via the joints list).
+    - all force sensors (can be accessed directly via their name or via the force_sensors list).
+    - all fans (can be accessed directly via their name or via the fans list).
 
     The synchronisation with the robot is automatically launched at instanciation and is handled in background automatically.
     """
@@ -101,6 +110,7 @@ class ReachySDK(metaclass=Singleton):
         self.connect()
 
     def connect(self) -> None:
+        """Connects the SDK to the server."""
         if self._grpc_status == "connected":
             self._logger.warning("Already connected to Reachy.")
             return
@@ -138,6 +148,7 @@ is running and that the IP is correct."
         self._logger.info("Connected to Reachy.")
 
     def disconnect(self) -> None:
+        """Disconnects the SDK from the server."""
         if self._grpc_status == "disconnected":
             self._logger.warning("Already disconnected from Reachy.")
             return
@@ -157,6 +168,7 @@ is running and that the IP is correct."
                 "grpc_status",
                 "connect",
                 "disconnect",
+                "home",
                 "turn_on",
                 "turn_off",
                 "enabled_parts",
@@ -170,6 +182,8 @@ is running and that the IP is correct."
                 "cancel_goto_by_id",
                 "get_goto_state",
                 "get_goto_joints_request",
+                "is_goto_finished",
+                "is_goto_playing",
             ]:
                 delattr(self, attr)
 
@@ -191,18 +205,21 @@ is running and that the IP is correct."
 
     @property
     def head(self) -> Optional[Head]:
+        """Get Reachy's head."""
         if self._head is None:
             raise AttributeError("head does not exist with this configuration")
         return self._head
 
     @property
     def r_arm(self) -> Optional[Arm]:
+        """Get Reachy's right arm."""
         if self._r_arm is None:
             raise AttributeError("r_arm does not exist with this configuration")
         return self._r_arm
 
     @property
     def l_arm(self) -> Optional[Arm]:
+        """Get Reachy's left arm."""
         if self._l_arm is None:
             raise AttributeError("l_arm does not exist with this configuration")
         return self._l_arm
@@ -294,6 +311,7 @@ is running and that the IP is correct."
         self._grpc_status = "connected"
 
     def _setup_audio(self) -> None:
+        """Internal function to set up the audio server."""
         try:
             self.audio = Audio(self._host, self._audio_port)
         except Exception:
@@ -593,7 +611,47 @@ is running and that the IP is correct."
 
         return True
 
+    def home(self, wait_for_goto_end: bool = True, duration: float = 2, interpolation_mode: str = "minimum_jerk") -> GoToHomeId:
+        """Send all joints to 0 in specified duration.
+
+        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the 0 commands.
+        Otherwise, the 0 commands will be sent to a part when all gotos of its queue has been played.
+        """
+        head_id = None
+        r_arm_id = None
+        l_arm_id = None
+        if not wait_for_goto_end:
+            self.cancel_all_goto()
+        if self.head is not None:
+            head_id = self.head.rotate_to(0, 0, 0, duration, interpolation_mode)
+        if self.r_arm is not None:
+            r_arm_id = self.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration, interpolation_mode)
+        if self.l_arm is not None:
+            l_arm_id = self.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration, interpolation_mode)
+        ids = GoToHomeId(
+            head=head_id,
+            r_arm=r_arm_id,
+            l_arm=l_arm_id,
+        )
+        return ids
+
+    def is_goto_finished(self, id: GoToId) -> bool:
+        """Return True if goto has been played and has been cancelled, False otherwise."""
+        state = self.get_goto_state(id)
+        result = bool(
+            state.goal_status == GoalStatus.STATUS_ABORTED
+            or state.goal_status == GoalStatus.STATUS_CANCELED
+            or state.goal_status == GoalStatus.STATUS_SUCCEEDED
+        )
+        return result
+
+    def is_goto_playing(self, id: GoToId) -> bool:
+        """Return True if goto is currently playing, False otherwise."""
+        state = self.get_goto_state(id)
+        return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
+
     def cancel_all_goto(self) -> GoToAck:
+        """Cancel all the goto tasks."""
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 

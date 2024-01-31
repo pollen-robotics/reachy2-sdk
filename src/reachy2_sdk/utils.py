@@ -1,3 +1,10 @@
+"""Reachy utils module.
+
+This module contains various useful functions especially:
+- angle conversion from/to degree/radian
+- enum conversion to string
+"""
+
 from typing import Any, List
 
 import numpy as np
@@ -22,7 +29,7 @@ def convert_to_degrees(my_list: List[float]) -> Any:
     a = np.array(my_list)
     a = np.rad2deg(a)
 
-    a = np.round(a, 2)
+    a = np.round(a, 3)
     return a.tolist()
 
 
