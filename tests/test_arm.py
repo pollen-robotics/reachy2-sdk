@@ -96,10 +96,6 @@ def test_class() -> None:
     arm = Arm(arm_msg=arm_proto, initial_state=arm_state, grpc_channel=grpc_channel, goto_stub=None)
 
     assert arm.shoulder.compliant
-    assert arm.compliant["shoulder"]
-
-    with pytest.raises(ValueError):
-        arm.compliant = "false"
 
     assert len(arm.actuators) == 3
     assert isinstance(arm.actuators, dict)
@@ -114,7 +110,6 @@ def test_class() -> None:
         arm.shoulder.yaw
 
     assert arm.elbow.compliant
-    assert arm.compliant["elbow"]
 
     assert arm.elbow.yaw.goal_position == _to_position(goal_position.axis_2.value)
     assert arm.elbow.yaw.present_position == _to_position(present_position.axis_2.value)
@@ -125,7 +120,8 @@ def test_class() -> None:
         arm.elbow.roll
 
     assert arm.wrist.compliant
-    assert arm.compliant["wrist"]
+    assert arm.is_off()
+    assert not arm.is_on()
 
     assert arm.wrist.roll.goal_position == _to_position(goal_rot.rpy.roll.value)
     assert arm.wrist.roll.present_position == _to_position(present_rot.rpy.roll.value)

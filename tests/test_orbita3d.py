@@ -45,7 +45,7 @@ def test_class() -> None:
 
     assert orbita3d.compliant
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AttributeError):
         orbita3d.compliant = "wrong value"
 
     # use _to_position()  to convert radian to degree
