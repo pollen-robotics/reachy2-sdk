@@ -21,7 +21,7 @@ from reachy2_sdk.orbita.orbita2d import (
     Vector2d,
 )
 from reachy2_sdk.orbita.utils import to_position
-from src.reachy2_sdk.arm import Arm
+from reachy2_sdk.parts.arm import Arm
 
 
 @pytest.mark.offline

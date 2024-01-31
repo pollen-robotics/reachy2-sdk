@@ -34,13 +34,13 @@ from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 from reachy2_sdk_api.orbita3d_pb2 import Orbita3dsCommand
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
-from .arm import Arm
-from .audio import Audio
-from .hand import Hand
-from .head import Head
+from .media.audio import Audio
 from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
+from .parts.arm import Arm
+from .parts.hand import Hand
+from .parts.head import Head
 from .reachy import ReachyInfo, get_config
 from .utils import (
     arm_position_to_list,
