@@ -47,8 +47,8 @@ class Orbita(ABC):
         stub: Orbita2dServiceStub | Orbita3dServiceStub,
     ):
         """Initialize the common attributes."""
-        self.name = name
-        self.id = uid
+        self._name = name
+        self._id = uid
         self._orbita_type = orbita_type
         self._stub = stub
 
@@ -170,7 +170,7 @@ class Orbita(ABC):
     def _make_command(self) -> Dict[str, Any]:
         """Create a gRPC command from the registers that need to be synced."""
         values = {
-            "id": ComponentId(id=self.id),
+            "id": ComponentId(id=self._id),
         }
 
         set_reg_to_update = set(self._register_needing_sync)
