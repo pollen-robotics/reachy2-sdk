@@ -31,6 +31,8 @@ from reachy2_sdk_api.goto_pb2 import (
     JointsGoal,
 )
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
+from reachy2_sdk_api.hand_pb2 import Hand as HandState
+from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
 from reachy2_sdk_api.kinematics_pb2 import (
     ExtEulerAngles,
     ExtEulerAnglesTolerances,
@@ -41,6 +43,7 @@ from reachy2_sdk_api.kinematics_pb2 import (
 )
 from reachy2_sdk_api.part_pb2 import PartId
 
+from .hand import Hand
 from .orbita2d import Orbita2d
 from .orbita3d import Orbita3d
 from .orbita_utils import OrbitaJoint
@@ -112,6 +115,9 @@ class Arm:
             grpc_channel=self._grpc_channel,
         )
 
+    def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
+        self.gripper = Hand(hand, hand_initial_state, self._grpc_channel)
+
     @property
     def actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
         """Get all the arm's actuators."""
@@ -132,6 +138,7 @@ class Arm:
         All arm's motors will then be stiff.
         """
         self._arm_stub.TurnOn(self.part_id)
+        self.gripper.turn_on()
 
     def turn_off(self) -> None:
         """Turn all motors of the part off.
@@ -139,6 +146,25 @@ class Arm:
         All arm's motors will then be compliant.
         """
         self._arm_stub.TurnOff(self.part_id)
+        self.gripper.turn_off()
+
+    def is_on(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for actuator in self._actuators.values():
+            if actuator.compliant:
+                return False
+        if self.gripper.compliant:
+            return False
+        return True
+
+    def is_off(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for actuator in self._actuators.values():
+            if not actuator.compliant:
+                return False
+        if not self.gripper.compliant:
+            return False
+        return True
 
     def __repr__(self) -> str:
         """Clean representation of an Arm."""
@@ -373,18 +399,3 @@ class Arm:
         self.shoulder._update_with(new_state.shoulder_state)
         self.elbow._update_with(new_state.elbow_state)
         self.wrist._update_with(new_state.wrist_state)
-
-    @property
-    def compliant(self) -> Dict[str, bool]:
-        """Get compliancy of all the part's actuators"""
-        return {"shoulder": self.shoulder.compliant, "elbow": self.elbow.compliant, "wrist": self.wrist.compliant}
-
-    @compliant.setter
-    def compliant(self, value: bool) -> None:
-        """Set compliancy of all the part's actuators"""
-        if not isinstance(value, bool):
-            raise ValueError("Expecting bool as compliant value")
-        if value:
-            self._arm_stub.TurnOff(self.part_id)
-        else:
-            self._arm_stub.TurnOn(self.part_id)

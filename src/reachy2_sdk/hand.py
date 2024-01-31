@@ -25,6 +25,8 @@ class Hand:
 
         self._setup_hand(hand_msg, initial_state)
 
+        self._compliant: bool
+
     def __repr__(self) -> str:
         """Clean representation of a Hand."""
         return f"Hand with part_id {self.part_id} and opening of {self.opening}%"
@@ -38,6 +40,7 @@ class Hand:
         self._present_position: float = round(np.rad2deg(initial_state.present_position.parallel_gripper.position), 1)
         self._goal_position: float = round(np.rad2deg(initial_state.goal_position.parallel_gripper.position), 1)
         self._opening: float = initial_state.opening.value
+        self._compliant = initial_state.compliant.value
 
     @property
     def opening(self) -> float:
@@ -96,8 +99,14 @@ class Hand:
         """
         self._hand_stub.TurnOff(self.part_id)
 
+    @property
+    def compliant(self) -> bool:
+        """Get compliancy of the hand"""
+        return self._compliant
+
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state received from the gRPC server."""
         self._present_position = new_state.present_position.parallel_gripper.position
         self._goal_position = new_state.goal_position.parallel_gripper.position
         self._opening = new_state.opening.value
+        self._compliant = new_state.compliant.value

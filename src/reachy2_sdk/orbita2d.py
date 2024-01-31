@@ -41,7 +41,7 @@ class Orbita2d:
     - temperatures (temperatures of all motors of the actuator)
     """
 
-    compliant = Register(readonly=False, type=BoolValue, label="compliant")
+    _compliant = Register(readonly=False, type=BoolValue, label="compliant")
 
     def __init__(  # noqa: C901
         self,
@@ -151,6 +151,25 @@ class Orbita2d:
         """Get pid of all motors of the actuator"""
         return {motor_name: m.pid for motor_name, m in self._motors.items()}
 
+    def turn_on(self) -> None:
+        """Turn all motors of the orbita2d on.
+
+        All orbita2d's motors will then be stiff.
+        """
+        self._compliant = False
+
+    def turn_off(self) -> None:
+        """Turn all motors of the orbita2d on.
+
+        All orbita2d's motors will then be stiff.
+        """
+        self._compliant = True
+
+    @property
+    def compliant(self) -> Any:
+        """Get compliancy of the actuator"""
+        return self._compliant
+
     @property
     def temperatures(self) -> Dict[str, Register]:
         """Get temperatures of all the motors of the actuator"""
@@ -229,13 +248,13 @@ class Orbita2d:
 
     def __setattr__(self, __name: str, __value: Any) -> None:
         """Set the value of the register."""
-        if __name == "compliant":
+        if __name == "_compliant":
             if not isinstance(__value, bool):
                 raise ValueError(f"Expected bool for compliant value, got {type(__value).__name__}")
-            self._state[__name] = __value
+            self._state["compliant"] = __value
 
             async def set_in_loop() -> None:
-                self._register_needing_sync.append(__name)
+                self._register_needing_sync.append("compliant")
                 self._need_sync.set()
 
             fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
