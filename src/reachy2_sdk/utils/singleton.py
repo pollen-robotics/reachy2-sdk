@@ -13,7 +13,6 @@ _T = t.TypeVar("_T")
 
 class Singleton(type, t.Generic[_T]):
     """
-    @private.
     Singleton pattern. Only one robot can be instancied by python kernel.
     """
 
