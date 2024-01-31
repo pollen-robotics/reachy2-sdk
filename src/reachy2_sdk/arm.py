@@ -138,6 +138,7 @@ class Arm:
         All arm's motors will then be stiff.
         """
         self._arm_stub.TurnOn(self.part_id)
+        self.gripper.turn_on()
 
     def turn_off(self) -> None:
         """Turn all motors of the part off.
@@ -145,12 +146,15 @@ class Arm:
         All arm's motors will then be compliant.
         """
         self._arm_stub.TurnOff(self.part_id)
+        self.gripper.turn_off()
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
             if actuator.compliant:
                 return False
+        if self.gripper.compliant:
+            return False
         return True
 
     def is_off(self) -> bool:
@@ -158,6 +162,8 @@ class Arm:
         for actuator in self._actuators.values():
             if not actuator.compliant:
                 return False
+        if not self.gripper.compliant:
+            return False
         return True
 
     def __repr__(self) -> str:
