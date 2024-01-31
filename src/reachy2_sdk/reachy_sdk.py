@@ -9,13 +9,12 @@ You can also send joint commands, compute forward or inverse kinematics.
 
 # from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 # from .dynamixel_motor import DynamixelMotor
-from __future__ import annotations
+
 
 import asyncio
 import atexit
 import threading
 import time
-import typing as t
 from collections import namedtuple
 from logging import getLogger
 from typing import Any, Dict, List, Optional
@@ -42,6 +41,7 @@ from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
 from .parts.hand import Hand
 from .parts.head import Head
+from .utils.singleton import Singleton
 from .utils.utils import (
     arm_position_to_list,
     ext_euler_angles_to_list,
@@ -53,27 +53,6 @@ SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "
 
 GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 """Named tuple for easy access to goto request on full body"""
-
-_T = t.TypeVar("_T")
-
-
-class Singleton(type, t.Generic[_T]):
-    """
-    @private.
-    Singleton pattern. Only one robot can be instancied by python kernel.
-    """
-
-    _instances: Dict[Singleton[_T], _T] = {}
-
-    def __call__(cls, *args: t.Any, **kwargs: t.Any) -> _T:
-        if cls not in cls._instances:
-            cls._instances[cls] = super().__call__(*args, **kwargs)
-        else:
-            raise ConnectionError("Cannot open 2 robot connections in the same kernel.")
-        return cls._instances[cls]
-
-    def clear(cls) -> None:
-        del cls._instances[cls]
 
 
 class ReachySDK(metaclass=Singleton):
