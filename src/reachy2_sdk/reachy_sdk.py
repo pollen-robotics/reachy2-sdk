@@ -37,9 +37,9 @@ from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 from .arm import Arm
 from .audio import Audio
 from .head import Head
-from .orbita2d import Orbita2d
-from .orbita3d import Orbita3d
-from .orbita_utils import OrbitaJoint
+from .orbita.orbita2d import Orbita2d
+from .orbita.orbita3d import Orbita3d
+from .orbita.orbita_joint import OrbitaJoint
 from .reachy import ReachyInfo, get_config
 from .utils import (
     arm_position_to_list,

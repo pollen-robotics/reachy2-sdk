@@ -44,9 +44,9 @@ from reachy2_sdk_api.kinematics_pb2 import (
 from reachy2_sdk_api.part_pb2 import PartId
 
 from .hand import Hand
-from .orbita2d import Orbita2d
-from .orbita3d import Orbita3d
-from .orbita_utils import OrbitaJoint
+from .orbita.orbita2d import Orbita2d
+from .orbita.orbita3d import Orbita3d
+from .orbita.orbita_joint import OrbitaJoint
 from .utils import (
     arm_position_to_list,
     get_grpc_interpolation_mode,
