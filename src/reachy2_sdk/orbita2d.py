@@ -167,7 +167,7 @@ class Orbita2d:
 
     @property
     def compliant(self) -> Any:
-        """Get complinancy of the actuator"""
+        """Get compliancy of the actuator"""
         return self._compliant
 
     @property
