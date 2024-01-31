@@ -26,6 +26,7 @@ def test_class() -> None:
 
     goal_position_rad = 3
     present_position_rad = 4
+    compliant = True
 
     hand_proto = Hand_proto()
     hand_state = HandState(
@@ -36,6 +37,7 @@ def test_class() -> None:
         present_position=HandPosition(parallel_gripper=ParallelGripperPosition(position=present_position_rad)),
         joints_limits=JointsLimits(parallel_gripper=ParallelGripperLimits(limits=JointLimits(max=5, min=6))),
         temperatures=HandTemperatures(parallel_gripper=Temperatures(driver=7, motor=8)),
+        compliant=BoolValue(value=compliant),
     )
 
     hand = Hand(hand_msg=hand_proto, initial_state=hand_state, grpc_channel=grpc_channel)
@@ -58,6 +60,7 @@ def test_class() -> None:
 
     assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
     assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
+    assert hand.compliant
 
     goal_position_rad = 5
     present_position_rad = 6

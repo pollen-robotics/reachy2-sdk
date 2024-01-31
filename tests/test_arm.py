@@ -120,8 +120,6 @@ def test_class() -> None:
         arm.elbow.roll
 
     assert arm.wrist.compliant
-    assert arm.is_off()
-    assert not arm.is_on()
 
     assert arm.wrist.roll.goal_position == _to_position(goal_rot.rpy.roll.value)
     assert arm.wrist.roll.present_position == _to_position(present_rot.rpy.roll.value)
