@@ -9,7 +9,7 @@ from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
-from ..register import Register
+from ..motors.register import Register
 from .orbita_motor import OrbitaMotor
 from .utils import to_internal_position
 

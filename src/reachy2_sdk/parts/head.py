@@ -34,7 +34,7 @@ from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.orbita3d import Orbita3d
 from ..orbita.orbita_joint import OrbitaJoint
-from ..utils import get_grpc_interpolation_mode
+from ..utils.utils import get_grpc_interpolation_mode
 
 # from .dynamixel_motor import DynamixelMotor
 

@@ -3,7 +3,7 @@ import pytest
 from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles
 
-from src.reachy2_sdk.utils import (
+from reachy2_sdk.utils.utils import (
     arm_position_to_list,
     convert_to_degrees,
     convert_to_radians,

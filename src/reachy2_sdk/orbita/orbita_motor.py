@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
 
-from ..register import Register
+from ..motors.register import Register
 from .utils import to_internal_position, to_position
 
 
