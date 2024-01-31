@@ -312,8 +312,7 @@ is running and that the IP is correct."
                 self._r_arm = r_arm
                 self._enabled_parts["r_arm"] = self._r_arm
                 if self._robot.HasField("r_hand"):
-                    right_hand = Hand(self._robot.r_hand, initial_state.r_hand_state, self._grpc_channel)
-                    setattr(self.r_arm, "gripper", right_hand)
+                    self._r_arm._init_hand(self._robot.r_hand, initial_state.r_hand_state)
             else:
                 self._disabled_parts.append("r_arm")
 
@@ -323,8 +322,7 @@ is running and that the IP is correct."
                 self._l_arm = l_arm
                 self._enabled_parts["l_arm"] = self._l_arm
                 if self._robot.HasField("l_hand"):
-                    left_hand = Hand(self._robot.l_hand, initial_state.l_hand_state, self._grpc_channel)
-                    setattr(self.l_arm, "gripper", left_hand)
+                    self._l_arm._init_hand(self._robot.l_hand, initial_state.l_hand_state)
             else:
                 self._disabled_parts.append("l_arm")
 
