@@ -6,7 +6,7 @@ from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState, PID3d, Vector3d
 
 from reachy2_sdk.orbita.orbita3d import Orbita3d
-from reachy2_sdk.orbita.utils import to_position
+from reachy2_sdk.orbita.utils import _to_position
 
 
 @pytest.mark.offline
@@ -49,12 +49,12 @@ def test_class() -> None:
         orbita3d.compliant = "wrong value"
 
     # use _to_position()  to convert radian to degree
-    assert orbita3d.roll.goal_position == to_position(goal_rot.rpy.roll.value)
-    assert orbita3d.roll.present_position == to_position(present_rot.rpy.roll.value)
-    assert orbita3d.pitch.goal_position == to_position(goal_rot.rpy.pitch.value)
-    assert orbita3d.pitch.present_position == to_position(present_rot.rpy.pitch.value)
-    assert orbita3d.yaw.goal_position == to_position(goal_rot.rpy.yaw.value)
-    assert orbita3d.yaw.present_position == to_position(present_rot.rpy.yaw.value)
+    assert orbita3d.roll.goal_position == _to_position(goal_rot.rpy.roll.value)
+    assert orbita3d.roll.present_position == _to_position(present_rot.rpy.roll.value)
+    assert orbita3d.pitch.goal_position == _to_position(goal_rot.rpy.pitch.value)
+    assert orbita3d.pitch.present_position == _to_position(present_rot.rpy.pitch.value)
+    assert orbita3d.yaw.goal_position == _to_position(goal_rot.rpy.yaw.value)
+    assert orbita3d.yaw.present_position == _to_position(present_rot.rpy.yaw.value)
 
     pid_set = orbita3d.get_pid()
     assert pid_set["motor_1"][0] == pid.motor_1.p.value
@@ -75,9 +75,9 @@ def test_class() -> None:
     assert torques_set["motor_3"] == torque_limit.motor_3.value
 
     speed_set = orbita3d.get_speed_limit()
-    assert speed_set["motor_1"] == to_position(speed_limit.motor_1.value)
-    assert speed_set["motor_2"] == to_position(speed_limit.motor_2.value)
-    assert speed_set["motor_3"] == to_position(speed_limit.motor_3.value)
+    assert speed_set["motor_1"] == _to_position(speed_limit.motor_1.value)
+    assert speed_set["motor_2"] == _to_position(speed_limit.motor_2.value)
+    assert speed_set["motor_3"] == _to_position(speed_limit.motor_3.value)
 
     orbita3d.temperatures["motor_1"] == temperature.motor_1.value
     orbita3d.temperatures["motor_2"] == temperature.motor_1.value
@@ -133,12 +133,12 @@ def test_class() -> None:
 
     assert not orbita3d.compliant
 
-    assert orbita3d.roll.goal_position == to_position(goal_rot.rpy.roll.value)
-    assert orbita3d.roll.present_position == to_position(present_rot.rpy.roll.value)
-    assert orbita3d.pitch.goal_position == to_position(goal_rot.rpy.pitch.value)
-    assert orbita3d.pitch.present_position == to_position(present_rot.rpy.pitch.value)
-    assert orbita3d.yaw.goal_position == to_position(goal_rot.rpy.yaw.value)
-    assert orbita3d.yaw.present_position == to_position(present_rot.rpy.yaw.value)
+    assert orbita3d.roll.goal_position == _to_position(goal_rot.rpy.roll.value)
+    assert orbita3d.roll.present_position == _to_position(present_rot.rpy.roll.value)
+    assert orbita3d.pitch.goal_position == _to_position(goal_rot.rpy.pitch.value)
+    assert orbita3d.pitch.present_position == _to_position(present_rot.rpy.pitch.value)
+    assert orbita3d.yaw.goal_position == _to_position(goal_rot.rpy.yaw.value)
+    assert orbita3d.yaw.present_position == _to_position(present_rot.rpy.yaw.value)
 
     # pid not changed. testing against old values
     pid_set = orbita3d.get_pid()
@@ -160,9 +160,9 @@ def test_class() -> None:
     assert torques_set["motor_3"] == torque_limit.motor_3.value
 
     speed_set = orbita3d.get_speed_limit()
-    assert speed_set["motor_1"] == to_position(speed_limit.motor_1.value)
-    assert speed_set["motor_2"] == to_position(speed_limit.motor_2.value)
-    assert speed_set["motor_3"] == to_position(speed_limit.motor_3.value)
+    assert speed_set["motor_1"] == _to_position(speed_limit.motor_1.value)
+    assert speed_set["motor_2"] == _to_position(speed_limit.motor_2.value)
+    assert speed_set["motor_3"] == _to_position(speed_limit.motor_3.value)
 
     orbita3d.temperatures["motor_1"] == temperature.motor_1.value
     orbita3d.temperatures["motor_2"] == temperature.motor_1.value

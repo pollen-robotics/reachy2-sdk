@@ -40,7 +40,7 @@ from .hand import Hand
 from .head import Head
 from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
-from .orbita.orbita_joint import OrbitaJoint
+from .orbita.utils import OrbitaJoint
 from .reachy import ReachyInfo, get_config
 from .utils import (
     arm_position_to_list,
