@@ -16,7 +16,7 @@ from reachy2_sdk_api.hand_pb2 import (
     Temperatures,
 )
 
-from reachy2_sdk.hand import Hand
+from reachy2_sdk.parts.hand import Hand
 from src.reachy2_sdk.reachy_sdk import ReachySDK
 
 
