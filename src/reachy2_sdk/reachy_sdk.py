@@ -241,7 +241,7 @@ is running and that the IP is correct."
         for part_name in self.enabled_parts:
             part = getattr(self, part_name)
             for actuator_name, actuator in part.actuators.items():
-                _actuators[part_name + "_" + actuator_name] = actuator
+                _actuators[part_name + "." + actuator_name] = actuator
         return _actuators
 
     @property
