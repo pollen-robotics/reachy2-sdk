@@ -115,7 +115,7 @@ is running and that the IP is correct."
             return
 
         self._setup_parts()
-        self._setup_audio()
+        # self._setup_audio()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
