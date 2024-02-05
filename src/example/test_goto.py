@@ -118,6 +118,7 @@ def is_goto_finished(reachy: ReachySDK, id: GoToId, verbose=False) -> bool:
     )
     return result
 
+
 def test_state(reachy: ReachySDK) -> None:
     pose = build_pose_matrix(0.3, -0.4, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
