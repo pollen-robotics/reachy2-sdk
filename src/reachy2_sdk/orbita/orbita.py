@@ -68,27 +68,27 @@ class Orbita(ABC):
             s
         }\n>"""
 
-    def set_speed_limit(self, speed_limit: float) -> None:
-        """Set a speed_limit on all motors of the actuator"""
-        if not isinstance(speed_limit, float | int):
-            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
-        speed_limit = to_internal_position(speed_limit)
-        self._set_motors_fields("speed_limit", speed_limit)
+    # def set_speed_limit(self, speed_limit: float) -> None:
+    #     """Set a speed_limit on all motors of the actuator"""
+    #     if not isinstance(speed_limit, float | int):
+    #         raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
+    #     speed_limit = to_internal_position(speed_limit)
+    #     self._set_motors_fields("speed_limit", speed_limit)
 
-    def set_torque_limit(self, torque_limit: float) -> None:
-        """Set a torque_limit on all motors of the actuator"""
-        if not isinstance(torque_limit, float | int):
-            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
-        self._set_motors_fields("torque_limit", torque_limit)
+    # def set_torque_limit(self, torque_limit: float) -> None:
+    #     """Set a torque_limit on all motors of the actuator"""
+    #     if not isinstance(torque_limit, float | int):
+    #         raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
+    #     self._set_motors_fields("torque_limit", torque_limit)
 
-    def set_pid(self, pid: Tuple[float, float, float]) -> None:
-        """Set a pid value on all motors of the actuator"""
-        if isinstance(pid, tuple) and len(pid) == 3 and all(isinstance(n, float | int) for n in pid):
-            for m in self._motors.values():
-                m._tmp_pid = pid
-            self._update_loop("pid")
-        else:
-            raise ValueError("pid should be of type Tuple[float, float, float]")
+    # def set_pid(self, pid: Tuple[float, float, float]) -> None:
+    #     """Set a pid value on all motors of the actuator"""
+    #     if isinstance(pid, tuple) and len(pid) == 3 and all(isinstance(n, float | int) for n in pid):
+    #         for m in self._motors.values():
+    #             m._tmp_pid = pid
+    #         self._update_loop("pid")
+    #     else:
+    #         raise ValueError("pid should be of type Tuple[float, float, float]")
 
     def get_speed_limit(self) -> Dict[str, float]:
         """Get speed_limit of all motors of the actuator"""
@@ -141,15 +141,15 @@ class Orbita(ABC):
         else:
             super().__setattr__(__name, __value)
 
-    def _set_motors_fields(self, field: str, value: float) -> None:
-        """Set the value of the register for all motors of the actuator.
+    # def _set_motors_fields(self, field: str, value: float) -> None:
+    #     """Set the value of the register for all motors of the actuator.
 
-        It is used to set pid, speed_limit and torque_limit.
-        """
-        for m in self._motors.values():
-            m._tmp_fields[field] = value
+    #     It is used to set pid, speed_limit and torque_limit.
+    #     """
+    #     for m in self._motors.values():
+    #         m._tmp_fields[field] = value
 
-        self._update_loop(field)
+    #     self._update_loop(field)
 
     def _setup_sync_loop(self) -> None:
         """Set up the async synchronisation loop.

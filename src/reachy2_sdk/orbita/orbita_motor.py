@@ -21,15 +21,15 @@ class OrbitaMotor:
 
     temperature = Register(readonly=True, type=FloatValue, label="temperature")
     speed_limit = Register(
-        readonly=False,
+        readonly=True,
         type=FloatValue,
         label="speed_limit",
         conversion=(to_internal_position, to_position),
     )
-    torque_limit = Register(readonly=False, type=FloatValue, label="torque_limit")
+    torque_limit = Register(readonly=True, type=FloatValue, label="torque_limit")
     compliant = Register(readonly=True, type=BoolValue, label="compliant")
 
-    pid = Register(readonly=False, type=PIDGains, label="pid")
+    pid = Register(readonly=True, type=PIDGains, label="pid")
 
     def __init__(self, initial_state: Dict[str, Any], actuator: Any) -> None:
         """Initialize the motor with its initial state."""
