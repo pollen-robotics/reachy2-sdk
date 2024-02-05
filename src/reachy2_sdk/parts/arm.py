@@ -12,15 +12,13 @@ import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
-from reachy2_sdk_api.arm_pb2 import (
+from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmCartesianGoal,
     ArmEndEffector,
     ArmFKRequest,
     ArmIKRequest,
     ArmJointGoal,
-    ArmLimits,
     ArmState,
-    ArmTemperatures,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import (
@@ -382,17 +380,17 @@ class Arm:
         positions = arm_position_to_list(response)
         return positions
 
-    @property
-    def joints_limits(self) -> ArmLimits:
-        """Get limits of all the part's joints"""
-        limits = self._arm_stub.GetJointsLimits(self.part_id)
-        return limits
+    # @property
+    # def joints_limits(self) -> ArmLimits:
+    #     """Get limits of all the part's joints"""
+    #     limits = self._arm_stub.GetJointsLimits(self._part_id)
+    #     return limits
 
-    @property
-    def temperatures(self) -> ArmTemperatures:
-        """Get temperatures of all the part's motors"""
-        temperatures = self._arm_stub.GetTemperatures(self.part_id)
-        return temperatures
+    # @property
+    # def temperatures(self) -> ArmTemperatures:
+    #     """Get temperatures of all the part's motors"""
+    #     temperatures = self._arm_stub.GetTemperatures(self._part_id)
+    #     return temperatures
 
     def _update_with(self, new_state: ArmState) -> None:
         """Update the arm with a newly received (partial) state received from the gRPC server."""
