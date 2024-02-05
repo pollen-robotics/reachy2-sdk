@@ -38,6 +38,7 @@ class OrbitaMotor:
         self._state = initial_state
 
         self._tmp_fields: Dict[str, float | None] = {}
+        self._tmp_state: Dict[str, float | None] = initial_state.copy()
         self._tmp_pid: Tuple[float, float, float]
 
         for field in dir(self):
