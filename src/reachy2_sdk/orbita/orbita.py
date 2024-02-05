@@ -11,6 +11,7 @@ from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
 from ..motors.register import Register
 from .orbita_motor import OrbitaMotor
+
 # from .utils import to_internal_position
 
 
