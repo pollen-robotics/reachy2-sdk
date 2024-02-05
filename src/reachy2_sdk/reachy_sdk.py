@@ -228,7 +228,7 @@ is running and that the IP is correct."
         for part_name in self.enabled_parts:
             part = getattr(self, part_name)
             for joint_name, joint in part.joints.items():
-                _joints[part_name + "_" + joint_name] = joint
+                _joints[part_name + "." + joint_name] = joint
         return _joints
 
     @property
