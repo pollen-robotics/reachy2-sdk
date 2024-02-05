@@ -58,7 +58,7 @@ class Head:
         self._grpc_channel = grpc_channel
         self._goto_stub = goto_stub
         self._head_stub = HeadServiceStub(grpc_channel)
-        self.part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
+        self._part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
 
         self._setup_head(head_msg, initial_state)
         self._actuators = {
@@ -117,7 +117,7 @@ class Head:
 
         It will return the quaternion (x, y, z, w).
         """
-        quat = self._head_stub.GetOrientation(self.part_id).q
+        quat = self._head_stub.GetOrientation(self._part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def forward_kinematics(self, rpy_position: Optional[Tuple[float, float, float]] = None) -> pyQuat:
@@ -130,7 +130,7 @@ class Head:
             return self.get_orientation()
         else:
             req = NeckFKRequest(
-                id=self.part_id,
+                id=self._part_id,
                 position=HeadPosition(
                     neck_position=Rotation3d(
                         rpy=ExtEulerAngles(
@@ -160,7 +160,7 @@ class Head:
         You can also specify a basic joint configuration as a prior for the solution.
         """
         req_params = {
-            "id": self.part_id,
+            "id": self._part_id,
         }
         if orientation is not None:
             req_params["target"] = NeckOrientation(
@@ -193,7 +193,7 @@ class Head:
         request = GoToRequest(
             cartesian_goal=CartesianGoal(
                 neck_cartesian_goal=NeckCartesianGoal(
-                    id=self.part_id,
+                    id=self._part_id,
                     point=Point(x=x, y=y, z=z),
                     duration=FloatValue(value=duration),
                 )
@@ -223,7 +223,7 @@ class Head:
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
-                    id=self.part_id,
+                    id=self._part_id,
                     joints_goal=NeckOrientation(
                         rotation=Rotation3d(
                             rpy=ExtEulerAngles(
@@ -244,7 +244,7 @@ class Head:
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
-                    id=self.part_id,
+                    id=self._part_id,
                     joints_goal=NeckOrientation(rotation=Rotation3d(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z))),
                     duration=FloatValue(value=duration),
                 )
@@ -259,14 +259,14 @@ class Head:
 
         All head's motors will then be stiff.
         """
-        self._head_stub.TurnOn(self.part_id)
+        self._head_stub.TurnOn(self._part_id)
 
     def turn_off(self) -> None:
         """Turn all motors of the part off.
 
         All head's motors will then be compliant.
         """
-        self._head_stub.TurnOff(self.part_id)
+        self._head_stub.TurnOff(self._part_id)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
@@ -284,17 +284,17 @@ class Head:
 
     def get_goto_playing(self) -> GoToId:
         """Return the id of the goto currently playing on the head"""
-        response = self._goto_stub.GetPartGoToPlaying(self.part_id)
+        response = self._goto_stub.GetPartGoToPlaying(self._part_id)
         return response
 
     def get_goto_queue(self) -> List[GoToId]:
         """Return the list of all goto ids waiting to be played on the head"""
-        response = self._goto_stub.GetPartGoToQueue(self.part_id)
+        response = self._goto_stub.GetPartGoToQueue(self._part_id)
         return [goal_id for goal_id in response.goto_ids]
 
     def cancel_all_goto(self) -> GoToAck:
         """Ask the cancellation of all waiting goto on the head"""
-        response = self._goto_stub.CancelPartAllGoTo(self.part_id)
+        response = self._goto_stub.CancelPartAllGoTo(self._part_id)
         return response
 
     def _update_with(self, new_state: HeadState) -> None:
