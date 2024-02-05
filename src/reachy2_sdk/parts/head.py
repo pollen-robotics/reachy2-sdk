@@ -108,8 +108,9 @@ class Head:
     def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all the arm's joints."""
         _joints: Dict[str, OrbitaJoint] = {}
-        for actuator in self._actuators.values():
-            _joints.update(actuator._joints)
+        for actuator_name, actuator in self._actuators.items():
+            for joint in actuator._joints.values():
+                _joints[actuator_name + "." + joint.axis_type] = joint
         return _joints
 
     def get_orientation(self) -> pyQuat:
