@@ -302,8 +302,3 @@ class Head:
         self.neck._update_with(new_state.neck_state)
         # self.l_antenna._update_with(new_state.l_antenna_state)
         # self.r_antenna._update_with(new_state.r_antenna_state)
-
-    @property
-    def compliant(self) -> Dict[str, bool]:
-        """Get compliancy of all the part's actuators"""
-        return {"neck": self.neck.compliant}  # , "l_antenna": self.l_antenna.compliant, "r_antenna": self.r_antenna.compliant}
