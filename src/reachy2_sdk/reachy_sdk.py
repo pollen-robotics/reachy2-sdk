@@ -206,7 +206,7 @@ is running and that the IP is correct."
             self._logger.warning("Cannot get joints, not connected to Reachy.")
             return {}
         _joints: Dict[str, OrbitaJoint] = {}
-        for part_name in self.info.enabled_parts:
+        for part_name in self.info._enabled_parts:
             part = getattr(self, part_name)
             for joint_name, joint in part.joints.items():
                 _joints[part_name + "_" + joint_name] = joint
@@ -219,7 +219,7 @@ is running and that the IP is correct."
             self._logger.warning("Cannot get actuators, not connected to Reachy.")
             return {}
         _actuators: Dict[str, Orbita2d | Orbita3d] = {}
-        for part_name in self.info.enabled_parts:
+        for part_name in self.info._enabled_parts:
             part = getattr(self, part_name)
             for actuator_name, actuator in part.actuators.items():
                 _actuators[part_name + "_" + actuator_name] = actuator
@@ -264,7 +264,7 @@ is running and that the IP is correct."
         except _InactiveRpcError:
             raise ConnectionError()
 
-        self.info = ReachyInfo(self._robot.info)
+        self.info = ReachyInfo(self._robot)
         self._grpc_connected = True
 
     def _setup_audio(self) -> None:
