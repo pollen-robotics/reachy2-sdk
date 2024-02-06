@@ -3,7 +3,7 @@
 This module provides main info of the robot.
 """
 from reachy2_sdk_api.reachy_pb2 import Reachy
-from reachy2_sdk_api.reachy_pb2 import ReachyInfo as ReachyInfo_proto
+from typing import List, Dict, Any
 
 
 class ReachyInfo:
@@ -15,24 +15,30 @@ class ReachyInfo:
         - the robot's core software version, that will not change during a session
     """
 
-    def __init__(self, info_msg: ReachyInfo_proto) -> None:
-        self.robot_serial_number = info_msg.serial_number
+    def __init__(self, reachy: Reachy) -> None:
+        self.robot_serial_number = reachy.info.serial_number
 
-        self.hardware_version = info_msg.version_hard
-        self.core_software_version = info_msg.version_soft
+        self.hardware_version = reachy.info.version_hard
+        self.core_software_version = reachy.info.version_soft
 
+        self._enabled_parts: Dict[str, Any] = {}
+        self._disabled_parts: List[str] = []
 
-def get_config(msg: Reachy) -> str:
-    """Return the current configuration of the robot."""
-    mobile_base_presence = ""
-    if msg.HasField("mobile_base"):
-        mobile_base_presence = " with mobile_base"
-    if msg.HasField("head"):
-        if msg.HasField("l_arm") and msg.HasField("r_arm"):
-            return "full_kit" + mobile_base_presence
-        elif msg.HasField("l_arm"):
-            return "starter_kit (left arm)" + mobile_base_presence
+        self.set_config(reachy)
+
+    def set_config(self, msg: Reachy) -> None:
+        """Return the current configuration of the robot."""
+        self.config: str = ""
+
+        mobile_base_presence = ""
+        if msg.HasField("mobile_base"):
+            mobile_base_presence = " with mobile_base"
+        if msg.HasField("head"):
+            if msg.HasField("l_arm") and msg.HasField("r_arm"):
+                self.config = "full_kit" + mobile_base_presence
+            elif msg.HasField("l_arm"):
+                self.config = "starter_kit (left arm)" + mobile_base_presence
+            else:
+                self.config = "starter_kit (right arm)" + mobile_base_presence
         else:
-            return "starter_kit (right arm)" + mobile_base_presence
-    else:
-        return "custom_config"
+            self.config = "custom_config"

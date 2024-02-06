@@ -33,7 +33,7 @@ from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 from reachy2_sdk_api.orbita3d_pb2 import Orbita3dsCommand
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
-from .config.reachy_info import ReachyInfo, get_config
+from .config.reachy_info import ReachyInfo
 from .media.audio import Audio
 from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
@@ -95,9 +95,6 @@ class ReachySDK(metaclass=Singleton):
 
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
 
-        self._enabled_parts: Dict[str, Any] = {}
-        self._disabled_parts: List[str] = []
-
         self._stop_flag = threading.Event()
         self._ready = threading.Event()
         self._pushed_2dcommand = threading.Event()
@@ -131,7 +128,7 @@ is running and that the IP is correct."
             self._logger.warning("Already disconnected from Reachy.")
             return
 
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             for actuator in part._actuators.values():
                 actuator._need_sync.clear()
 
@@ -176,10 +173,10 @@ is running and that the IP is correct."
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
-        s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self._enabled_parts.items()])
+        s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self.info._enabled_parts.items()])
         return f"""<Reachy host="{self._host}"\n connected={self._grpc_connected} \n enabled_parts=\n\t{
             s
-        }\n\tdisabled_parts={self._disabled_parts}\n>"""
+        }\n\tdisabled_parts={self.info._disabled_parts}\n>"""
 
     @property
     def head(self) -> Optional[Head]:
@@ -203,29 +200,13 @@ is running and that the IP is correct."
         return self._l_arm
 
     @property
-    def enabled_parts(self) -> List[str]:
-        """Get existing parts of the robot the user can effectively control."""
-        if not self._grpc_connected:
-            self._logger.warning("Cannot get enabled parts, not connected to Reachy.")
-            return []
-        return list(self._enabled_parts.keys())
-
-    @property
-    def disabled_parts(self) -> List[str]:
-        """Get existing parts of the robot that cannot be controlled by the user"""
-        if not self._grpc_connected:
-            self._logger.warning("Cannot get disabled parts, not connected to Reachy.")
-            return []
-        return self._disabled_parts
-
-    @property
     def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all joints of the robot."""
         if not self._grpc_connected:
             self._logger.warning("Cannot get joints, not connected to Reachy.")
             return {}
         _joints: Dict[str, OrbitaJoint] = {}
-        for part_name in self.enabled_parts:
+        for part_name in self.info.enabled_parts:
             part = getattr(self, part_name)
             for joint_name, joint in part.joints.items():
                 _joints[part_name + "_" + joint_name] = joint
@@ -238,7 +219,7 @@ is running and that the IP is correct."
             self._logger.warning("Cannot get actuators, not connected to Reachy.")
             return {}
         _actuators: Dict[str, Orbita2d | Orbita3d] = {}
-        for part_name in self.enabled_parts:
+        for part_name in self.info.enabled_parts:
             part = getattr(self, part_name)
             for actuator_name, actuator in part.actuators.items():
                 _actuators[part_name + "_" + actuator_name] = actuator
@@ -284,7 +265,6 @@ is running and that the IP is correct."
             raise ConnectionError()
 
         self.info = ReachyInfo(self._robot.info)
-        self.config = get_config(self._robot)
         self._grpc_connected = True
 
     def _setup_audio(self) -> None:
@@ -308,29 +288,29 @@ is running and that the IP is correct."
             if initial_state.r_arm_state.activated:
                 r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel, self._goto_stub)
                 self._r_arm = r_arm
-                self._enabled_parts["r_arm"] = self._r_arm
+                self.info._enabled_parts["r_arm"] = self._r_arm
                 if self._robot.HasField("r_hand"):
                     self._r_arm._init_hand(self._robot.r_hand, initial_state.r_hand_state)
             else:
-                self._disabled_parts.append("r_arm")
+                self.info._disabled_parts.append("r_arm")
 
         if self._robot.HasField("l_arm"):
             if initial_state.l_arm_state.activated:
                 l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel, self._goto_stub)
                 self._l_arm = l_arm
-                self._enabled_parts["l_arm"] = self._l_arm
+                self.info._enabled_parts["l_arm"] = self._l_arm
                 if self._robot.HasField("l_hand"):
                     self._l_arm._init_hand(self._robot.l_hand, initial_state.l_hand_state)
             else:
-                self._disabled_parts.append("l_arm")
+                self.info._disabled_parts.append("l_arm")
 
         if self._robot.HasField("head"):
             if initial_state.head_state.activated:
                 head = Head(self._robot.head, initial_state.head_state, self._grpc_channel, self._goto_stub)
                 self._head = head
-                self._enabled_parts["head"] = self._head
+                self.info._enabled_parts["head"] = self._head
             else:
-                self._disabled_parts.append("head")
+                self.info._disabled_parts.append("head")
 
         if self._robot.HasField("mobile_base"):
             self.mobile_base = MobileBaseSDK(self._host)
@@ -344,7 +324,7 @@ is running and that the IP is correct."
         """Poll registers to update for Orbita2d actuators of the robot."""
         tasks = []
 
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             for actuator in part._actuators.values():
                 if isinstance(actuator, Orbita2d):
                     # tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
@@ -357,7 +337,7 @@ is running and that the IP is correct."
             )
             commands = []
 
-            for part in self._enabled_parts.values():
+            for part in self.info._enabled_parts.values():
                 for actuator in part._actuators.values():
                     if isinstance(actuator, Orbita2d) and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
@@ -371,7 +351,7 @@ is running and that the IP is correct."
         """Poll registers to update for Orbita3d actuators of the robot."""
         tasks = []
 
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             for actuator in part._actuators.values():
                 if isinstance(actuator, Orbita3d):
                     tasks.append(asyncio.create_task(actuator._need_sync.wait()))
@@ -385,7 +365,7 @@ is running and that the IP is correct."
 
             commands = []
 
-            for part in self._enabled_parts.values():
+            for part in self.info._enabled_parts.values():
                 for actuator in part._actuators.values():
                     if isinstance(actuator, Orbita3d) and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
@@ -568,7 +548,7 @@ is running and that the IP is correct."
         if not self._grpc_connected:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             part.turn_on()
 
         return True
@@ -581,21 +561,21 @@ is running and that the IP is correct."
         if not self._grpc_connected:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             part.turn_off()
 
         return True
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             if not part.is_on():
                 return False
         return True
 
     def is_off(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             if part.is_on():
                 return False
         return True
