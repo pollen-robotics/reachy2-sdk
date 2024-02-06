@@ -244,7 +244,6 @@ is running and that the IP is correct."
                 _actuators[part_name + "_" + actuator_name] = actuator
         return _actuators
 
-    @property
     def is_connected(self) -> bool:
         """Get the status of the connection with the robot server.
 
