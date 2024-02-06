@@ -156,12 +156,12 @@ is running and that the IP is correct."
                 "head",
                 "r_arm",
                 "l_arm",
-                "cancel_all_goto",
-                "cancel_goto_by_id",
-                "get_goto_state",
-                "get_goto_joints_request",
-                "is_goto_finished",
-                "is_goto_playing",
+                "cancel_all_moves",
+                "cancel_move_by_id",
+                "_get_move_state",
+                "get_move_joints_request",
+                "is_move_finished",
+                "is_move_playing",
             ]:
                 delattr(self, attr)
 
@@ -596,7 +596,7 @@ is running and that the IP is correct."
         r_arm_id = None
         l_arm_id = None
         if not wait_for_goto_end:
-            self.cancel_all_goto()
+            self.cancel_all_moves()
         if self.head is not None:
             head_id = self.head.rotate_to(0, 0, 0, duration, interpolation_mode)
         if self.r_arm is not None:
@@ -610,9 +610,9 @@ is running and that the IP is correct."
         )
         return ids
 
-    def is_goto_finished(self, id: GoToId) -> bool:
+    def is_move_finished(self, id: GoToId) -> bool:
         """Return True if goto has been played and has been cancelled, False otherwise."""
-        state = self.get_goto_state(id)
+        state = self._get_move_state(id)
         result = bool(
             state.goal_status == GoalStatus.STATUS_ABORTED
             or state.goal_status == GoalStatus.STATUS_CANCELED
@@ -620,27 +620,27 @@ is running and that the IP is correct."
         )
         return result
 
-    def is_goto_playing(self, id: GoToId) -> bool:
+    def is_move_playing(self, id: GoToId) -> bool:
         """Return True if goto is currently playing, False otherwise."""
-        state = self.get_goto_state(id)
+        state = self._get_move_state(id)
         return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
 
-    def cancel_all_goto(self) -> GoToAck:
+    def cancel_all_moves(self) -> GoToAck:
         """Cancel all the goto tasks."""
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
-    def get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
+    def _get_move_state(self, goto_id: GoToId) -> GoToGoalStatus:
         """Return the current state of a goto, given its id."""
         response = self._goto_stub.GetGoToState(goto_id)
         return response
 
-    def cancel_goto_by_id(self, goto_id: GoToId) -> GoToAck:
+    def cancel_move_by_id(self, goto_id: GoToId) -> GoToAck:
         """Ask the cancellation of a single goto on the arm, given its id"""
         response = self._goto_stub.CancelGoTo(goto_id)
         return response
 
-    def get_goto_joints_request(self, goto_id: GoToId) -> SimplifiedRequest:
+    def get_move_joints_request(self, goto_id: GoToId) -> SimplifiedRequest:
         """Returns the part affected, the joints goal positions, duration and mode of the corresponding GoToId
 
         Part can be either 'r_arm', 'l_arm' or 'head'

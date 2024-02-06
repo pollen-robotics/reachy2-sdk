@@ -282,17 +282,17 @@ class Head:
                 return False
         return True
 
-    def get_goto_playing(self) -> GoToId:
+    def get_move_playing(self) -> GoToId:
         """Return the id of the goto currently playing on the head"""
         response = self._goto_stub.GetPartGoToPlaying(self._part_id)
         return response
 
-    def get_goto_queue(self) -> List[GoToId]:
+    def get_moves_queue(self) -> List[GoToId]:
         """Return the list of all goto ids waiting to be played on the head"""
         response = self._goto_stub.GetPartGoToQueue(self._part_id)
         return [goal_id for goal_id in response.goto_ids]
 
-    def cancel_all_goto(self) -> GoToAck:
+    def cancel_all_moves(self) -> GoToAck:
         """Ask the cancellation of all waiting goto on the head"""
         response = self._goto_stub.CancelPartAllGoTo(self._part_id)
         return response
