@@ -23,6 +23,7 @@ class ReachyInfo:
 
 
 def get_config(msg: Reachy) -> str:
+    """Return the current configuration of the robot."""
     mobile_base_presence = ""
     if msg.HasField("mobile_base"):
         mobile_base_presence = " with mobile_base"

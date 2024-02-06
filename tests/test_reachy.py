@@ -5,7 +5,7 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import MobileBase
 from reachy2_sdk_api.reachy_pb2 import Reachy
 from reachy2_sdk_api.reachy_pb2 import ReachyInfo as ReachyInfo_proto
 
-from src.reachy2_sdk.reachy import ReachyInfo, get_config
+from reachy2_sdk.config.reachy_info import ReachyInfo, get_config
 
 
 @pytest.mark.offline

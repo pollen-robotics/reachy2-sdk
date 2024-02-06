@@ -16,6 +16,11 @@ jobs:
   isort:
     runs-on: ubuntu-22.04
     steps:
+      - name: Install SSH_KEYS
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_REACHY2_SDK_API }}
       - uses: actions/checkout@v3
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
@@ -32,6 +37,11 @@ jobs:
   flake8:
     runs-on: ubuntu-22.04
     steps:
+      - name: Install SSH_KEYS
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_REACHY2_SDK_API }}
       - uses: actions/checkout@v3
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
