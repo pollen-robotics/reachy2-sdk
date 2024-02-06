@@ -143,7 +143,7 @@ is running and that the IP is correct."
         attributs = [attr for attr in dir(self) if not attr.startswith("_")]
         for attr in attributs:
             if attr not in [
-                "grpc_status",
+                "is_connected",
                 "connect",
                 "disconnect",
                 "home",
