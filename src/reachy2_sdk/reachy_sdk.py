@@ -17,7 +17,7 @@ import threading
 import time
 from collections import namedtuple
 from logging import getLogger
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
