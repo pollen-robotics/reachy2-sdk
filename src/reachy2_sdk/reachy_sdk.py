@@ -89,7 +89,7 @@ class ReachySDK(metaclass=Singleton):
 
     def connect(self) -> None:
         """Connects the SDK to the server."""
-        if self._grpc_status == "connected":
+        if self._grpc_connected:
             self._logger.warning("Already connected to Reachy.")
             return
 
@@ -111,7 +111,7 @@ class ReachySDK(metaclass=Singleton):
                 f"Could not connect to Reachy with on IP address {self._host}, check that the sdk server \
 is running and that the IP is correct."
             )
-            self._grpc_status = "disconnected"
+            self._grpc_connected = False
             return
 
         self._setup_parts()
@@ -121,13 +121,13 @@ is running and that the IP is correct."
         self._sync_thread.daemon = True
         self._sync_thread.start()
 
-        self._grpc_status = "connected"
+        self._grpc_connected = True
         _open_connection.append(self)
         self._logger.info("Connected to Reachy.")
 
     def disconnect(self) -> None:
         """Disconnects the SDK from the server."""
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Already disconnected from Reachy.")
             return
 
@@ -137,7 +137,7 @@ is running and that the IP is correct."
 
         self._stop_flag.set()
         time.sleep(0.1)
-        self._grpc_status = "disconnected"
+        self._grpc_connected = False
 
         self._grpc_channel.close()
         attributs = [attr for attr in dir(self) if not attr.startswith("_")]
@@ -177,7 +177,7 @@ is running and that the IP is correct."
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
         s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self._enabled_parts.items()])
-        return f"""<Reachy host="{self._host}"\n grpc_status={self.grpc_status} \n enabled_parts=\n\t{
+        return f"""<Reachy host="{self._host}"\n connected={self._grpc_connected} \n enabled_parts=\n\t{
             s
         }\n\tdisabled_parts={self._disabled_parts}\n>"""
 
@@ -205,7 +205,7 @@ is running and that the IP is correct."
     @property
     def enabled_parts(self) -> List[str]:
         """Get existing parts of the robot the user can effectively control."""
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Cannot get enabled parts, not connected to Reachy.")
             return []
         return list(self._enabled_parts.keys())
@@ -213,7 +213,7 @@ is running and that the IP is correct."
     @property
     def disabled_parts(self) -> List[str]:
         """Get existing parts of the robot that cannot be controlled by the user"""
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Cannot get disabled parts, not connected to Reachy.")
             return []
         return self._disabled_parts
@@ -221,7 +221,7 @@ is running and that the IP is correct."
     @property
     def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all joints of the robot."""
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Cannot get joints, not connected to Reachy.")
             return {}
         _joints: Dict[str, OrbitaJoint] = {}
@@ -234,7 +234,7 @@ is running and that the IP is correct."
     @property
     def actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
         """Get all actuators of the robot."""
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Cannot get actuators, not connected to Reachy.")
             return {}
         _actuators: Dict[str, Orbita2d | Orbita3d] = {}
@@ -245,12 +245,12 @@ is running and that the IP is correct."
         return _actuators
 
     @property
-    def grpc_status(self) -> str:
+    def is_connected(self) -> bool:
         """Get the status of the connection with the robot server.
 
         Can be either 'connected' or 'disconnected'.
         """
-        return self._grpc_status
+        return self._grpc_connected
 
     @property
     def _grpc_status(self) -> str:
@@ -286,7 +286,7 @@ is running and that the IP is correct."
 
         self.info = ReachyInfo(self._robot.info)
         self.config = get_config(self._robot)
-        self._grpc_status = "connected"
+        self._grpc_connected = True
 
     def _setup_audio(self) -> None:
         """Internal function to set up the audio server."""
@@ -566,7 +566,7 @@ is running and that the IP is correct."
 
         All enabled parts' motors will then be stiff.
         """
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
         for part in self._enabled_parts.values():
@@ -579,7 +579,7 @@ is running and that the IP is correct."
 
         All enabled parts' motors will then be compliant.
         """
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         for part in self._enabled_parts.values():
