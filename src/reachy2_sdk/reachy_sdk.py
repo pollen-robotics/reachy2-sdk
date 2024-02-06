@@ -586,6 +586,20 @@ is running and that the IP is correct."
 
         return True
 
+    def is_on(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for part in self._enabled_parts.values():
+            if not part.is_on():
+                return False
+        return True
+
+    def is_off(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for part in self._enabled_parts.values():
+            if part.is_on():
+                return False
+        return True
+
     def home(self, wait_for_goto_end: bool = True, duration: float = 2, interpolation_mode: str = "minimum_jerk") -> GoToHomeId:
         """Send all joints to 0 in specified duration.
 

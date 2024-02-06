@@ -65,7 +65,7 @@ class Orbita(ABC):
     def __repr__(self) -> str:
         """Clean representation of an Orbita."""
         s = "\n\t".join([str(joint) for joint in self._joints.values()])
-        return f"""<Orbita{self._orbita_type} compliant={self.compliant} joints=\n\t{
+        return f"""<Orbita{self._orbita_type} on={self.is_on()} joints=\n\t{
             s
         }\n>"""
 
@@ -115,10 +115,9 @@ class Orbita(ABC):
         """
         self._compliant = True
 
-    @property
-    def compliant(self) -> Any:
+    def is_on(self) -> Any:
         """Get compliancy of the actuator"""
-        return self._compliant
+        return not self._compliant
 
     @property
     def temperatures(self) -> Dict[str, Register]:

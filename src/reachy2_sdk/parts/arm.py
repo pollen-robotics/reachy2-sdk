@@ -149,18 +149,18 @@ class Arm:
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
-            if actuator.compliant:
+            if not actuator.is_on():
                 return False
-        if self.gripper.compliant:
+        if not self.gripper.is_on():
             return False
         return True
 
     def is_off(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
-            if not actuator.compliant:
+            if actuator.is_on():
                 return False
-        if not self.gripper.compliant:
+        if self.gripper.is_on():
             return False
         return True
 

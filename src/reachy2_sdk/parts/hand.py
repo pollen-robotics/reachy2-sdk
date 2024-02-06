@@ -97,8 +97,7 @@ class Hand:
         """
         self._hand_stub.TurnOff(self._part_id)
 
-    @property
-    def compliant(self) -> bool:
+    def is_on(self) -> bool:
         """Get compliancy of the hand"""
         return self._compliant
 
