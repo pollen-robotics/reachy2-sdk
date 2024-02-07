@@ -4,7 +4,7 @@ Handles all specific method to an Head:
 - the inverse kinematics
 - look_at function
 """
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 import grpc
 import numpy as np
@@ -20,11 +20,8 @@ from reachy2_sdk_api.goto_pb2 import (
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
-    HeadPosition,
     HeadState,
     NeckCartesianGoal,
-    NeckFKRequest,
-    NeckIKRequest,
     NeckJointGoal,
     NeckOrientation,
 )
