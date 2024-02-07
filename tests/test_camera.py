@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 from reachy2_sdk_api.video_pb2 import CameraInfo, View
 
+from reachy2_sdk.media.camera import Camera, CameraView
 from src.reachy2_sdk.reachy_sdk import ReachySDK
-from src.reachy2_sdk.video import Camera, Video
 
 
 @pytest.fixture(scope="module")
@@ -25,135 +25,61 @@ def reachy_sdk() -> ReachySDK:
 
 @pytest.mark.online
 def test_no_camera(reachy_sdk: ReachySDK) -> None:
-    list_cam = reachy_sdk.video.get_all_cameras()
-    assert (len(list_cam)) == 0
-
-    fake_cam_info = CameraInfo(mxid="fake_mxid", name="fake_name", stereo=True, depth=True)
-    assert not reachy_sdk.video.init_camera(fake_cam_info)
-
-    assert not reachy_sdk.video.capture(fake_cam_info)
-
-    assert reachy_sdk.video.get_frame(cam_info=fake_cam_info, view=View.LEFT) is None
-
-    assert reachy_sdk.video.get_depth_frame(cam_info=fake_cam_info, view=View.LEFT) is None
-
-    assert reachy_sdk.video.get_depthmap(cam_info=fake_cam_info) is None
-
-    assert reachy_sdk.video.get_disparity(cam_info=fake_cam_info) is None
-
-    assert not reachy_sdk.video.close_camera(fake_cam_info)
+    assert reachy_sdk.cameras.teleop is None
+    assert reachy_sdk.cameras.SR is None
 
 
 @pytest.mark.sr_camera
 def test_sr_camera(reachy_sdk: ReachySDK) -> None:
-    list_cam = reachy_sdk.video.get_all_cameras()
+    assert reachy_sdk.cameras.SR is not None
 
-    assert (len(list_cam)) > 0
+    assert reachy_sdk.cameras.SR.capture()
 
-    cam_info = None
-    for c in list_cam:
-        if c.name == "other":
-            cam_info = c
-            break
-
-    assert cam_info is not None
-
-    assert reachy_sdk.video.init_camera(cam_info)
-
-    assert reachy_sdk.video.capture(cam_info)
-
-    frame = reachy_sdk.video.get_frame(cam_info=cam_info)
+    frame = reachy_sdk.cameras.SR.get_frame()
     assert frame is not None
     assert frame.dtype == np.uint8
 
-    frame = reachy_sdk.video.get_depth_frame(cam_info=cam_info, view=View.LEFT)
+    frame = reachy_sdk.cameras.SR.get_depth_frame(CameraView.LEFT)
     assert frame is not None
     assert frame.dtype == np.uint8
 
-    frame_right = reachy_sdk.video.get_depth_frame(cam_info=cam_info, view=View.RIGHT)
+    frame_right = reachy_sdk.cameras.SR.get_depth_frame(CameraView.RIGHT)
     assert frame_right is not None
     assert frame_right.dtype == np.uint8
 
     # check that we don't return the same view
     assert not np.array_equal(frame, frame_right)
 
-    frame = reachy_sdk.video.get_depthmap(cam_info=cam_info)
+    frame = reachy_sdk.cameras.SR.get_depthmap()
     assert frame is not None
     assert frame.dtype == np.uint16
 
-    frame = reachy_sdk.video.get_disparity(cam_info=cam_info)
+    frame = reachy_sdk.cameras.SR.get_disparity()
     assert frame is not None
     assert frame.dtype == np.uint16
-
-    assert reachy_sdk.video.close_camera(cam_info)
-
-    assert not reachy_sdk.video.capture(cam_info)
 
 
 @pytest.mark.teleop_camera
 def test_teleop_camera(reachy_sdk: ReachySDK) -> None:
-    list_cam = reachy_sdk.video.get_all_cameras()
+    assert reachy_sdk.cameras.teleop is not None
 
-    assert (len(list_cam)) > 0
+    assert reachy_sdk.cameras.teleop.capture()
 
-    cam_info = None
-    for c in list_cam:
-        if c.name == "teleop_head":
-            cam_info = c
-            break
-
-    assert cam_info is not None
-
-    assert reachy_sdk.video.init_camera(cam_info)
-
-    assert reachy_sdk.video.capture(cam_info)
-
-    frame = reachy_sdk.video.get_frame(cam_info=cam_info, view=View.LEFT)
+    frame = reachy_sdk.cameras.teleop.get_frame(CameraView.LEFT)
     assert frame is not None
     assert frame.dtype == np.uint8
 
-    frame_right = reachy_sdk.video.get_frame(cam_info=cam_info, view=View.RIGHT)
+    frame_right = reachy_sdk.cameras.teleop.get_frame(CameraView.RIGHT)
     assert frame_right is not None
     assert frame_right.dtype == np.uint8
 
     # check that we don't return the same frame
     assert not np.array_equal(frame, frame_right)
 
-    frame = reachy_sdk.video.get_depth_frame(cam_info=cam_info)
-    assert frame is None
-
-    frame = reachy_sdk.video.get_depthmap(cam_info=cam_info)
-    assert frame is None
-
-    frame = reachy_sdk.video.get_disparity(cam_info=cam_info)
-    assert frame is None
-
-    assert reachy_sdk.video.close_camera(cam_info)
-
-    assert not reachy_sdk.video.capture(cam_info)
-
 
 @pytest.mark.offline
-def test_get_cam_info() -> None:
-    list_cam: List[CameraInfo] = []
-
-    cam_type = Camera.TELEOP
-
-    cam = Video.get_camera_info(list_cam, cam_type)
-
-    assert cam is None
-
+def test_class() -> None:
     cam_teleop = CameraInfo(mxid="fakemixid_tel", name="teleop_head", stereo=True, depth=False)
-    list_cam.append(cam_teleop)
+    cam = Camera(cam_info=cam_teleop, video_stub=None)
 
-    cam = Video.get_camera_info(list_cam, cam_type)
-
-    assert cam is cam_teleop
-
-    cam_sr = CameraInfo(mxid="fakemixid_sr", name="other", stereo=False, depth=True)
-    list_cam.append(cam_sr)
-
-    cam_type = Camera.SR
-    cam = Video.get_camera_info(list_cam, cam_type)
-
-    assert cam is cam_sr
+    assert cam is not None

@@ -35,6 +35,7 @@ from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
 from .config.reachy_info import ReachyInfo, get_config
 from .media.audio import Audio
+from .media.camera_manager import CameraManager
 from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
@@ -46,7 +47,6 @@ from .utils.utils import (
     ext_euler_angles_to_list,
     get_interpolation_mode,
 )
-from .video import Video
 
 SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
 """Named tuple for easy access to request variables"""
@@ -119,7 +119,7 @@ is running and that the IP is correct."
 
         self._setup_parts()
         # self._setup_audio()
-        self._setup_video()
+        self.cameras = self._setup_video()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
@@ -160,6 +160,7 @@ is running and that the IP is correct."
                 "head",
                 "r_arm",
                 "l_arm",
+                "cameras",
                 "cancel_all_goto",
                 "cancel_goto_by_id",
                 "get_goto_state",
@@ -175,6 +176,10 @@ is running and that the IP is correct."
 
         for task in asyncio.all_tasks(loop=self._loop):
             task.cancel()
+
+        if self.cameras is not None:
+            self.cameras.cleanup()
+            self.cameras = None
 
         self._logger.info("Disconnected from Reachy.")
 
@@ -299,11 +304,12 @@ is running and that the IP is correct."
         except Exception:
             self._logger.error("Failed to connect to audio server. ReachySDK.audio will not be available.")
 
-    def _setup_video(self) -> None:
+    def _setup_video(self) -> Optional[CameraManager]:
         try:
-            self.video = Video(self._host, self._video_port)
+            return CameraManager(self._host, self._video_port)
         except Exception as e:
-            self._logger.error(f"Failed to connect to video server. ReachySDK.video will not be available {e}.")
+            self._logger.error(f"Failed to connect to video server with error {e}.\nReachySDK.video will not be available.")
+            return None
 
     def _setup_parts(self) -> None:
         """Setup all parts of the robot.

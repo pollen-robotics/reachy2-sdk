@@ -1,3 +1,9 @@
+"""Reachy Camera module.
+
+Define a RGB Camera (Teleop) and a RGBD Camera (SR). Provide access to the frames (color, depth, disparity)
+
+"""
+
 import logging
 from enum import Enum
 from typing import Optional
@@ -15,6 +21,10 @@ class CameraView(Enum):
 
 
 class Camera:
+    """
+    RGB Camera. Mainly for Reachy Teleop Camera.
+    """
+
     def __init__(self, cam_info: CameraInfo, video_stub: VideoServiceStub) -> None:
         self._logger = logging.getLogger(__name__)
         self._cam_info = cam_info
@@ -39,6 +49,10 @@ class Camera:
 
 
 class SRCamera(Camera):
+    """
+    RGBD Camera. Meant to control a Luxonis SR
+    """
+
     def get_depth_frame(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.uint8]]:
         frame = self._video_stub.GetDepthFrame(request=ViewRequest(camera_info=self._cam_info, view=view.value))
         if frame.data == b"":

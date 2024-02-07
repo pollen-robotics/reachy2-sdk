@@ -1,11 +1,42 @@
 import logging
-from typing import List
 
 import cv2
-from reachy2_sdk_api.video_pb2 import CameraInfo, View
 
 from reachy2_sdk import ReachySDK
-from reachy2_sdk.video import Camera, Video
+from reachy2_sdk.media.camera import CameraView
+
+
+def display_teleop_cam() -> None:
+    if reachy.cameras.teleop is None:
+        exit("There is no teleop camera.")
+
+    try:
+        while reachy.cameras.teleop.capture():
+            frame = reachy.cameras.teleop.get_frame(CameraView.LEFT)
+            frame_r = reachy.cameras.teleop.get_frame(CameraView.LEFT)
+            cv2.imshow("left", frame)
+            cv2.imshow("right", frame_r)
+            cv2.waitKey(1)
+
+    except KeyboardInterrupt:
+        logging.info("User Interrupt")
+
+
+def display_SR_cam() -> None:
+    if reachy.cameras.SR is None:
+        exit("There is no SR camera.")
+
+    try:
+        while reachy.cameras.SR.capture():
+            cv2.imshow("sr_depthNode_left", reachy.cameras.SR.get_depth_frame(CameraView.LEFT))
+            cv2.imshow("sr_depthNode_right", reachy.cameras.SR.get_depth_frame(CameraView.RIGHT))
+            cv2.imshow("depth", reachy.cameras.SR.get_depthmap())
+            cv2.imshow("disparity", reachy.cameras.SR.get_disparity())
+            cv2.waitKey(1)
+
+    except KeyboardInterrupt:
+        logging.info("User Interrupt")
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
@@ -14,35 +45,5 @@ if __name__ == "__main__":
     if reachy.grpc_status == "disconnected":
         exit("Reachy is not connected.")
 
-    list_cam: List[CameraInfo] = reachy.video.get_all_cameras()
-
-    # select camera here
-    cam_type = Camera.TELEOP
-    # cam_type = Camera.SR
-
-    cam = Video.get_camera_info(list_cam, cam_type)
-
-    if cam is None:
-        exit("Camera was not found")
-
-    reachy.video.init_camera(cam)
-
-    try:
-        while reachy.video.capture(cam):
-            if cam_type == Camera.TELEOP:
-                frame = reachy.video.get_frame(cam, View.LEFT)
-                frame_r = reachy.video.get_frame(cam, View.RIGHT)
-                cv2.imshow("left", frame)
-                cv2.imshow("right", frame_r)
-            elif cam_type == Camera.SR:
-                cv2.imshow("sr_depthNode_left", reachy.video.get_depth_frame(cam, View.LEFT))
-                cv2.imshow("sr_depthNode_right", reachy.video.get_depth_frame(cam, View.RIGHT))
-                cv2.imshow("depth", reachy.video.get_depthmap(cam))
-                cv2.imshow("disparity", reachy.video.get_disparity(cam))
-            cv2.waitKey(1)
-
-    except KeyboardInterrupt:
-        logging.info("User Interrupt")
-    finally:
-        reachy.video.close_camera(cam)
-        reachy.disconnect()
+    display_teleop_cam()
+    # display_SR_cam()
