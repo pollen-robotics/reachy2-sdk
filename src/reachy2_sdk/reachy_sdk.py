@@ -213,7 +213,7 @@ is running and that the IP is correct."
         return _joints
 
     @property
-    def actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
+    def _actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
         """Get all actuators of the robot."""
         if not self._grpc_connected:
             self._logger.warning("Cannot get actuators, not connected to Reachy.")

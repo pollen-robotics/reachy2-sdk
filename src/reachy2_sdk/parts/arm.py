@@ -117,11 +117,6 @@ class Arm:
         self.gripper = Hand(hand, hand_initial_state, self._grpc_channel)
 
     @property
-    def actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
-        """Get all the arm's actuators."""
-        return self._actuators
-
-    @property
     def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all the arm's joints."""
         _joints: Dict[str, OrbitaJoint] = {}

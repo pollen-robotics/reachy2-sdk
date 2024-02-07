@@ -100,11 +100,6 @@ class Head:
         }\n>"""
 
     @property
-    def actuators(self) -> Dict[str, Orbita3d]:
-        """Get all the arm's actuators."""
-        return self._actuators
-
-    @property
     def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all the arm's joints."""
         _joints: Dict[str, OrbitaJoint] = {}
