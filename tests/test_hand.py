@@ -60,7 +60,7 @@ def test_class() -> None:
 
     assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
     assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
-    assert hand.compliant
+    assert hand.is_on() is False
 
     goal_position_rad = 5
     present_position_rad = 6
@@ -86,7 +86,7 @@ def test_class() -> None:
 @pytest.fixture(scope="module")
 def reachy_sdk() -> ReachySDK:
     reachy = ReachySDK(host="localhost")
-    assert reachy.grpc_status == "connected"
+    assert reachy.is_connected()
 
     assert reachy.turn_on()
 

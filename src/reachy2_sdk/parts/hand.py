@@ -99,7 +99,7 @@ class Hand:
 
     def is_on(self) -> bool:
         """Get compliancy of the hand"""
-        return self._compliant
+        return not self._compliant
 
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state received from the gRPC server."""
