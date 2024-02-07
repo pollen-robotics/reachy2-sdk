@@ -45,43 +45,29 @@ class Hand:
         """Return the opening of the hand in percentage."""
         return round(self._opening * 100, 2)
 
-    def open(self, percentage: float = 100) -> None:
-        """Open the hand.
+    def set_opening(self, percentage: float) -> None:
+        """Set an opening value for the hand
 
         Args:
-            percentage (float): Percentage of the opening. Defaults to 100.
+            percentage (float): Percentage of the opening.
         """
         if not 0.0 <= percentage <= 100.0:
             raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
 
-        if percentage == 100.0:
-            self._hand_stub.OpenHand(self._part_id)
-        else:
-            self._hand_stub.SetHandPosition(
-                HandPositionRequest(
-                    id=self._part_id,
-                    position=HandPosition(parallel_gripper=ParallelGripperPosition(position=percentage / 100.0)),
-                )
+        self._hand_stub.SetHandPosition(
+            HandPositionRequest(
+                id=self._part_id,
+                position=HandPosition(parallel_gripper=ParallelGripperPosition(position=percentage / 100.0)),
             )
+        )
 
-    def close(self, percentage: float = 100) -> None:
-        """Close the hand.
+    def open(self) -> None:
+        """Open the hand."""
+        self._hand_stub.OpenHand(self._part_id)
 
-        Args:
-            percentage (float): Percentage of the closing. Defaults to 100.
-        """
-        if not 0.0 <= percentage <= 100.0:
-            raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
-
-        if percentage == 100.0:
-            self._hand_stub.CloseHand(self._part_id)
-        else:
-            self._hand_stub.SetHandPosition(
-                HandPositionRequest(
-                    id=self._part_id,
-                    position=HandPosition(parallel_gripper=ParallelGripperPosition(position=(100 - percentage) / 100.0)),
-                )
-            )
+    def close(self) -> None:
+        """Close the hand."""
+        self._hand_stub.CloseHand(self._part_id)
 
     def turn_on(self) -> None:
         """Turn all motors of the hand on.
