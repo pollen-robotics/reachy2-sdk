@@ -2,8 +2,9 @@
 
 This module provides main info of the robot.
 """
+from typing import Any, Dict, List
+
 from reachy2_sdk_api.reachy_pb2 import Reachy
-from typing import List, Dict, Any
 
 
 class ReachyInfo:
@@ -24,9 +25,11 @@ class ReachyInfo:
         self._enabled_parts: Dict[str, Any] = {}
         self._disabled_parts: List[str] = []
 
-        self.set_config(reachy)
+        self.battery_voltage: float = 30.0
 
-    def set_config(self, msg: Reachy) -> None:
+        self._set_config(reachy)
+
+    def _set_config(self, msg: Reachy) -> None:
         """Return the current configuration of the robot."""
         self.config: str = ""
 
