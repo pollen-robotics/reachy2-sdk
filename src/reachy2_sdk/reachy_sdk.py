@@ -149,7 +149,7 @@ is running and that the IP is correct."
                 "connect",
                 "disconnect",
                 "info",
-                "home",
+                "set_pose",
                 "turn_on",
                 "turn_off",
                 "is_on",
