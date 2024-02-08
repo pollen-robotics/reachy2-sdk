@@ -37,6 +37,8 @@ class CameraManager:
 
         self._init_thread = threading.Thread(target=self._setup_cameras)
         self._init_thread.start()
+        # SDK Server count the number of clients to release the cameras if there is no one left
+        self._cleaned = False
         atexit.register(self.cleanup)
 
     def _setup_cameras(self) -> None:
@@ -56,8 +58,10 @@ class CameraManager:
                     self._logger.error(f"Camera {c.name} not defined")
 
     def cleanup(self) -> None:
-        self._init_thread.join()
-        self._video_stub.GoodBye(Empty())
+        if not self._cleaned:
+            self._init_thread.join()
+            self._video_stub.GoodBye(Empty())
+            self._cleaned = True
 
     @property
     def teleop(self) -> Optional[Camera]:
