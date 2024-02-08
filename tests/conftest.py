@@ -9,6 +9,7 @@ import pytest
 from src.reachy2_sdk.reachy_sdk import ReachySDK
 
 
+@pytest.mark.online
 @pytest.fixture(scope="package")
 def reachy_sdk() -> ReachySDK:
     """
