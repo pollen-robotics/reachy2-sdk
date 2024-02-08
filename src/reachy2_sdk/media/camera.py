@@ -31,6 +31,7 @@ class Camera:
         self._video_stub = video_stub
 
     def capture(self) -> bool:
+        """Synchronized capture of all frames (RGB, Depth, etc)"""
         ret: VideoAck = self._video_stub.Capture(request=self._cam_info)
         if not ret.success.value:
             self._logger.error(f"Capture failed: {ret.error}")
@@ -39,6 +40,7 @@ class Camera:
             return True
 
     def get_frame(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.uint8]]:
+        """Get RGB frame (OpenCV)"""
         frame = self._video_stub.GetFrame(request=ViewRequest(camera_info=self._cam_info, view=view.value))
         if frame.data == b"":
             self._logger.error("No frame retrieved")
@@ -54,6 +56,7 @@ class SRCamera(Camera):
     """
 
     def get_depth_frame(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.uint8]]:
+        """Get 8bit depth view (OpenCV format)"""
         frame = self._video_stub.GetDepthFrame(request=ViewRequest(camera_info=self._cam_info, view=view.value))
         if frame.data == b"":
             self._logger.error("No frame retrieved")
@@ -63,6 +66,7 @@ class SRCamera(Camera):
         return img  # type: ignore[no-any-return]
 
     def get_depthmap(self) -> Optional[npt.NDArray[np.uint16]]:
+        """Get 16bit depthmap (OpenCV format)"""
         frame = self._video_stub.GetDepthMap(request=self._cam_info)
         if frame.data == b"":
             self._logger.error("No frame retrieved")
@@ -72,6 +76,7 @@ class SRCamera(Camera):
         return img  # type: ignore[no-any-return]
 
     def get_disparity(self) -> Optional[npt.NDArray[np.uint16]]:
+        """Get 16bit disparity (OpenCV format)"""
         frame = self._video_stub.GetDisparity(request=self._cam_info)
         if frame.data == b"":
             self._logger.error("No frame retrieved")

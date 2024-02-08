@@ -17,7 +17,8 @@ from .camera import Camera, SRCamera
 
 
 class CameraType(Enum):
-    # values defined in pollen-vision
+    """Camera names defined in pollen-vision"""
+
     TELEOP = "teleop_head"
     SR = "other"
 
@@ -26,7 +27,7 @@ class CameraManager:
     """CameraManager class provide the available cameras."""
 
     def __init__(self, host: str, port: int) -> None:
-        """Set up video module"""
+        """Set up camera manager module"""
         self._logger = logging.getLogger(__name__)
         self._grpc_video_channel = grpc.insecure_channel(f"{host}:{port}")
 
@@ -42,6 +43,7 @@ class CameraManager:
         atexit.register(self._cleanup)
 
     def _setup_cameras(self) -> None:
+        """Thread initializing cameras"""
         cams = self._video_stub.InitAllCameras(Empty())
         if len(cams.camera_info) == 0:
             self._logger.error("Cameras not initialized.")
@@ -58,6 +60,7 @@ class CameraManager:
                     self._logger.error(f"Camera {c.name} not defined")
 
     def _cleanup(self) -> None:
+        """Let the server know that the cameras are not longer used by this client"""
         if not self._cleaned:
             self._init_thread.join()
             self._video_stub.GoodBye(Empty())
@@ -65,14 +68,23 @@ class CameraManager:
 
     @property
     def teleop(self) -> Optional[Camera]:
+        """Get Teleop camera"""
         if self._init_thread.is_alive():
             self._logger.info("waiting for camera to be initialized")
             self._init_thread.join()
+
+        if self._teleop is None:
+            raise AttributeError("There is no Teleop camera")
+
         return self._teleop
 
     @property
     def SR(self) -> Optional[SRCamera]:
+        """Get SR Camera"""
         if self._init_thread.is_alive():
             self._logger.info("waiting for camera to be initialized")
             self._init_thread.join()
+
+        if self._SR is None:
+            raise AttributeError("There is no SR camera")
         return self._SR
