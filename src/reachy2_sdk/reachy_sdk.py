@@ -571,6 +571,8 @@ is running and that the IP is correct."
             return False
         for part in self._enabled_parts.values():
             part.turn_on()
+        if self.mobile_base is not None:
+            self.mobile_base.turn_on()
 
         return True
 
@@ -584,6 +586,8 @@ is running and that the IP is correct."
             return False
         for part in self._enabled_parts.values():
             part.turn_off()
+        if self.mobile_base is not None:
+            self.mobile_base.turn_off()
 
         return True
 
