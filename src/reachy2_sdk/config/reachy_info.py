@@ -2,8 +2,9 @@
 
 This module provides main info of the robot.
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
+from mobile_base_sdk import MobileBaseSDK
 from reachy2_sdk_api.reachy_pb2 import Reachy
 
 
@@ -24,6 +25,7 @@ class ReachyInfo:
 
         self._enabled_parts: Dict[str, Any] = {}
         self._disabled_parts: List[str] = []
+        self._mobile_base: Optional[MobileBaseSDK] = None
 
         self.battery_voltage: float = 30.0
 
@@ -45,3 +47,16 @@ class ReachyInfo:
                 self.config = "starter_kit (right arm)" + mobile_base_presence
         else:
             self.config = "custom_config"
+
+    def _set_mobile_base(self, mobile_base: MobileBaseSDK) -> None:
+        self._mobile_base = mobile_base
+
+    @property
+    def battery_voltage(self) -> float:
+        """Returns mobile base battery voltage.
+
+        If there is no mobile base, returns full battery value.
+        """
+        if self._mobile_base is not None:
+            return self._mobile_base.battery_voltage
+        return 30.0

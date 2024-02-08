@@ -315,6 +315,7 @@ is running and that the IP is correct."
 
         if self._robot.HasField("mobile_base"):
             self.mobile_base = MobileBaseSDK(self._host)
+            self.info._set_mobile_base(self.mobile_base)
 
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
