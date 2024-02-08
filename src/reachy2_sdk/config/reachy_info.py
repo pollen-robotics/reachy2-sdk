@@ -27,8 +27,6 @@ class ReachyInfo:
         self._disabled_parts: List[str] = []
         self._mobile_base: Optional[MobileBaseSDK] = None
 
-        self.battery_voltage: float = 30.0
-
         self._set_config(reachy)
 
     def _set_config(self, msg: Reachy) -> None:
