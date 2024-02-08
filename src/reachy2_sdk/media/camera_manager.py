@@ -48,7 +48,7 @@ class CameraManager:
         if len(cams.camera_info) == 0:
             self._logger.error("Cameras not initialized.")
         else:
-            self._logger.info(cams.camera_info)
+            self._logger.debug(cams.camera_info)
             for c in cams.camera_info:
                 if c.name == CameraType.TELEOP.value:
                     self._logger.debug("Teleop Camera initialized.")
@@ -62,16 +62,19 @@ class CameraManager:
     def _cleanup(self) -> None:
         """Let the server know that the cameras are not longer used by this client"""
         if not self._cleaned:
-            self._init_thread.join()
+            self.wait_end_of_initialization()
             self._video_stub.GoodBye(Empty())
             self._cleaned = True
+
+    def wait_end_of_initialization(self) -> None:
+        self._init_thread.join()
 
     @property
     def teleop(self) -> Optional[Camera]:
         """Get Teleop camera"""
         if self._init_thread.is_alive():
             self._logger.info("waiting for camera to be initialized")
-            self._init_thread.join()
+            self.wait_end_of_initialization()
 
         if self._teleop is None:
             raise AttributeError("There is no Teleop camera")
@@ -83,7 +86,7 @@ class CameraManager:
         """Get SR Camera"""
         if self._init_thread.is_alive():
             self._logger.info("waiting for camera to be initialized")
-            self._init_thread.join()
+            self.wait_end_of_initialization()
 
         if self._SR is None:
             raise AttributeError("There is no SR camera")

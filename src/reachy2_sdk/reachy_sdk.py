@@ -283,9 +283,9 @@ is running and that the IP is correct."
     @property
     def cameras(self) -> CameraManager:
         """Get Reachy's cameras."""
-        if self._cameras is None or (self._cameras.SR is None and self._cameras.teleop is None):
-            raise AttributeError("There is not available camera")
-        return self._cameras
+        self._cameras.wait_end_of_initialization()  # type: ignore[union-attr]
+
+        return self._cameras  # type: ignore[return-value]
 
     def _get_info(self) -> None:
         """Get main description of the robot.

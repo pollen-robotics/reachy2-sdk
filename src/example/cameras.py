@@ -39,7 +39,7 @@ def display_SR_cam() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     reachy = ReachySDK(host="localhost")
 
     if reachy.grpc_status == "disconnected":

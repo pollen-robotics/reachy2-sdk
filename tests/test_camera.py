@@ -11,13 +11,10 @@ from src.reachy2_sdk.reachy_sdk import ReachySDK
 @pytest.mark.online
 def test_no_camera(reachy_sdk: ReachySDK) -> None:
     with pytest.raises(AttributeError):
-        reachy_sdk.cameras
+        assert reachy_sdk.cameras.teleop
 
     with pytest.raises(AttributeError):
-        assert reachy_sdk._cameras.teleop
-
-    with pytest.raises(AttributeError):
-        assert reachy_sdk._cameras.SR
+        assert reachy_sdk.cameras.SR
 
 
 @pytest.mark.sr_camera
