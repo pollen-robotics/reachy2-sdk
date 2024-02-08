@@ -332,7 +332,9 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     time.sleep(2)
 
-    req_h2, req_r2, req_l2 = reachy_sdk_zeroed.set_pose('zero', wait_for_moves_end=False, duration=1, interpolation_mode="linear")
+    req_h2, req_r2, req_l2 = reachy_sdk_zeroed.set_pose(
+        "zero", wait_for_moves_end=False, duration=1, interpolation_mode="linear"
+    )
 
     assert (reachy_sdk_zeroed._get_move_state(req4).goal_status == GoalStatus.STATUS_CANCELING) | (
         reachy_sdk_zeroed._get_move_state(req4).goal_status == GoalStatus.STATUS_CANCELED
@@ -373,7 +375,7 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     time.sleep(2)
 
-    req_h3, req_r3, req_l3 = reachy_sdk_zeroed.set_pose('elbow_90', wait_for_moves_end=False, duration=2)
+    req_h3, req_r3, req_l3 = reachy_sdk_zeroed.set_pose("elbow_90", wait_for_moves_end=False, duration=2)
 
     assert (reachy_sdk_zeroed._get_move_state(req7).goal_status == GoalStatus.STATUS_CANCELING) | (
         reachy_sdk_zeroed._get_move_state(req7).goal_status == GoalStatus.STATUS_CANCELED
