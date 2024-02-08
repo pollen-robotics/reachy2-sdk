@@ -159,6 +159,7 @@ is running and that the IP is correct."
                 "head",
                 "r_arm",
                 "l_arm",
+                "cameras",
                 "cancel_all_moves",
                 "cancel_move_by_id",
                 "_get_move_state",
