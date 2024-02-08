@@ -190,6 +190,9 @@ class Head:
 
         X is forward, Y is left and Z is upward. They all expressed in meters.
         """
+        if self.is_off():
+            raise RuntimeError("Head is off. Look at not created.")
+
         request = GoToRequest(
             cartesian_goal=CartesianGoal(
                 neck_cartesian_goal=NeckCartesianGoal(
@@ -216,6 +219,9 @@ class Head:
 
         Rotation is done in order roll, pitch, yaw.
         """
+        if self.is_off():
+            raise RuntimeError("Head is off. Rotate_to not created.")
+
         if degrees:
             roll = np.deg2rad(roll)
             pitch = np.deg2rad(pitch)
@@ -241,6 +247,9 @@ class Head:
 
     def orient(self, q: pyQuat, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
         """Send neck to the orientation given as a quaternion."""
+        if self.is_off():
+            raise RuntimeError("Head is off. Orient to not created.")
+
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(

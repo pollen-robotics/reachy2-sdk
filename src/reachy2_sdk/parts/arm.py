@@ -138,7 +138,8 @@ class Arm:
         All arm's motors will then be stiff.
         """
         self._arm_stub.TurnOn(self.part_id)
-        self.gripper.turn_on()
+        if hasattr(self, "gripper"):
+            self.gripper.turn_on()
 
     def turn_off(self) -> None:
         """Turn all motors of the part off.
@@ -146,14 +147,15 @@ class Arm:
         All arm's motors will then be compliant.
         """
         self._arm_stub.TurnOff(self.part_id)
-        self.gripper.turn_off()
+        if hasattr(self, "gripper"):
+            self.gripper.turn_off()
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
             if actuator.compliant:
                 return False
-        if self.gripper.compliant:
+        if hasattr(self, "gripper") and self.gripper.compliant:
             return False
         return True
 
@@ -162,7 +164,7 @@ class Arm:
         for actuator in self._actuators.values():
             if not actuator.compliant:
                 return False
-        if not self.gripper.compliant:
+        if hasattr(self, "gripper") and not self.gripper.compliant:
             return False
         return True
 
@@ -266,6 +268,8 @@ class Arm:
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
         if q0 is not None and (len(q0) != 7):
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
+        if self.is_off():
+            raise RuntimeError("Arm is off. Goto not created.")
 
         if q0 is not None:
             q0 = list_to_arm_position(q0)
@@ -311,6 +315,9 @@ class Arm:
 
         You can also define tolerances for each axis of the position and of the orientation.
         """
+        if self.is_off():
+            raise RuntimeError("Arm is off. Goto not created.")
+
         target = ArmCartesianGoal(
             id=self.part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
@@ -350,6 +357,8 @@ class Arm:
         """
         if len(positions) != 7:
             raise ValueError(f"positions should be length 7 (got {len(positions)} instead)!")
+        if self.is_off():
+            raise RuntimeError("Arm is off. Goto not created.")
 
         arm_pos = list_to_arm_position(positions, degrees)
         request = GoToRequest(

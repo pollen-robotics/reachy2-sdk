@@ -177,5 +177,16 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         arm.goto_from_matrix(target=np.zeros((4, 4)), q0=[0.0])
 
+    # Arm is off
+    with pytest.raises(RuntimeError):
+        arm.goto_from_matrix(target=np.zeros((4, 4)), q0=[0.0, 0, 0, 0, 0, 0, 0])
+
     with pytest.raises(ValueError):
         arm.goto_joints(positions=[0.0])
+
+    # Arm is off
+    with pytest.raises(RuntimeError):
+        arm.goto_joints(positions=[0.0, 0, 0, 0, 0, 0, 0])
+    # Arm is off
+    with pytest.raises(RuntimeError):
+        arm.goto_position_orientation(None, None, None, None)

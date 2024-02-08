@@ -53,6 +53,8 @@ class Hand:
         """
         if not 0.0 <= percentage <= 100.0:
             raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
+        if self.compliant:
+            raise RuntimeError("Gripper is off.")
 
         if percentage == 100.0:
             self._hand_stub.OpenHand(self.part_id)
@@ -72,6 +74,8 @@ class Hand:
         """
         if not 0.0 <= percentage <= 100.0:
             raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
+        if self.compliant:
+            raise RuntimeError("Gripper is off.")
 
         if percentage == 100.0:
             self._hand_stub.CloseHand(self.part_id)

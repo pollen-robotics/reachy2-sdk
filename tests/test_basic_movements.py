@@ -131,6 +131,9 @@ def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
 
 @pytest.mark.online
 def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
+    reachy_sdk_zeroed.head.turn_on()
+    print(reachy_sdk_zeroed.head.is_on())
+    print(reachy_sdk_zeroed.head.is_off())
     q0 = Quaternion(axis=[1, 0, 0], angle=np.pi / 6.0)  # Rotate 30 about X
     id = reachy_sdk_zeroed.head.orient(q0, duration=1)
 

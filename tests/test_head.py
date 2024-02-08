@@ -77,6 +77,15 @@ def test_class() -> None:
     assert head.joints["roll"].goal_position == to_position(goal_rot.rpy.roll.value)
     assert head.joints["roll"].present_position == to_position(present_rot.rpy.roll.value)
 
+    with pytest.raises(RuntimeError):
+        head.look_at(0, 0, 0)
+
+    with pytest.raises(RuntimeError):
+        head.rotate_to(0, 0, 0)
+
+    with pytest.raises(RuntimeError):
+        head.orient(None)
+
     # updating values
     compliance = BoolValue(value=False)
 
