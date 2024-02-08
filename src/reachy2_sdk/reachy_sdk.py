@@ -178,7 +178,7 @@ is running and that the IP is correct."
             task.cancel()
 
         if self.cameras is not None:
-            self.cameras.cleanup()
+            self.cameras._cleanup()
             self.cameras = None
 
         self._logger.info("Disconnected from Reachy.")

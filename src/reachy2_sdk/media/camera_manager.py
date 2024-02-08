@@ -39,7 +39,7 @@ class CameraManager:
         self._init_thread.start()
         # SDK Server count the number of clients to release the cameras if there is no one left
         self._cleaned = False
-        atexit.register(self.cleanup)
+        atexit.register(self._cleanup)
 
     def _setup_cameras(self) -> None:
         cams = self._video_stub.InitAllCameras(Empty())
@@ -57,7 +57,7 @@ class CameraManager:
                 else:
                     self._logger.error(f"Camera {c.name} not defined")
 
-    def cleanup(self) -> None:
+    def _cleanup(self) -> None:
         if not self._cleaned:
             self._init_thread.join()
             self._video_stub.GoodBye(Empty())
