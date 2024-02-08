@@ -5,7 +5,7 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import MobileBase
 from reachy2_sdk_api.reachy_pb2 import Reachy
 from reachy2_sdk_api.reachy_pb2 import ReachyInfo as ReachyInfo_proto
 
-from reachy2_sdk.config.reachy_info import ReachyInfo, get_config
+from reachy2_sdk.config.reachy_info import ReachyInfo
 
 
 @pytest.mark.offline
@@ -14,8 +14,9 @@ def test_ReachyInfo() -> None:
     version_hard = "1.1"
     version_soft = "1.2"
     robot_info = ReachyInfo_proto(serial_number=serial_number, version_hard=version_hard, version_soft=version_soft)
+    reachy = Reachy(info=robot_info)
 
-    ri = ReachyInfo(robot_info)
+    ri = ReachyInfo(reachy)
 
     assert ri.robot_serial_number == serial_number
     assert ri.hardware_version == version_hard
@@ -23,31 +24,36 @@ def test_ReachyInfo() -> None:
 
 
 @pytest.mark.offline
-def test_getconfig() -> None:
-    robot = Reachy()
-    config = get_config(robot)
-    assert config == "custom_config"
+def test_config() -> None:
+    serial_number = "Reachy-12345"
+    version_hard = "1.1"
+    version_soft = "1.2"
+    robot_info = ReachyInfo_proto(serial_number=serial_number, version_hard=version_hard, version_soft=version_soft)
 
-    robot = Reachy(head=Head(), l_arm=Arm())
-    config = get_config(robot)
-    assert config == "starter_kit (left arm)"
+    robot = Reachy(info=robot_info)
+    ri = ReachyInfo(robot)
+    assert ri.config == "custom_config"
 
-    robot = Reachy(head=Head(), r_arm=Arm())
-    config = get_config(robot)
-    assert config == "starter_kit (right arm)"
+    robot = Reachy(head=Head(), l_arm=Arm(), info=robot_info)
+    ri = ReachyInfo(robot)
+    assert ri.config == "starter_kit (left arm)"
 
-    robot = Reachy(head=Head(), l_arm=Arm(), r_arm=Arm())
-    config = get_config(robot)
-    assert config == "full_kit"
+    robot = Reachy(head=Head(), r_arm=Arm(), info=robot_info)
+    ri = ReachyInfo(robot)
+    assert ri.config == "starter_kit (right arm)"
 
-    robot = Reachy(head=Head(), l_arm=Arm(), mobile_base=MobileBase())
-    config = get_config(robot)
-    assert config == "starter_kit (left arm) with mobile_base"
+    robot = Reachy(head=Head(), l_arm=Arm(), r_arm=Arm(), info=robot_info)
+    ri = ReachyInfo(robot)
+    assert ri.config == "full_kit"
 
-    robot = Reachy(head=Head(), r_arm=Arm(), mobile_base=MobileBase())
-    config = get_config(robot)
-    assert config == "starter_kit (right arm) with mobile_base"
+    robot = Reachy(head=Head(), l_arm=Arm(), mobile_base=MobileBase(), info=robot_info)
+    ri = ReachyInfo(robot)
+    assert ri.config == "starter_kit (left arm) with mobile_base"
 
-    robot = Reachy(head=Head(), l_arm=Arm(), r_arm=Arm(), mobile_base=MobileBase())
-    config = get_config(robot)
-    assert config == "full_kit with mobile_base"
+    robot = Reachy(head=Head(), r_arm=Arm(), mobile_base=MobileBase(), info=robot_info)
+    ri = ReachyInfo(robot)
+    assert ri.config == "starter_kit (right arm) with mobile_base"
+
+    robot = Reachy(head=Head(), l_arm=Arm(), r_arm=Arm(), mobile_base=MobileBase(), info=robot_info)
+    ri = ReachyInfo(robot)
+    assert ri.config == "full_kit with mobile_base"
