@@ -576,6 +576,8 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if not part.is_on():
                 return False
+        if self.mobile_base is not None and self.mobile_base.is_off():
+            return False
         return True
 
     def is_off(self) -> bool:
@@ -583,6 +585,8 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if part.is_on():
                 return False
+        if self.mobile_base is not None and self.mobile_base.is_on():
+            return False
         return True
 
     def home(self, wait_for_goto_end: bool = True, duration: float = 2, interpolation_mode: str = "minimum_jerk") -> GoToHomeId:
