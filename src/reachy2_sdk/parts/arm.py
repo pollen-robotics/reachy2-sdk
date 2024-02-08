@@ -12,15 +12,13 @@ import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
-from reachy2_sdk_api.arm_pb2 import (
+from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmCartesianGoal,
     ArmEndEffector,
     ArmFKRequest,
     ArmIKRequest,
     ArmJointGoal,
-    ArmLimits,
     ArmState,
-    ArmTemperatures,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import (
@@ -77,7 +75,7 @@ class Arm:
         self._grpc_channel = grpc_channel
         self._arm_stub = ArmServiceStub(grpc_channel)
         self._goto_stub = goto_stub
-        self.part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
+        self._part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
 
         self._setup_arm(arm_msg, initial_state)
 
@@ -119,17 +117,12 @@ class Arm:
         self.gripper = Hand(hand, hand_initial_state, self._grpc_channel)
 
     @property
-    def actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
-        """Get all the arm's actuators."""
-        return self._actuators
-
-    @property
     def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all the arm's joints."""
         _joints: Dict[str, OrbitaJoint] = {}
         for actuator_name, actuator in self._actuators.items():
             for joint in actuator._joints.values():
-                _joints[actuator_name + "_" + joint.axis_type] = joint
+                _joints[actuator_name + "_" + joint._axis_type] = joint
         return _joints
 
     def turn_on(self) -> None:
@@ -137,7 +130,7 @@ class Arm:
 
         All arm's motors will then be stiff.
         """
-        self._arm_stub.TurnOn(self.part_id)
+        self._arm_stub.TurnOn(self._part_id)
         self.gripper.turn_on()
 
     def turn_off(self) -> None:
@@ -145,24 +138,24 @@ class Arm:
 
         All arm's motors will then be compliant.
         """
-        self._arm_stub.TurnOff(self.part_id)
+        self._arm_stub.TurnOff(self._part_id)
         self.gripper.turn_off()
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
-            if actuator.compliant:
+            if not actuator.is_on():
                 return False
-        if self.gripper.compliant:
+        if not self.gripper.is_on():
             return False
         return True
 
     def is_off(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
-            if not actuator.compliant:
+            if actuator.is_on():
                 return False
-        if not self.gripper.compliant:
+        if self.gripper.is_on():
             return False
         return True
 
@@ -182,7 +175,7 @@ class Arm:
         You can either specify a given joints position, otherwise it will use the current robot position.
         """
         req_params = {
-            "id": self.part_id,
+            "id": self._part_id,
         }
         if joints_positions is None:
             present_joints_positions = [
@@ -229,7 +222,7 @@ class Arm:
             "target": ArmEndEffector(
                 pose=Matrix4x4(data=target.flatten().tolist()),
             ),
-            "id": self.part_id,
+            "id": self._part_id,
         }
 
         if q0 is not None:
@@ -272,7 +265,7 @@ class Arm:
             request = GoToRequest(
                 cartesian_goal=CartesianGoal(
                     arm_cartesian_goal=ArmCartesianGoal(
-                        id=self.part_id,
+                        id=self._part_id,
                         goal_pose=Matrix4x4(data=target.flatten().tolist()),
                         duration=FloatValue(value=duration),
                         q0=q0,
@@ -284,7 +277,7 @@ class Arm:
             request = GoToRequest(
                 cartesian_goal=CartesianGoal(
                     arm_cartesian_goal=ArmCartesianGoal(
-                        id=self.part_id,
+                        id=self._part_id,
                         goal_pose=Matrix4x4(data=target.flatten().tolist()),
                         duration=FloatValue(value=duration),
                     )
@@ -312,7 +305,7 @@ class Arm:
         You can also define tolerances for each axis of the position and of the orientation.
         """
         target = ArmCartesianGoal(
-            id=self.part_id,
+            id=self._part_id,
             target_position=Point(x=position[0], y=position[1], z=position[2]),
             target_orientation=Rotation3d(
                 rpy=ExtEulerAngles(
@@ -354,45 +347,45 @@ class Arm:
         arm_pos = list_to_arm_position(positions, degrees)
         request = GoToRequest(
             joints_goal=JointsGoal(
-                arm_joint_goal=ArmJointGoal(id=self.part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
+                arm_joint_goal=ArmJointGoal(id=self._part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
             ),
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
         return response
 
-    def get_goto_playing(self) -> GoToId:
+    def get_move_playing(self) -> GoToId:
         """Return the id of the goto currently playing on the arm"""
-        response = self._goto_stub.GetPartGoToPlaying(self.part_id)
+        response = self._goto_stub.GetPartGoToPlaying(self._part_id)
         return response
 
-    def get_goto_queue(self) -> List[GoToId]:
+    def get_moves_queue(self) -> List[GoToId]:
         """Return the list of all goto ids waiting to be played on the arm"""
-        response = self._goto_stub.GetPartGoToQueue(self.part_id)
+        response = self._goto_stub.GetPartGoToQueue(self._part_id)
         return [goal_id for goal_id in response.goto_ids]
 
-    def cancel_all_goto(self) -> GoToAck:
+    def cancel_all_moves(self) -> GoToAck:
         """Ask the cancellation of all waiting goto on the arm"""
-        response = self._goto_stub.CancelPartAllGoTo(self.part_id)
+        response = self._goto_stub.CancelPartAllGoTo(self._part_id)
         return response
 
     def get_joints_positions(self) -> List[float]:
         """Return the current joints positions of the arm in degrees"""
-        response = self._arm_stub.GetJointPosition(self.part_id)
+        response = self._arm_stub.GetJointPosition(self._part_id)
         positions = arm_position_to_list(response)
         return positions
 
-    @property
-    def joints_limits(self) -> ArmLimits:
-        """Get limits of all the part's joints"""
-        limits = self._arm_stub.GetJointsLimits(self.part_id)
-        return limits
+    # @property
+    # def joints_limits(self) -> ArmLimits:
+    #     """Get limits of all the part's joints"""
+    #     limits = self._arm_stub.GetJointsLimits(self._part_id)
+    #     return limits
 
-    @property
-    def temperatures(self) -> ArmTemperatures:
-        """Get temperatures of all the part's motors"""
-        temperatures = self._arm_stub.GetTemperatures(self.part_id)
-        return temperatures
+    # @property
+    # def temperatures(self) -> ArmTemperatures:
+    #     """Get temperatures of all the part's motors"""
+    #     temperatures = self._arm_stub.GetTemperatures(self._part_id)
+    #     return temperatures
 
     def _update_with(self, new_state: ArmState) -> None:
         """Update the arm with a newly received (partial) state received from the gRPC server."""

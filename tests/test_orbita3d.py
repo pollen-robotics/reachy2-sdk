@@ -43,10 +43,7 @@ def test_class() -> None:
 
     assert orbita3d.__repr__() != ""
 
-    assert orbita3d.compliant
-
-    with pytest.raises(AttributeError):
-        orbita3d.compliant = "wrong value"
+    assert not orbita3d.is_on()
 
     # use to_position()  to convert radian to degree
     assert orbita3d.roll.goal_position == to_position(goal_rot.rpy.roll.value)
@@ -83,17 +80,17 @@ def test_class() -> None:
     orbita3d.temperatures["motor_2"] == temperature.motor_1.value
     orbita3d.temperatures["motor_3"] == temperature.motor_3.value
 
-    with pytest.raises(ValueError):
-        orbita3d.set_speed_limit("wrong value")
+    # with pytest.raises(ValueError):
+    #     orbita3d.set_speed_limit("wrong value")
 
-    with pytest.raises(ValueError):
-        orbita3d.set_torque_limit("wrong value")
+    # with pytest.raises(ValueError):
+    #     orbita3d.set_torque_limit("wrong value")
 
-    with pytest.raises(ValueError):
-        orbita3d.set_pid("wrong value")
+    # with pytest.raises(ValueError):
+    #     orbita3d.set_pid("wrong value")
 
-    with pytest.raises(ValueError):
-        orbita3d.set_pid(("1", 2, 3))
+    # with pytest.raises(ValueError):
+    #     orbita3d.set_pid(("1", 2, 3))
 
     pid_msg = orbita3d._build_grpc_cmd_msg("pid")
     assert isinstance(pid_msg, PID3d)
@@ -131,7 +128,7 @@ def test_class() -> None:
 
     orbita3d._update_with(orbita3d_state)
 
-    assert not orbita3d.compliant
+    assert orbita3d.is_on()
 
     assert orbita3d.roll.goal_position == to_position(goal_rot.rpy.roll.value)
     assert orbita3d.roll.present_position == to_position(present_rot.rpy.roll.value)

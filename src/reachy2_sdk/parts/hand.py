@@ -27,14 +27,14 @@ class Hand:
 
     def __repr__(self) -> str:
         """Clean representation of a Hand."""
-        return f"Hand with part_id {self.part_id} and opening of {self.opening}%"
+        return f"Hand with part_id {self._part_id} and opening of {self.opening}%"
 
     def _setup_hand(self, hand_msg: Hand_proto, initial_state: HandState) -> None:
         """Set up the hand.
 
         It will create the hand and set its initial state.
         """
-        self.part_id = PartId(id=hand_msg.part_id.id)
+        self._part_id = PartId(id=hand_msg.part_id.id)
         self._present_position: float = round(np.rad2deg(initial_state.present_position.parallel_gripper.position), 1)
         self._goal_position: float = round(np.rad2deg(initial_state.goal_position.parallel_gripper.position), 1)
         self._opening: float = initial_state.opening.value
@@ -45,62 +45,47 @@ class Hand:
         """Return the opening of the hand in percentage."""
         return round(self._opening * 100, 2)
 
-    def open(self, percentage: float = 100) -> None:
-        """Open the hand.
+    def set_opening(self, percentage: float) -> None:
+        """Set an opening value for the hand
 
         Args:
-            percentage (float): Percentage of the opening. Defaults to 100.
+            percentage (float): Percentage of the opening.
         """
         if not 0.0 <= percentage <= 100.0:
             raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
 
-        if percentage == 100.0:
-            self._hand_stub.OpenHand(self.part_id)
-        else:
-            self._hand_stub.SetHandPosition(
-                HandPositionRequest(
-                    id=self.part_id,
-                    position=HandPosition(parallel_gripper=ParallelGripperPosition(position=percentage / 100.0)),
-                )
+        self._hand_stub.SetHandPosition(
+            HandPositionRequest(
+                id=self._part_id,
+                position=HandPosition(parallel_gripper=ParallelGripperPosition(position=percentage / 100.0)),
             )
+        )
 
-    def close(self, percentage: float = 100) -> None:
-        """Close the hand.
+    def open(self) -> None:
+        """Open the hand."""
+        self._hand_stub.OpenHand(self._part_id)
 
-        Args:
-            percentage (float): Percentage of the closing. Defaults to 100.
-        """
-        if not 0.0 <= percentage <= 100.0:
-            raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
-
-        if percentage == 100.0:
-            self._hand_stub.CloseHand(self.part_id)
-        else:
-            self._hand_stub.SetHandPosition(
-                HandPositionRequest(
-                    id=self.part_id,
-                    position=HandPosition(parallel_gripper=ParallelGripperPosition(position=(100 - percentage) / 100.0)),
-                )
-            )
+    def close(self) -> None:
+        """Close the hand."""
+        self._hand_stub.CloseHand(self._part_id)
 
     def turn_on(self) -> None:
         """Turn all motors of the hand on.
 
         All hand's motors will then be stiff.
         """
-        self._hand_stub.TurnOn(self.part_id)
+        self._hand_stub.TurnOn(self._part_id)
 
     def turn_off(self) -> None:
         """Turn all motors of the hand off.
 
         All hand's motors will then be compliant.
         """
-        self._hand_stub.TurnOff(self.part_id)
+        self._hand_stub.TurnOff(self._part_id)
 
-    @property
-    def compliant(self) -> bool:
+    def is_on(self) -> bool:
         """Get compliancy of the hand"""
-        return self._compliant
+        return not self._compliant
 
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state received from the gRPC server."""

@@ -12,7 +12,7 @@ from src.reachy2_sdk.reachy_sdk import ReachySDK
 @pytest.fixture(scope="module")
 def reachy_sdk() -> ReachySDK:
     reachy = ReachySDK(host="localhost")
-    assert reachy.grpc_status == "connected"
+    assert reachy.is_connected()
 
     assert reachy.turn_on()
 
@@ -26,7 +26,7 @@ def reachy_sdk() -> ReachySDK:
 
 @pytest.fixture
 def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
-    reachy_sdk.cancel_all_goto()
+    reachy_sdk.cancel_all_moves()
     for joint in reachy_sdk.joints.values():
         joint.goal_position = 0
 
@@ -120,7 +120,7 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
-    state = reachy.get_goto_state(id)
+    state = reachy._get_move_state(id)
     result = bool(
         state.goal_status == GoalStatus.STATUS_ABORTED
         or state.goal_status == GoalStatus.STATUS_CANCELED
