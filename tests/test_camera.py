@@ -8,21 +8,6 @@ from reachy2_sdk.media.camera import Camera, CameraView
 from src.reachy2_sdk.reachy_sdk import ReachySDK
 
 
-@pytest.fixture(scope="module")
-def reachy_sdk() -> ReachySDK:
-    reachy = ReachySDK(host="localhost")
-    assert reachy.grpc_status == "connected"
-
-    assert reachy.turn_on()
-
-    yield reachy
-
-    assert reachy.turn_off()
-
-    reachy.disconnect()
-    ReachySDK.clear()
-
-
 @pytest.mark.online
 def test_no_camera(reachy_sdk: ReachySDK) -> None:
     assert reachy_sdk.cameras.teleop is None

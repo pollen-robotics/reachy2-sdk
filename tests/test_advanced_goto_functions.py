@@ -10,32 +10,6 @@ from src.reachy2_sdk.reachy_sdk import ReachySDK
 from .test_basic_movements import is_goto_finished
 
 
-@pytest.fixture(scope="module")
-def reachy_sdk() -> ReachySDK:
-    reachy = ReachySDK(host="localhost")
-    assert reachy.grpc_status == "connected"
-
-    assert reachy.turn_on()
-
-    yield reachy
-
-    assert reachy.turn_off()
-
-    reachy.disconnect()
-    ReachySDK.clear()
-
-
-@pytest.fixture
-def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
-    reachy_sdk.cancel_all_goto()
-    for joint in reachy_sdk.joints.values():
-        joint.goal_position = 0
-
-    time.sleep(1)
-
-    return reachy_sdk
-
-
 @pytest.mark.online
 def test_cancel_goto_by_id(reachy_sdk_zeroed: ReachySDK) -> None:
     req = reachy_sdk_zeroed.head.rotate_to(0, 40, 0, duration=10, interpolation_mode="linear")

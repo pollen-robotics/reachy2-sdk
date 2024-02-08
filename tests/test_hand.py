@@ -83,31 +83,6 @@ def test_class() -> None:
     # assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
 
 
-@pytest.fixture(scope="module")
-def reachy_sdk() -> ReachySDK:
-    reachy = ReachySDK(host="localhost")
-    assert reachy.grpc_status == "connected"
-
-    assert reachy.turn_on()
-
-    yield reachy
-
-    assert reachy.turn_off()
-
-    reachy.disconnect()
-    ReachySDK.clear()
-
-
-@pytest.fixture
-def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
-    for joint in reachy_sdk.joints.values():
-        joint.goal_position = 0
-
-    time.sleep(1)
-
-    return reachy_sdk
-
-
 @pytest.mark.online
 def test_gripper(reachy_sdk_zeroed: ReachySDK) -> None:
     # https://github.com/pollen-robotics/reachy2_sdk_server/pull/80#issuecomment-1907665226
