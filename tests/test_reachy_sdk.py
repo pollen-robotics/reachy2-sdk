@@ -26,7 +26,7 @@ def test_unconnected() -> None:
         rsdk.audio
 
     with pytest.raises(AttributeError):
-        rsdk._cameras
+        rsdk.cameras
 
     assert len(rsdk.enabled_parts) == 0
 
