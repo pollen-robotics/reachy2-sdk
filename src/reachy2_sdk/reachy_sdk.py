@@ -87,6 +87,7 @@ class ReachySDK(metaclass=Singleton):
         self._r_arm: Optional[Arm] = None
         self._l_arm: Optional[Arm] = None
         self._head: Optional[Head] = None
+        self._cameras: Optional[CameraManager] = None
 
         self.connect()
 
@@ -119,7 +120,7 @@ is running and that the IP is correct."
 
         self._setup_parts()
         # self._setup_audio()
-        self.cameras = self._setup_video()
+        self._cameras = self._setup_video()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
@@ -177,9 +178,9 @@ is running and that the IP is correct."
         for task in asyncio.all_tasks(loop=self._loop):
             task.cancel()
 
-        if self.cameras is not None:
-            self.cameras._cleanup()
-            self.cameras = None
+        if self._cameras is not None:
+            self._cameras._cleanup()
+            self._cameras = None
 
         self._logger.info("Disconnected from Reachy.")
 
@@ -278,6 +279,13 @@ is running and that the IP is correct."
             self._grpc_connected = False
         else:
             raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
+
+    @property
+    def cameras(self) -> CameraManager:
+        """Get Reachy's cameras."""
+        if self._cameras is None or (self._cameras.SR is None and self._cameras.teleop is None):
+            raise AttributeError("There is not available camera")
+        return self._cameras
 
     def _get_info(self) -> None:
         """Get main description of the robot.
