@@ -94,7 +94,7 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
-    state = reachy.get_goto_state(id)
+    state = reachy._get_move_state(id)
     result = bool(
         state.goal_status == GoalStatus.STATUS_ABORTED
         or state.goal_status == GoalStatus.STATUS_CANCELED

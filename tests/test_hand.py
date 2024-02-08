@@ -47,20 +47,14 @@ def test_class() -> None:
     assert hand.opening == 20
 
     with pytest.raises(ValueError):
-        hand.open(-1)
+        hand.set_opening(-1)
 
     with pytest.raises(ValueError):
-        hand.open(101)
-
-    with pytest.raises(ValueError):
-        hand.close(-1)
-
-    with pytest.raises(ValueError):
-        hand.close(101)
+        hand.set_opening(101)
 
     assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
     assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
-    assert hand.compliant
+    assert hand.is_on() is False
 
     goal_position_rad = 5
     present_position_rad = 6

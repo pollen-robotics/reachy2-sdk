@@ -17,24 +17,14 @@ def test_unconnected() -> None:
     rsdk = ReachySDK(host="dummy")
 
     assert rsdk._grpc_connected is False
-    assert rsdk.grpc_status == "disconnected"
+    assert not rsdk.is_connected()
 
     with pytest.raises(ConnectionError):
         rsdk._get_info()
 
-    with pytest.raises(AttributeError):
-        rsdk.audio
-
-    with pytest.raises(AttributeError):
-        rsdk.cameras
-
-    assert len(rsdk.enabled_parts) == 0
-
-    assert len(rsdk.disabled_parts) == 0
-
     assert len(rsdk.joints) == 0
 
-    assert len(rsdk.actuators) == 0
+    assert len(rsdk._actuators) == 0
 
     assert rsdk.turn_on() is False
 
@@ -47,9 +37,6 @@ def test_unconnected() -> None:
 @pytest.mark.offline
 def test_getters_setters() -> None:
     rsdk = ReachySDK(host="dummy")
-
-    with pytest.raises(ValueError):
-        rsdk._grpc_status = "test_test"
 
     with pytest.raises(AttributeError):
         rsdk.r_arm
