@@ -123,7 +123,7 @@ class Arm:
 
         All arm's motors will then be stiff.
         """
-        self._arm_stub.TurnOn(self.part_id)
+        self._arm_stub.TurnOn(self._part_id)
         if hasattr(self, "gripper"):
             self.gripper.turn_on()
 
@@ -132,7 +132,7 @@ class Arm:
 
         All arm's motors will then be compliant.
         """
-        self._arm_stub.TurnOff(self.part_id)
+        self._arm_stub.TurnOff(self._part_id)
         if hasattr(self, "gripper"):
             self.gripper.turn_off()
 
