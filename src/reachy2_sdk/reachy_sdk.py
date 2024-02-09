@@ -41,6 +41,7 @@ from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
 from .parts.head import Head
+from .utils.custom_dict import CustomDict
 from .utils.singleton import Singleton
 from .utils.utils import (
     arm_position_to_list,
@@ -216,7 +217,7 @@ is running and that the IP is correct."
         if not self._grpc_connected:
             self._logger.warning("Cannot get joints, not connected to Reachy.")
             return {}
-        _joints: Dict[str, OrbitaJoint] = {}
+        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
         for part_name in self.info._enabled_parts:
             part = getattr(self, part_name)
             for joint_name, joint in part.joints.items():
