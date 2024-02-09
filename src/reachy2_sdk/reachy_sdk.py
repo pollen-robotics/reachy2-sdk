@@ -35,6 +35,7 @@ from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
 from .config.reachy_info import ReachyInfo
 from .media.audio import Audio
+from .media.camera_manager import CameraManager
 from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
@@ -71,12 +72,14 @@ class ReachySDK(metaclass=Singleton):
         host: str,
         sdk_port: int = 50051,
         audio_port: int = 50063,
+        video_port: int = 50065,
     ) -> None:
         """Set up the connection with the robot."""
         self._logger = getLogger(__name__)
         self._host = host
         self._sdk_port = sdk_port
         self._audio_port = audio_port
+        self._video_port = video_port
 
         self._grpc_connected = False
 
@@ -84,6 +87,7 @@ class ReachySDK(metaclass=Singleton):
         self._r_arm: Optional[Arm] = None
         self._l_arm: Optional[Arm] = None
         self._head: Optional[Head] = None
+        self._cameras: Optional[CameraManager] = None
 
         self.connect()
 
@@ -113,6 +117,7 @@ is running and that the IP is correct."
 
         self._setup_parts()
         # self._setup_audio()
+        self._cameras = self._setup_video()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
@@ -154,6 +159,7 @@ is running and that the IP is correct."
                 "head",
                 "r_arm",
                 "l_arm",
+                "cameras",
                 "cancel_all_moves",
                 "cancel_move_by_id",
                 "_get_move_state",
@@ -169,6 +175,10 @@ is running and that the IP is correct."
 
         for task in asyncio.all_tasks(loop=self._loop):
             task.cancel()
+
+        if self._cameras is not None:
+            self._cameras._cleanup()
+            self._cameras = None
 
         self._logger.info("Disconnected from Reachy.")
 
@@ -251,6 +261,13 @@ is running and that the IP is correct."
         else:
             raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
 
+    @property
+    def cameras(self) -> CameraManager:
+        """Get Reachy's cameras."""
+        self._cameras.wait_end_of_initialization()  # type: ignore[union-attr]
+
+        return self._cameras  # type: ignore[return-value]
+
     def _get_info(self) -> None:
         """Get main description of the robot.
 
@@ -274,6 +291,13 @@ is running and that the IP is correct."
             self.audio = Audio(self._host, self._audio_port)
         except Exception:
             self._logger.error("Failed to connect to audio server. ReachySDK.audio will not be available.")
+
+    def _setup_video(self) -> Optional[CameraManager]:
+        try:
+            return CameraManager(self._host, self._video_port)
+        except Exception as e:
+            self._logger.error(f"Failed to connect to video server with error {e}.\nReachySDK.video will not be available.")
+            return None
 
     def _setup_parts(self) -> None:
         """Setup all parts of the robot.
