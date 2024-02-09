@@ -1,7 +1,7 @@
 import grpc
 import pytest
-from pyquaternion import Quaternion
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
+from pyquaternion import Quaternion
 from reachy2_sdk_api.component_pb2 import PIDGains
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import HeadState
@@ -137,6 +137,6 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         quat = Quaternion(axis=[1, 0, 0], angle=20.0)
         head.orient(quat, duration=0)
-    
+
     with pytest.raises(ValueError):
         head.rotate_to(20, 30, 10, duration=0)
