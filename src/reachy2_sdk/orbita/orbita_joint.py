@@ -43,9 +43,7 @@ class OrbitaJoint:
 
     def __repr__(self) -> str:
         repr_template = (
-            '<OrbitaJoint axis_type="{axis_type}"'
-            " present_position={present_position}"
-            " goal_position={goal_position} >"
+            '<OrbitaJoint axis_type="{axis_type}" present_position={present_position} goal_position={goal_position} >'
         )
         return repr_template.format(
             axis_type=self._axis_type,
