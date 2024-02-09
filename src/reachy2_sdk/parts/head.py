@@ -102,7 +102,7 @@ class Head:
         _joints: Dict[str, OrbitaJoint] = {}
         for actuator_name, actuator in self._actuators.items():
             for joint in actuator._joints.values():
-                _joints[actuator_name + "." + joint.axis_type] = joint
+                _joints[actuator_name + "." + joint._axis_type] = joint
         return _joints
 
     def get_orientation(self) -> pyQuat:
