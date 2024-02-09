@@ -186,9 +186,18 @@ is running and that the IP is correct."
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
         s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self.info._enabled_parts.items()])
-        return f"""<Reachy host="{self._host}"\n connected={self._grpc_connected}\n battery_voltage={self.info.battery_voltage}\n parts=\n\t{
-            s
-        }\n>"""
+        repr_template = (
+            '<Reachy host="{host}" connected={connected} on={on} \n'
+            " battery_voltage={battery_voltage} \n"
+            " parts=\n\t{parts} \n>"
+        )
+        return repr_template.format(
+            host=self._host,
+            connected=self._grpc_connected,
+            on=self.is_on(),
+            battery_voltage=self.info.battery_voltage,
+            parts=s,
+        )
 
     @property
     def head(self) -> Optional[Head]:

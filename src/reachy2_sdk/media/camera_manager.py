@@ -6,7 +6,6 @@ Initialize the two teleop and SR cameras if they are available.
 import atexit
 import logging
 import threading
-from enum import Enum
 from typing import Optional
 
 import grpc
