@@ -24,6 +24,15 @@ $ pytest [-m offline|online]
 
 Note that only **offline tests** are executed by the Continuous Integration/Continuous Deployment (CI/CD) pipeline, as they don't require a gRPC connection.
 
+### Camera tests
+
+Camera tests have their own marks because it requires the camera to be plugged to the sdk server (*sr_camera* and/or *teleop_camera*). 
+
+```console
+$ pytest -m [sr_camera | teleop_camera]
+```
+
+
 
 ## Logs
 
@@ -32,4 +41,12 @@ The SDK relies on the [python logging system](https://docs.python.org/3/howto/lo
 ```python
 import logging
 logging.basicConfig(level=logging.DEBUG)
+```
+
+
+## Documentation
+
+Documentation is generated via pdoc. It can be generated locally with:
+```console
+pdoc reachy2_sdk --output-dir docs --logo "https://www.pollen-robotics.com/img/company/logo/pollen_logo_square_black.svg"
 ```

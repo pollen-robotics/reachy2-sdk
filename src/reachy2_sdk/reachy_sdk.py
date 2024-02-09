@@ -9,22 +9,22 @@ You can also send joint commands, compute forward or inverse kinematics.
 
 # from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 # from .dynamixel_motor import DynamixelMotor
-from __future__ import annotations
+
 
 import asyncio
 import atexit
 import threading
 import time
-import typing as t
+from collections import namedtuple
 from logging import getLogger
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from mobile_base_sdk import MobileBaseSDK
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
-from reachy2_sdk_api.goto_pb2 import GoToAck
+from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
@@ -33,40 +33,36 @@ from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 from reachy2_sdk_api.orbita3d_pb2 import Orbita3dsCommand
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
-from .arm import Arm
-from .audio import Audio
-from .hand import Hand
-from .head import Head
-from .orbita2d import Orbita2d
-from .orbita3d import Orbita3d
-from .orbita_utils import OrbitaJoint2d, OrbitaJoint3d
-from .reachy import ReachyInfo, get_config
+from .config.reachy_info import ReachyInfo
+from .media.audio import Audio
+from .media.camera_manager import CameraManager
+from .orbita.orbita2d import Orbita2d
+from .orbita.orbita3d import Orbita3d
+from .orbita.orbita_joint import OrbitaJoint
+from .parts.arm import Arm
+from .parts.head import Head
+from .utils.singleton import Singleton
+from .utils.utils import (
+    arm_position_to_list,
+    ext_euler_angles_to_list,
+    get_interpolation_mode,
+)
 
-_T = t.TypeVar("_T")
+SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
+"""Named tuple for easy access to request variables"""
 
-
-class Singleton(type, t.Generic[_T]):
-    _instances: Dict[Singleton[_T], _T] = {}
-
-    def __call__(cls, *args: t.Any, **kwargs: t.Any) -> _T:
-        if cls not in cls._instances:
-            cls._instances[cls] = super().__call__(*args, **kwargs)
-        else:
-            raise ConnectionError("Cannot open 2 robot connections in the same kernel.")
-        return cls._instances[cls]
-
-    def clear(cls) -> None:
-        del cls._instances[cls]
+GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
+"""Named tuple for easy access to goto request on full body"""
 
 
 class ReachySDK(metaclass=Singleton):
     """The ReachySDK class handles the connection with your robot.
     Only one instance of this class can be created in a session.
 
-    # It holds:
-    # - all joints (can be accessed directly via their name or via the joints list).
-    # - all force sensors (can be accessed directly via their name or via the force_sensors list).
-    # - all fans (can be accessed directly via their name or via the fans list).
+    It holds:
+    - all joints (can be accessed directly via their name or via the joints list).
+    - all force sensors (can be accessed directly via their name or via the force_sensors list).
+    - all fans (can be accessed directly via their name or via the fans list).
 
     The synchronisation with the robot is automatically launched at instanciation and is handled in background automatically.
     """
@@ -76,12 +72,14 @@ class ReachySDK(metaclass=Singleton):
         host: str,
         sdk_port: int = 50051,
         audio_port: int = 50063,
+        video_port: int = 50065,
     ) -> None:
         """Set up the connection with the robot."""
         self._logger = getLogger(__name__)
         self._host = host
         self._sdk_port = sdk_port
         self._audio_port = audio_port
+        self._video_port = video_port
 
         self._grpc_connected = False
 
@@ -89,18 +87,17 @@ class ReachySDK(metaclass=Singleton):
         self._r_arm: Optional[Arm] = None
         self._l_arm: Optional[Arm] = None
         self._head: Optional[Head] = None
+        self._cameras: Optional[CameraManager] = None
 
         self.connect()
 
     def connect(self) -> None:
-        if self._grpc_status == "connected":
+        """Connects the SDK to the server."""
+        if self._grpc_connected:
             self._logger.warning("Already connected to Reachy.")
             return
 
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
-
-        self._enabled_parts: Dict[str, Any] = {}
-        self._disabled_parts: List[str] = []
 
         self._stop_flag = threading.Event()
         self._ready = threading.Event()
@@ -115,50 +112,60 @@ class ReachySDK(metaclass=Singleton):
                 f"Could not connect to Reachy with on IP address {self._host}, check that the sdk server \
 is running and that the IP is correct."
             )
-            self._grpc_status = "disconnected"
+            self._grpc_connected = False
             return
 
         self._setup_parts()
-        self._setup_audio()
+        # self._setup_audio()
+        self._cameras = self._setup_video()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
         self._sync_thread.start()
 
-        self._grpc_status = "connected"
+        self._grpc_connected = True
         _open_connection.append(self)
         self._logger.info("Connected to Reachy.")
 
     def disconnect(self) -> None:
-        if self._grpc_status == "disconnected":
+        """Disconnects the SDK from the server."""
+        if not self._grpc_connected:
             self._logger.warning("Already disconnected from Reachy.")
             return
 
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             for actuator in part._actuators.values():
                 actuator._need_sync.clear()
 
         self._stop_flag.set()
         time.sleep(0.1)
-        self._grpc_status = "disconnected"
+        self._grpc_connected = False
 
         self._grpc_channel.close()
         attributs = [attr for attr in dir(self) if not attr.startswith("_")]
         for attr in attributs:
             if attr not in [
-                "grpc_status",
+                "is_connected",
                 "connect",
                 "disconnect",
+                "info",
+                "set_pose",
                 "turn_on",
                 "turn_off",
-                "enabled_parts",
-                "disabled_parts",
+                "is_on",
+                "is_off",
                 "joints",
                 "actuators",
                 "head",
                 "r_arm",
                 "l_arm",
-                "cancel_all_goto",
+                "cameras",
+                "cancel_all_moves",
+                "cancel_move_by_id",
+                "_get_move_state",
+                "get_move_joints_request",
+                "is_move_finished",
+                "is_move_playing",
             ]:
                 delattr(self, attr)
 
@@ -169,82 +176,72 @@ is running and that the IP is correct."
         for task in asyncio.all_tasks(loop=self._loop):
             task.cancel()
 
+        if self._cameras is not None:
+            self._cameras._cleanup()
+            self._cameras = None
+
         self._logger.info("Disconnected from Reachy.")
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
-        s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self._enabled_parts.items()])
-        return f"""<Reachy host="{self._host}"\n grpc_status={self.grpc_status} \n enabled_parts=\n\t{
+        s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self.info._enabled_parts.items()])
+        return f"""<Reachy host="{self._host}"\n connected={self._grpc_connected} \n enabled_parts=\n\t{
             s
-        }\n\tdisabled_parts={self._disabled_parts}\n>"""
+        }\n\tdisabled_parts={self.info._disabled_parts}\n>"""
 
     @property
     def head(self) -> Optional[Head]:
+        """Get Reachy's head."""
         if self._head is None:
             raise AttributeError("head does not exist with this configuration")
         return self._head
 
     @property
     def r_arm(self) -> Optional[Arm]:
+        """Get Reachy's right arm."""
         if self._r_arm is None:
             raise AttributeError("r_arm does not exist with this configuration")
         return self._r_arm
 
     @property
     def l_arm(self) -> Optional[Arm]:
+        """Get Reachy's left arm."""
         if self._l_arm is None:
             raise AttributeError("l_arm does not exist with this configuration")
         return self._l_arm
 
     @property
-    def enabled_parts(self) -> List[str]:
-        """Get existing parts of the robot the user can effectively control."""
-        if self._grpc_status == "disconnected":
-            self._logger.warning("Cannot get enabled parts, not connected to Reachy.")
-            return []
-        return list(self._enabled_parts.keys())
-
-    @property
-    def disabled_parts(self) -> List[str]:
-        """Get existing parts of the robot that cannot be controlled by the user"""
-        if self._grpc_status == "disconnected":
-            self._logger.warning("Cannot get disabled parts, not connected to Reachy.")
-            return []
-        return self._disabled_parts
-
-    @property
-    def joints(self) -> Dict[str, OrbitaJoint2d | OrbitaJoint3d]:
+    def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all joints of the robot."""
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Cannot get joints, not connected to Reachy.")
             return {}
-        _joints: Dict[str, OrbitaJoint2d | OrbitaJoint3d] = {}
-        for part_name in self.enabled_parts:
+        _joints: Dict[str, OrbitaJoint] = {}
+        for part_name in self.info._enabled_parts:
             part = getattr(self, part_name)
             for joint_name, joint in part.joints.items():
                 _joints[part_name + "_" + joint_name] = joint
         return _joints
 
     @property
-    def actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
+    def _actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
         """Get all actuators of the robot."""
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Cannot get actuators, not connected to Reachy.")
             return {}
         _actuators: Dict[str, Orbita2d | Orbita3d] = {}
-        for part_name in self.enabled_parts:
+        for part_name in self.info._enabled_parts:
             part = getattr(self, part_name)
             for actuator_name, actuator in part.actuators.items():
                 _actuators[part_name + "_" + actuator_name] = actuator
         return _actuators
 
-    @property
-    def grpc_status(self) -> str:
+    def is_connected(self) -> bool:
         """Get the status of the connection with the robot server.
 
         Can be either 'connected' or 'disconnected'.
         """
-        return self._grpc_status
+        return self._grpc_connected
 
     @property
     def _grpc_status(self) -> str:
@@ -264,6 +261,13 @@ is running and that the IP is correct."
         else:
             raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
 
+    @property
+    def cameras(self) -> CameraManager:
+        """Get Reachy's cameras."""
+        self._cameras.wait_end_of_initialization()  # type: ignore[union-attr]
+
+        return self._cameras  # type: ignore[return-value]
+
     def _get_info(self) -> None:
         """Get main description of the robot.
 
@@ -278,15 +282,22 @@ is running and that the IP is correct."
         except _InactiveRpcError:
             raise ConnectionError()
 
-        self.info = ReachyInfo(self._robot.info)
-        self.config = get_config(self._robot)
-        self._grpc_status = "connected"
+        self.info = ReachyInfo(self._robot)
+        self._grpc_connected = True
 
     def _setup_audio(self) -> None:
+        """Internal function to set up the audio server."""
         try:
             self.audio = Audio(self._host, self._audio_port)
         except Exception:
             self._logger.error("Failed to connect to audio server. ReachySDK.audio will not be available.")
+
+    def _setup_video(self) -> Optional[CameraManager]:
+        try:
+            return CameraManager(self._host, self._video_port)
+        except Exception as e:
+            self._logger.error(f"Failed to connect to video server with error {e}.\nReachySDK.video will not be available.")
+            return None
 
     def _setup_parts(self) -> None:
         """Setup all parts of the robot.
@@ -302,31 +313,29 @@ is running and that the IP is correct."
             if initial_state.r_arm_state.activated:
                 r_arm = Arm(self._robot.r_arm, initial_state.r_arm_state, self._grpc_channel, self._goto_stub)
                 self._r_arm = r_arm
-                self._enabled_parts["r_arm"] = self._r_arm
+                self.info._enabled_parts["r_arm"] = self._r_arm
                 if self._robot.HasField("r_hand"):
-                    right_hand = Hand(self._robot.r_hand, initial_state.r_hand_state, self._grpc_channel)
-                    setattr(self.r_arm, "gripper", right_hand)
+                    self._r_arm._init_hand(self._robot.r_hand, initial_state.r_hand_state)
             else:
-                self._disabled_parts.append("r_arm")
+                self.info._disabled_parts.append("r_arm")
 
         if self._robot.HasField("l_arm"):
             if initial_state.l_arm_state.activated:
                 l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel, self._goto_stub)
                 self._l_arm = l_arm
-                self._enabled_parts["l_arm"] = self._l_arm
+                self.info._enabled_parts["l_arm"] = self._l_arm
                 if self._robot.HasField("l_hand"):
-                    left_hand = Hand(self._robot.l_hand, initial_state.l_hand_state, self._grpc_channel)
-                    setattr(self.l_arm, "gripper", left_hand)
+                    self._l_arm._init_hand(self._robot.l_hand, initial_state.l_hand_state)
             else:
-                self._disabled_parts.append("l_arm")
+                self.info._disabled_parts.append("l_arm")
 
         if self._robot.HasField("head"):
             if initial_state.head_state.activated:
                 head = Head(self._robot.head, initial_state.head_state, self._grpc_channel, self._goto_stub)
                 self._head = head
-                self._enabled_parts["head"] = self._head
+                self.info._enabled_parts["head"] = self._head
             else:
-                self._disabled_parts.append("head")
+                self.info._disabled_parts.append("head")
 
         if self._robot.HasField("mobile_base"):
             self.mobile_base = MobileBaseSDK(self._host)
@@ -340,7 +349,7 @@ is running and that the IP is correct."
         """Poll registers to update for Orbita2d actuators of the robot."""
         tasks = []
 
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             for actuator in part._actuators.values():
                 if isinstance(actuator, Orbita2d):
                     # tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
@@ -353,7 +362,7 @@ is running and that the IP is correct."
             )
             commands = []
 
-            for part in self._enabled_parts.values():
+            for part in self.info._enabled_parts.values():
                 for actuator in part._actuators.values():
                     if isinstance(actuator, Orbita2d) and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
@@ -367,7 +376,7 @@ is running and that the IP is correct."
         """Poll registers to update for Orbita3d actuators of the robot."""
         tasks = []
 
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             for actuator in part._actuators.values():
                 if isinstance(actuator, Orbita3d):
                     tasks.append(asyncio.create_task(actuator._need_sync.wait()))
@@ -381,7 +390,7 @@ is running and that the IP is correct."
 
             commands = []
 
-            for part in self._enabled_parts.values():
+            for part in self.info._enabled_parts.values():
                 for actuator in part._actuators.values():
                     if isinstance(actuator, Orbita3d) and actuator._need_sync.is_set():
                         commands.append(actuator._pop_command())
@@ -455,10 +464,10 @@ is running and that the IP is correct."
 
         try:
             await asyncio.gather(
-                self._stream_orbita2d_commands_loop(orbita2d_stub, freq=100),
-                self._stream_orbita3d_commands_loop(orbita3d_stub, freq=100),
+                self._stream_orbita2d_commands_loop(orbita2d_stub, freq=80),
+                self._stream_orbita3d_commands_loop(orbita3d_stub, freq=80),
                 # self._stream_dynamixel_motor_commands_loop(dynamixel_motor_stub, freq=100),
-                self._get_stream_update_loop(reachy_stub, freq=1),
+                self._get_stream_update_loop(reachy_stub, freq=100),
                 self._wait_for_stop(),
             )
         except ConnectionError:
@@ -561,10 +570,10 @@ is running and that the IP is correct."
 
         All enabled parts' motors will then be stiff.
         """
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             part.turn_on()
 
         return True
@@ -574,17 +583,122 @@ is running and that the IP is correct."
 
         All enabled parts' motors will then be compliant.
         """
-        if self._grpc_status == "disconnected":
+        if not self._grpc_connected:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
-        for part in self._enabled_parts.values():
+        for part in self.info._enabled_parts.values():
             part.turn_off()
 
         return True
 
-    def cancel_all_goto(self) -> GoToAck:
+    def is_on(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for part in self.info._enabled_parts.values():
+            if not part.is_on():
+                return False
+        return True
+
+    def is_off(self) -> bool:
+        """Return True if all actuators of the arm are stiff"""
+        for part in self.info._enabled_parts.values():
+            if part.is_on():
+                return False
+        return True
+
+    def set_pose(
+        self,
+        common_pose: str = "zero",
+        wait_for_moves_end: bool = True,
+        duration: float = 2,
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToHomeId:
+        """Send all joints to 0 in specified duration.
+
+        common_pose can be 'zero' or 'elbow_90', default is set to 'zero'.
+        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the 0 commands.
+        Otherwise, the 0 commands will be sent to a part when all gotos of its queue has been played.
+        """
+        if common_pose not in ["zero", "elbow_90"]:
+            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'zero' or 'elbow_90'")
+        if common_pose == "elbow_90":
+            elbow_pitch = -90
+        else:
+            elbow_pitch = 0
+        head_id = None
+        r_arm_id = None
+        l_arm_id = None
+        if not wait_for_moves_end:
+            self.cancel_all_moves()
+        if self.head is not None:
+            head_id = self.head.rotate_to(0, 0, 0, duration, interpolation_mode)
+        if self.r_arm is not None:
+            r_arm_id = self.r_arm.goto_joints([0, 0, 0, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+        if self.l_arm is not None:
+            l_arm_id = self.l_arm.goto_joints([0, 0, 0, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+        ids = GoToHomeId(
+            head=head_id,
+            r_arm=r_arm_id,
+            l_arm=l_arm_id,
+        )
+        return ids
+
+    def is_move_finished(self, id: GoToId) -> bool:
+        """Return True if goto has been played and has been cancelled, False otherwise."""
+        state = self._get_move_state(id)
+        result = bool(
+            state.goal_status == GoalStatus.STATUS_ABORTED
+            or state.goal_status == GoalStatus.STATUS_CANCELED
+            or state.goal_status == GoalStatus.STATUS_SUCCEEDED
+        )
+        return result
+
+    def is_move_playing(self, id: GoToId) -> bool:
+        """Return True if goto is currently playing, False otherwise."""
+        state = self._get_move_state(id)
+        return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
+
+    def cancel_all_moves(self) -> GoToAck:
+        """Cancel all the goto tasks."""
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
+
+    def _get_move_state(self, goto_id: GoToId) -> GoToGoalStatus:
+        """Return the current state of a goto, given its id."""
+        response = self._goto_stub.GetGoToState(goto_id)
+        return response
+
+    def cancel_move_by_id(self, goto_id: GoToId) -> GoToAck:
+        """Ask the cancellation of a single goto on the arm, given its id"""
+        response = self._goto_stub.CancelGoTo(goto_id)
+        return response
+
+    def get_move_joints_request(self, goto_id: GoToId) -> SimplifiedRequest:
+        """Returns the part affected, the joints goal positions, duration and mode of the corresponding GoToId
+
+        Part can be either 'r_arm', 'l_arm' or 'head'
+        Goal_position is returned as a list in degrees
+        """
+        response = self._goto_stub.GetGoToRequest(goto_id)
+        if response.joints_goal.HasField("arm_joint_goal"):
+            part = response.joints_goal.arm_joint_goal.id.name
+            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+            goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
+            duration = response.joints_goal.arm_joint_goal.duration.value
+        elif response.joints_goal.HasField("neck_joint_goal"):
+            part = response.joints_goal.neck_joint_goal.id.name
+            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+            goal_positions = ext_euler_angles_to_list(
+                response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
+            )
+            duration = response.joints_goal.neck_joint_goal.duration.value
+
+        request = SimplifiedRequest(
+            part=part,
+            goal_positions=goal_positions,
+            duration=duration,
+            mode=mode,
+        )
+        return request
 
 
 _open_connection: List[ReachySDK] = []

@@ -4,30 +4,17 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 from pyquaternion import Quaternion
+from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 
 from src.reachy2_sdk.reachy_sdk import ReachySDK
 
 
 @pytest.mark.online
-def test_basic() -> None:
-    reachy = ReachySDK(host="localhost")
-    assert reachy.grpc_status == "connected"
-
-    assert reachy.turn_on()
-
-    for joint in reachy.joints.values():
-        joint.goal_position = 0
-        time.sleep(0.01)
-
+def test_basic(reachy_sdk_zeroed: ReachySDK) -> None:
     goal_position = -90
-    reachy.r_arm.elbow.pitch.goal_position = goal_position
-    time.sleep(2)
-    assert reachy.r_arm.elbow.pitch.present_position == goal_position
-
-    assert reachy.turn_off()
-
-    reachy.disconnect()
-    ReachySDK.clear()
+    reachy_sdk_zeroed.r_arm.elbow.pitch.goal_position = goal_position
+    time.sleep(1)
+    assert reachy_sdk_zeroed.r_arm.elbow.pitch.present_position == goal_position
 
 
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
@@ -43,19 +30,7 @@ def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
 
 
 @pytest.mark.online
-def test_square() -> None:
-    reachy = ReachySDK(host="localhost")
-    assert reachy.grpc_status == "connected"
-
-    assert reachy.turn_on()
-
-    # reset
-    for joint in reachy.joints.values():
-        joint.goal_position = 0
-        time.sleep(0.01)
-
-    time.sleep(2)
-
+def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
     # In A position, the effector is at (0.3, -0,4, -0.3) in the world frame
     # In B position, the effector is at (0.3, -0.4, 0) in the world frame
     # In C position, the effector is at (0.3, -0.1, 0.0) in the world frame
@@ -64,89 +39,117 @@ def test_square() -> None:
     # Going from A to B
     for z in np.arange(-0.3, 0.01, 0.01):
         target_pose = build_pose_matrix(0.3, -0.4, z)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        ik = reachy_sdk_zeroed.r_arm.inverse_kinematics(target_pose)
 
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+        for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
 
     time.sleep(2)
 
     B = build_pose_matrix(0.3, -0.4, 0)
-    current_pos = reachy.r_arm.forward_kinematics()
+    current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, B, atol=1e-03)
 
     # Going from B to C
     for y in np.arange(-0.4, -0.1, 0.01):
         target_pose = build_pose_matrix(0.3, y, 0.0)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        ik = reachy_sdk_zeroed.r_arm.inverse_kinematics(target_pose)
 
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+        for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
 
     time.sleep(2)
 
     C = build_pose_matrix(0.3, -0.1, 0)
-    current_pos = reachy.r_arm.forward_kinematics()
+    current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, C, atol=1e-03)
 
     # Going from C to D
     for z in np.arange(0.0, -0.31, -0.01):
         target_pose = build_pose_matrix(0.3, -0.1, z)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        ik = reachy_sdk_zeroed.r_arm.inverse_kinematics(target_pose)
 
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+        for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
 
     time.sleep(2)
 
     D = build_pose_matrix(0.3, -0.1, -0.3)
-    current_pos = reachy.r_arm.forward_kinematics()
+    current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, D, atol=1e-03)
 
     # Going from D to A
     for y in np.arange(-0.1, -0.4, -0.01):
         target_pose = build_pose_matrix(0.3, y, -0.3)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        ik = reachy_sdk_zeroed.r_arm.inverse_kinematics(target_pose)
 
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+        for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
 
     time.sleep(2)
 
     A = build_pose_matrix(0.3, -0.4, -0.3)
-    current_pos = reachy.r_arm.forward_kinematics()
+    current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, A, atol=1e-03)
 
-    assert reachy.turn_off()
 
-    reachy.disconnect()
-    ReachySDK.clear()
+def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
+    state = reachy._get_move_state(id)
+    result = bool(
+        state.goal_status == GoalStatus.STATUS_ABORTED
+        or state.goal_status == GoalStatus.STATUS_CANCELED
+        or state.goal_status == GoalStatus.STATUS_SUCCEEDED
+    )
+    return result
 
 
 @pytest.mark.online
-def test_head_movements() -> None:
-    reachy = ReachySDK(host="localhost")
-    assert reachy.grpc_status == "connected"
-
-    assert reachy.turn_on()
-
+def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     q0 = Quaternion(axis=[1, 0, 0], angle=np.pi / 6.0)  # Rotate 30 about X
-    reachy.head.orient(q0, duration=1)
-    time.sleep(1.1)
-    q1 = reachy.head.get_orientation()
-    assert Quaternion.distance(q0, q1) < 1e-05
+    id = reachy_sdk_zeroed.head.orient(q0, duration=1)
 
-    reachy.head.rotate_to(roll=0, pitch=60, yaw=0, duration=1)
+    while not is_goto_finished(reachy_sdk_zeroed, id):
+        time.sleep(0.1)
+
+    q1 = reachy_sdk_zeroed.head.get_orientation()
+    assert np.isclose(Quaternion.distance(q0, q1), 0, atol=1e-04)
+
+    id = reachy_sdk_zeroed.head.rotate_to(roll=0, pitch=60, yaw=0, duration=1)
     q2 = Quaternion(axis=[0, 1, 0], angle=np.pi / 3.0)  # Rotate 60 about Y
-    time.sleep(1.1)
-    q3 = reachy.head.get_orientation()
-    assert Quaternion.distance(q2, q3) < 1e-05
 
-    assert reachy.turn_off()
+    while not is_goto_finished(reachy_sdk_zeroed, id):
+        time.sleep(0.1)
 
-    reachy.disconnect()
-    ReachySDK.clear()
+    q3 = reachy_sdk_zeroed.head.get_orientation()
+    assert np.isclose(Quaternion.distance(q2, q3), 0, atol=1e-04)
+
+    id = reachy_sdk_zeroed.head.look_at(10000, 10000, 0, duration=1)
+    q4 = Quaternion(axis=[0, 0, 1], angle=np.pi / 4.0)  # Rotate 45 about Z
+
+    while not is_goto_finished(reachy_sdk_zeroed, id):
+        time.sleep(0.1)
+
+    q5 = reachy_sdk_zeroed.head.get_orientation()
+    assert np.isclose(Quaternion.distance(q4, q5), 0, atol=1e-04)
+
+    id = reachy_sdk_zeroed.head.look_at(10000, 0, -10000, duration=1)
+    q6 = Quaternion(axis=[0, 1, 0], angle=np.pi / 4.0)  # Rotate 45 about Y
+
+    while not is_goto_finished(reachy_sdk_zeroed, id):
+        time.sleep(0.1)
+
+    q7 = reachy_sdk_zeroed.head.get_orientation()
+    assert np.isclose(Quaternion.distance(q6, q7), 0, atol=1e-04)
+
+
+@pytest.mark.online
+def test_basic_get_positions(reachy_sdk_zeroed: ReachySDK) -> None:
+    expected_pos1 = [0, 0, 0, 0, 0, 0, 0]
+
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos1, atol=1e-01)
+
+    expected_pos2 = [15, 10, 20, -50, 10, 10, 20]
+    id = reachy_sdk_zeroed.l_arm.goto_joints(expected_pos2, duration=3)
+    while not is_goto_finished(reachy_sdk_zeroed, id):
+        time.sleep(0.1)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos2, atol=1e-01)
