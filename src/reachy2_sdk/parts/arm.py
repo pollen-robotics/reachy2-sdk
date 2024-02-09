@@ -287,52 +287,6 @@ class Arm:
         response = self._goto_stub.GoToCartesian(request)
         return response
 
-    def goto_position_orientation(
-        self,
-        position: Tuple[float, float, float],
-        orientation: Tuple[float, float, float],
-        position_tol: Optional[Tuple[float, float, float]] = (0, 0, 0),
-        orientation_tol: Optional[Tuple[float, float, float]] = (0, 0, 0),
-        duration: float = 2,
-        interpolation_mode: str = "minimum_jerk",
-    ) -> None:
-        """Move the arm so that the end effector reaches the given position and orientation.
-
-        Given a 3d position and a rpy rotation expressed in Reachy coordinate systems,
-        it will try to compute a joint solution to reach this target (or get close),
-        and move to this position in the defined duration.
-
-        You can also define tolerances for each axis of the position and of the orientation.
-        """
-        target = ArmCartesianGoal(
-            id=self._part_id,
-            target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3d(
-                rpy=ExtEulerAngles(
-                    roll=FloatValue(value=orientation[0]),
-                    pitch=FloatValue(value=orientation[1]),
-                    yaw=FloatValue(value=orientation[2]),
-                )
-            ),
-            duration=FloatValue(value=duration),
-        )
-        if position_tol is not None:
-            target.position_tolerance = PointDistanceTolerances(
-                x_tol=position_tol[0], y_tol=position_tol[1], z_tol=position_tol[2]
-            )
-        if orientation_tol is not None:
-            target.orientation_tolerance = ExtEulerAnglesTolerances(
-                x_tol=orientation_tol[0],
-                y_tol=orientation_tol[1],
-                z_tol=orientation_tol[2],
-            )
-
-        request = GoToRequest(
-            cartesian_goal=target,
-            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-        )
-        self._goto_stub.GoToCartesian(request)
-
     def goto_joints(
         self, positions: List[float], duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
     ) -> GoToId:
