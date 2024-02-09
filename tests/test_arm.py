@@ -1,5 +1,6 @@
 import grpc
 import numpy as np
+import numpy.typing as npt
 import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
@@ -19,6 +20,7 @@ from reachy2_sdk.orbita.orbita2d import (
     Vector2d,
 )
 from reachy2_sdk.orbita.utils import to_position
+from .test_basic_movements import build_pose_matrix
 from reachy2_sdk.parts.arm import Arm
 
 
@@ -177,3 +179,9 @@ def test_class() -> None:
 
     with pytest.raises(ValueError):
         arm.goto_joints(positions=[0.0])
+    
+    with pytest.raises(ValueError):
+        arm.goto_joints([0, 0, 0, -90, 0, 0, 0], duration=0)
+    
+    with pytest.raises(ValueError):
+        arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), duration=0)
