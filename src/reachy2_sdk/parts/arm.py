@@ -252,6 +252,8 @@ class Arm:
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
         if q0 is not None and (len(q0) != 7):
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
 
         if q0 is not None:
             q0 = list_to_arm_position(q0)
@@ -290,7 +292,6 @@ class Arm:
         """
         if len(positions) != 7:
             raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
-
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
 
