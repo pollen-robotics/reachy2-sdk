@@ -185,6 +185,3 @@ def test_class() -> None:
     # Arm is off
     with pytest.raises(RuntimeError):
         arm.goto_joints(positions=[0.0, 0, 0, 0, 0, 0, 0])
-    # Arm is off
-    with pytest.raises(RuntimeError):
-        arm.goto_position_orientation(None, None, None, None)

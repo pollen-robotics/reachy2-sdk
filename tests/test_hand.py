@@ -75,10 +75,13 @@ def test_class() -> None:
     hand._compliant = True
 
     with pytest.raises(RuntimeError):
-        hand.open(50)
+        hand.open()
 
     with pytest.raises(RuntimeError):
-        hand.close(50)
+        hand.close()
+
+    with pytest.raises(RuntimeError):
+        hand.set_opening(50)
 
     # Todo values are in deg or rad?
     # assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
