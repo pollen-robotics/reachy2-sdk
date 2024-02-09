@@ -54,7 +54,7 @@ class Hand:
         if not 0.0 <= percentage <= 100.0:
             raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
         if self._compliant:
-            raise RuntimeError("Gripper is off.")
+            raise RuntimeError("Gripper is off. Opening value not sent.")
 
         self._hand_stub.SetHandPosition(
             HandPositionRequest(
@@ -65,10 +65,14 @@ class Hand:
 
     def open(self) -> None:
         """Open the hand."""
+        if self._compliant:
+            raise RuntimeError("Gripper is off. Open request not sent.")
         self._hand_stub.OpenHand(self._part_id)
 
     def close(self) -> None:
         """Close the hand."""
+        if self._compliant:
+            raise RuntimeError("Gripper is off. Close request not sent.")
         self._hand_stub.CloseHand(self._part_id)
 
     def turn_on(self) -> None:

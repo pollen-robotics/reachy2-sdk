@@ -255,7 +255,7 @@ class Arm:
         if q0 is not None and (len(q0) != 7):
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
         if self.is_off():
-            raise RuntimeError("Arm is off. Goto not created.")
+            raise RuntimeError("Arm is off. Goto not sent.")
 
         if q0 is not None:
             q0 = list_to_arm_position(q0)
@@ -295,7 +295,7 @@ class Arm:
         if len(positions) != 7:
             raise ValueError(f"positions should be length 7 (got {len(positions)} instead)!")
         if self.is_off():
-            raise RuntimeError("Arm is off. Goto not created.")
+            raise RuntimeError("Arm is off. Goto not sent.")
 
         arm_pos = list_to_arm_position(positions, degrees)
         request = GoToRequest(
