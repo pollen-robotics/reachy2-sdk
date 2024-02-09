@@ -221,11 +221,11 @@ is running and that the IP is correct."
         return self._l_arm
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint]:
+    def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all joints of the robot."""
         if not self._grpc_connected:
             self._logger.warning("Cannot get joints, not connected to Reachy.")
-            return {}
+            return CustomDict({})
         _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
         for part_name in self.info._enabled_parts:
             part = getattr(self, part_name)

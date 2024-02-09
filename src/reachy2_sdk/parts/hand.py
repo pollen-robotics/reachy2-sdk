@@ -27,7 +27,7 @@ class Hand:
 
     def __repr__(self) -> str:
         """Clean representation of a Hand."""
-        return f"Hand with part_id {self._part_id} and opening of {self.opening}%"
+        return f"<Hand on={self.is_on()} opening={self.opening} >"
 
     def _setup_hand(self, hand_msg: Hand_proto, initial_state: HandState) -> None:
         """Set up the hand.

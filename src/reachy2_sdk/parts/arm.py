@@ -37,6 +37,7 @@ from reachy2_sdk_api.part_pb2 import PartId
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
 from ..orbita.orbita_joint import OrbitaJoint
+from ..utils.custom_dict import CustomDict
 from ..utils.utils import (
     arm_position_to_list,
     get_grpc_interpolation_mode,
@@ -110,9 +111,9 @@ class Arm:
         self.gripper = Hand(hand, hand_initial_state, self._grpc_channel)
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint]:
+    def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all the arm's joints."""
-        _joints: Dict[str, OrbitaJoint] = {}
+        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
         for actuator_name, actuator in self._actuators.items():
             for joint in actuator._joints.values():
                 _joints[actuator_name + "." + joint._axis_type] = joint
@@ -155,7 +156,7 @@ class Arm:
     def __repr__(self) -> str:
         """Clean representation of an Arm."""
         s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
-        return f"""<Arm actuators=\n\t{
+        return f"""<Arm on={self.is_on()} actuators=\n\t{
             s
         }\n>"""
 
