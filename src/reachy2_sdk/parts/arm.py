@@ -5,7 +5,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 - the inverse kinematics
 - goto functions
 """
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import grpc
 import numpy as np
@@ -31,14 +31,7 @@ from reachy2_sdk_api.goto_pb2 import (
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
-from reachy2_sdk_api.kinematics_pb2 import (
-    ExtEulerAngles,
-    ExtEulerAnglesTolerances,
-    Matrix4x4,
-    Point,
-    PointDistanceTolerances,
-    Rotation3d,
-)
+from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.orbita2d import Orbita2d
