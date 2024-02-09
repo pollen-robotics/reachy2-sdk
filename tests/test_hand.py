@@ -47,20 +47,14 @@ def test_class() -> None:
     assert hand.opening == 20
 
     with pytest.raises(ValueError):
-        hand.open(-1)
+        hand.set_opening(-1)
 
     with pytest.raises(ValueError):
-        hand.open(101)
-
-    with pytest.raises(ValueError):
-        hand.close(-1)
-
-    with pytest.raises(ValueError):
-        hand.close(101)
+        hand.set_opening(101)
 
     assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
     assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
-    assert hand.compliant
+    assert hand.is_on() is False
 
     goal_position_rad = 5
     present_position_rad = 6
@@ -89,31 +83,6 @@ def test_class() -> None:
     # Todo values are in deg or rad?
     # assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
     # assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
-
-
-@pytest.fixture(scope="module")
-def reachy_sdk() -> ReachySDK:
-    reachy = ReachySDK(host="localhost")
-    assert reachy.grpc_status == "connected"
-
-    assert reachy.turn_on()
-
-    yield reachy
-
-    assert reachy.turn_off()
-
-    reachy.disconnect()
-    ReachySDK.clear()
-
-
-@pytest.fixture
-def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
-    for joint in reachy_sdk.joints.values():
-        joint.goal_position = 0
-
-    time.sleep(1)
-
-    return reachy_sdk
 
 
 @pytest.mark.online

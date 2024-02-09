@@ -6,9 +6,7 @@ from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import ArmDescription, ArmState
 from reachy2_sdk_api.component_pb2 import PIDGains
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
-from reachy2_sdk_api.orbita2d_pb2 import Axis
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2d as Orbita2d_proto
-from reachy2_sdk_api.orbita2d_pb2 import Orbita2dState, Pose2d
 from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState, PID3d, Vector3d
 from reachy2_sdk_api.part_pb2 import PartId
 
@@ -95,10 +93,10 @@ def test_class() -> None:
     arm_state = ArmState(shoulder_state=orbita2d_state, elbow_state=orbita2d_state, wrist_state=orbita3d_state)
     arm = Arm(arm_msg=arm_proto, initial_state=arm_state, grpc_channel=grpc_channel, goto_stub=None)
 
-    assert arm.shoulder.compliant
+    assert not arm.shoulder.is_on()
 
-    assert len(arm.actuators) == 3
-    assert isinstance(arm.actuators, dict)
+    assert len(arm._actuators) == 3
+    assert isinstance(arm._actuators, dict)
 
     # use to_position()  to convert radian to degree
     assert arm.shoulder.roll.goal_position == to_position(goal_position.axis_2.value)
@@ -109,7 +107,7 @@ def test_class() -> None:
     with pytest.raises(AttributeError):
         arm.shoulder.yaw
 
-    assert arm.elbow.compliant
+    assert not arm.elbow.is_on()
 
     assert arm.elbow.yaw.goal_position == to_position(goal_position.axis_2.value)
     assert arm.elbow.yaw.present_position == to_position(present_position.axis_2.value)
@@ -119,7 +117,7 @@ def test_class() -> None:
     with pytest.raises(AttributeError):
         arm.elbow.roll
 
-    assert arm.wrist.compliant
+    assert not arm.wrist.is_on()
 
     assert arm.wrist.roll.goal_position == to_position(goal_rot.rpy.roll.value)
     assert arm.wrist.roll.present_position == to_position(present_rot.rpy.roll.value)
@@ -128,37 +126,37 @@ def test_class() -> None:
     assert arm.wrist.yaw.goal_position == to_position(goal_rot.rpy.yaw.value)
     assert arm.wrist.yaw.present_position == to_position(present_rot.rpy.yaw.value)
 
-    assert arm.joints["shoulder_pitch"].axis_type == "pitch"
+    assert arm.joints["shoulder_pitch"]._axis_type == "pitch"
     assert arm.joints["shoulder_pitch"].goal_position == to_position(goal_position.axis_1.value)
     assert arm.joints["shoulder_pitch"].present_position == to_position(present_position.axis_1.value)
 
-    assert arm.joints["shoulder_roll"].axis_type == "roll"
+    assert arm.joints["shoulder_roll"]._axis_type == "roll"
     assert arm.joints["shoulder_roll"].goal_position == to_position(goal_position.axis_2.value)
     assert arm.joints["shoulder_roll"].present_position == to_position(present_position.axis_2.value)
 
     with pytest.raises(KeyError):
         arm.joints["shoulder_yaw"]
 
-    assert arm.joints["elbow_pitch"].axis_type == "pitch"
+    assert arm.joints["elbow_pitch"]._axis_type == "pitch"
     assert arm.joints["elbow_pitch"].goal_position == to_position(goal_position.axis_1.value)
     assert arm.joints["elbow_pitch"].present_position == to_position(present_position.axis_1.value)
 
-    assert arm.joints["elbow_yaw"].axis_type == "yaw"
+    assert arm.joints["elbow_yaw"]._axis_type == "yaw"
     assert arm.joints["elbow_yaw"].goal_position == to_position(goal_position.axis_2.value)
     assert arm.joints["elbow_yaw"].present_position == to_position(present_position.axis_2.value)
 
     with pytest.raises(KeyError):
         arm.joints["elbow_roll"]
 
-    assert arm.joints["wrist_pitch"].axis_type == "pitch"
+    assert arm.joints["wrist_pitch"]._axis_type == "pitch"
     assert arm.joints["wrist_pitch"].goal_position == to_position(goal_rot.rpy.pitch.value)
     assert arm.joints["wrist_pitch"].present_position == to_position(present_rot.rpy.pitch.value)
 
-    assert arm.joints["wrist_yaw"].axis_type == "yaw"
+    assert arm.joints["wrist_yaw"]._axis_type == "yaw"
     assert arm.joints["wrist_yaw"].goal_position == to_position(goal_rot.rpy.yaw.value)
     assert arm.joints["wrist_yaw"].present_position == to_position(present_rot.rpy.yaw.value)
 
-    assert arm.joints["wrist_roll"].axis_type == "roll"
+    assert arm.joints["wrist_roll"]._axis_type == "roll"
     assert arm.joints["wrist_roll"].goal_position == to_position(goal_rot.rpy.roll.value)
     assert arm.joints["wrist_roll"].present_position == to_position(present_rot.rpy.roll.value)
 

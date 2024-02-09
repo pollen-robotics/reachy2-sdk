@@ -47,15 +47,12 @@ def test_class() -> None:
 
     assert head.__repr__() != ""
 
-    assert head.neck.compliant
+    assert not head.neck.is_on()
     assert head.is_off()
     assert not head.is_on()
 
-    with pytest.raises(AttributeError):
-        head.neck.compliant = 2.5
-
-    assert len(head.actuators) == 1
-    assert isinstance(head.actuators, dict)
+    assert len(head._actuators) == 1
+    assert isinstance(head._actuators, dict)
 
     # use to_position()  to convert radian to degree
     assert head.neck.roll.goal_position == to_position(goal_rot.rpy.roll.value)
@@ -65,15 +62,15 @@ def test_class() -> None:
     assert head.neck.yaw.goal_position == to_position(goal_rot.rpy.yaw.value)
     assert head.neck.yaw.present_position == to_position(present_rot.rpy.yaw.value)
 
-    assert head.joints["pitch"].axis_type == "pitch"
+    assert head.joints["pitch"]._axis_type == "pitch"
     assert head.joints["pitch"].goal_position == to_position(goal_rot.rpy.pitch.value)
     assert head.joints["pitch"].present_position == to_position(present_rot.rpy.pitch.value)
 
-    assert head.joints["yaw"].axis_type == "yaw"
+    assert head.joints["yaw"]._axis_type == "yaw"
     assert head.joints["yaw"].goal_position == to_position(goal_rot.rpy.yaw.value)
     assert head.joints["yaw"].present_position == to_position(present_rot.rpy.yaw.value)
 
-    assert head.joints["roll"].axis_type == "roll"
+    assert head.joints["roll"]._axis_type == "roll"
     assert head.joints["roll"].goal_position == to_position(goal_rot.rpy.roll.value)
     assert head.joints["roll"].present_position == to_position(present_rot.rpy.roll.value)
 
@@ -118,10 +115,10 @@ def test_class() -> None:
 
     head._update_with(head_state)
 
-    assert not head.neck.compliant
+    assert head.neck.is_on()
 
-    assert len(head.actuators) == 1
-    assert isinstance(head.actuators, dict)
+    assert len(head._actuators) == 1
+    assert isinstance(head._actuators, dict)
 
     assert head.neck.roll.goal_position == to_position(goal_rot.rpy.roll.value)
     assert head.neck.roll.present_position == to_position(present_rot.rpy.roll.value)
@@ -130,14 +127,14 @@ def test_class() -> None:
     assert head.neck.yaw.goal_position == to_position(goal_rot.rpy.yaw.value)
     assert head.neck.yaw.present_position == to_position(present_rot.rpy.yaw.value)
 
-    assert head.joints["pitch"].axis_type == "pitch"
+    assert head.joints["pitch"]._axis_type == "pitch"
     assert head.joints["pitch"].goal_position == to_position(goal_rot.rpy.pitch.value)
     assert head.joints["pitch"].present_position == to_position(present_rot.rpy.pitch.value)
 
-    assert head.joints["yaw"].axis_type == "yaw"
+    assert head.joints["yaw"]._axis_type == "yaw"
     assert head.joints["yaw"].goal_position == to_position(goal_rot.rpy.yaw.value)
     assert head.joints["yaw"].present_position == to_position(present_rot.rpy.yaw.value)
 
-    assert head.joints["roll"].axis_type == "roll"
+    assert head.joints["roll"]._axis_type == "roll"
     assert head.joints["roll"].goal_position == to_position(goal_rot.rpy.roll.value)
     assert head.joints["roll"].present_position == to_position(present_rot.rpy.roll.value)
