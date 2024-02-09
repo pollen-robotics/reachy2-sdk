@@ -4,7 +4,7 @@ Handles all specific method to an Head:
 - the inverse kinematics
 - look_at function
 """
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 import grpc
 import numpy as np
@@ -20,11 +20,8 @@ from reachy2_sdk_api.goto_pb2 import (
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
-    HeadPosition,
     HeadState,
     NeckCartesianGoal,
-    NeckFKRequest,
-    NeckIKRequest,
     NeckJointGoal,
     NeckOrientation,
 )
@@ -58,7 +55,7 @@ class Head:
         self._grpc_channel = grpc_channel
         self._goto_stub = goto_stub
         self._head_stub = HeadServiceStub(grpc_channel)
-        self.part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
+        self._part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
 
         self._setup_head(head_msg, initial_state)
         self._actuators = {
@@ -100,11 +97,6 @@ class Head:
         }\n>"""
 
     @property
-    def actuators(self) -> Dict[str, Orbita3d]:
-        """Get all the arm's actuators."""
-        return self._actuators
-
-    @property
     def joints(self) -> Dict[str, OrbitaJoint]:
         """Get all the arm's joints."""
         _joints: Dict[str, OrbitaJoint] = {}
@@ -118,73 +110,8 @@ class Head:
 
         It will return the quaternion (x, y, z, w).
         """
-        quat = self._head_stub.GetOrientation(self.part_id).q
+        quat = self._head_stub.GetOrientation(self._part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
-
-    def forward_kinematics(self, rpy_position: Optional[Tuple[float, float, float]] = None) -> pyQuat:
-        """Compute the forward kinematics of the head.
-
-        It will return the quaternion (x, y, z, w).
-        You can either specify a given joints position, otherwise it will use the current robot position.
-        """
-        if rpy_position is None:
-            return self.get_orientation()
-        else:
-            req = NeckFKRequest(
-                id=self.part_id,
-                position=HeadPosition(
-                    neck_position=Rotation3d(
-                        rpy=ExtEulerAngles(
-                            roll=FloatValue(value=rpy_position[0]),
-                            pitch=FloatValue(value=rpy_position[1]),
-                            yaw=FloatValue(value=rpy_position[2]),
-                        )
-                    )
-                ),
-            )
-            res = self._head_stub.ComputeNeckFK(req)
-            quat = res.orientation.q
-            return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
-
-    def inverse_kinematics(
-        self,
-        orientation: Optional[pyQuat] = None,
-        rpy_q0: Optional[Tuple[float, float, float]] = None,
-    ) -> Tuple[float, float, float]:
-        """Compute the inverse kinematics of the arm.
-
-        Given a goal quaternion (x, y, z, w)
-        it will try to compute a joint solution to reach this target (or get close).
-
-        It will raise a ValueError if no solution is found.
-
-        You can also specify a basic joint configuration as a prior for the solution.
-        """
-        req_params = {
-            "id": self.part_id,
-        }
-        if orientation is not None:
-            req_params["target"] = NeckOrientation(
-                q=Quaternion(
-                    w=orientation.w,
-                    x=orientation.x,
-                    y=orientation.y,
-                    z=orientation.z,
-                )
-            )
-        if rpy_q0 is not None:
-            req_params["q0"] = Rotation3d(
-                rpy=ExtEulerAngles(
-                    roll=FloatValue(value=rpy_q0[0]), pitch=FloatValue(value=rpy_q0[1]), yaw=FloatValue(value=rpy_q0[2])
-                )
-            )
-        req = NeckIKRequest(**req_params)
-        rpy_pos = self._head_stub.ComputeNeckIK(req)
-        return (
-            rpy_pos.position.rpy.roll.value,
-            rpy_pos.position.rpy.pitch.value,
-            rpy_pos.position.rpy.yaw.value,
-        )
 
     def look_at(self, x: float, y: float, z: float, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
         """Compute and send neck rpy position to look at the (x, y, z) point in Reachy cartesian space (torso frame).
@@ -194,7 +121,7 @@ class Head:
         request = GoToRequest(
             cartesian_goal=CartesianGoal(
                 neck_cartesian_goal=NeckCartesianGoal(
-                    id=self.part_id,
+                    id=self._part_id,
                     point=Point(x=x, y=y, z=z),
                     duration=FloatValue(value=duration),
                 )
@@ -224,7 +151,7 @@ class Head:
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
-                    id=self.part_id,
+                    id=self._part_id,
                     joints_goal=NeckOrientation(
                         rotation=Rotation3d(
                             rpy=ExtEulerAngles(
@@ -245,7 +172,7 @@ class Head:
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
-                    id=self.part_id,
+                    id=self._part_id,
                     joints_goal=NeckOrientation(rotation=Rotation3d(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z))),
                     duration=FloatValue(value=duration),
                 )
@@ -260,42 +187,42 @@ class Head:
 
         All head's motors will then be stiff.
         """
-        self._head_stub.TurnOn(self.part_id)
+        self._head_stub.TurnOn(self._part_id)
 
     def turn_off(self) -> None:
         """Turn all motors of the part off.
 
         All head's motors will then be compliant.
         """
-        self._head_stub.TurnOff(self.part_id)
+        self._head_stub.TurnOff(self._part_id)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
-            if actuator.compliant:
+            if not actuator.is_on():
                 return False
         return True
 
     def is_off(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
-            if not actuator.compliant:
+            if actuator.is_on():
                 return False
         return True
 
-    def get_goto_playing(self) -> GoToId:
+    def get_move_playing(self) -> GoToId:
         """Return the id of the goto currently playing on the head"""
-        response = self._goto_stub.GetPartGoToPlaying(self.part_id)
+        response = self._goto_stub.GetPartGoToPlaying(self._part_id)
         return response
 
-    def get_goto_queue(self) -> List[GoToId]:
+    def get_moves_queue(self) -> List[GoToId]:
         """Return the list of all goto ids waiting to be played on the head"""
-        response = self._goto_stub.GetPartGoToQueue(self.part_id)
+        response = self._goto_stub.GetPartGoToQueue(self._part_id)
         return [goal_id for goal_id in response.goto_ids]
 
-    def cancel_all_goto(self) -> GoToAck:
+    def cancel_all_moves(self) -> GoToAck:
         """Ask the cancellation of all waiting goto on the head"""
-        response = self._goto_stub.CancelPartAllGoTo(self.part_id)
+        response = self._goto_stub.CancelPartAllGoTo(self._part_id)
         return response
 
     def _update_with(self, new_state: HeadState) -> None:
@@ -303,8 +230,3 @@ class Head:
         self.neck._update_with(new_state.neck_state)
         # self.l_antenna._update_with(new_state.l_antenna_state)
         # self.r_antenna._update_with(new_state.r_antenna_state)
-
-    @property
-    def compliant(self) -> Dict[str, bool]:
-        """Get compliancy of all the part's actuators"""
-        return {"neck": self.neck.compliant}  # , "l_antenna": self.l_antenna.compliant, "r_antenna": self.r_antenna.compliant}
