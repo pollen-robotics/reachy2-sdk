@@ -118,14 +118,14 @@ def test_class() -> None:
     assert head.neck.yaw.goal_position == to_position(goal_rot.rpy.yaw.value)
     assert head.neck.yaw.present_position == to_position(present_rot.rpy.yaw.value)
 
-    assert head.joints["pitch"]._axis_type == "pitch"
-    assert head.joints["pitch"].goal_position == to_position(goal_rot.rpy.pitch.value)
-    assert head.joints["pitch"].present_position == to_position(present_rot.rpy.pitch.value)
+    assert head.joints["neck.pitch"]._axis_type == "pitch"
+    assert head.joints["neck.pitch"].goal_position == to_position(goal_rot.rpy.pitch.value)
+    assert head.joints["neck.pitch"].present_position == to_position(present_rot.rpy.pitch.value)
 
-    assert head.joints["yaw"]._axis_type == "yaw"
-    assert head.joints["yaw"].goal_position == to_position(goal_rot.rpy.yaw.value)
-    assert head.joints["yaw"].present_position == to_position(present_rot.rpy.yaw.value)
+    assert head.joints["neck.yaw"]._axis_type == "yaw"
+    assert head.joints["neck.yaw"].goal_position == to_position(goal_rot.rpy.yaw.value)
+    assert head.joints["neck.yaw"].present_position == to_position(present_rot.rpy.yaw.value)
 
-    assert head.joints["roll"]._axis_type == "roll"
-    assert head.joints["roll"].goal_position == to_position(goal_rot.rpy.roll.value)
-    assert head.joints["roll"].present_position == to_position(present_rot.rpy.roll.value)
+    assert head.joints["neck.roll"]._axis_type == "roll"
+    assert head.joints["neck.roll"].goal_position == to_position(goal_rot.rpy.roll.value)
+    assert head.joints["neck.roll"].present_position == to_position(present_rot.rpy.roll.value)
