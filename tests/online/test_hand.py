@@ -17,7 +17,7 @@ from reachy2_sdk_api.hand_pb2 import (
 )
 
 from reachy2_sdk.parts.hand import Hand
-from src.reachy2_sdk.reachy_sdk import ReachySDK
+from reachy2_sdk.reachy_sdk import ReachySDK
 
 
 @pytest.mark.offline

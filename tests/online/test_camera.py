@@ -5,7 +5,7 @@ import pytest
 from reachy2_sdk_api.video_pb2 import CameraInfo, View
 
 from reachy2_sdk.media.camera import Camera, CameraView
-from src.reachy2_sdk.reachy_sdk import ReachySDK
+from reachy2_sdk.reachy_sdk import ReachySDK
 
 
 @pytest.mark.online

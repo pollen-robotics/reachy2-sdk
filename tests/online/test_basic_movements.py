@@ -6,7 +6,7 @@ import pytest
 from pyquaternion import Quaternion
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 
-from src.reachy2_sdk.reachy_sdk import ReachySDK
+from reachy2_sdk.reachy_sdk import ReachySDK
 
 
 @pytest.mark.online
