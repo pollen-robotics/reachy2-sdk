@@ -21,6 +21,7 @@ def test_ReachyInfo() -> None:
     assert ri.robot_serial_number == serial_number
     assert ri.hardware_version == version_hard
     assert ri.core_software_version == version_soft
+    assert ri.battery_voltage == 30.0
 
 
 @pytest.mark.offline

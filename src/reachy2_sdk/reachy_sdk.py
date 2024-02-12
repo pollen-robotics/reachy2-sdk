@@ -349,6 +349,7 @@ is running and that the IP is correct."
 
         if self._robot.HasField("mobile_base"):
             self.mobile_base = MobileBaseSDK(self._host)
+            self.info._set_mobile_base(self.mobile_base)
 
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
@@ -585,6 +586,8 @@ is running and that the IP is correct."
             return False
         for part in self.info._enabled_parts.values():
             part.turn_on()
+        if hasattr(self, "mobile_base") and self.mobile_base is not None:
+            self.mobile_base.turn_on()
 
         return True
 
@@ -598,6 +601,8 @@ is running and that the IP is correct."
             return False
         for part in self.info._enabled_parts.values():
             part.turn_off()
+        if hasattr(self, "mobile_base") and self.mobile_base is not None:
+            self.mobile_base.turn_off()
 
         return True
 
@@ -606,6 +611,8 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if not part.is_on():
                 return False
+        if hasattr(self, "mobile_base") and self.mobile_base is not None and self.mobile_base.is_off():
+            return False
         return True
 
     def is_off(self) -> bool:
@@ -613,6 +620,8 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if part.is_on():
                 return False
+        if hasattr(self, "mobile_base") and self.mobile_base is not None and self.mobile_base.is_on():
+            return False
         return True
 
     def set_pose(
