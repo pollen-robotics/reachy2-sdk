@@ -20,6 +20,13 @@ class CameraView(Enum):
     RIGHT = View.RIGHT
 
 
+class CameraType(Enum):
+    """Camera names defined in pollen-vision"""
+
+    TELEOP = "teleop_head"
+    SR = "other"
+
+
 class Camera:
     """
     RGB Camera. Mainly for Reachy Teleop Camera.
@@ -48,6 +55,16 @@ class Camera:
         np_data = np.frombuffer(frame.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
         return img  # type: ignore[no-any-return]
+
+    def __repr__(self) -> str:
+        """Clean representation of a RGB camera"""
+        if self._cam_info.name == CameraType.TELEOP.value:
+            name = "teleop"
+        elif self._cam_info.name == CameraType.SR.value:
+            name = "SR"
+        else:
+            name = self._cam_info.name
+        return f"""<Camera name="{name}" stereo={self._cam_info.stereo}> """
 
 
 class SRCamera(Camera):

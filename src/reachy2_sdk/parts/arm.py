@@ -37,6 +37,7 @@ from reachy2_sdk_api.part_pb2 import PartId
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
 from ..orbita.orbita_joint import OrbitaJoint
+from ..utils.custom_dict import CustomDict
 from ..utils.utils import (
     arm_position_to_list,
     get_grpc_interpolation_mode,
@@ -110,12 +111,12 @@ class Arm:
         self.gripper = Hand(hand, hand_initial_state, self._grpc_channel)
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint]:
+    def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all the arm's joints."""
-        _joints: Dict[str, OrbitaJoint] = {}
+        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
         for actuator_name, actuator in self._actuators.items():
             for joint in actuator._joints.values():
-                _joints[actuator_name + "_" + joint._axis_type] = joint
+                _joints[actuator_name + "." + joint._axis_type] = joint
         return _joints
 
     def turn_on(self) -> None:
@@ -155,7 +156,7 @@ class Arm:
     def __repr__(self) -> str:
         """Clean representation of an Arm."""
         s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
-        return f"""<Arm actuators=\n\t{
+        return f"""<Arm on={self.is_on()} actuators=\n\t{
             s
         }\n>"""
 
@@ -252,6 +253,8 @@ class Arm:
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
         if q0 is not None and (len(q0) != 7):
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
 
         if q0 is not None:
             q0 = list_to_arm_position(q0)
@@ -289,7 +292,9 @@ class Arm:
         it will move the arm to that position.
         """
         if len(positions) != 7:
-            raise ValueError(f"positions should be length 7 (got {len(positions)} instead)!")
+            raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
 
         arm_pos = list_to_arm_position(positions, degrees)
         request = GoToRequest(

@@ -41,6 +41,7 @@ from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
 from .parts.head import Head
+from .utils.custom_dict import CustomDict
 from .utils.singleton import Singleton
 from .utils.utils import (
     arm_position_to_list,
@@ -185,9 +186,18 @@ is running and that the IP is correct."
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
         s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self.info._enabled_parts.items()])
-        return f"""<Reachy host="{self._host}"\n connected={self._grpc_connected} \n enabled_parts=\n\t{
-            s
-        }\n\tdisabled_parts={self.info._disabled_parts}\n>"""
+        repr_template = (
+            '<Reachy host="{host}" connected={connected} on={on} \n'
+            " battery_voltage={battery_voltage} \n"
+            " parts=\n\t{parts} \n>"
+        )
+        return repr_template.format(
+            host=self._host,
+            connected=self._grpc_connected,
+            on=self.is_on(),
+            battery_voltage=self.info.battery_voltage,
+            parts=s,
+        )
 
     @property
     def head(self) -> Optional[Head]:
@@ -211,16 +221,16 @@ is running and that the IP is correct."
         return self._l_arm
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint]:
+    def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all joints of the robot."""
         if not self._grpc_connected:
             self._logger.warning("Cannot get joints, not connected to Reachy.")
-            return {}
-        _joints: Dict[str, OrbitaJoint] = {}
+            return CustomDict({})
+        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
         for part_name in self.info._enabled_parts:
             part = getattr(self, part_name)
             for joint_name, joint in part.joints.items():
-                _joints[part_name + "_" + joint_name] = joint
+                _joints[part_name + "." + joint_name] = joint
         return _joints
 
     @property
@@ -233,7 +243,7 @@ is running and that the IP is correct."
         for part_name in self.info._enabled_parts:
             part = getattr(self, part_name)
             for actuator_name, actuator in part.actuators.items():
-                _actuators[part_name + "_" + actuator_name] = actuator
+                _actuators[part_name + "." + actuator_name] = actuator
         return _actuators
 
     def is_connected(self) -> bool:
@@ -339,6 +349,7 @@ is running and that the IP is correct."
 
         if self._robot.HasField("mobile_base"):
             self.mobile_base = MobileBaseSDK(self._host)
+            self.info._set_mobile_base(self.mobile_base)
 
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
@@ -575,6 +586,8 @@ is running and that the IP is correct."
             return False
         for part in self.info._enabled_parts.values():
             part.turn_on()
+        if hasattr(self, "mobile_base") and self.mobile_base is not None:
+            self.mobile_base.turn_on()
 
         return True
 
@@ -588,6 +601,8 @@ is running and that the IP is correct."
             return False
         for part in self.info._enabled_parts.values():
             part.turn_off()
+        if hasattr(self, "mobile_base") and self.mobile_base is not None:
+            self.mobile_base.turn_off()
 
         return True
 
@@ -596,6 +611,8 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if not part.is_on():
                 return False
+        if hasattr(self, "mobile_base") and self.mobile_base is not None and self.mobile_base.is_off():
+            return False
         return True
 
     def is_off(self) -> bool:
@@ -603,6 +620,8 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if part.is_on():
                 return False
+        if hasattr(self, "mobile_base") and self.mobile_base is not None and self.mobile_base.is_on():
+            return False
         return True
 
     def set_pose(
