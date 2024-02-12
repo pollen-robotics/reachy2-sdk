@@ -5,7 +5,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 - the inverse kinematics
 - goto functions
 """
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import grpc
 import numpy as np
@@ -31,19 +31,13 @@ from reachy2_sdk_api.goto_pb2 import (
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
-from reachy2_sdk_api.kinematics_pb2 import (
-    ExtEulerAngles,
-    ExtEulerAnglesTolerances,
-    Matrix4x4,
-    Point,
-    PointDistanceTolerances,
-    Rotation3d,
-)
+from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
 from ..orbita.orbita_joint import OrbitaJoint
+from ..utils.custom_dict import CustomDict
 from ..utils.utils import (
     arm_position_to_list,
     get_grpc_interpolation_mode,
@@ -117,12 +111,12 @@ class Arm:
         self.gripper = Hand(hand, hand_initial_state, self._grpc_channel)
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint]:
+    def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all the arm's joints."""
-        _joints: Dict[str, OrbitaJoint] = {}
+        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
         for actuator_name, actuator in self._actuators.items():
             for joint in actuator._joints.values():
-                _joints[actuator_name + "_" + joint._axis_type] = joint
+                _joints[actuator_name + "." + joint._axis_type] = joint
         return _joints
 
     def turn_on(self) -> None:
@@ -162,7 +156,7 @@ class Arm:
     def __repr__(self) -> str:
         """Clean representation of an Arm."""
         s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
-        return f"""<Arm actuators=\n\t{
+        return f"""<Arm on={self.is_on()} actuators=\n\t{
             s
         }\n>"""
 
@@ -259,6 +253,8 @@ class Arm:
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
         if q0 is not None and (len(q0) != 7):
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
 
         if q0 is not None:
             q0 = list_to_arm_position(q0)
@@ -287,52 +283,6 @@ class Arm:
         response = self._goto_stub.GoToCartesian(request)
         return response
 
-    def goto_position_orientation(
-        self,
-        position: Tuple[float, float, float],
-        orientation: Tuple[float, float, float],
-        position_tol: Optional[Tuple[float, float, float]] = (0, 0, 0),
-        orientation_tol: Optional[Tuple[float, float, float]] = (0, 0, 0),
-        duration: float = 2,
-        interpolation_mode: str = "minimum_jerk",
-    ) -> None:
-        """Move the arm so that the end effector reaches the given position and orientation.
-
-        Given a 3d position and a rpy rotation expressed in Reachy coordinate systems,
-        it will try to compute a joint solution to reach this target (or get close),
-        and move to this position in the defined duration.
-
-        You can also define tolerances for each axis of the position and of the orientation.
-        """
-        target = ArmCartesianGoal(
-            id=self._part_id,
-            target_position=Point(x=position[0], y=position[1], z=position[2]),
-            target_orientation=Rotation3d(
-                rpy=ExtEulerAngles(
-                    roll=FloatValue(value=orientation[0]),
-                    pitch=FloatValue(value=orientation[1]),
-                    yaw=FloatValue(value=orientation[2]),
-                )
-            ),
-            duration=FloatValue(value=duration),
-        )
-        if position_tol is not None:
-            target.position_tolerance = PointDistanceTolerances(
-                x_tol=position_tol[0], y_tol=position_tol[1], z_tol=position_tol[2]
-            )
-        if orientation_tol is not None:
-            target.orientation_tolerance = ExtEulerAnglesTolerances(
-                x_tol=orientation_tol[0],
-                y_tol=orientation_tol[1],
-                z_tol=orientation_tol[2],
-            )
-
-        request = GoToRequest(
-            cartesian_goal=target,
-            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-        )
-        self._goto_stub.GoToCartesian(request)
-
     def goto_joints(
         self, positions: List[float], duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
     ) -> GoToId:
@@ -342,7 +292,9 @@ class Arm:
         it will move the arm to that position.
         """
         if len(positions) != 7:
-            raise ValueError(f"positions should be length 7 (got {len(positions)} instead)!")
+            raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
 
         arm_pos = list_to_arm_position(positions, degrees)
         request = GoToRequest(

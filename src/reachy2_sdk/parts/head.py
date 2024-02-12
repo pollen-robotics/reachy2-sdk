@@ -4,7 +4,7 @@ Handles all specific method to an Head:
 - the inverse kinematics
 - look_at function
 """
-from typing import Dict, List
+from typing import List
 
 import grpc
 import numpy as np
@@ -31,6 +31,7 @@ from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.orbita3d import Orbita3d
 from ..orbita.orbita_joint import OrbitaJoint
+from ..utils.custom_dict import CustomDict
 from ..utils.utils import get_grpc_interpolation_mode
 
 # from .dynamixel_motor import DynamixelMotor
@@ -92,16 +93,17 @@ class Head:
     def __repr__(self) -> str:
         """Clean representation of an Head."""
         s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
-        return f"""<Head actuators=\n\t{
+        return f"""<Head on={self.is_on()} actuators=\n\t{
             s
         }\n>"""
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint]:
+    def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all the arm's joints."""
-        _joints: Dict[str, OrbitaJoint] = {}
-        for actuator in self._actuators.values():
-            _joints.update(actuator._joints)
+        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
+        for actuator_name, actuator in self._actuators.items():
+            for joint in actuator._joints.values():
+                _joints[actuator_name + "." + joint._axis_type] = joint
         return _joints
 
     def get_orientation(self) -> pyQuat:
@@ -117,6 +119,9 @@ class Head:
 
         X is forward, Y is left and Z is upward. They all expressed in meters.
         """
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
+
         request = GoToRequest(
             cartesian_goal=CartesianGoal(
                 neck_cartesian_goal=NeckCartesianGoal(
@@ -143,6 +148,9 @@ class Head:
 
         Rotation is done in order roll, pitch, yaw.
         """
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
+
         if degrees:
             roll = np.deg2rad(roll)
             pitch = np.deg2rad(pitch)
@@ -168,6 +176,9 @@ class Head:
 
     def orient(self, q: pyQuat, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
         """Send neck to the orientation given as a quaternion."""
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
+
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
