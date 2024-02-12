@@ -6,21 +6,13 @@ Initialize the two teleop and SR cameras if they are available.
 import atexit
 import logging
 import threading
-from enum import Enum
 from typing import Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from reachy2_sdk_api.video_pb2_grpc import VideoServiceStub
 
-from .camera import Camera, SRCamera
-
-
-class CameraType(Enum):
-    """Camera names defined in pollen-vision"""
-
-    TELEOP = "teleop_head"
-    SR = "other"
+from .camera import Camera, CameraType, SRCamera
 
 
 class CameraManager:
@@ -41,6 +33,11 @@ class CameraManager:
         # SDK Server count the number of clients to release the cameras if there is no one left
         self._cleaned = False
         atexit.register(self._cleanup)
+
+    def __repr__(self) -> str:
+        """Clean representation of a reachy cameras."""
+        s = "\n\t".join([str(cam) for cam in [self._SR, self._teleop] if cam is not None])
+        return f"""<CameraManager intialized_cameras=\n\t{s}\n>"""
 
     def _setup_cameras(self) -> None:
         """Thread initializing cameras"""

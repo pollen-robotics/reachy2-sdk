@@ -42,4 +42,11 @@ class OrbitaJoint:
         self._register_needing_sync: List[str] = []
 
     def __repr__(self) -> str:
-        return f'<OrbitaJoint axis_type="{self._axis_type}" present_position={self.present_position} goal_position={self.goal_position} >'  # noqa: E501
+        repr_template = (
+            '<OrbitaJoint axis_type="{axis_type}" present_position={present_position} goal_position={goal_position} >'
+        )
+        return repr_template.format(
+            axis_type=self._axis_type,
+            present_position=self.present_position,
+            goal_position=self.goal_position,
+        )
