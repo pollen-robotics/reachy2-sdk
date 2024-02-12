@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from src.reachy2_sdk.reachy_sdk import ReachySDK
+from reachy2_sdk.reachy_sdk import ReachySDK
 
 
 @pytest.mark.online
