@@ -22,7 +22,7 @@ from reachy2_sdk.orbita.orbita2d import (
 from reachy2_sdk.orbita.utils import to_position
 from reachy2_sdk.parts.arm import Arm
 
-from .test_basic_movements import build_pose_matrix
+from online.test_basic_movements import build_pose_matrix
 
 
 @pytest.mark.offline
