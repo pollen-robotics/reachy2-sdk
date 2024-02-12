@@ -4,7 +4,7 @@ Handles all specific method to an Head:
 - the inverse kinematics
 - look_at function
 """
-from typing import Dict, List
+from typing import List
 
 import grpc
 import numpy as np
@@ -31,6 +31,7 @@ from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.orbita3d import Orbita3d
 from ..orbita.orbita_joint import OrbitaJoint
+from ..utils.custom_dict import CustomDict
 from ..utils.utils import get_grpc_interpolation_mode
 
 # from .dynamixel_motor import DynamixelMotor
@@ -92,16 +93,17 @@ class Head:
     def __repr__(self) -> str:
         """Clean representation of an Head."""
         s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
-        return f"""<Head actuators=\n\t{
+        return f"""<Head on={self.is_on()} actuators=\n\t{
             s
         }\n>"""
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint]:
+    def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all the arm's joints."""
-        _joints: Dict[str, OrbitaJoint] = {}
-        for actuator in self._actuators.values():
-            _joints.update(actuator._joints)
+        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
+        for actuator_name, actuator in self._actuators.items():
+            for joint in actuator._joints.values():
+                _joints[actuator_name + "." + joint._axis_type] = joint
         return _joints
 
     def get_orientation(self) -> pyQuat:
