@@ -56,5 +56,7 @@ class ReachyInfo:
         If there is no mobile base, returns full battery value.
         """
         if self._mobile_base is not None:
-            return self._mobile_base.battery_voltage
+            # ToDo : https://github.com/pollen-robotics/mobile-base-sdk/issues/18
+            # and removing cast
+            return (float)(self._mobile_base.battery_voltage)
         return 30.0
