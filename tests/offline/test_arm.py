@@ -3,6 +3,7 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
+from online.test_basic_movements import build_pose_matrix
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import ArmDescription, ArmState
 from reachy2_sdk_api.component_pb2 import PIDGains
@@ -21,8 +22,6 @@ from reachy2_sdk.orbita.orbita2d import (
 )
 from reachy2_sdk.orbita.utils import to_position
 from reachy2_sdk.parts.arm import Arm
-
-from online.test_basic_movements import build_pose_matrix
 
 
 @pytest.mark.offline
