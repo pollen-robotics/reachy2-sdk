@@ -63,11 +63,3 @@ def test_teleop_camera(reachy_sdk: ReachySDK) -> None:
 
     # check that we don't return the same frame
     assert not np.array_equal(frame, frame_right)
-
-
-@pytest.mark.offline
-def test_class() -> None:
-    cam_teleop = CameraInfo(mxid="fakemixid_tel", name="teleop_head", stereo=True, depth=False)
-    cam = Camera(cam_info=cam_teleop, video_stub=None)
-
-    assert cam is not None
