@@ -1,7 +1,6 @@
 import time
 
 import numpy as np
-
 from reachy2_sdk import ReachySDK
 
 
@@ -24,40 +23,82 @@ def follow_square(reachy: ReachySDK):
     # In D position, the effector is at (0.3, -0.1, -0.3) in the world frame
 
     # Going from A to B
-    for z in np.arange(-0.3, 0.1, 0.01):
+    for z in np.arange(-0.3, 0.0, 0.001):
         jacobian = build_pose_matrix(0.3, -0.4, z)
         ik = reachy.r_arm.inverse_kinematics(jacobian)
 
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
+
+        jacobian = build_pose_matrix(0.3, 0.4, z)
+        ik = reachy.l_arm.inverse_kinematics(jacobian)
+
+        for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
+            joint.goal_position = goal_pos
+        time.sleep(0.01)
 
     # Going from B to C
-    for y in np.arange(-0.4, -0.1, 0.01):
+    for y in np.arange(-0.4, -0.1, 0.001):
         jacobian = build_pose_matrix(0.3, y, 0.0)
         ik = reachy.r_arm.inverse_kinematics(jacobian)
 
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
+
+        jacobian = build_pose_matrix(0.3, -y, 0.0)
+        ik = reachy.l_arm.inverse_kinematics(jacobian)
+
+        for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
+            joint.goal_position = goal_pos
+        time.sleep(0.01)
 
     # Going from C to D
-    for z in np.arange(0.0, -0.3, -0.01):
+    for z in np.arange(0.0, -0.3, -0.001):
         jacobian = build_pose_matrix(0.3, -0.1, z)
         ik = reachy.r_arm.inverse_kinematics(jacobian)
 
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
+
+        jacobian = build_pose_matrix(0.3, 0.1, z)
+        ik = reachy.l_arm.inverse_kinematics(jacobian)
+
+        for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
+            joint.goal_position = goal_pos
+        time.sleep(0.01)
 
     # Going from D to A
-    for y in np.arange(-0.1, -0.4, -0.01):
+    for y in np.arange(-0.1, -0.4, -0.001):
         jacobian = build_pose_matrix(0.3, y, -0.3)
         ik = reachy.r_arm.inverse_kinematics(jacobian)
 
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        time.sleep(0.1)
+
+        jacobian = build_pose_matrix(0.3, -y, -0.3)
+        ik = reachy.l_arm.inverse_kinematics(jacobian)
+
+        for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
+            joint.goal_position = goal_pos
+        time.sleep(0.01)
+
+
+def sinus_joint():
+    print("Trying to connect on localhost Reachy...")
+    time.sleep(1.0)
+    reachy = ReachySDK(host="localhost")
+
+    time.sleep(1.0)
+    if reachy._grpc_status == "disconnected":
+        print("Failed to connect to Reachy, exiting...")
+        return
+
+    reachy.turn_on()
+
+    while True:
+        pos = 10 * np.sin(2 * np.pi * 0.1 * time.time())
+        for joint in reachy.joints.values():
+            joint.goal_position = pos
 
 
 def main_test():
@@ -100,5 +141,38 @@ def main_test():
     reachy.disconnect()
 
 
+def always_square():
+    print("Trying to connect on localhost Reachy...")
+    time.sleep(1.0)
+    reachy = ReachySDK(host="localhost")
+
+    time.sleep(1.0)
+    if reachy._grpc_status == "disconnected":
+        print("Failed to connect to Reachy, exiting...")
+        return
+
+    reachy.turn_on()
+    print("Putting each joint at 0 degrees angle")
+    time.sleep(0.5)
+    for joint in reachy.joints.values():
+        joint.goal_position = 0
+
+    print("Reproducing the square movement without using goto")
+    # time.sleep(1.0)
+    while True:
+        follow_square(reachy)
+
+    print("Going back to initial position")
+    time.sleep(0.5)
+    for joint in reachy.joints.values():
+        joint.goal_position = 0
+
+    print("Finished testing, disconnecting from Reachy...")
+    time.sleep(0.5)
+    reachy.disconnect()
+
+
 if __name__ == "__main__":
-    main_test()
+    # main_test()
+    always_square()
+    # sinus_joint()
