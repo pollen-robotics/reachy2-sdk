@@ -30,21 +30,30 @@ def get_homogeneous_matrix_msg_from_euler(
     return homogeneous_matrix
 
 
+def angle_diff(a: float, b: float) -> float:
+    """Returns the smallest distance between 2 angles"""
+    d = a - b
+    d = ((d + np.pi) % (2 * np.pi)) - np.pi
+    return d
+
+
 def random_trajectoy(reachy: ReachySDK):
     x0, y0, z0 = 0.3, -0.4, -0.3
     roll0, pitch0, yaw0 = 0, -np.pi / 2, 0
-    reductor = 0.5
+    reductor = 1.0
     freq_reductor = 2.0
     amp = [0.35 * reductor, 0.35 * reductor, 0.35 * reductor, np.pi / 6, np.pi / 6, np.pi / 6]
     freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47]
     control_freq = 120
-    max_angular_change = 3.0  # degrees
+    max_angular_change = 5.0  # degrees
     prev_ik_r = [0, 0, 0, 0, 0, 0, 0]
     prev_ik_l = [0, 0, 0, 0, 0, 0, 0]
     prev_M_r = get_homogeneous_matrix_msg_from_euler((x0, y0, z0), (roll0, pitch0, yaw0), degrees=False)
     prev_M_l = get_homogeneous_matrix_msg_from_euler((x0, -y0, z0), (-roll0, pitch0, -yaw0), degrees=False)
+    first = True
+    t_init = time.time()
     while True:
-        t = time.time()
+        t = time.time() - t_init
         x = x0 + amp[0] * np.sin(freq[0] * t)
         y = y0 + amp[1] * np.sin(freq[1] * t)
         z = z0 + amp[2] * np.sin(freq[2] * t)
@@ -72,11 +81,11 @@ def random_trajectoy(reachy: ReachySDK):
         # calculate l2 distance between r_joints and l_mod
         l2_dist = np.linalg.norm(ik_r - l_mod)
         if l2_dist < 0.001:
-            print("Symetry OK")
+            print("Symmetry OK")
             pass
         else:
             pass
-            print("Symetry NOT OK!!")
+            print("Symmetry NOT OK!!")
             print(f"prev_ik_r {np.round(prev_ik_r, 3).tolist()}")
             print(f"prev_ik_l {np.round(prev_ik_l, 3).tolist()}")
             print(f"ik_r {np.round(ik_r, 3).tolist()}")
@@ -85,11 +94,15 @@ def random_trajectoy(reachy: ReachySDK):
             print(f"prev_M_l {prev_M_l}")
             print(f"M_r {M_r}")
             print(f"M_l {M_l}")
+            break
 
         ## Test continuity
         # calculating the maximum angulare change in joint space
-        max_angular_change_r = np.max(np.abs(np.array(ik_r) - np.array(prev_ik_r)))
-        max_angular_change_l = np.max(np.abs(np.array(ik_l) - np.array(prev_ik_l)))
+        # create a list based on angle_diff for each joint
+        r_diff = [angle_diff(a, b) for a, b in zip(ik_r, prev_ik_r)]
+        l_diff = [angle_diff(a, b) for a, b in zip(ik_l, prev_ik_l)]
+        max_angular_change_r = np.max(np.abs(r_diff))
+        max_angular_change_l = np.max(np.abs(l_diff))
 
         if max_angular_change_r < max_angular_change and max_angular_change_l < max_angular_change:
             print("Continuity OK")
@@ -105,11 +118,14 @@ def random_trajectoy(reachy: ReachySDK):
             print(f"prev_M_l {prev_M_l}")
             print(f"M_r {M_r}")
             print(f"M_l {M_l}")
+            if not first:
+                break
 
         prev_ik_r = ik_r
         prev_ik_l = ik_l
         prev_M_r = M_r
         prev_M_l = M_l
+        first = False
 
         # print(f"ik_r: {ik_r}, ik_l: {ik_l}, time_r: {t1-t0}, time_l: {t2-t1}")
         print(f"time_r: {(t1-t0)*1000:.1f}ms\ntime_l: {(t2-t1)*1000:.1f}ms")
