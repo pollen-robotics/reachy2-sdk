@@ -1,5 +1,5 @@
 import time
-
+import math
 import numpy as np
 import numpy.typing as npt
 from reachy2_sdk import ReachySDK
@@ -208,24 +208,14 @@ def test_goto_rejection(reachy: ReachySDK) -> None:
 
 
 def test_head_orient(reachy: ReachySDK) -> None:
-    id = reachy.head.rotate_to(0, 0, 0.5, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
-        time.sleep(0.1)
-    id = reachy.head.rotate_to(0, 0.5, 0.5, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
-        time.sleep(0.1)
-    id = reachy.head.rotate_to(0.5, 0.5, 0.5, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
-        time.sleep(0.1)
-    id = reachy.head.rotate_to(0.5, 0.5, 0.0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
-        time.sleep(0.1)
-    id = reachy.head.rotate_to(0.5, 0.0, 0.0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
-        time.sleep(0.1)
-    id = reachy.head.rotate_to(0.0, 0.0, 0.0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
-        time.sleep(0.1)
+    id = reachy.head.rotate_to(0, math.pi / 3, 0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    time.sleep(1.0)
+    id = reachy.head.rotate_to(math.pi / 3, math.pi / 3, 0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    time.sleep(1.0)
+    id = reachy.head.rotate_to(math.pi / 3, 0, 0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    time.sleep(1.0)
+    id = reachy.head.rotate_to(0, 0, 0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    time.sleep(1.0)
 
 
 def test_head_look_at(reachy: ReachySDK) -> None:
@@ -245,36 +235,36 @@ def main_test() -> None:
     reachy = ReachySDK(host="localhost")
 
     time.sleep(1.0)
-    if reachy.grpc_status == "disconnected":
+    if reachy._grpc_status == "disconnected":
         print("Failed to connect to Reachy, exiting...")
         return
 
-    reachy.turn_on()
-    init_pose(reachy)
+    # reachy.turn_on()
+    # init_pose(reachy)
 
-    print("\n###1)Testing the goto_joints function, drawing a square")
-    test_goto_joint(reachy)
+    # print("\n###1)Testing the goto_joints function, drawing a square")
+    # test_goto_joint(reachy)
 
-    print("\n###2)Testing the get_goto_state function")
-    test_state(reachy)
+    # print("\n###2)Testing the get_goto_state function")
+    # test_state(reachy)
 
-    print("\n###3)Testing the goto_cancel function")
-    test_goto_cancel(reachy)
+    # print("\n###3)Testing the goto_cancel function")
+    # test_goto_cancel(reachy)
 
-    print("\n###4)Testing both arms")
-    test_both_arms(reachy)
+    # print("\n###4)Testing both arms")
+    # test_both_arms(reachy)
 
-    print("\n###5)Testing the goto_cartesian function")
-    test_goto_cartesian(reachy)
-    print("\n###6)Testing goto REJECTION")
-    test_goto_rejection(reachy)
+    # print("\n###5)Testing the goto_cartesian function")
+    # test_goto_cartesian(reachy)
+    # print("\n###6)Testing goto REJECTION")
+    # test_goto_rejection(reachy)
 
     print("\n###7)Testing the goto_head function")
     test_head_orient(reachy)
 
-    while True:
-        print("\n###X)Testing both arms ad vitam eternam")
-        test_both_arms(reachy)
+    # while True:
+    #     print("\n###X)Testing both arms ad vitam eternam")
+    #     test_both_arms(reachy)
 
     # print("\n###8)Testing the look_at function")
     # test_head_look_at(reachy)

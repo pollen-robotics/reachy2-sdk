@@ -85,6 +85,24 @@ def follow_square(reachy: ReachySDK):
         time.sleep(0.01)
 
 
+def big_circle(reachy: ReachySDK):
+    y = -0.2
+    r = 1.0
+
+    while True:
+        angle = (2 * np.pi * 0.1 * time.time()) % (2 * np.pi)
+        x = r * np.cos(angle)
+        z = r * np.sin(angle)
+
+        pose = build_pose_matrix(x, y, z)
+        ik = reachy.r_arm.inverse_kinematics(pose)
+        print(ik)
+
+        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+            joint.goal_position = goal_pos
+        time.sleep(0.01)
+
+
 def sinus_joint():
     print("Trying to connect on localhost Reachy...")
     time.sleep(1.0)

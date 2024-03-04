@@ -53,7 +53,7 @@ def random_trajectoy(reachy: ReachySDK):
     first = True
     t_init = time.time()
     while True:
-        t = time.time() - t_init
+        t = time.time() - t_init + 11
         x = x0 + amp[0] * np.sin(freq[0] * t)
         y = y0 + amp[1] * np.sin(freq[1] * t)
         z = z0 + amp[2] * np.sin(freq[2] * t)
