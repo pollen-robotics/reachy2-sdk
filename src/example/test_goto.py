@@ -108,7 +108,7 @@ def test_both_arms(reachy: ReachySDK) -> None:
 
 
 def is_goto_finished(reachy: ReachySDK, id: GoToId, verbose=False) -> bool:
-    state = reachy.get_goto_state(id)
+    state = reachy._get_move_state(id)
     if verbose:
         print(f"Goal status: {state.goal_status}")
     result = bool(
@@ -229,6 +229,17 @@ def test_head_look_at(reachy: ReachySDK) -> None:
             time.sleep(0.1)
 
 
+def test_head_look_at_out_of_bounds(reachy: ReachySDK) -> None:
+    list_of_poses = [[0.2, 0.0, -0.5], [0.15, 0.4, -0.5], [4, 4, 0.3], [100.0, 0.0, 0.0]]
+    for pose in list_of_poses:
+        id = reachy.head.look_at(pose[0], pose[1], pose[2], duration=1.0, interpolation_mode="minimum_jerk")
+        if id.id < 0:
+            print("The goto was rejected!")
+            return
+        while is_goto_finished(reachy, id, verbose=True) is False:
+            time.sleep(0.1)
+
+
 def main_test() -> None:
     print("Trying to connect on localhost Reachy...")
     time.sleep(1.0)
@@ -260,7 +271,8 @@ def main_test() -> None:
     # test_goto_rejection(reachy)
 
     print("\n###7)Testing the goto_head function")
-    test_head_orient(reachy)
+    # test_head_orient(reachy)
+    test_head_look_at_out_of_bounds(reachy)
 
     # while True:
     #     print("\n###X)Testing both arms ad vitam eternam")
