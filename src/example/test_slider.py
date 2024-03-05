@@ -12,6 +12,9 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QMainWindow, QSli
 from scipy.spatial.transform import Rotation
 
 
+DEGREES = True
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -27,9 +30,9 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.canvas)
 
         # Sliders
-        self.azimut_slider = self.create_slider("azimut")
-        self.inclinaison_slider = self.create_slider("inclinaison")
-        self.torsion_slider = self.create_slider("torsion")
+        self.azimut_slider = self.create_slider("roll")
+        self.inclinaison_slider = self.create_slider("pitch")
+        self.torsion_slider = self.create_slider("yaw")
 
         print("Trying to connect on localhost Reachy...")
         time.sleep(1.0)
@@ -81,75 +84,75 @@ class MainWindow(QMainWindow):
         inclinaison = self.inclinaison_slider.value()
         torsion = self.torsion_slider.value()
         # This is the natural convention used on the wrist
-        R = Rotation.from_euler("xyz", [azimut, inclinaison, torsion], degrees=True)
+        R = Rotation.from_euler("xyz", [azimut, inclinaison, torsion], degrees=DEGREES)
 
         # Going to a rotation matrix and then back to euler angles in the zyz convention where we can limit the inclination
-        rotation = Rotation.from_euler("xyz", [azimut, inclinaison, torsion], degrees=True)
-        arm_joints = rotation.as_euler("zyz", degrees=True)
+        rotation = Rotation.from_euler("xyz", [azimut, inclinaison, torsion], degrees=DEGREES)
+        arm_joints = rotation.as_euler("ZYZ", degrees=DEGREES)
         # Limiting the inclination
         arm_joints[1] = min(45, max(-45, arm_joints[1]))
         # Going back to the rotation matrix
-        rotation = Rotation.from_euler("zyz", arm_joints, degrees=True)
+        rotation = Rotation.from_euler("ZYZ", arm_joints, degrees=DEGREES)
         # Going back to the euler angles in the xyz convention
-        arm_joints = rotation.as_euler("xyz", degrees=True)
+        arm_joints = rotation.as_euler("xyz", degrees=DEGREES)
+        R2 = Rotation.from_euler("xyz", arm_joints, degrees=DEGREES)
 
         r_arm_joints = [180, 0, 0, 0, arm_joints[0], arm_joints[1], arm_joints[2]]
         for joint, goal_pos in zip(self.reachy.r_arm.joints.values(), r_arm_joints):
             joint.goal_position = goal_pos
 
         self.ax.clear()
-        self.plot_3d_coordinate_frame(R.as_matrix(), alpha=True)
-        self.plot_3d_coordinate_frame(rotation.as_matrix(), alpha=True)
+        self.plot_3d_coordinate_frame(R.as_matrix(), alpha=1.0)
+        self.plot_3d_coordinate_frame(R2.as_matrix(), alpha=0.5)
+        self.plot_3d_coordinate_frame(np.eye(3), alpha=1.0, length=0.5)
         self.canvas.draw()
 
-    def plot_3d_coordinate_frame(self, R, alpha=False):
-        i, j, k = np.eye(3)
-        i_rotated, j_rotated, k_rotated = R @ np.eye(3)
+    def plot_3d_coordinate_frame(self, R, alpha=0.5, length=1.0):
+        # Standard basis vectors
+        i = np.array([1, 0, 0])
+        j = np.array([0, 1, 0])
+        k = np.array([0, 0, 1])
 
-        self.ax.quiver(0, 0, 0, i[0], i[1], i[2], color="k", length=1.0)
-        self.ax.quiver(0, 0, 0, j[0], j[1], j[2], color="k", length=1.0)
-        self.ax.quiver(0, 0, 0, k[0], k[1], k[2], color="k", length=1.0)
+        # Rotate basis vectors
+        i_rotated = R @ i
+        j_rotated = R @ j
+        k_rotated = R @ k
 
-        if alpha:
-            self.ax.quiver(
-                0,
-                0,
-                0,
-                i_rotated[0],
-                i_rotated[1],
-                i_rotated[2],
-                color="r",
-                length=1.0,
-                alpha=0.5,
-            )
-            self.ax.quiver(
-                0,
-                0,
-                0,
-                j_rotated[0],
-                j_rotated[1],
-                j_rotated[2],
-                color="g",
-                length=1.0,
-                alpha=0.5,
-            )
-            self.ax.quiver(
-                0,
-                0,
-                0,
-                k_rotated[0],
-                k_rotated[1],
-                k_rotated[2],
-                color="b",
-                length=1.0,
-                alpha=0.5,
-            )
-
-        else:
-            self.ax.quiver(0, 0, 0, i_rotated[0], i_rotated[1], i_rotated[2], color="r", length=1.0)
-            self.ax.quiver(0, 0, 0, j_rotated[0], j_rotated[1], j_rotated[2], color="g", length=1.0)
-            self.ax.quiver(0, 0, 0, k_rotated[0], k_rotated[1], k_rotated[2], color="b", length=1.0)
-
+        # Plotting each rotated vector
+        # Red for i, Green for j, Blue for k
+        self.ax.quiver(
+            0,
+            0,
+            0,
+            i_rotated[0],
+            i_rotated[1],
+            i_rotated[2],
+            color="r",
+            length=length,
+            alpha=alpha,
+        )
+        self.ax.quiver(
+            0,
+            0,
+            0,
+            j_rotated[0],
+            j_rotated[1],
+            j_rotated[2],
+            color="g",
+            length=length,
+            alpha=alpha,
+        )
+        self.ax.quiver(
+            0,
+            0,
+            0,
+            k_rotated[0],
+            k_rotated[1],
+            k_rotated[2],
+            color="b",
+            length=length,
+            alpha=alpha,
+        )
         self.ax.set_xlim([-1.5, 1.5])
         self.ax.set_ylim([-1.5, 1.5])
         self.ax.set_zlim([-1.5, 1.5])
@@ -176,7 +179,7 @@ def get_homogeneous_matrix_msg_from_euler(
     degrees: bool = False,
 ):
     homogeneous_matrix = np.eye(4)
-    homogeneous_matrix[:3, :3] = Rotation.from_euler("xyz", euler_angles, degrees=degrees).as_matrix()
+    homogeneous_matrix[:3, :3] = Rotation.from_euler("xyz", euler_angles, degrees=DEGREES).as_matrix()
     homogeneous_matrix[:3, 3] = position
     return homogeneous_matrix
 
