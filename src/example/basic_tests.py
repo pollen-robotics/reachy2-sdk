@@ -116,7 +116,7 @@ def sinus_joint():
     reachy.turn_on()
 
     while True:
-        pos = 10 * np.sin(2 * np.pi * 0.1 * time.time())
+        pos = 10 * np.sin(2 * np.pi * 1.0 * time.time())
         for joint in reachy.joints.values():
             joint.goal_position = pos
 
@@ -192,7 +192,35 @@ def always_square():
     reachy.disconnect()
 
 
+def brutal_elbow():
+    print("Trying to connect on localhost Reachy...")
+    time.sleep(1.0)
+    reachy = ReachySDK(host="localhost")
+
+    time.sleep(1.0)
+    if reachy._grpc_status == "disconnected":
+        print("Failed to connect to Reachy, exiting...")
+        return
+
+    reachy.turn_on()
+    print("Putting each joint at 0 degrees angle")
+    time.sleep(0.5)
+    for joint in reachy.joints.values():
+        joint.goal_position = 0
+
+    print("Putting the right arm at 90 degrees angle")
+    time.sleep(1.0)
+    reachy.r_arm.elbow.pitch.goal_position = -90
+
+    time.sleep(2.0)
+    for joint in reachy.joints.values():
+        joint.goal_position = 0
+
+    time.sleep(2.0)
+
+
 if __name__ == "__main__":
     # main_test()
-    always_square()
+    # always_square()
     # sinus_joint()
+    brutal_elbow()
