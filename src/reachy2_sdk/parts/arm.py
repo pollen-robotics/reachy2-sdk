@@ -84,7 +84,7 @@ class Arm:
         Set up the arm's actuators (shoulder, elbow and wrist) with the arm's description and initial state.
         """
         description = arm.description
-        self.shoulder = Orbita2d(
+        self._shoulder = Orbita2d(
             uid=description.shoulder.id.id,
             name=description.shoulder.id.name,
             axis1=description.shoulder.axis_1,
@@ -92,7 +92,7 @@ class Arm:
             initial_state=initial_state.shoulder_state,
             grpc_channel=self._grpc_channel,
         )
-        self.elbow = Orbita2d(
+        self._elbow = Orbita2d(
             uid=description.elbow.id.id,
             name=description.elbow.id.name,
             axis1=description.elbow.axis_1,
@@ -100,7 +100,7 @@ class Arm:
             initial_state=initial_state.elbow_state,
             grpc_channel=self._grpc_channel,
         )
-        self.wrist = Orbita3d(
+        self._wrist = Orbita3d(
             uid=description.wrist.id.id,
             name=description.wrist.id.name,
             initial_state=initial_state.wrist_state,
@@ -108,7 +108,23 @@ class Arm:
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
-        self.gripper = Hand(hand, hand_initial_state, self._grpc_channel)
+        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel)
+
+    @property
+    def shoulder(self) -> Orbita2d:
+        return self._shoulder
+
+    @property
+    def elbow(self) -> Orbita2d:
+        return self._elbow
+
+    @property
+    def wrist(self) -> Orbita3d:
+        return self._wrist
+
+    @property
+    def gripper(self) -> Hand:
+        return self._gripper
 
     @property
     def joints(self) -> CustomDict[str, OrbitaJoint]:

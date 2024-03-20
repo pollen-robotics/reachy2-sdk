@@ -1,5 +1,5 @@
 """This module defines the Orbita2d class and its registers, joints, motors and axis."""
-from typing import Dict
+from typing import Any, Dict
 
 from google.protobuf.wrappers_pb2 import FloatValue
 from grpc import Channel
@@ -51,7 +51,7 @@ class Orbita2d(Orbita):
         initial_state: Orbita2dState,
         grpc_channel: Channel,
     ):
-        """Initialize the Orbita2d with its joints, motors and its two axis (either roll, pith or yaw for both)."""
+        """Initialize the Orbita2d with its joints, motors and its two axis (either roll, pitch or yaw for both)."""
         super().__init__(uid, name, "2d", Orbita2dServiceStub(grpc_channel))
 
         axis1_name = Axis.DESCRIPTOR.values_by_number[axis1].name.lower()
@@ -107,6 +107,12 @@ class Orbita2d(Orbita):
                             init_state[axis.name] = {}
                         init_state[axis.name][field.name] = val
         return init_state
+
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        if __name in ["roll", "pitch", "yaw"]:
+            if hasattr(self, __name):
+                raise AttributeError(f"can't set attribute '{__name}'")
+        super().__setattr__(__name, __value)
 
     def _build_grpc_cmd_msg(self, field: str) -> Pose2d | PID2d | Float2d:
         """Build a gRPC message from the registers that need to be synced at the joints and

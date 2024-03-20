@@ -221,6 +221,13 @@ is running and that the IP is correct."
         return self._l_arm
 
     @property
+    def mobile_base(self) -> Optional[MobileBaseSDK]:
+        """Get Reachy's mobile base."""
+        if not hasattr(self, "_mobile_base") or self._mobile_base is None:
+            raise AttributeError("mobile_base does not exist with this configuration")
+        return self._mobile_base
+
+    @property
     def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all joints of the robot."""
         if not self._grpc_connected:
@@ -348,8 +355,8 @@ is running and that the IP is correct."
                 self.info._disabled_parts.append("head")
 
         if self._robot.HasField("mobile_base"):
-            self.mobile_base = MobileBaseSDK(self._host)
-            self.info._set_mobile_base(self.mobile_base)
+            self._mobile_base = MobileBaseSDK(self._host)
+            self.info._set_mobile_base(self._mobile_base)
 
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
@@ -586,8 +593,8 @@ is running and that the IP is correct."
             return False
         for part in self.info._enabled_parts.values():
             part.turn_on()
-        if hasattr(self, "mobile_base") and self.mobile_base is not None:
-            self.mobile_base.turn_on()
+        if hasattr(self, "_mobile_base") and self._mobile_base is not None:
+            self._mobile_base.turn_on()
 
         return True
 
@@ -601,8 +608,8 @@ is running and that the IP is correct."
             return False
         for part in self.info._enabled_parts.values():
             part.turn_off()
-        if hasattr(self, "mobile_base") and self.mobile_base is not None:
-            self.mobile_base.turn_off()
+        if hasattr(self, "_mobile_base") and self._mobile_base is not None:
+            self._mobile_base.turn_off()
 
         return True
 
@@ -611,7 +618,7 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if not part.is_on():
                 return False
-        if hasattr(self, "mobile_base") and self.mobile_base is not None and self.mobile_base.is_off():
+        if hasattr(self, "_mobile_base") and self._mobile_base is not None and self._mobile_base.is_off():
             return False
         return True
 
@@ -620,7 +627,7 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if part.is_on():
                 return False
-        if hasattr(self, "mobile_base") and self.mobile_base is not None and self.mobile_base.is_on():
+        if hasattr(self, "_mobile_base") and self._mobile_base is not None and self._mobile_base.is_on():
             return False
         return True
 

@@ -71,7 +71,7 @@ class Head:
         It will create the actuators neck and antennas and set their initial state.
         """
         description = head.description
-        self.neck = Orbita3d(
+        self._neck = Orbita3d(
             uid=description.neck.id.id,
             name=description.neck.id.name,
             initial_state=initial_state.neck_state,
@@ -96,6 +96,10 @@ class Head:
         return f"""<Head on={self.is_on()} actuators=\n\t{
             s
         }\n>"""
+
+    @property
+    def neck(self) -> Orbita3d:
+        return self._neck
 
     @property
     def joints(self) -> CustomDict[str, OrbitaJoint]:
