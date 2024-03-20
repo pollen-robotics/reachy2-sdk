@@ -81,7 +81,7 @@ def random_trajectoy(reachy: ReachySDK):
         # calculate l2 distance between r_joints and l_mod
         l2_dist = np.linalg.norm(ik_r - l_mod)
         if l2_dist < 0.001:
-            print("Symmetry OK")
+            print(f"Symmetry OK distance: {l2_dist:.4f}")
             pass
         else:
             pass
