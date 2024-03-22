@@ -117,6 +117,16 @@ class Head:
         """
         quat = self._head_stub.GetOrientation(self._part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
+    
+    def get_joints_positions(self) -> List[float]:
+        """Return the current joints positions of the neck.
+
+        It will return the List[roll, pitch, yaw].
+        """
+        roll = self.neck._joints['roll'].present_position
+        pitch = self.neck._joints['pitch'].present_position
+        yaw = self.neck._joints['yaw'].present_position
+        return [roll, pitch, yaw]
 
     def look_at(self, x: float, y: float, z: float, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
         """Compute and send neck rpy position to look at the (x, y, z) point in Reachy cartesian space (torso frame).
