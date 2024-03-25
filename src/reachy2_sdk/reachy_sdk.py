@@ -167,6 +167,7 @@ is running and that the IP is correct."
                 "get_move_joints_request",
                 "is_move_finished",
                 "is_move_playing",
+                "mobile_base",
             ]:
                 delattr(self, attr)
 
