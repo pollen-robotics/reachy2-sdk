@@ -48,9 +48,9 @@ class Orbita3d(Orbita):
 
         self._register_needing_sync: List[str] = []
 
-        self.roll = OrbitaJoint(initial_state=init_state["roll"], axis_type="roll", actuator=self)
-        self.pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
-        self.yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
+        self._roll = OrbitaJoint(initial_state=init_state["roll"], axis_type="roll", actuator=self)
+        self._pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
+        self._yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
         self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
@@ -93,6 +93,18 @@ class Orbita3d(Orbita):
                             init_state[axis.name] = {}
                         init_state[axis.name][field.name] = val
         return init_state
+
+    @property
+    def roll(self) -> OrbitaJoint:
+        return self._roll
+
+    @property
+    def pitch(self) -> OrbitaJoint:
+        return self._pitch
+
+    @property
+    def yaw(self) -> OrbitaJoint:
+        return self._yaw
 
     def _build_grpc_cmd_msg(self, field: str) -> Float3d:
         """Build a gRPC message from the registers that need to be synced at the joints and
