@@ -125,11 +125,13 @@ is running and that the IP is correct."
         self._sync_thread.start()
 
         self._grpc_connected = True
+        self._lost_connection = False
         _open_connection.append(self)
         self._logger.info("Connected to Reachy.")
 
-    def disconnect(self) -> None:
+    def disconnect(self, lost_connection: bool = False) -> None:
         """Disconnects the SDK from the server."""
+
         if not self._grpc_connected:
             self._logger.warning("Already disconnected from Reachy.")
             return
@@ -138,11 +140,12 @@ is running and that the IP is correct."
             for actuator in part._actuators.values():
                 actuator._need_sync.clear()
 
+        self._lost_connection = lost_connection
+        self._grpc_connected = False
         self._stop_flag.set()
         time.sleep(0.1)
-        self._grpc_connected = False
-
         self._grpc_channel.close()
+
         attributs = [attr for attr in dir(self) if not attr.startswith("_")]
         for attr in attributs:
             if attr not in [
@@ -167,6 +170,7 @@ is running and that the IP is correct."
                 "get_move_joints_request",
                 "is_move_finished",
                 "is_move_playing",
+                "mobile_base",
             ]:
                 delattr(self, attr)
 
@@ -361,7 +365,8 @@ is running and that the IP is correct."
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
             await asyncio.sleep(0.1)
-        raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
+        if self._lost_connection:
+            raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
     async def _poll_waiting_2dcommands(self) -> Orbita2dsCommand:
         """Poll registers to update for Orbita2d actuators of the robot."""
@@ -451,17 +456,13 @@ is running and that the IP is correct."
 
         try:
             self._loop.run_until_complete(self._sync_loop())
-            self.disconnect()
+            if self._grpc_connected:
+                self.disconnect(lost_connection=True)
         except asyncio.CancelledError:
             self._logger.error("Sync loop cancelled.")
 
-    async def _sync_loop(self) -> None:
-        """Define the synchronization loop.
-
-        The synchronization loop is used to:
-            - stream commands to the robot
-            - update the state of the robot
-        """
+    def _setup_parts_sync_loops(self) -> None:
+        """Start sync loop of each part"""
         if self._r_arm is not None:
             for actuator in self._r_arm._actuators.values():
                 actuator._setup_sync_loop()
@@ -473,6 +474,16 @@ is running and that the IP is correct."
         if self._head is not None:
             for actuator in self._head._actuators.values():
                 actuator._setup_sync_loop()
+
+    async def _sync_loop(self) -> None:
+        """Define the synchronization loop.
+
+        The synchronization loop is used to:
+            - stream commands to the robot
+            - update the state of the robot
+        """
+
+        self._setup_parts_sync_loops()
 
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
         reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
@@ -491,7 +502,8 @@ is running and that the IP is correct."
         except ConnectionError:
             self._logger.error("Connection with Reachy lost, check the sdk server status.")
         except asyncio.CancelledError:
-            self._logger.error("Stopped streaming commands.")
+            if self._lost_connection:
+                self._logger.error("Stopped streaming commands.")
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         """Update the state of the robot at a given frequency."""
