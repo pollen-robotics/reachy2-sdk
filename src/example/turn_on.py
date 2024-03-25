@@ -73,5 +73,5 @@ def turn_on_debug():
 
 
 if __name__ == "__main__":
-    # turn_on()
-    turn_on_debug()
+    turn_on()
+    # turn_on_debug()

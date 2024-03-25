@@ -1,6 +1,5 @@
 import sys
 import time
-from reachy2_sdk import ReachySDK
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,9 +7,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from numpy.typing import NDArray
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QMainWindow, QSlider, QVBoxLayout, QWidget
-
+from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation
-
 
 DEGREES = True
 
@@ -79,18 +77,64 @@ class MainWindow(QMainWindow):
 
         return slider
 
+    def restrict_rotation_to_cone(self, euler_angles, cone_axis, max_angle, degrees=True):
+        """
+        Restrict a rotation given in Euler angles to a cone.
+
+        :param euler_angles: The rotation in Euler angles (XYZ) as a numpy array.
+        :param cone_axis: The axis of the cone as a unit vector.
+        :param max_angle: The half-angle of the cone in radians.
+
+        :return: A numpy array of the adjusted Euler angles.
+        """
+
+        # Convert Euler angles to a quaternion
+        rotation = Rotation.from_euler("xyz", euler_angles, degrees=degrees)
+        rotation_vector = rotation.as_rotvec()
+
+        # Extract the rotation axis and angle
+        rotation_angle = np.linalg.norm(rotation_vector)
+        rotation_axis = rotation_vector / rotation_angle if rotation_angle != 0 else rotation_vector
+
+        # Check if the rotation is within the cone
+        angle_with_cone_axis = np.arccos(np.clip(np.dot(rotation_axis, cone_axis), -1.0, 1.0))
+        # print(f"Angle with cone axis: {np.degrees(angle_with_cone_axis)}")
+
+        if angle_with_cone_axis > max_angle:
+            print("NOT IN THE CONE!")
+            # Adjust the rotation to be within the cone
+            # Project the rotation axis onto the plane orthogonal to the cone axis
+            projected_axis = rotation_axis - np.dot(rotation_axis, cone_axis) * cone_axis
+            projected_axis /= np.linalg.norm(projected_axis)
+
+            # Adjust the rotation axis and angle
+            adjusted_rotation_axis = np.cos(max_angle) * cone_axis + np.sin(max_angle) * projected_axis
+            rotation_vector = adjusted_rotation_axis * rotation_angle
+
+        # Convert the adjusted rotation vector back to Euler angles
+        adjusted_rotation = Rotation.from_rotvec(rotation_vector)
+        adjusted_euler_angles = adjusted_rotation.as_euler("xyz", degrees=degrees)
+
+        return adjusted_euler_angles
+
     def update_plot(self):
         azimut = self.azimut_slider.value()
         inclinaison = self.inclinaison_slider.value()
         torsion = self.torsion_slider.value()
         # This is the natural convention used on the wrist
+        # adjusted_euler_angles = self.restrict_rotation_to_cone(
+        #     [azimut, inclinaison, torsion], [1, 0, 0], np.deg2rad(20), degrees=DEGREES
+        # )
         R = Rotation.from_euler("xyz", [azimut, inclinaison, torsion], degrees=DEGREES)
+        # Rrestricted = Rotation.from_euler("xyz", adjusted_euler_angles, degrees=DEGREES)
+        # RZYZ = Rotation.from_euler("ZYZ", [azimut, inclinaison, torsion], degrees=DEGREES)
 
         # Going to a rotation matrix and then back to euler angles in the zyz convention where we can limit the inclination
         rotation = Rotation.from_euler("xyz", [azimut, inclinaison, torsion], degrees=DEGREES)
         arm_joints = rotation.as_euler("ZYZ", degrees=DEGREES)
         # Limiting the inclination
         arm_joints[1] = min(45, max(-45, arm_joints[1]))
+        # arm_joints[2] = 0
         # Going back to the rotation matrix
         rotation = Rotation.from_euler("ZYZ", arm_joints, degrees=DEGREES)
         # Going back to the euler angles in the xyz convention
@@ -105,6 +149,9 @@ class MainWindow(QMainWindow):
         self.plot_3d_coordinate_frame(R.as_matrix(), alpha=1.0)
         self.plot_3d_coordinate_frame(R2.as_matrix(), alpha=0.5)
         self.plot_3d_coordinate_frame(np.eye(3), alpha=1.0, length=0.5)
+        # self.plot_3d_coordinate_frame(RZYZ.as_matrix(), alpha=1.0, length=2.0)
+        # self.plot_3d_coordinate_frame(Rrestricted.as_matrix(), alpha=1.0, length=2.0)
+
         self.canvas.draw()
 
     def plot_3d_coordinate_frame(self, R, alpha=0.5, length=1.0):

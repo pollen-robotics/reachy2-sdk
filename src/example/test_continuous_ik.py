@@ -133,6 +133,26 @@ def random_trajectoy(reachy: ReachySDK):
         time.sleep(max(0, 1.0 / control_freq - (time.time() - t)))
 
 
+def debug_jump(reachy: ReachySDK):
+    control_freq = 120
+
+    list_of_joints = [
+        [-0.38441463, 0.19387888, 0.28078524, -1.65101396, -0.8450815, 0.43836166, -0.82958215],
+        [-0.38052307, 0.20013711, 0.27489125, -1.65223818, -0.82320635, 0.44291983, -0.84999702],
+    ]
+    i = -1
+    while True:
+        i += 1
+        ik_l = list_of_joints[i % 2]
+        print(f"Setting l_arm to {ik_l}")
+
+        for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik_l):
+            joint.goal_position = np.rad2deg(goal_pos)
+
+        # Trying to emulate a control loop
+        time.sleep(1.0 / control_freq)
+
+
 def main_test():
     print("Trying to connect on localhost Reachy...")
     time.sleep(1.0)
@@ -150,7 +170,8 @@ def main_test():
         joint.goal_position = 0
     time.sleep(1.0)
 
-    random_trajectoy(reachy)
+    # random_trajectoy(reachy)
+    debug_jump(reachy)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
