@@ -53,14 +53,14 @@ class ReachyInfo:
         """Clean representation of an Reachy info."""
         repr_template = (
             '<ReachyInfo robot_serial_number="{serial_number}" \n'
-            " hardware_version={hardware_version} \n"
-            " core_software_version={software_version} \n>"
-            " battery_voltage={battery_voltage} \n>"
+            ' hardware_version="{hardware_version}" \n'
+            ' core_software_version="{software_version}" \n'
+            " battery_voltage={battery_voltage} >"
         )
         return repr_template.format(
-            robot_serial_number=self.robot_serial_number,
+            serial_number=self.robot_serial_number,
             hardware_version=self.hardware_version,
-            core_software_version=self.core_software_version,
+            software_version=self.core_software_version,
             battery_voltage=self.battery_voltage,
         )
 
