@@ -42,7 +42,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     reachy = ReachySDK(host="localhost")
 
-    if reachy.grpc_status == "disconnected":
+    if not reachy.is_connected:
         exit("Reachy is not connected.")
 
     display_teleop_cam()

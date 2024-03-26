@@ -22,6 +22,7 @@ class CameraManager:
         """Set up camera manager module"""
         self._logger = logging.getLogger(__name__)
         self._grpc_video_channel = grpc.insecure_channel(f"{host}:{port}")
+        self._host = host
 
         self._video_stub = VideoServiceStub(self._grpc_video_channel)
 
@@ -64,27 +65,31 @@ class CameraManager:
             self._cleaned = True
 
     def wait_end_of_initialization(self) -> None:
-        self._init_thread.join()
+        if self._init_thread.is_alive():
+            self._logger.info("waiting for camera to be initialized")
+            self._init_thread.join()
 
     @property
     def teleop(self) -> Optional[Camera]:
         """Get Teleop camera"""
-        if self._init_thread.is_alive():
-            self._logger.info("waiting for camera to be initialized")
-            self.wait_end_of_initialization()
+        self.wait_end_of_initialization()
 
         if self._teleop is None:
-            raise AttributeError("There is no Teleop camera")
+            self._logger.error(
+                "Teleop camera is not initialized. Please check that the reachy2-webrtc service is stopped "
+                f"(see http://{self._host}:8000)."
+            )
+            return None
 
         return self._teleop
 
     @property
     def SR(self) -> Optional[SRCamera]:
         """Get SR Camera"""
-        if self._init_thread.is_alive():
-            self._logger.info("waiting for camera to be initialized")
-            self.wait_end_of_initialization()
+        self.wait_end_of_initialization()
 
         if self._SR is None:
-            raise AttributeError("There is no SR camera")
+            self._logger.error("SR camera is not initialized.")
+            return None
+
         return self._SR
