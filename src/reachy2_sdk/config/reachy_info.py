@@ -77,13 +77,13 @@ class ReachyInfo:
         return 30.0
 
     @property
-    def robot_serial_number(self) -> str:
+    def robot_serial_number(self) -> Any:
         return self._robot_serial_number
 
     @property
-    def hardware_version(self) -> str:
+    def hardware_version(self) -> Any:
         return self._hardware_version
 
     @property
-    def core_software_version(self) -> str:
+    def core_software_version(self) -> Any:
         return self._core_software_version
