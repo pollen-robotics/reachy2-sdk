@@ -18,10 +18,10 @@ class ReachyInfo:
     """
 
     def __init__(self, reachy: Reachy) -> None:
-        self.robot_serial_number = reachy.info.serial_number
+        self._robot_serial_number = reachy.info.serial_number
 
-        self.hardware_version = reachy.info.version_hard
-        self.core_software_version = reachy.info.version_soft
+        self._hardware_version = reachy.info.version_hard
+        self._core_software_version = reachy.info.version_soft
 
         self._enabled_parts: Dict[str, Any] = {}
         self._disabled_parts: List[str] = []
@@ -49,6 +49,21 @@ class ReachyInfo:
     def _set_mobile_base(self, mobile_base: MobileBaseSDK) -> None:
         self._mobile_base = mobile_base
 
+    def __repr__(self) -> str:
+        """Clean representation of an Reachy info."""
+        repr_template = (
+            '<ReachyInfo robot_serial_number="{serial_number}" \n'
+            " hardware_version={hardware_version} \n"
+            " core_software_version={software_version} \n>"
+            " battery_voltage={battery_voltage} \n>"
+        )
+        return repr_template.format(
+            robot_serial_number=self.robot_serial_number,
+            hardware_version=self.hardware_version,
+            core_software_version=self.core_software_version,
+            battery_voltage=self.battery_voltage,
+        )
+
     @property
     def battery_voltage(self) -> float:
         """Returns mobile base battery voltage.
@@ -60,3 +75,15 @@ class ReachyInfo:
             # and removing cast
             return (float)(self._mobile_base.battery_voltage)
         return 30.0
+
+    @property
+    def robot_serial_number(self) -> str:
+        return self._robot_serial_number
+
+    @property
+    def hardware_version(self) -> str:
+        return self._hardware_version
+
+    @property
+    def core_software_version(self) -> str:
+        return self._core_software_version
