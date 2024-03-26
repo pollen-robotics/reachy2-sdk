@@ -5,6 +5,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 - the inverse kinematics
 - goto functions
 """
+import time
 from typing import Dict, List, Optional
 
 import grpc
@@ -150,6 +151,18 @@ class Arm:
         """
         self._arm_stub.TurnOff(self._part_id)
         self.gripper.turn_off()
+
+    def turn_off_smoothly(self, duration: float = 2) -> None:
+        """Turn all motors of the part off.
+
+        All arm's motors will see their torque limit reduces from a determined duration, then will be fully compliant.
+        """
+        self._arm_stub.SetTorqueLimit(40)
+        time.sleep(duration)
+        self._arm_stub.TurnOff(self._part_id)
+        self.gripper.turn_off()
+        time.sleep(0.2)
+        self._arm_stub.SetTorqueLimit(100)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
