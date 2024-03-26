@@ -204,28 +204,32 @@ is running and that the IP is correct."
     def head(self) -> Optional[Head]:
         """Get Reachy's head."""
         if self._head is None:
-            raise AttributeError("head does not exist with this configuration")
+            self._logger.error("head does not exist with this configuration")
+            return None
         return self._head
 
     @property
     def r_arm(self) -> Optional[Arm]:
         """Get Reachy's right arm."""
         if self._r_arm is None:
-            raise AttributeError("r_arm does not exist with this configuration")
+            self._logger.error("r_arm does not exist with this configuration")
+            return None
         return self._r_arm
 
     @property
     def l_arm(self) -> Optional[Arm]:
         """Get Reachy's left arm."""
         if self._l_arm is None:
-            raise AttributeError("l_arm does not exist with this configuration")
+            self._logger.error("l_arm does not exist with this configuration")
+            return None
         return self._l_arm
 
     @property
     def mobile_base(self) -> Optional[MobileBaseSDK]:
         """Get Reachy's mobile base."""
         if not hasattr(self, "_mobile_base") or self._mobile_base is None:
-            raise AttributeError("mobile_base does not exist with this configuration")
+            self._logger.error("mobile_base does not exist with this configuration")
+            return None
         return self._mobile_base
 
     @property
