@@ -89,6 +89,7 @@ class ReachySDK(metaclass=Singleton):
         self._l_arm: Optional[Arm] = None
         self._head: Optional[Head] = None
         self._cameras: Optional[CameraManager] = None
+        self._mobile_base: Optional[MobileBaseSDK] = None
 
         self.connect()
 
@@ -110,8 +111,8 @@ class ReachySDK(metaclass=Singleton):
             self._get_info()
         except ConnectionError:
             self._logger.error(
-                f"Could not connect to Reachy with on IP address {self._host}, check that the sdk server \
-is running and that the IP is correct."
+                f"Could not connect to Reachy with on IP address {self._host}, "
+                "check that the sdk server is running and that the IP is correct."
             )
             self._grpc_connected = False
             return
@@ -146,37 +147,10 @@ is running and that the IP is correct."
         time.sleep(0.1)
         self._grpc_channel.close()
 
-        attributs = [attr for attr in dir(self) if not attr.startswith("_")]
-        for attr in attributs:
-            if attr not in [
-                "is_connected",
-                "connect",
-                "disconnect",
-                "info",
-                "set_pose",
-                "turn_on",
-                "turn_off",
-                "is_on",
-                "is_off",
-                "joints",
-                "actuators",
-                "head",
-                "r_arm",
-                "l_arm",
-                "cameras",
-                "cancel_all_moves",
-                "cancel_move_by_id",
-                "_get_move_state",
-                "get_move_joints_request",
-                "is_move_finished",
-                "is_move_playing",
-                "mobile_base",
-            ]:
-                delattr(self, attr)
-
         self._head = None
         self._r_arm = None
         self._l_arm = None
+        self._mobile_base = None
 
         for task in asyncio.all_tasks(loop=self._loop):
             task.cancel()
@@ -227,7 +201,7 @@ is running and that the IP is correct."
     @property
     def mobile_base(self) -> Optional[MobileBaseSDK]:
         """Get Reachy's mobile base."""
-        if not hasattr(self, "_mobile_base") or self._mobile_base is None:
+        if self._mobile_base is None:
             raise AttributeError("mobile_base does not exist with this configuration")
         return self._mobile_base
 
@@ -605,7 +579,7 @@ is running and that the IP is correct."
             return False
         for part in self.info._enabled_parts.values():
             part.turn_on()
-        if hasattr(self, "_mobile_base") and self._mobile_base is not None:
+        if self._mobile_base is not None:
             self._mobile_base.turn_on()
 
         return True
@@ -620,7 +594,7 @@ is running and that the IP is correct."
             return False
         for part in self.info._enabled_parts.values():
             part.turn_off()
-        if hasattr(self, "_mobile_base") and self._mobile_base is not None:
+        if self._mobile_base is not None:
             self._mobile_base.turn_off()
 
         return True
@@ -630,7 +604,7 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if not part.is_on():
                 return False
-        if hasattr(self, "_mobile_base") and self._mobile_base is not None and self._mobile_base.is_off():
+        if self._mobile_base is not None and self._mobile_base.is_off():
             return False
         return True
 
@@ -639,7 +613,7 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if part.is_on():
                 return False
-        if hasattr(self, "_mobile_base") and self._mobile_base is not None and self._mobile_base.is_on():
+        if self._mobile_base is not None and self._mobile_base.is_on():
             return False
         return True
 

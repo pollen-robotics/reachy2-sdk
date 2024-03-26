@@ -43,7 +43,7 @@ class CameraManager:
         """Thread initializing cameras"""
         cams = self._video_stub.InitAllCameras(Empty())
         if len(cams.camera_info) == 0:
-            self._logger.error("Cameras not initialized.")
+            self._logger.warning("Cameras not initialized.")
         else:
             self._logger.debug(cams.camera_info)
             for c in cams.camera_info:
@@ -60,7 +60,13 @@ class CameraManager:
         """Let the server know that the cameras are not longer used by this client"""
         if not self._cleaned:
             self.wait_end_of_initialization()
-            self._video_stub.GoodBye(Empty())
+            try:
+                self._video_stub.GoodBye(Empty())
+            except grpc.RpcError as rpc_error:
+                if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                    self._logger.warning("Video module disconnected")
+                else:
+                    self._logger.error(rpc_error)
             self._cleaned = True
 
     def wait_end_of_initialization(self) -> None:
