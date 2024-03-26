@@ -34,7 +34,7 @@ def test_arm_position_to_list() -> None:
 
     arm_position_float = arm_position_to_list(arm_position, True)
 
-    assert np.allclose(arm_position_float_ref, arm_position_float, atol=1e-01)
+    assert np.allclose(arm_position_float_ref, arm_position_float)
 
     """
     # Todo: this should be equivalent
