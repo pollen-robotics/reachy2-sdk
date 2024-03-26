@@ -35,8 +35,8 @@ class Hand:
         It will create the hand and set its initial state.
         """
         self._part_id = PartId(id=hand_msg.part_id.id)
-        self._present_position: float = round(np.rad2deg(initial_state.present_position.parallel_gripper.position), 1)
-        self._goal_position: float = round(np.rad2deg(initial_state.goal_position.parallel_gripper.position), 1)
+        self._present_position: float = np.rad2deg(initial_state.present_position.parallel_gripper.position)
+        self._goal_position: float = np.rad2deg(initial_state.goal_position.parallel_gripper.position)
         self._opening: float = initial_state.opening.value
         self._compliant: bool = initial_state.compliant.value
 

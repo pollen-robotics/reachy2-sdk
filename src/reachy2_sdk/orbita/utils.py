@@ -7,7 +7,8 @@ import numpy as np
 
 def to_position(internal_pos: float) -> Any:
     """Convert an internal angluar value in radians to a value in degrees."""
-    return round(np.rad2deg(internal_pos), 2)
+    # return round(np.rad2deg(internal_pos), 2)
+    return np.rad2deg(internal_pos)
 
 
 def to_internal_position(pos: float) -> Any:
