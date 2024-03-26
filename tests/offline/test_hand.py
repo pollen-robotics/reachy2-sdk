@@ -52,8 +52,8 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         hand.set_opening(101)
 
-    assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
-    assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
+    assert hand._goal_position == np.rad2deg(goal_position_rad)
+    assert hand._present_position == np.rad2deg(present_position_rad)
     assert hand.is_on() is False
 
     goal_position_rad = 5

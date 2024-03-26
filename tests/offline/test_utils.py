@@ -17,14 +17,14 @@ from reachy2_sdk.utils.utils import (
 @pytest.mark.offline
 def test_deg_rad() -> None:
     degs_ref = [0.0, 360.0, 180.0, 10.0, 20.0]
-    rads_ref = [0.0, 6.283, 3.142, 0.175, 0.349]
+    rads_ref = [0.0, 6.283185, 3.141592, 0.174532, 0.349065]
     rads = convert_to_radians(degs_ref)
 
-    assert np.array_equal(rads_ref, rads)
+    assert np.allclose(rads_ref, rads)
 
     degs = convert_to_degrees(rads_ref)
 
-    assert np.allclose(degs_ref, degs, atol=1e-01)
+    assert np.allclose(degs_ref, degs)
 
 
 @pytest.mark.offline

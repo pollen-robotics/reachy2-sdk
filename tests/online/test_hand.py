@@ -31,7 +31,7 @@ def test_gripper(reachy_sdk_zeroed: ReachySDK) -> None:
     time.sleep(1.0)
 
     # ToDo: these values are not correct
-    # assert reachy_sdk_zeroed.r_arm.gripper.opening == 11.64
+    assert reachy_sdk_zeroed.r_arm.gripper.opening == 0
     assert reachy_sdk_zeroed.l_arm.gripper.opening == 0
 
     reachy_sdk_zeroed.r_arm.gripper.open()
@@ -39,5 +39,5 @@ def test_gripper(reachy_sdk_zeroed: ReachySDK) -> None:
 
     time.sleep(1.0)
 
-    assert reachy_sdk_zeroed.r_arm.gripper.opening == 0
+    assert reachy_sdk_zeroed.r_arm.gripper.opening == 100
     assert reachy_sdk_zeroed.l_arm.gripper.opening == 100
