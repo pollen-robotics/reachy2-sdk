@@ -132,7 +132,6 @@ class ReachySDK(metaclass=Singleton):
 
     def disconnect(self, lost_connection: bool = False) -> None:
         """Disconnects the SDK from the server."""
-
         if not self._grpc_connected:
             self._logger.warning("Already disconnected from Reachy.")
             return
