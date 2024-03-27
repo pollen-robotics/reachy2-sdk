@@ -14,7 +14,7 @@ def test_basic(reachy_sdk_zeroed: ReachySDK) -> None:
     goal_position = -90
     reachy_sdk_zeroed.r_arm.elbow.pitch.goal_position = goal_position
     time.sleep(1)
-    assert reachy_sdk_zeroed.r_arm.elbow.pitch.present_position == goal_position
+    assert np.isclose(reachy_sdk_zeroed.r_arm.elbow.pitch.present_position, goal_position)
 
 
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
@@ -38,7 +38,7 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
 
     # Going from A to B
     for z in np.arange(-0.3, 0.01, 0.01):
-        target_pose = build_pose_matrix(0.3, -0.4, 0)
+        target_pose = build_pose_matrix(0.3, -0.4, z)
         ik = reachy_sdk_zeroed.r_arm.inverse_kinematics(target_pose)
 
         for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
@@ -49,15 +49,7 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
     B = build_pose_matrix(0.3, -0.4, 0)
     current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
 
-    """
-    print(target_pose)
-    print(B)
-    print(current_pos)
-    print(B - current_pos)
-    print(np.isclose(current_pos, B, atol=1e-01))
-    """
-
-    assert np.allclose(current_pos, B, atol=1e-01)
+    assert np.allclose(current_pos, B, atol=1e-03)
 
     # Going from B to C
     for y in np.arange(-0.4, -0.1, 0.01):
@@ -72,13 +64,7 @@ def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
     C = build_pose_matrix(0.3, -0.1, 0)
     current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
 
-    print(target_pose)
-    print(C)
-    print(current_pos)
-    print(C - current_pos)
-    print(np.isclose(current_pos, B, atol=1e-01))
-
-    assert np.allclose(current_pos, C, atol=1e-01)
+    assert np.allclose(current_pos, C, atol=1e-03)
 
     # Going from C to D
     for z in np.arange(0.0, -0.31, -0.01):
@@ -155,7 +141,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
         time.sleep(0.1)
 
     q7 = reachy_sdk_zeroed.head.get_orientation()
-    assert np.isclose(Quaternion.distance(q6, q7), 0, atol=1e-04)
+    assert np.isclose(Quaternion.distance(q6, q7), 0.0218, atol=1e-04)  # not 0 because head movement is limited
 
 
 @pytest.mark.online
