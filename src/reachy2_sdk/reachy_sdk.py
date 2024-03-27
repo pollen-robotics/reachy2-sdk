@@ -144,8 +144,6 @@ class ReachySDK(metaclass=Singleton):
         self._grpc_connected = False
         self._stop_flag.set()
         time.sleep(0.1)
-        self._grpc_connected = False
-
         self._grpc_channel.close()
 
         self._head = None
