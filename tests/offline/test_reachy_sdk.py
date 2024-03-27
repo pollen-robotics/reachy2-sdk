@@ -44,5 +44,7 @@ def test_getters_setters() -> None:
 
     assert rsdk.head is None
 
+    assert rsdk.mobile_base is None
+
     rsdk.disconnect()
     ReachySDK.clear()
