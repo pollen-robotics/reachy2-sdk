@@ -622,14 +622,18 @@ is running and that the IP is correct."
         if not self._grpc_connected:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
-        for part in self.info._enabled_parts.values():
-            if "amr" in part.name:
-                part.turn_off_smoothly(duration)
-            else:
-                part.turn_off()
         if hasattr(self, "_mobile_base") and self._mobile_base is not None:
             self._mobile_base.turn_off()
-
+        for part in self.info._enabled_parts.values():
+            if "arm" in part._part_id.name:
+                part.set_torque(4)
+            else:
+                part.turn_off()
+        time.sleep(duration)
+        for part in self.info._enabled_parts.values():
+            if "arm" in part._part_id.name:
+                part.turn_off()
+                part.set_torque(100)
         return True
 
     def is_on(self) -> bool:
