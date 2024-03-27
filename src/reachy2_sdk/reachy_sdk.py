@@ -626,14 +626,14 @@ is running and that the IP is correct."
             self._mobile_base.turn_off()
         for part in self.info._enabled_parts.values():
             if "arm" in part._part_id.name:
-                part.set_torque(4)
+                part.set_torque_limit(4)
             else:
                 part.turn_off()
         time.sleep(duration)
         for part in self.info._enabled_parts.values():
             if "arm" in part._part_id.name:
                 part.turn_off()
-                part.set_torque(100)
+                part.set_torque_limit(100)
         return True
 
     def is_on(self) -> bool:

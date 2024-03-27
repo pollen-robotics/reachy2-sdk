@@ -20,6 +20,7 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmIKRequest,
     ArmJointGoal,
     ArmState,
+    SpeedLimitRequest,
     TorqueLimitRequest,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
@@ -158,22 +159,28 @@ class Arm:
 
         All arm's motors will see their torque limit reduces from a determined duration, then will be fully compliant.
         """
-        self.set_torque(40)
-        print("torque")
+        self.set_torque_limit(40)
         time.sleep(duration)
-        print("compliant")
         self._arm_stub.TurnOff(self._part_id)
         self.gripper.turn_off()
         time.sleep(0.2)
-        self.set_torque(100)
+        self.set_torque_limit(100)
 
-    def set_torque(self, value: int) -> None:
-        """Choose percentage of torque limit applied to the arms."""
+    def set_torque_limit(self, value: int) -> None:
+        """Choose percentage of torque max value applied as limit to the arms."""
         req = TorqueLimitRequest(
             id=self._part_id,
             limit=value,
         )
         self._arm_stub.SetTorqueLimit(req)
+
+    def set_speed_limit(self, value: int) -> None:
+        """Choose percentage of speed max value applied as limit to the arms."""
+        req = SpeedLimitRequest(
+            id=self._part_id,
+            limit=value,
+        )
+        self._arm_stub.SetSpeedLimit(req)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
