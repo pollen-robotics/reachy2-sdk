@@ -18,10 +18,10 @@ class ReachyInfo:
     """
 
     def __init__(self, reachy: Reachy) -> None:
-        self._robot_serial_number = reachy.info.serial_number
+        self._robot_serial_number: str = reachy.info.serial_number
 
-        self._hardware_version = reachy.info.version_hard
-        self._core_software_version = reachy.info.version_soft
+        self._hardware_version: str = reachy.info.version_hard
+        self._core_software_version: str = reachy.info.version_soft
 
         self._enabled_parts: Dict[str, Any] = {}
         self._disabled_parts: List[str] = []
@@ -77,13 +77,13 @@ class ReachyInfo:
         return 30.0
 
     @property
-    def robot_serial_number(self) -> Any:
+    def robot_serial_number(self) -> str:
         return self._robot_serial_number
 
     @property
-    def hardware_version(self) -> Any:
+    def hardware_version(self) -> str:
         return self._hardware_version
 
     @property
-    def core_software_version(self) -> Any:
+    def core_software_version(self) -> str:
         return self._core_software_version
