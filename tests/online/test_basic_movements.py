@@ -142,7 +142,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
         time.sleep(0.1)
 
     q7 = reachy_sdk_zeroed.head.get_orientation()
-    assert np.isclose(Quaternion.distance(q6, q7), 0, atol=1e-04)
+    assert np.isclose(Quaternion.distance(q6, q7), 0.0218, atol=1e-04)  # not 0 because head movement is limited
 
 
 @pytest.mark.online

@@ -72,6 +72,7 @@ class Arm:
         self._part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
 
         self._setup_arm(arm_msg, initial_state)
+        self._gripper: Optional[Hand] = None
 
         self._actuators: Dict[str, Orbita2d | Orbita3d] = {}
         self._actuators["shoulder"] = self.shoulder
@@ -123,7 +124,7 @@ class Arm:
         return self._wrist
 
     @property
-    def gripper(self) -> Hand:
+    def gripper(self) -> Optional[Hand]:
         return self._gripper
 
     @property
@@ -141,7 +142,8 @@ class Arm:
         All arm's motors will then be stiff.
         """
         self._arm_stub.TurnOn(self._part_id)
-        self.gripper.turn_on()
+        if self._gripper is not None:
+            self._gripper.turn_on()
 
     def turn_off(self) -> None:
         """Turn all motors of the part off.
@@ -149,14 +151,15 @@ class Arm:
         All arm's motors will then be compliant.
         """
         self._arm_stub.TurnOff(self._part_id)
-        self.gripper.turn_off()
+        if self._gripper is not None:
+            self._gripper.turn_off()
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
             if not actuator.is_on():
                 return False
-        if not self.gripper.is_on():
+        if self._gripper is not None and not self._gripper.is_on():
             return False
         return True
 
@@ -165,7 +168,7 @@ class Arm:
         for actuator in self._actuators.values():
             if actuator.is_on():
                 return False
-        if self.gripper.is_on():
+        if self._gripper is not None and self._gripper.is_on():
             return False
         return True
 
