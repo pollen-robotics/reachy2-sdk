@@ -37,6 +37,7 @@ from reachy2_sdk_api.part_pb2 import PartId
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
 from ..orbita.orbita_joint import OrbitaJoint
+from ..utils.custom_dict import CustomDict
 from ..utils.utils import (
     arm_position_to_list,
     get_grpc_interpolation_mode,
@@ -83,7 +84,7 @@ class Arm:
         Set up the arm's actuators (shoulder, elbow and wrist) with the arm's description and initial state.
         """
         description = arm.description
-        self.shoulder = Orbita2d(
+        self._shoulder = Orbita2d(
             uid=description.shoulder.id.id,
             name=description.shoulder.id.name,
             axis1=description.shoulder.axis_1,
@@ -91,7 +92,7 @@ class Arm:
             initial_state=initial_state.shoulder_state,
             grpc_channel=self._grpc_channel,
         )
-        self.elbow = Orbita2d(
+        self._elbow = Orbita2d(
             uid=description.elbow.id.id,
             name=description.elbow.id.name,
             axis1=description.elbow.axis_1,
@@ -99,7 +100,7 @@ class Arm:
             initial_state=initial_state.elbow_state,
             grpc_channel=self._grpc_channel,
         )
-        self.wrist = Orbita3d(
+        self._wrist = Orbita3d(
             uid=description.wrist.id.id,
             name=description.wrist.id.name,
             initial_state=initial_state.wrist_state,
@@ -107,15 +108,31 @@ class Arm:
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
-        self.gripper = Hand(hand, hand_initial_state, self._grpc_channel)
+        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel)
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint]:
+    def shoulder(self) -> Orbita2d:
+        return self._shoulder
+
+    @property
+    def elbow(self) -> Orbita2d:
+        return self._elbow
+
+    @property
+    def wrist(self) -> Orbita3d:
+        return self._wrist
+
+    @property
+    def gripper(self) -> Hand:
+        return self._gripper
+
+    @property
+    def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all the arm's joints."""
-        _joints: Dict[str, OrbitaJoint] = {}
+        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
         for actuator_name, actuator in self._actuators.items():
             for joint in actuator._joints.values():
-                _joints[actuator_name + "_" + joint._axis_type] = joint
+                _joints[actuator_name + "." + joint._axis_type] = joint
         return _joints
 
     def turn_on(self) -> None:
@@ -124,8 +141,7 @@ class Arm:
         All arm's motors will then be stiff.
         """
         self._arm_stub.TurnOn(self._part_id)
-        if hasattr(self, "gripper"):
-            self.gripper.turn_on()
+        self.gripper.turn_on()
 
     def turn_off(self) -> None:
         """Turn all motors of the part off.
@@ -133,15 +149,14 @@ class Arm:
         All arm's motors will then be compliant.
         """
         self._arm_stub.TurnOff(self._part_id)
-        if hasattr(self, "gripper"):
-            self.gripper.turn_off()
+        self.gripper.turn_off()
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
             if not actuator.is_on():
                 return False
-        if hasattr(self, "gripper") and not self.gripper.is_on():
+        if not self.gripper.is_on():
             return False
         return True
 
@@ -150,14 +165,14 @@ class Arm:
         for actuator in self._actuators.values():
             if actuator.is_on():
                 return False
-        if hasattr(self, "gripper") and self.gripper.is_on():
+        if self.gripper.is_on():
             return False
         return True
 
     def __repr__(self) -> str:
         """Clean representation of an Arm."""
         s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
-        return f"""<Arm actuators=\n\t{
+        return f"""<Arm on={self.is_on()} actuators=\n\t{
             s
         }\n>"""
 
@@ -254,6 +269,8 @@ class Arm:
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
         if q0 is not None and (len(q0) != 7):
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
         if self.is_off():
             raise RuntimeError("Arm is off. Goto not sent.")
 
@@ -293,7 +310,9 @@ class Arm:
         it will move the arm to that position.
         """
         if len(positions) != 7:
-            raise ValueError(f"positions should be length 7 (got {len(positions)} instead)!")
+            raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
         if self.is_off():
             raise RuntimeError("Arm is off. Goto not sent.")
 

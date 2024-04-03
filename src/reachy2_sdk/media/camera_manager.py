@@ -6,21 +6,13 @@ Initialize the two teleop and SR cameras if they are available.
 import atexit
 import logging
 import threading
-from enum import Enum
 from typing import Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from reachy2_sdk_api.video_pb2_grpc import VideoServiceStub
 
-from .camera import Camera, SRCamera
-
-
-class CameraType(Enum):
-    """Camera names defined in pollen-vision"""
-
-    TELEOP = "teleop_head"
-    SR = "other"
+from .camera import Camera, CameraType, SRCamera
 
 
 class CameraManager:
@@ -30,6 +22,7 @@ class CameraManager:
         """Set up camera manager module"""
         self._logger = logging.getLogger(__name__)
         self._grpc_video_channel = grpc.insecure_channel(f"{host}:{port}")
+        self._host = host
 
         self._video_stub = VideoServiceStub(self._grpc_video_channel)
 
@@ -42,11 +35,16 @@ class CameraManager:
         self._cleaned = False
         atexit.register(self._cleanup)
 
+    def __repr__(self) -> str:
+        """Clean representation of a reachy cameras."""
+        s = "\n\t".join([str(cam) for cam in [self._SR, self._teleop] if cam is not None])
+        return f"""<CameraManager intialized_cameras=\n\t{s}\n>"""
+
     def _setup_cameras(self) -> None:
         """Thread initializing cameras"""
         cams = self._video_stub.InitAllCameras(Empty())
         if len(cams.camera_info) == 0:
-            self._logger.error("Cameras not initialized.")
+            self._logger.warning("Cameras not initialized.")
         else:
             self._logger.debug(cams.camera_info)
             for c in cams.camera_info:
@@ -63,31 +61,41 @@ class CameraManager:
         """Let the server know that the cameras are not longer used by this client"""
         if not self._cleaned:
             self.wait_end_of_initialization()
-            self._video_stub.GoodBye(Empty())
+            try:
+                self._video_stub.GoodBye(Empty())
+            except grpc.RpcError as rpc_error:
+                if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                    self._logger.warning("Video module disconnected")
+                else:
+                    self._logger.error(rpc_error)
             self._cleaned = True
 
     def wait_end_of_initialization(self) -> None:
-        self._init_thread.join()
+        if self._init_thread.is_alive():
+            self._logger.info("waiting for camera to be initialized")
+            self._init_thread.join()
 
     @property
     def teleop(self) -> Optional[Camera]:
         """Get Teleop camera"""
-        if self._init_thread.is_alive():
-            self._logger.info("waiting for camera to be initialized")
-            self.wait_end_of_initialization()
+        self.wait_end_of_initialization()
 
         if self._teleop is None:
-            raise AttributeError("There is no Teleop camera")
+            self._logger.error(
+                "Teleop camera is not initialized. Please check that the reachy2-webrtc service is stopped "
+                f"(see http://{self._host}:8000)."
+            )
+            return None
 
         return self._teleop
 
     @property
     def SR(self) -> Optional[SRCamera]:
         """Get SR Camera"""
-        if self._init_thread.is_alive():
-            self._logger.info("waiting for camera to be initialized")
-            self.wait_end_of_initialization()
+        self.wait_end_of_initialization()
 
         if self._SR is None:
-            raise AttributeError("There is no SR camera")
+            self._logger.error("SR camera is not initialized.")
+            return None
+
         return self._SR

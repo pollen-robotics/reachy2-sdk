@@ -1,6 +1,6 @@
 import pytest
 
-from src.reachy2_sdk.reachy_sdk import ReachySDK
+from reachy2_sdk.reachy_sdk import ReachySDK
 
 
 @pytest.mark.offline
@@ -38,14 +38,13 @@ def test_unconnected() -> None:
 def test_getters_setters() -> None:
     rsdk = ReachySDK(host="dummy")
 
-    with pytest.raises(AttributeError):
-        rsdk.r_arm
+    assert rsdk.r_arm is None
 
-    with pytest.raises(AttributeError):
-        rsdk.l_arm
+    assert rsdk.l_arm is None
 
-    with pytest.raises(AttributeError):
-        rsdk.head
+    assert rsdk.head is None
+
+    assert rsdk.mobile_base is None
 
     rsdk.disconnect()
     ReachySDK.clear()

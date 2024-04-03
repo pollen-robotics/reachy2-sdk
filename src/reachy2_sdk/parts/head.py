@@ -4,7 +4,7 @@ Handles all specific method to an Head:
 - the inverse kinematics
 - look_at function
 """
-from typing import Dict, List
+from typing import List
 
 import grpc
 import numpy as np
@@ -31,6 +31,7 @@ from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.orbita3d import Orbita3d
 from ..orbita.orbita_joint import OrbitaJoint
+from ..utils.custom_dict import CustomDict
 from ..utils.utils import get_grpc_interpolation_mode
 
 # from .dynamixel_motor import DynamixelMotor
@@ -70,7 +71,7 @@ class Head:
         It will create the actuators neck and antennas and set their initial state.
         """
         description = head.description
-        self.neck = Orbita3d(
+        self._neck = Orbita3d(
             uid=description.neck.id.id,
             name=description.neck.id.name,
             initial_state=initial_state.neck_state,
@@ -92,16 +93,21 @@ class Head:
     def __repr__(self) -> str:
         """Clean representation of an Head."""
         s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
-        return f"""<Head actuators=\n\t{
+        return f"""<Head on={self.is_on()} actuators=\n\t{
             s
         }\n>"""
 
     @property
-    def joints(self) -> Dict[str, OrbitaJoint]:
+    def neck(self) -> Orbita3d:
+        return self._neck
+
+    @property
+    def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all the arm's joints."""
-        _joints: Dict[str, OrbitaJoint] = {}
-        for actuator in self._actuators.values():
-            _joints.update(actuator._joints)
+        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
+        for actuator_name, actuator in self._actuators.items():
+            for joint in actuator._joints.values():
+                _joints[actuator_name + "." + joint._axis_type] = joint
         return _joints
 
     def get_orientation(self) -> pyQuat:
@@ -112,11 +118,23 @@ class Head:
         quat = self._head_stub.GetOrientation(self._part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
+    def get_joints_positions(self) -> List[float]:
+        """Return the current joints positions of the neck.
+
+        It will return the List[roll, pitch, yaw].
+        """
+        roll = self.neck._joints["roll"].present_position
+        pitch = self.neck._joints["pitch"].present_position
+        yaw = self.neck._joints["yaw"].present_position
+        return [roll, pitch, yaw]
+
     def look_at(self, x: float, y: float, z: float, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
         """Compute and send neck rpy position to look at the (x, y, z) point in Reachy cartesian space (torso frame).
 
         X is forward, Y is left and Z is upward. They all expressed in meters.
         """
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
         if self.is_off():
             raise RuntimeError("Head is off. Look_at not sent.")
 
@@ -146,6 +164,8 @@ class Head:
 
         Rotation is done in order roll, pitch, yaw.
         """
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
         if self.is_off():
             raise RuntimeError("Head is off. Rotate_to not sent.")
 
@@ -174,6 +194,8 @@ class Head:
 
     def orient(self, q: pyQuat, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
         """Send neck to the orientation given as a quaternion."""
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
         if self.is_off():
             raise RuntimeError("Head is off. Orient not sent.")
 

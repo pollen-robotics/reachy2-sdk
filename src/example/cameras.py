@@ -13,7 +13,7 @@ def display_teleop_cam() -> None:
     try:
         while reachy.cameras.teleop.capture():
             frame = reachy.cameras.teleop.get_frame(CameraView.LEFT)
-            frame_r = reachy.cameras.teleop.get_frame(CameraView.LEFT)
+            frame_r = reachy.cameras.teleop.get_frame(CameraView.RIGHT)
             cv2.imshow("left", frame)
             cv2.imshow("right", frame_r)
             cv2.waitKey(1)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     reachy = ReachySDK(host="localhost")
 
-    if reachy.grpc_status == "disconnected":
+    if not reachy.is_connected:
         exit("Reachy is not connected.")
 
     display_teleop_cam()

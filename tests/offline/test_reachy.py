@@ -21,6 +21,7 @@ def test_ReachyInfo() -> None:
     assert ri.robot_serial_number == serial_number
     assert ri.hardware_version == version_hard
     assert ri.core_software_version == version_soft
+    assert ri.battery_voltage == 30.0
 
 
 @pytest.mark.offline
@@ -57,3 +58,11 @@ def test_config() -> None:
     robot = Reachy(head=Head(), l_arm=Arm(), r_arm=Arm(), mobile_base=MobileBase(), info=robot_info)
     ri = ReachyInfo(robot)
     assert ri.config == "full_kit with mobile_base"
+
+    assert ri.robot_serial_number == serial_number
+
+    assert ri.hardware_version == version_hard
+
+    assert ri.core_software_version == version_soft
+
+    assert ri.battery_voltage == 30.0
