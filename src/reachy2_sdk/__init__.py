@@ -14,6 +14,8 @@ reachy = ReachySDK(host="ip_address")
 
 And you're ready to use Reachy!
 
+*Examples and tutorials are available [here](../src/examples/)!*
+
 """
 
 from .reachy_sdk import ReachySDK  # noqa: F401
