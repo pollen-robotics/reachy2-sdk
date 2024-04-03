@@ -89,6 +89,7 @@ class ReachySDK(metaclass=Singleton):
         self._l_arm: Optional[Arm] = None
         self._head: Optional[Head] = None
         self._cameras: Optional[CameraManager] = None
+        self._mobile_base: Optional[MobileBaseSDK] = None
 
         self.connect()
 
@@ -110,8 +111,8 @@ class ReachySDK(metaclass=Singleton):
             self._get_info()
         except ConnectionError:
             self._logger.error(
-                f"Could not connect to Reachy with on IP address {self._host}, check that the sdk server \
-is running and that the IP is correct."
+                f"Could not connect to Reachy with on IP address {self._host}, "
+                "check that the sdk server is running and that the IP is correct."
             )
             self._grpc_connected = False
             return
@@ -125,10 +126,11 @@ is running and that the IP is correct."
         self._sync_thread.start()
 
         self._grpc_connected = True
+        self._lost_connection = False
         _open_connection.append(self)
         self._logger.info("Connected to Reachy.")
 
-    def disconnect(self) -> None:
+    def disconnect(self, lost_connection: bool = False) -> None:
         """Disconnects the SDK from the server."""
         if not self._grpc_connected:
             self._logger.warning("Already disconnected from Reachy.")
@@ -138,41 +140,16 @@ is running and that the IP is correct."
             for actuator in part._actuators.values():
                 actuator._need_sync.clear()
 
+        self._lost_connection = lost_connection
+        self._grpc_connected = False
         self._stop_flag.set()
         time.sleep(0.1)
-        self._grpc_connected = False
-
         self._grpc_channel.close()
-        attributs = [attr for attr in dir(self) if not attr.startswith("_")]
-        for attr in attributs:
-            if attr not in [
-                "is_connected",
-                "connect",
-                "disconnect",
-                "info",
-                "set_pose",
-                "turn_on",
-                "turn_off",
-                "is_on",
-                "is_off",
-                "joints",
-                "actuators",
-                "head",
-                "r_arm",
-                "l_arm",
-                "cameras",
-                "cancel_all_moves",
-                "cancel_move_by_id",
-                "_get_move_state",
-                "get_move_joints_request",
-                "is_move_finished",
-                "is_move_playing",
-            ]:
-                delattr(self, attr)
 
         self._head = None
         self._r_arm = None
         self._l_arm = None
+        self._mobile_base = None
 
         for task in asyncio.all_tasks(loop=self._loop):
             task.cancel()
@@ -203,28 +180,32 @@ is running and that the IP is correct."
     def head(self) -> Optional[Head]:
         """Get Reachy's head."""
         if self._head is None:
-            raise AttributeError("head does not exist with this configuration")
+            self._logger.error("head does not exist with this configuration")
+            return None
         return self._head
 
     @property
     def r_arm(self) -> Optional[Arm]:
         """Get Reachy's right arm."""
         if self._r_arm is None:
-            raise AttributeError("r_arm does not exist with this configuration")
+            self._logger.error("r_arm does not exist with this configuration")
+            return None
         return self._r_arm
 
     @property
     def l_arm(self) -> Optional[Arm]:
         """Get Reachy's left arm."""
         if self._l_arm is None:
-            raise AttributeError("l_arm does not exist with this configuration")
+            self._logger.error("l_arm does not exist with this configuration")
+            return None
         return self._l_arm
 
     @property
     def mobile_base(self) -> Optional[MobileBaseSDK]:
         """Get Reachy's mobile base."""
-        if not hasattr(self, "_mobile_base") or self._mobile_base is None:
-            raise AttributeError("mobile_base does not exist with this configuration")
+        if self._mobile_base is None:
+            self._logger.error("mobile_base does not exist with this configuration")
+            return None
         return self._mobile_base
 
     @property
@@ -361,7 +342,8 @@ is running and that the IP is correct."
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
             await asyncio.sleep(0.1)
-        raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
+        if self._lost_connection:
+            raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
     async def _poll_waiting_2dcommands(self) -> Orbita2dsCommand:
         """Poll registers to update for Orbita2d actuators of the robot."""
@@ -451,17 +433,13 @@ is running and that the IP is correct."
 
         try:
             self._loop.run_until_complete(self._sync_loop())
-            self.disconnect()
+            if self._grpc_connected:
+                self.disconnect(lost_connection=True)
         except asyncio.CancelledError:
             self._logger.error("Sync loop cancelled.")
 
-    async def _sync_loop(self) -> None:
-        """Define the synchronization loop.
-
-        The synchronization loop is used to:
-            - stream commands to the robot
-            - update the state of the robot
-        """
+    def _setup_parts_sync_loops(self) -> None:
+        """Start sync loop of each part"""
         if self._r_arm is not None:
             for actuator in self._r_arm._actuators.values():
                 actuator._setup_sync_loop()
@@ -473,6 +451,16 @@ is running and that the IP is correct."
         if self._head is not None:
             for actuator in self._head._actuators.values():
                 actuator._setup_sync_loop()
+
+    async def _sync_loop(self) -> None:
+        """Define the synchronization loop.
+
+        The synchronization loop is used to:
+            - stream commands to the robot
+            - update the state of the robot
+        """
+
+        self._setup_parts_sync_loops()
 
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
         reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
@@ -491,7 +479,8 @@ is running and that the IP is correct."
         except ConnectionError:
             self._logger.error("Connection with Reachy lost, check the sdk server status.")
         except asyncio.CancelledError:
-            self._logger.error("Stopped streaming commands.")
+            if self._lost_connection:
+                self._logger.error("Stopped streaming commands.")
 
     async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         """Update the state of the robot at a given frequency."""
@@ -593,7 +582,7 @@ is running and that the IP is correct."
             return False
         for part in self.info._enabled_parts.values():
             part.turn_on()
-        if hasattr(self, "_mobile_base") and self._mobile_base is not None:
+        if self._mobile_base is not None:
             self._mobile_base.turn_on()
 
         return True
@@ -608,7 +597,7 @@ is running and that the IP is correct."
             return False
         for part in self.info._enabled_parts.values():
             part.turn_off()
-        if hasattr(self, "_mobile_base") and self._mobile_base is not None:
+        if self._mobile_base is not None:
             self._mobile_base.turn_off()
 
         return True
@@ -618,7 +607,7 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if not part.is_on():
                 return False
-        if hasattr(self, "_mobile_base") and self._mobile_base is not None and self._mobile_base.is_off():
+        if self._mobile_base is not None and self._mobile_base.is_off():
             return False
         return True
 
@@ -627,7 +616,7 @@ is running and that the IP is correct."
         for part in self.info._enabled_parts.values():
             if part.is_on():
                 return False
-        if hasattr(self, "_mobile_base") and self._mobile_base is not None and self._mobile_base.is_on():
+        if self._mobile_base is not None and self._mobile_base.is_on():
             return False
         return True
 
