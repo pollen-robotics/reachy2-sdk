@@ -24,6 +24,8 @@ from reachy2_sdk_api.head_pb2 import (
     NeckCartesianGoal,
     NeckJointGoal,
     NeckOrientation,
+    SpeedLimitRequest,
+    TorqueLimitRequest,
 )
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
@@ -225,6 +227,22 @@ class Head:
         All head's motors will then be compliant.
         """
         self._head_stub.TurnOff(self._part_id)
+
+    def set_torque_limit(self, value: int) -> None:
+        """Choose percentage of torque max value applied as limit to the head."""
+        req = TorqueLimitRequest(
+            id=self._part_id,
+            limit=value,
+        )
+        self._head_stub.SetTorqueLimit(req)
+
+    def set_speed_limit(self, value: int) -> None:
+        """Choose percentage of speed max value applied as limit to the head."""
+        req = SpeedLimitRequest(
+            id=self._part_id,
+            limit=value,
+        )
+        self._head_stub.SetSpeedLimit(req)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""

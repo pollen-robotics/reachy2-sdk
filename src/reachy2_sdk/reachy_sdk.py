@@ -604,6 +604,28 @@ class ReachySDK(metaclass=Singleton):
 
         return True
 
+    def turn_off_smoothly(self, duration: float = 2) -> bool:
+        """Turn all motors of enabled parts off.
+
+        All enabled parts' motors will then be compliant.
+        """
+        if not self._grpc_connected:
+            self._logger.warning("Cannot turn off Reachy, not connected.")
+            return False
+        if hasattr(self, "_mobile_base") and self._mobile_base is not None:
+            self._mobile_base.turn_off()
+        for part in self.info._enabled_parts.values():
+            if "arm" in part._part_id.name:
+                part.set_torque_limit(20)
+            else:
+                part.turn_off()
+        time.sleep(duration)
+        for part in self.info._enabled_parts.values():
+            if "arm" in part._part_id.name:
+                part.turn_off()
+                part.set_torque_limit(100)
+        return True
+
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for part in self.info._enabled_parts.values():

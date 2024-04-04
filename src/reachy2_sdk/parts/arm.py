@@ -5,6 +5,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 - the inverse kinematics
 - goto functions
 """
+import time
 from typing import Dict, List, Optional
 
 import grpc
@@ -19,6 +20,8 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmIKRequest,
     ArmJointGoal,
     ArmState,
+    SpeedLimitRequest,
+    TorqueLimitRequest,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import (
@@ -153,6 +156,34 @@ class Arm:
         self._arm_stub.TurnOff(self._part_id)
         if self._gripper is not None:
             self._gripper.turn_off()
+
+    def turn_off_smoothly(self, duration: float = 2) -> None:
+        """Turn all motors of the part off.
+
+        All arm's motors will see their torque limit reduces from a determined duration, then will be fully compliant.
+        """
+        self.set_torque_limit(20)
+        time.sleep(duration)
+        self._arm_stub.TurnOff(self._part_id)
+        self.gripper.turn_off()
+        time.sleep(0.2)
+        self.set_torque_limit(100)
+
+    def set_torque_limit(self, value: int) -> None:
+        """Choose percentage of torque max value applied as limit to the arms."""
+        req = TorqueLimitRequest(
+            id=self._part_id,
+            limit=value,
+        )
+        self._arm_stub.SetTorqueLimit(req)
+
+    def set_speed_limit(self, value: int) -> None:
+        """Choose percentage of speed max value applied as limit to the arms."""
+        req = SpeedLimitRequest(
+            id=self._part_id,
+            limit=value,
+        )
+        self._arm_stub.SetSpeedLimit(req)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
