@@ -118,6 +118,8 @@ if __name__ == "__main__":
     print("Turning on Reachy")
     reachy.turn_on()
 
+    time.sleep(0.2)
+
     print("Set to Elbow 90 pose ...")
     move_ids = reachy.set_pose("elbow_90")
     wait_for_pose_to_finish(move_ids)
@@ -134,5 +136,7 @@ if __name__ == "__main__":
 
     print("Turning off Reachy")
     reachy.turn_off()
+
+    time.sleep(0.2)
 
     exit("Exiting example")
