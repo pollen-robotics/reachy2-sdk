@@ -159,7 +159,7 @@ class Arm:
 
         All arm's motors will see their torque limit reduces from a determined duration, then will be fully compliant.
         """
-        self.set_torque_limit(40)
+        self.set_torque_limit(20)
         time.sleep(duration)
         self._arm_stub.TurnOff(self._part_id)
         self.gripper.turn_off()
