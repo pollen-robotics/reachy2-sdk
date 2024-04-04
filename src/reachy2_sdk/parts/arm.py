@@ -5,6 +5,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 - the inverse kinematics
 - goto functions
 """
+import time
 from typing import Dict, List, Optional
 
 import grpc
@@ -19,6 +20,8 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmIKRequest,
     ArmJointGoal,
     ArmState,
+    SpeedLimitRequest,
+    TorqueLimitRequest,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import (
@@ -72,6 +75,7 @@ class Arm:
         self._part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
 
         self._setup_arm(arm_msg, initial_state)
+        self._gripper: Optional[Hand] = None
 
         self._actuators: Dict[str, Orbita2d | Orbita3d] = {}
         self._actuators["shoulder"] = self.shoulder
@@ -123,7 +127,7 @@ class Arm:
         return self._wrist
 
     @property
-    def gripper(self) -> Hand:
+    def gripper(self) -> Optional[Hand]:
         return self._gripper
 
     @property
@@ -141,7 +145,8 @@ class Arm:
         All arm's motors will then be stiff.
         """
         self._arm_stub.TurnOn(self._part_id)
-        self.gripper.turn_on()
+        if self._gripper is not None:
+            self._gripper.turn_on()
 
     def turn_off(self) -> None:
         """Turn all motors of the part off.
@@ -149,14 +154,43 @@ class Arm:
         All arm's motors will then be compliant.
         """
         self._arm_stub.TurnOff(self._part_id)
+        if self._gripper is not None:
+            self._gripper.turn_off()
+
+    def turn_off_smoothly(self, duration: float = 2) -> None:
+        """Turn all motors of the part off.
+
+        All arm's motors will see their torque limit reduces from a determined duration, then will be fully compliant.
+        """
+        self.set_torque_limit(20)
+        time.sleep(duration)
+        self._arm_stub.TurnOff(self._part_id)
         self.gripper.turn_off()
+        time.sleep(0.2)
+        self.set_torque_limit(100)
+
+    def set_torque_limit(self, value: int) -> None:
+        """Choose percentage of torque max value applied as limit to the arms."""
+        req = TorqueLimitRequest(
+            id=self._part_id,
+            limit=value,
+        )
+        self._arm_stub.SetTorqueLimit(req)
+
+    def set_speed_limit(self, value: int) -> None:
+        """Choose percentage of speed max value applied as limit to the arms."""
+        req = SpeedLimitRequest(
+            id=self._part_id,
+            limit=value,
+        )
+        self._arm_stub.SetSpeedLimit(req)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         for actuator in self._actuators.values():
             if not actuator.is_on():
                 return False
-        if not self.gripper.is_on():
+        if self._gripper is not None and not self._gripper.is_on():
             return False
         return True
 
@@ -165,7 +199,7 @@ class Arm:
         for actuator in self._actuators.values():
             if actuator.is_on():
                 return False
-        if self.gripper.is_on():
+        if self._gripper is not None and self._gripper.is_on():
             return False
         return True
 
@@ -271,6 +305,8 @@ class Arm:
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
+        if self.is_off():
+            raise RuntimeError("Arm is off. Goto not sent.")
 
         if q0 is not None:
             q0 = list_to_arm_position(q0)
@@ -311,6 +347,8 @@ class Arm:
             raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
+        if self.is_off():
+            raise RuntimeError("Arm is off. Goto not sent.")
 
         arm_pos = list_to_arm_position(positions, degrees)
         request = GoToRequest(

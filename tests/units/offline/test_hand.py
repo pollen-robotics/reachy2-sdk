@@ -72,6 +72,17 @@ def test_class() -> None:
 
     assert hand.opening == 70
 
+    hand._compliant = True
+
+    with pytest.raises(RuntimeError):
+        hand.open()
+
+    with pytest.raises(RuntimeError):
+        hand.close()
+
+    with pytest.raises(RuntimeError):
+        hand.set_opening(50)
+
     # Todo values are in deg or rad?
     # assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
     # assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
