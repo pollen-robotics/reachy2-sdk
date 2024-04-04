@@ -135,6 +135,8 @@ class Head:
         """
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
+        if self.is_off():
+            raise RuntimeError("Head is off. Look_at not sent.")
 
         request = GoToRequest(
             cartesian_goal=CartesianGoal(
@@ -164,6 +166,8 @@ class Head:
         """
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
+        if self.is_off():
+            raise RuntimeError("Head is off. Rotate_to not sent.")
 
         if degrees:
             roll = np.deg2rad(roll)
@@ -192,6 +196,8 @@ class Head:
         """Send neck to the orientation given as a quaternion."""
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
+        if self.is_off():
+            raise RuntimeError("Head is off. Orient not sent.")
 
         request = GoToRequest(
             joints_goal=JointsGoal(

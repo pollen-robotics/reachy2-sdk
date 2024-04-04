@@ -489,11 +489,13 @@ class ReachySDK(metaclass=Singleton):
             async for state_update in reachy_stub.StreamReachyState(stream_req):
                 if self._l_arm is not None:
                     self._l_arm._update_with(state_update.l_arm_state)
-                    if hasattr(self._l_arm, "gripper"):
+                    # if hasattr(self._l_arm, "gripper"):
+                    if self._l_arm.gripper is not None:
                         self._l_arm.gripper._update_with(state_update.l_hand_state)
                 if self._r_arm is not None:
                     self._r_arm._update_with(state_update.r_arm_state)
-                    if hasattr(self._r_arm, "gripper"):
+                    # if hasattr(self._r_arm, "gripper"):
+                    if self._r_arm.gripper is not None:
                         self._r_arm.gripper._update_with(state_update.r_hand_state)
                 if self._head is not None:
                     self._head._update_with(state_update.head_state)
