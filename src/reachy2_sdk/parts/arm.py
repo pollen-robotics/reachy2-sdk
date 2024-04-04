@@ -165,7 +165,8 @@ class Arm:
         self.set_torque_limit(20)
         time.sleep(duration)
         self._arm_stub.TurnOff(self._part_id)
-        self.gripper.turn_off()
+        if self._gripper is not None:
+            self._gripper.turn_off()
         time.sleep(0.2)
         self.set_torque_limit(100)
 
