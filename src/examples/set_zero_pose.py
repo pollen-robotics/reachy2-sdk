@@ -1,4 +1,5 @@
 import logging
+import time
 
 from reachy2_sdk import ReachySDK
 
@@ -23,7 +24,11 @@ if __name__ == "__main__":
     print("Turning on Reachy...")
     reachy.turn_on()
 
+    time.sleep(0.2)
+
     print("Set to zero pose...")
     reachy.set_pose("zero")
+
+    time.sleep(1)
 
     exit("Exiting example")
