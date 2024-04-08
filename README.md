@@ -7,10 +7,10 @@
 Use the following command to install:
 
 ```console
-$ pip install -e .[pollen,dev]
+$ pip install -e .[dev]
 ```
 
-The *[dev]* option includes tools for developers. The *[pollen]* option contains custom Pollen Robotics repositories. It is essential but not included in the default installation because GitHub Actions cannot directly fetch from private repositories.
+The *[dev]* option includes tools for developers.
 
 ## Usage
 
