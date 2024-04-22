@@ -28,53 +28,33 @@ def draw_square(reachy: ReachySDK) -> None:
     # see https://docs.pollen-robotics.com/sdk/first-moves/kinematics/ for Reachy's coordinate system
 
     # Going from A to B
-    for z in np.arange(-0.3, 0.01, 0.01):
-        target_pose = build_pose_matrix(0.3, -0.4, z)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
-            joint.goal_position = goal_pos
-
-        time.sleep(0.1)
+    target_pose = build_pose_matrix(0.3, -0.4, 0)
+    ik = reachy.r_arm.inverse_kinematics(target_pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose B: ", current_pos)
 
     # Going from B to C
-    for y in np.arange(-0.4, -0.1, 0.01):
-        target_pose = build_pose_matrix(0.3, y, 0.0)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
-            joint.goal_position = goal_pos
-
-        time.sleep(0.1)
+    target_pose = build_pose_matrix(0.3, -0.1, 0.0)
+    ik = reachy.r_arm.inverse_kinematics(target_pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose C: ", current_pos)
 
     # Going from C to D
-    for z in np.arange(0.0, -0.31, -0.01):
-        target_pose = build_pose_matrix(0.3, -0.1, z)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
-            joint.goal_position = goal_pos
-
-        time.sleep(0.1)
+    target_pose = build_pose_matrix(0.3, -0.1, -0.3)
+    ik = reachy.r_arm.inverse_kinematics(target_pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose D: ", current_pos)
 
     # Going from D to A
-    for y in np.arange(-0.1, -0.4, -0.01):
-        target_pose = build_pose_matrix(0.3, y, -0.3)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
-            joint.goal_position = goal_pos
-
-        time.sleep(0.1)
+    target_pose = build_pose_matrix(0.3, -0.4, -0.3)
+    ik = reachy.r_arm.inverse_kinematics(target_pose)
+    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose A: ", current_pos)
