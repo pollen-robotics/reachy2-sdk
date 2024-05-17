@@ -2,8 +2,10 @@ import time
 
 import numpy as np
 import numpy.typing as npt
-from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
+from scipy.spatial.transform import Rotation as R
+
+from reachy2_sdk import ReachySDK
 
 
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
@@ -16,6 +18,17 @@ def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
             [0, 0, 0, 1],
         ]
     )
+    
+
+def get_homogeneous_matrix_msg_from_euler(
+    position: tuple = (0, 0, 0),  # (x, y, z)
+    euler_angles: tuple = (0, 0, 0),  # (roll, pitch, yaw)
+    degrees: bool = False,
+):
+    homogeneous_matrix = np.eye(4)
+    homogeneous_matrix[:3, :3] = R.from_euler("xyz", euler_angles, degrees=degrees).as_matrix()
+    homogeneous_matrix[:3, 3] = position
+    return homogeneous_matrix
 
 
 def test_goto_joint(reachy: ReachySDK) -> None:
@@ -180,21 +193,15 @@ def test_goto_cancel(reachy: ReachySDK) -> None:
 
 
 def test_goto_cartesian(reachy: ReachySDK) -> None:
-    id = reachy.r_arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), 2.0)
-    while is_goto_finished(reachy, id) is False:
-        time.sleep(0.1)
-
-    print("Trying with weird q0")
-    q0 = [np.pi / 2, -np.pi / 2, np.pi / 2, -np.pi / 2, np.pi / 2, -np.pi / 2, np.pi / 2]
-    id = reachy.r_arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), 2.0, q0=q0)
-    while is_goto_finished(reachy, id) is False:
-        time.sleep(0.1)
-
-    time.sleep(1.0)
-    init_pose(reachy)
-
-    print("End of cartesian goto test!")
-
+    delay = 2.0
+    # goal = ([x, y, z], [roll, pitch, yaw])
+    # goals = [([0.3, -0.4, -0.3], [0.0,-90,0.0]), ([0.3, -0.4, -0.3], [0.0,-60,0.0]), ([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])]
+    goals = [([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])]
+    for goal in goals:
+        id = reachy.r_arm.goto_from_matrix(get_homogeneous_matrix_msg_from_euler(position=goal[0], euler_angles=goal[1], degrees=True), delay)
+        while not reachy.is_move_finished(id):
+            time.sleep(0.1)
+        
 
 def test_goto_rejection(reachy: ReachySDK) -> None:
     print("Trying a goto with duration 0.0")
@@ -244,37 +251,44 @@ def main_test() -> None:
     time.sleep(1.0)
     reachy = ReachySDK(host="localhost")
 
-    time.sleep(1.0)
-    if reachy.grpc_status == "disconnected":
-        print("Failed to connect to Reachy, exiting...")
-        return
-
+    while not reachy.is_connected():
+        print("Waiting for Reachy to be ready...")
+        time.sleep(0.2)
+    print(reachy.info)
     reachy.turn_on()
-    init_pose(reachy)
+    time.sleep(1.0)
+        
+    reachy.l_arm.goto_joints([0, 20, 0, 0, 0, 0, 0], duration = 2)
+    id = reachy.r_arm.goto_joints([0, -20, 0, 0, 0, 0, 0], duration = 2)
+    while not reachy.is_move_finished(id):
+        time.sleep(0.1)
+    
+    # init_pose(reachy)
 
-    print("\n###1)Testing the goto_joints function, drawing a square")
-    test_goto_joint(reachy)
+    # print("\n###1)Testing the goto_joints function, drawing a square")
+    # test_goto_joint(reachy)
 
-    print("\n###2)Testing the get_goto_state function")
-    test_state(reachy)
+    # print("\n###2)Testing the get_goto_state function")
+    # test_state(reachy)
 
-    print("\n###3)Testing the goto_cancel function")
-    test_goto_cancel(reachy)
+    # print("\n###3)Testing the goto_cancel function")
+    # test_goto_cancel(reachy)
 
-    print("\n###4)Testing both arms")
-    test_both_arms(reachy)
+    # print("\n###4)Testing both arms")
+    # test_both_arms(reachy)
 
     print("\n###5)Testing the goto_cartesian function")
-    test_goto_cartesian(reachy)
-    print("\n###6)Testing goto REJECTION")
-    test_goto_rejection(reachy)
-
-    print("\n###7)Testing the goto_head function")
-    test_head_orient(reachy)
-
     while True:
-        print("\n###X)Testing both arms ad vitam eternam")
-        test_both_arms(reachy)
+        test_goto_cartesian(reachy)
+    # print("\n###6)Testing goto REJECTION")
+    # test_goto_rejection(reachy)
+
+    # print("\n###7)Testing the goto_head function")
+    # test_head_orient(reachy)
+
+    # while True:
+    #     print("\n###X)Testing both arms ad vitam eternam")
+    #     test_both_arms(reachy)
 
     # print("\n###8)Testing the look_at function")
     # test_head_look_at(reachy)
