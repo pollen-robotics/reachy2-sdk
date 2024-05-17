@@ -195,12 +195,19 @@ def test_goto_cancel(reachy: ReachySDK) -> None:
 def test_goto_cartesian(reachy: ReachySDK) -> None:
     delay = 2.0
     # goal = ([x, y, z], [roll, pitch, yaw])
-    # goals = [([0.3, -0.4, -0.3], [0.0,-90,0.0]), ([0.3, -0.4, -0.3], [0.0,-60,0.0]), ([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])]
-    goals = [([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])]
+    goals = []
+    goals.extend([([0.3, -0.0, -0.3], [45.0,-60,0.0]), ([0.3, -0.0, -0.3], [45.0,-30,0.0]), ([0.4, -0.0, -0.3], [45.0,-30,10.0])])
+    goals.extend([([0.3, -0.4, -0.3], [0.0,-90,0.0]), ([0.5, -0.4, -0.3], [0.0,-90,0.0]), ([0.9, -0.4, -0.3], [0.0,-90,0.0]), ([0.3, -0.4, -0.1], [0.0,-90,0.0])])
+    goals.extend([([0.3, -0.4, -0.3], [0.0,-90,0.0]), ([0.3, -0.4, -0.3], [0.0,-60,0.0]), ([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])])
+    # goals = [([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])]
     for goal in goals:
         id = reachy.r_arm.goto_from_matrix(get_homogeneous_matrix_msg_from_euler(position=goal[0], euler_angles=goal[1], degrees=True), delay)
-        while not reachy.is_move_finished(id):
-            time.sleep(0.1)
+        if id.id < 0:
+            print("The goto was rejected! Unreachable pose.")
+            time.sleep(1.0)
+        else :
+            while not reachy.is_move_finished(id):
+                time.sleep(0.1)
         
 
 def test_goto_rejection(reachy: ReachySDK) -> None:
