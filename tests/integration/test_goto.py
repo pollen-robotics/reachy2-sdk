@@ -199,6 +199,7 @@ def test_goto_cartesian(reachy: ReachySDK) -> None:
     goals.extend([([0.3, -0.0, -0.3], [45.0,-60,0.0]), ([0.3, -0.0, -0.3], [45.0,-30,0.0]), ([0.4, -0.0, -0.3], [45.0,-30,10.0])])
     goals.extend([([0.3, -0.4, -0.3], [0.0,-90,0.0]), ([0.5, -0.4, -0.3], [0.0,-90,0.0]), ([0.9, -0.4, -0.3], [0.0,-90,0.0]), ([0.3, -0.4, -0.1], [0.0,-90,0.0])])
     goals.extend([([0.3, -0.4, -0.3], [0.0,-90,0.0]), ([0.3, -0.4, -0.3], [0.0,-60,0.0]), ([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])])
+    # Problematic goal :
     # goals = [([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])]
     for goal in goals:
         id = reachy.r_arm.goto_from_matrix(get_homogeneous_matrix_msg_from_euler(position=goal[0], euler_angles=goal[1], degrees=True), delay)
@@ -287,6 +288,7 @@ def main_test() -> None:
     print("\n###5)Testing the goto_cartesian function")
     while True:
         test_goto_cartesian(reachy)
+        break
     # print("\n###6)Testing goto REJECTION")
     # test_goto_rejection(reachy)
 
