@@ -56,6 +56,17 @@ class Camera:
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
         return img  # type: ignore[no-any-return]
 
+
+    def get_intrinsic_matrix(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.float32]]:
+        """Get RGB frame (OpenCV)"""
+        intrinsic = self._video_stub.GetIntrinsicMatrix(request=ViewRequest(camera_info=self._cam_info, view=view.value))
+        if intrinsic.K == b"":
+            self._logger.error("No camera matric retrieved")
+            return None
+        np_data = np.frombuffer(intrinsic.K, np.float32)
+        return np_data  # type: ignore[no-any-return]
+
+
     def __repr__(self) -> str:
         """Clean representation of a RGB camera"""
         if self._cam_info.name == CameraType.TELEOP.value:
