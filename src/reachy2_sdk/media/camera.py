@@ -57,14 +57,22 @@ class Camera:
         return img  # type: ignore[no-any-return]
 
 
-    def get_intrinsic_matrix(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.float32]]:
-        """Get RGB frame (OpenCV)"""
+    def get_intrinsic_matrix(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.float64]]:
+        """Get camera instrinsic matrix K"""
         intrinsic = self._video_stub.GetIntrinsicMatrix(request=ViewRequest(camera_info=self._cam_info, view=view.value))
-        if intrinsic.K == b"":
+        if intrinsic.fx == b"":
             self._logger.error("No camera matric retrieved")
             return None
-        np_data = np.frombuffer(intrinsic.K, np.float32)
-        return np_data  # type: ignore[no-any-return]
+
+        K=np.eye(3)
+        K[0][0]=intrinsic.fx
+        K[1][1]=intrinsic.fy
+
+        K[0][2]=intrinsic.cx
+        K[1][2]=intrinsic.cy
+
+        # np_data = np.frombuffer(intrinsic.K, np.float64)
+        return K  # type: ignore[no-any-return]
 
 
     def __repr__(self) -> str:
