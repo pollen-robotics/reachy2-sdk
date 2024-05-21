@@ -56,24 +56,21 @@ class Camera:
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
         return img  # type: ignore[no-any-return]
 
-
     def get_intrinsic_matrix(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.float64]]:
         """Get camera instrinsic matrix K"""
         intrinsic = self._video_stub.GetIntrinsicMatrix(request=ViewRequest(camera_info=self._cam_info, view=view.value))
         if intrinsic.fx == b"":
-            self._logger.error("No camera matric retrieved")
+            self._logger.error("No camera matrix retrieved")
             return None
 
-        K=np.eye(3)
-        K[0][0]=intrinsic.fx
-        K[1][1]=intrinsic.fy
+        K = np.eye(3)
+        K[0][0] = intrinsic.fx
+        K[1][1] = intrinsic.fy
 
-        K[0][2]=intrinsic.cx
-        K[1][2]=intrinsic.cy
+        K[0][2] = intrinsic.cx
+        K[1][2] = intrinsic.cy
 
-        # np_data = np.frombuffer(intrinsic.K, np.float64)
         return K  # type: ignore[no-any-return]
-
 
     def __repr__(self) -> str:
         """Clean representation of a RGB camera"""
@@ -120,3 +117,19 @@ class SRCamera(Camera):
         np_data = np.frombuffer(frame.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_UNCHANGED)
         return img  # type: ignore[no-any-return]
+
+    def get_depth_intrinsic_matrix(self) -> Optional[npt.NDArray[np.float64]]:
+        """Get camera instrinsic matrix K"""
+        intrinsic = self._video_stub.GetDepthIntrinsicMatrix(request=self._cam_info)
+        if intrinsic.fx == b"":
+            self._logger.error("No camera matrix retrieved")
+            return None
+
+        K = np.eye(3)
+        K[0][0] = intrinsic.fx
+        K[1][1] = intrinsic.fy
+
+        K[0][2] = intrinsic.cx
+        K[1][2] = intrinsic.cy
+
+        return K  # type: ignore[no-any-return]
