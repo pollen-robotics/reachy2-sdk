@@ -4,6 +4,7 @@ import numpy as np
 import numpy.typing as npt
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 from scipy.spatial.transform import Rotation as R
+from pyquaternion import Quaternion
 
 from reachy2_sdk import ReachySDK
 
@@ -18,7 +19,7 @@ def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
             [0, 0, 0, 1],
         ]
     )
-    
+
 
 def get_homogeneous_matrix_msg_from_euler(
     position: tuple = (0, 0, 0),  # (x, y, z)
@@ -29,6 +30,44 @@ def get_homogeneous_matrix_msg_from_euler(
     homogeneous_matrix[:3, :3] = R.from_euler("xyz", euler_angles, degrees=degrees).as_matrix()
     homogeneous_matrix[:3, 3] = position
     return homogeneous_matrix
+
+
+def decompose_matrix(matrix):
+    """Decompose a homogeneous 4x4 matrix into rotation (quaternion) and translation components."""
+    rotation_matrix = matrix[:3, :3]
+    translation = matrix[:3, 3]
+    rotation = R.from_matrix(rotation_matrix)
+    return rotation, translation
+
+
+def recompose_matrix(rotation, translation):
+    """Recompose a homogeneous 4x4 matrix from rotation (quaternion) and translation components."""
+    matrix = np.eye(4)
+    matrix[:3, :3] = rotation.as_matrix()
+    matrix[:3, 3] = translation
+    return matrix
+
+
+def interpolate_matrices(matrix1, matrix2, t):
+    """Interpolate between two 4x4 matrices at time t [0, 1]."""
+    rot1, trans1 = decompose_matrix(matrix1)
+    rot2, trans2 = decompose_matrix(matrix2)
+
+    # Linear interpolation for translation
+    trans_interpolated = (1 - t) * trans1 + t * trans2
+
+    # SLERP for rotation interpolation
+    # q1 = quaternion.from_rotation_matrix(rot1.as_matrix())
+    # q2 = quaternion.from_rotation_matrix(rot2.as_matrix())
+    q1 = Quaternion(matrix=rot1.as_matrix())
+    q2 = Quaternion(matrix=rot2.as_matrix())
+    q_interpolated = Quaternion.slerp(q1, q2, t)
+    # quaternion.slerp_evaluate(q1, q2, .0)
+    rot_interpolated = R.from_quat(q_interpolated)
+
+    # Recompose the interpolated matrix
+    interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
+    return interpolated_matrix
 
 
 def test_goto_joint(reachy: ReachySDK) -> None:
@@ -196,20 +235,64 @@ def test_goto_cartesian(reachy: ReachySDK) -> None:
     delay = 2.0
     # goal = ([x, y, z], [roll, pitch, yaw])
     goals = []
-    goals.extend([([0.3, -0.0, -0.3], [45.0,-60,0.0]), ([0.3, -0.0, -0.3], [45.0,-30,0.0]), ([0.4, -0.0, -0.3], [45.0,-30,10.0])])
-    goals.extend([([0.3, -0.4, -0.3], [0.0,-90,0.0]), ([0.5, -0.4, -0.3], [0.0,-90,0.0]), ([0.9, -0.4, -0.3], [0.0,-90,0.0]), ([0.3, -0.4, -0.1], [0.0,-90,0.0])])
-    goals.extend([([0.3, -0.4, -0.3], [0.0,-90,0.0]), ([0.3, -0.4, -0.3], [0.0,-60,0.0]), ([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])])
+    goals.extend(
+        [([0.3, -0.0, -0.3], [45.0, -60, 0.0]), ([0.3, -0.0, -0.3], [45.0, -30, 0.0]), ([0.4, -0.0, -0.3], [45.0, -30, 10.0])]
+    )
+    goals.extend(
+        [
+            ([0.3, -0.4, -0.3], [0.0, -90, 0.0]),
+            ([0.5, -0.4, -0.3], [0.0, -90, 0.0]),
+            ([0.9, -0.4, -0.3], [0.0, -90, 0.0]),
+            ([0.3, -0.4, -0.1], [0.0, -90, 0.0]),
+        ]
+    )
+    goals.extend(
+        [
+            ([0.3, -0.4, -0.3], [0.0, -90, 0.0]),
+            ([0.3, -0.4, -0.3], [0.0, -60, 0.0]),
+            ([0.3, -0.4, -0.3], [0.0, -30, 0.0]),
+            ([0.3, -0.4, -0.3], [0.0, 0, 0.0]),
+        ]
+    )
     # Problematic goal :
     # goals = [([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])]
     for goal in goals:
-        id = reachy.r_arm.goto_from_matrix(get_homogeneous_matrix_msg_from_euler(position=goal[0], euler_angles=goal[1], degrees=True), delay)
+        id = reachy.r_arm.goto_from_matrix(
+            get_homogeneous_matrix_msg_from_euler(position=goal[0], euler_angles=goal[1], degrees=True), delay
+        )
         if id.id < 0:
             print("The goto was rejected! Unreachable pose.")
             time.sleep(1.0)
-        else :
+        else:
             while not reachy.is_move_finished(id):
                 time.sleep(0.1)
-        
+
+
+def test_goto_simsim(reachy: ReachySDK) -> None:
+    delay = 2.0
+    # goal = ([x, y, z], [roll, pitch, yaw])
+    # Problematic goal :
+    # goals = [([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])]
+    mat2 = np.array(
+        [
+            [0.056889, 0.99439, -0.089147, 0.25249],
+            [-0.14988, 0.096786, 0.98395, -0.099362],
+            [0.98707, -0.042614, 0.15455, -0.32934],
+            [0, 0, 0, 1],
+        ]
+    )
+    mat1 = np.array([[0, 0, -1.0, 0.25249], [0, 1.0, 0, -0.099362], [1.0, 0, 0, -0.32934], [0, 0, 0, 1]])
+
+    for t in np.linspace(0, 1, 10):
+        interpolated_matrix = interpolate_matrices(mat1, mat2, t)
+        id = reachy.r_arm.goto_from_matrix(interpolated_matrix, delay)
+        if id.id < 0:
+            print("The goto was rejected! Unreachable pose.")
+            time.sleep(1.0)
+        else:
+            while not reachy.is_move_finished(id):
+                time.sleep(0.1)
+
 
 def test_goto_rejection(reachy: ReachySDK) -> None:
     print("Trying a goto with duration 0.0")
@@ -265,12 +348,12 @@ def main_test() -> None:
     print(reachy.info)
     reachy.turn_on()
     time.sleep(1.0)
-        
-    reachy.l_arm.goto_joints([0, 20, 0, 0, 0, 0, 0], duration = 2)
-    id = reachy.r_arm.goto_joints([0, -20, 0, 0, 0, 0, 0], duration = 2)
+
+    reachy.l_arm.goto_joints([0, 20, 0, 0, 0, 0, 0], duration=2)
+    id = reachy.r_arm.goto_joints([0, -20, 0, 0, 0, 0, 0], duration=2)
     while not reachy.is_move_finished(id):
         time.sleep(0.1)
-    
+
     # init_pose(reachy)
 
     # print("\n###1)Testing the goto_joints function, drawing a square")
@@ -287,7 +370,8 @@ def main_test() -> None:
 
     print("\n###5)Testing the goto_cartesian function")
     while True:
-        test_goto_cartesian(reachy)
+        # test_goto_cartesian(reachy)
+        test_goto_simsim(reachy)
         break
     # print("\n###6)Testing goto REJECTION")
     # test_goto_rejection(reachy)
