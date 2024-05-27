@@ -7,7 +7,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 """
 
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import grpc
 import numpy as np
@@ -245,8 +245,7 @@ class Arm:
         target: npt.NDArray[np.float64],
         q0: Optional[List[float]] = None,
         degrees: bool = True,
-        ignore_raise_on_failure: bool = False,
-    ) -> Tuple[bool, List[float]]:
+    ) -> List[float]:
         """Compute the inverse kinematics of the arm.
 
         Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
@@ -284,13 +283,10 @@ class Arm:
         req = ArmIKRequest(**req_params)
         resp = self._arm_stub.ComputeArmIK(req)
 
-        if not ignore_raise_on_failure and not resp.success:
+        if not resp.success:
             raise ValueError(f"No solution found for the given target ({target})!")
 
-        if not resp.success:
-            return False, []
-
-        return True, arm_position_to_list(resp.arm_position)
+        return arm_position_to_list(resp.arm_position)
 
     def goto_from_matrix(
         self,
