@@ -266,26 +266,42 @@ def test_goto_cartesian(reachy: ReachySDK) -> None:
 
 
 def test_goto_single_pose(reachy: ReachySDK) -> None:
-    # mat = np.array(
-    #     [
-    #         [0.056889, 0.99439, -0.089147, 0.25249],
-    #         [-0.14988, 0.096786, 0.98395, -0.099362],
-    #         [0.98707, -0.042614, 0.15455, -0.32934],
-    #         [0, 0, 0, 1],
-    #     ]
-    # )
-    # Unreachable pose
-    mat = np.array([[    0.36861,    0.089736,    -0.92524,     0.37213],
+    list_of_mats = []
+    list_of_mats.append(np.array(
+        [
+            [0.056889, 0.99439, -0.089147, 0.25249],
+            [-0.14988, 0.096786, 0.98395, -0.099362],
+            [0.98707, -0.042614, 0.15455, -0.32934],
+            [0, 0, 0, 1],
+        ]
+    ))
+    list_of_mats.append(np.array([[    0.36861,    0.089736,    -0.92524,     0.37213],
        [  -0.068392,     0.99525,    0.069279,   -0.028012],
        [    0.92706,    0.037742,       0.373,    -0.38572],
-       [          0,           0,           0,           1]])
-    id = reachy.l_arm.goto_from_matrix(mat)
-    if id.id < 0:
-        print("The goto was rejected! Unreachable pose.")
-        time.sleep(1.0)
-    else:
-        while not reachy.is_move_finished(id):
-            time.sleep(0.1)
+       [          0,           0,           0,           1]]))
+    
+    
+    list_of_mats.append(np.array([[    0.29157,     0.95649,   -0.010922,     0.39481],
+       [   -0.27455,    0.094617,     0.95691,   -0.065782],
+       [     0.9163,      -0.276,     0.29019,    -0.27771],
+       [          0,           0,           0,           1]]))
+
+    list_of_mats.append(np.array([[    0.30741,     0.95003,   -0.054263,     0.38327],
+       [   -0.77787,     0.28373,     0.56073,   -0.059699],
+       [    0.54811,    -0.13017,     0.82622,     -0.2948],
+       [          0,           0,           0,           1]]))
+    
+    
+    
+    for mat in list_of_mats:
+        input("press enter to go to the next pose!")
+        id = reachy.l_arm.goto_from_matrix(mat)
+        if id.id < 0:
+            print("The goto was rejected! Unreachable pose.")
+            time.sleep(1.0)
+        else:
+            while not reachy.is_move_finished(id):
+                time.sleep(0.1)
 
 
 def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
