@@ -321,6 +321,16 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
             ]
         )
     )
+    list_of_mats.append(
+        np.array(
+            [
+                [-0.030111, 0.99613, -0.082526, 0.31861],
+                [-0.18163, 0.075737, 0.98045, 0.035154],
+                [0.98291, 0.044511, 0.17864, -0.25577],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
 
     for mat in list_of_mats:
         input("press enter to go to the next pose!")
@@ -329,6 +339,10 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
             print("The goto was rejected! Unreachable pose.")
             time.sleep(1.0)
         else:
+            l_ik_sol = reachy.l_arm.inverse_kinematics(mat)
+            goal_pose = reachy.l_arm.forward_kinematics(l_ik_sol)
+            precision_distance_xyz_to_sol = np.linalg.norm(goal_pose[:3, 3] - mat[:3, 3])
+            print(f"l2 xyz distance Ik SOL vs goal pose: {precision_distance_xyz_to_sol} with joints: {l_ik_sol}")
             while not reachy.is_move_finished(id):
                 time.sleep(0.1)
 
@@ -361,6 +375,10 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
             print("The goto was rejected! Unreachable pose.")
             time.sleep(1.0)
         else:
+            r_ik_sol = reachy.r_arm.inverse_kinematics(mat)
+            goal_pose = reachy.r_arm.forward_kinematics(r_ik_sol)
+            precision_distance_xyz_to_sol = np.linalg.norm(goal_pose[:3, 3] - mat[:3, 3])
+            print(f"l2 xyz distance Ik SOL vs goal pose: {precision_distance_xyz_to_sol} with joints: {r_ik_sol}")
             while not reachy.is_move_finished(id):
                 time.sleep(0.1)
 
@@ -510,10 +528,10 @@ def main_test() -> None:
     #     test_both_arms(reachy)
 
     print("\n###5)Testing the goto_cartesian function")
-    # test_goto_single_pose(reachy)
+    test_goto_single_pose(reachy)
     while True:
         # test_goto_cartesian(reachy)
-        test_task_space_interpolation_goto(reachy)
+        # test_task_space_interpolation_goto(reachy)
         break
     # print("\n###6)Testing goto REJECTION")
     # test_goto_rejection(reachy)
