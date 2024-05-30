@@ -44,7 +44,7 @@ def decompose_matrix(matrix):
 def recompose_matrix(rotation, translation):
     """Recompose a homogeneous 4x4 matrix from rotation (quaternion) and translation components."""
     matrix = np.eye(4)
-    matrix[:3, :3] = rotation#.as_matrix()
+    matrix[:3, :3] = rotation  # .as_matrix()
     matrix[:3, 3] = translation
     return matrix
 
@@ -56,7 +56,7 @@ def interpolate_matrices(matrix1, matrix2, t):
 
     # Linear interpolation for translation
     trans_interpolated = (1 - t) * trans1 + t * trans2
-    
+
     # SLERP for rotation interpolation
     q1 = Quaternion(matrix=rot1.as_matrix())
     q2 = Quaternion(matrix=rot2.as_matrix())
@@ -268,36 +268,60 @@ def test_goto_cartesian(reachy: ReachySDK) -> None:
 
 def test_goto_single_pose(reachy: ReachySDK) -> None:
     list_of_mats = []
-    list_of_mats.append(np.array(
-        [
-            [0.056889, 0.99439, -0.089147, 0.25249],
-            [-0.14988, 0.096786, 0.98395, -0.099362],
-            [0.98707, -0.042614, 0.15455, -0.32934],
-            [0, 0, 0, 1],
-        ]
-    ))
-    list_of_mats.append(np.array([[    0.36861,    0.089736,    -0.92524,     0.37213],
-       [  -0.068392,     0.99525,    0.069279,   -0.028012],
-       [    0.92706,    0.037742,       0.373,    -0.38572],
-       [          0,           0,           0,           1]]))
-    
-    
-    list_of_mats.append(np.array([[    0.29157,     0.95649,   -0.010922,     0.39481],
-       [   -0.27455,    0.094617,     0.95691,   -0.065782],
-       [     0.9163,      -0.276,     0.29019,    -0.27771],
-       [          0,           0,           0,           1]]))
+    list_of_mats.append(
+        np.array(
+            [
+                [0.056889, 0.99439, -0.089147, 0.25249],
+                [-0.14988, 0.096786, 0.98395, -0.099362],
+                [0.98707, -0.042614, 0.15455, -0.32934],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+    list_of_mats.append(
+        np.array(
+            [
+                [0.36861, 0.089736, -0.92524, 0.37213],
+                [-0.068392, 0.99525, 0.069279, -0.028012],
+                [0.92706, 0.037742, 0.373, -0.38572],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
 
-    list_of_mats.append(np.array([[    0.30741,     0.95003,   -0.054263,     0.38327],
-       [   -0.77787,     0.28373,     0.56073,   -0.059699],
-       [    0.54811,    -0.13017,     0.82622,     -0.2948],
-       [          0,           0,           0,           1]]))
-    
-    list_of_mats.append(np.array([[    0.46129,     0.27709,    -0.84288,     0.38394],
-       [   -0.22793,     0.95511,     0.18924,  -0.0087053],
-       [    0.85747,     0.10482,     0.50373,    -0.28038],
-       [          0,           0,           0,           1]]))
-    
-    
+    list_of_mats.append(
+        np.array(
+            [
+                [0.29157, 0.95649, -0.010922, 0.39481],
+                [-0.27455, 0.094617, 0.95691, -0.065782],
+                [0.9163, -0.276, 0.29019, -0.27771],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.30741, 0.95003, -0.054263, 0.38327],
+                [-0.77787, 0.28373, 0.56073, -0.059699],
+                [0.54811, -0.13017, 0.82622, -0.2948],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.46129, 0.27709, -0.84288, 0.38394],
+                [-0.22793, 0.95511, 0.18924, -0.0087053],
+                [0.85747, 0.10482, 0.50373, -0.28038],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
     for mat in list_of_mats:
         input("press enter to go to the next pose!")
         id = reachy.l_arm.goto_from_matrix(mat)
@@ -307,17 +331,29 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
         else:
             while not reachy.is_move_finished(id):
                 time.sleep(0.1)
-                
+
     list_of_mats = []
-    list_of_mats.append(np.array([[   -0.12009,     0.94787,    -0.29517,     0.42654],
-       [   -0.28736,    -0.31779,    -0.90357,   -0.069494],
-       [   -0.95026,   -0.023686,     0.31054,    -0.36334],
-       [          0,           0,           0,           1]]))
-    list_of_mats.append(np.array([[   -0.23603,     0.91326,    -0.33203,     0.35339],
-       [   -0.57781,    -0.40662,    -0.70767,    -0.17652],
-       [    -0.7813,     0.02482,     0.62367,    -0.40001],
-       [          0,           0,           0,           1]]))
-    
+    list_of_mats.append(
+        np.array(
+            [
+                [-0.12009, 0.94787, -0.29517, 0.42654],
+                [-0.28736, -0.31779, -0.90357, -0.069494],
+                [-0.95026, -0.023686, 0.31054, -0.36334],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+    list_of_mats.append(
+        np.array(
+            [
+                [-0.23603, 0.91326, -0.33203, 0.35339],
+                [-0.57781, -0.40662, -0.70767, -0.17652],
+                [-0.7813, 0.02482, 0.62367, -0.40001],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
     for mat in list_of_mats:
         input("press enter to go to the next pose!")
         id = reachy.r_arm.goto_from_matrix(mat)
@@ -343,17 +379,21 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
     #     ]
     # )
     # mat1 = np.array([[0, 0, -1.0, 0.25249], [0, 1.0, 0, -0.099362], [1.0, 0, 0, -0.32934], [0, 0, 0, 1]])
-    
+
     # r_arm
     # mat1 = build_pose_matrix(0.3, -0.45, 0.0)
     # mat2 = build_pose_matrix(0.3, -0.45, -0.3)
     # SimSim probelmatic pose on l_arm:
     mat1 = build_pose_matrix(0.3, 0.45, 0.0)
-    mat2 = np.array([[    0.36861,    0.089736,    -0.92524,     0.37213],
-       [  -0.068392,     0.99525,    0.069279,   -0.028012],
-       [    0.92706,    0.037742,       0.373,    -0.38572],
-       [          0,           0,           0,           1]])
-    
+    mat2 = np.array(
+        [
+            [0.36861, 0.089736, -0.92524, 0.37213],
+            [-0.068392, 0.99525, 0.069279, -0.028012],
+            [0.92706, 0.037742, 0.373, -0.38572],
+            [0, 0, 0, 1],
+        ]
+    )
+
     # mat2 = np.array([[    0.29157,     0.95649,   -0.010922,     0.39481],
     #    [   -0.27455,    0.094617,     0.95691,   -0.065782],
     #    [     0.9163,      -0.276,     0.29019,    -0.27771],
@@ -363,13 +403,13 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
     #     [   -0.77787,     0.28373,     0.56073,   -0.059699],
     #     [    0.54811,    -0.13017,     0.82622,     -0.2948],
     #     [          0,           0,           0,           1]])
-    #l2 distance between the two matrices in x, y, z only
+    # l2 distance between the two matrices in x, y, z only
     l2_distance_xyz = np.linalg.norm(mat1[:3, 3] - mat2[:3, 3])
     # distance in orientation TODO
     speed = 0.1
     nb_points = 20
-    duration = (l2_distance_xyz / speed)/nb_points
-    try :
+    duration = (l2_distance_xyz / speed) / nb_points
+    try:
         l_ik_sol = reachy.l_arm.inverse_kinematics(mat2)
         goal_pose = reachy.l_arm.forward_kinematics(l_ik_sol)
         precision_distance_xyz_to_sol = np.linalg.norm(goal_pose[:3, 3] - mat2[:3, 3])
@@ -382,21 +422,16 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
         if id.id < 0:
             print(f"The goto t={t} was rejected! Unreachable pose.")
             time.sleep(duration)
-        else :
+        else:
             print(f"The goto t={t} was accepted.")
             while not reachy.is_move_finished(id):
                 time.sleep(0.01)
-            
+
     # time.sleep(duration*nb_points + 1)
     time.sleep(0.5)
     current_pose = reachy.l_arm.forward_kinematics()
     precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
     print(f"l2 xyz distance to goal: {precision_distance_xyz}")
-    
-    
-    
-
-    
 
 
 def test_goto_rejection(reachy: ReachySDK) -> None:
