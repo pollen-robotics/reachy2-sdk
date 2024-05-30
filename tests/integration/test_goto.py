@@ -5,6 +5,7 @@ import numpy.typing as npt
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 from scipy.spatial.transform import Rotation as R
 from pyquaternion import Quaternion
+from sympy import li
 
 from reachy2_sdk import ReachySDK
 
@@ -291,11 +292,35 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
        [    0.54811,    -0.13017,     0.82622,     -0.2948],
        [          0,           0,           0,           1]]))
     
+    list_of_mats.append(np.array([[    0.46129,     0.27709,    -0.84288,     0.38394],
+       [   -0.22793,     0.95511,     0.18924,  -0.0087053],
+       [    0.85747,     0.10482,     0.50373,    -0.28038],
+       [          0,           0,           0,           1]]))
     
     
     for mat in list_of_mats:
         input("press enter to go to the next pose!")
         id = reachy.l_arm.goto_from_matrix(mat)
+        if id.id < 0:
+            print("The goto was rejected! Unreachable pose.")
+            time.sleep(1.0)
+        else:
+            while not reachy.is_move_finished(id):
+                time.sleep(0.1)
+                
+    list_of_mats = []
+    list_of_mats.append(np.array([[   -0.12009,     0.94787,    -0.29517,     0.42654],
+       [   -0.28736,    -0.31779,    -0.90357,   -0.069494],
+       [   -0.95026,   -0.023686,     0.31054,    -0.36334],
+       [          0,           0,           0,           1]]))
+    list_of_mats.append(np.array([[   -0.23603,     0.91326,    -0.33203,     0.35339],
+       [   -0.57781,    -0.40662,    -0.70767,    -0.17652],
+       [    -0.7813,     0.02482,     0.62367,    -0.40001],
+       [          0,           0,           0,           1]]))
+    
+    for mat in list_of_mats:
+        input("press enter to go to the next pose!")
+        id = reachy.r_arm.goto_from_matrix(mat)
         if id.id < 0:
             print("The goto was rejected! Unreachable pose.")
             time.sleep(1.0)
