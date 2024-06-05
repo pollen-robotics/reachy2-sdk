@@ -5,10 +5,13 @@ This module contains various useful functions especially:
 - enum conversion to string
 """
 
-from typing import Any, List
+from typing import Any, List, Tuple
 
 import numpy as np
+import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
+from scipy.spatial.transform import Rotation as R
+
 from reachy2_sdk_api.arm_pb2 import ArmPosition
 from reachy2_sdk_api.goto_pb2 import GoToInterpolation, InterpolationMode
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
@@ -118,3 +121,19 @@ def get_interpolation_mode(interpolation_mode: InterpolationMode) -> str:
     else:
         mode = "linear"
     return mode
+
+
+def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Tuple[R, npt.NDArray[np.float64]]:
+    """Decompose a homogeneous 4x4 matrix into rotation (quaternion) and translation components."""
+    rotation_matrix = matrix[:3, :3]
+    translation = matrix[:3, 3]
+    rotation = R.from_matrix(rotation_matrix)
+    return rotation, translation
+
+
+def recompose_matrix(rotation: R, translation: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Recompose a homogeneous 4x4 matrix from rotation (quaternion) and translation components."""
+    matrix = np.eye(4)
+    matrix[:3, :3] = rotation  # .as_matrix()
+    matrix[:3, 3] = translation
+    return matrix

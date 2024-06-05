@@ -12,6 +12,8 @@ from typing import Dict, List, Optional
 import grpc
 import numpy as np
 import numpy.typing as npt
+from pyquaternion import Quaternion
+from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
@@ -46,6 +48,8 @@ from ..utils.utils import (
     arm_position_to_list,
     get_grpc_interpolation_mode,
     list_to_arm_position,
+    decompose_matrix,
+    recompose_matrix,
 )
 from .hand import Hand
 
@@ -336,6 +340,58 @@ class Arm:
             )
         response = self._goto_stub.GoToCartesian(request)
         return response
+
+    def goto_spam_cartesian(
+        self,
+        target: npt.NDArray[np.float64],
+        duration: float = 2,
+        interpolation_frequency: float = 10,
+    ) -> bool:
+        """Move the arm to a matrix target (or get close).
+
+        """
+        if target.shape != (4, 4):
+            raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
+        if self.is_off():
+            raise RuntimeError("Arm is off. Goto not sent.")
+        try:
+            self.inverse_kinematics(target)
+        except ValueError:
+            print("Goal pose is not reachable!")
+            return False
+
+        origin_matrix = self.forward_kinematics()
+        nb_steps = int(duration * interpolation_frequency)
+        time_step = duration / nb_steps
+
+        rot1, trans1 = decompose_matrix(origin_matrix)
+        rot2, trans2 = decompose_matrix(target)
+
+        q1 = Quaternion(matrix=rot1.as_matrix())
+        q2 = Quaternion(matrix=rot2.as_matrix())
+
+        for t in np.linspace(0, 1, nb_steps):
+            # Linear interpolation for translation
+            trans_interpolated = (1 - t) * trans1 + t * trans2
+
+            # SLERP for rotation interpolation
+            q_interpolated = Quaternion.slerp(q1, q2, t)
+            rot_interpolated = q_interpolated.rotation_matrix
+
+            # Recompose the interpolated matrix
+            interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
+
+            request = ArmCartesianGoal(
+                id=self._part_id,
+                goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+                duration=FloatValue(value=time_step),
+            )
+            self._arm_stub.SendArmCartesianGoal(request)
+            time.sleep(time_step)
+
+        return True
 
     def goto_joints(
         self, positions: List[float], duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
