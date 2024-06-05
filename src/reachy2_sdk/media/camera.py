@@ -6,13 +6,16 @@ Define a RGB Camera (Teleop) and a RGBD Camera (SR). Provide access to the frame
 
 import logging
 from enum import Enum
+from google.protobuf.empty_pb2 import Empty
 from typing import Optional
 
 import cv2
 import numpy as np
 import numpy.typing as npt
+from threading import Event, Thread
+
 from reachy2_sdk_api.video_pb2 import CameraInfo, VideoAck, View, ViewRequest
-from reachy2_sdk_api.video_pb2_grpc import VideoServiceStub
+from reachy2_sdk_api.video_pb2_grpc import VideoServiceStub, VideoStreamStub
 
 
 class CameraView(Enum):
@@ -101,3 +104,45 @@ class SRCamera(Camera):
         np_data = np.frombuffer(frame.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_UNCHANGED)
         return img  # type: ignore[no-any-return]
+
+
+class CameraTeleopRecorder:
+    """
+    CameraTeleopRecorder class to get the frames from the teleoperation cameras through grpc.
+    """
+    def __init__(self, video_stub: VideoStreamStub) -> None:
+        self._logger = logging.getLogger(__name__)
+        self._got_img = Event()
+        self._last_frame: Optional[npt.NDArray[np.uint16]] = None
+        self._video_stub = video_stub
+        print("Init CameraTeleopRecorder")
+
+    def get_frame(self) -> npt.NDArray[np.uint16]:
+        """Get the last frame from the teleoperation camera"""
+        frame = self._video_stub.GetFrame(request=Empty())
+        if frame.data == b"":
+            self._logger.error("No frame retrieved")
+            return None
+        np_data = np.frombuffer(frame.data, np.uint8)
+        img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
+        return img  # type: ignore[no-any-return]
+
+    @property
+    def last_frame(self):
+        """Return the last retrieved frame."""
+        return self._last_frame
+
+    def _start_sync_in_bg(self) -> None:
+        def poll_img() -> None:
+            for resp in self._video_stub.GetFrame(request=Empty()):
+                buff = np.frombuffer(resp.data, dtype=np.uint8)
+                print("buff: ", buff)
+                self._last_frame = cv2.imdecode(buff, cv2.IMREAD_COLOR)
+                print("last_frame: ", self._last_frame)
+                self._got_img.set()
+
+        self._t = Thread(target=poll_img)
+        self._t.daemon = True
+        self._t.start()
+
+        self._got_img.wait()

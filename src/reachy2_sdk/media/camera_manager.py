@@ -10,9 +10,9 @@ from typing import Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
-from reachy2_sdk_api.video_pb2_grpc import VideoServiceStub
+from reachy2_sdk_api.video_pb2_grpc import VideoServiceStub, VideoStreamStub
 
-from .camera import Camera, CameraType, SRCamera
+from .camera import Camera, CameraType, SRCamera, CameraTeleopRecorder
 
 
 class CameraManager:
@@ -22,9 +22,11 @@ class CameraManager:
         """Set up camera manager module"""
         self._logger = logging.getLogger(__name__)
         self._grpc_video_channel = grpc.insecure_channel(f"{host}:{port}")
+        self._grpc_recorder_video_channel = grpc.insecure_channel(f"{host}:{4242}")
         self._host = host
 
         self._video_stub = VideoServiceStub(self._grpc_video_channel)
+        self._video_grpc_stub = VideoStreamStub(self._grpc_recorder_video_channel)
 
         self._teleop: Optional[Camera] = None
         self._SR: Optional[SRCamera] = None
@@ -37,12 +39,13 @@ class CameraManager:
 
     def __repr__(self) -> str:
         """Clean representation of a reachy cameras."""
-        s = "\n\t".join([str(cam) for cam in [self._SR, self._teleop] if cam is not None])
+        s = "\n\t".join([str(cam) for cam in [self._SR, self._teleop, self._teleop_recorder] if cam is not None])
         return f"""<CameraManager intialized_cameras=\n\t{s}\n>"""
 
     def _setup_cameras(self) -> None:
         """Thread initializing cameras"""
         cams = self._video_stub.InitAllCameras(Empty())
+
         if len(cams.camera_info) == 0:
             self._logger.warning("Cameras not initialized.")
         else:
@@ -51,6 +54,8 @@ class CameraManager:
                 if c.name == CameraType.TELEOP.value:
                     self._logger.debug("Teleop Camera initialized.")
                     self._teleop = Camera(c, self._video_stub)
+                    self._teleop_recorder = CameraTeleopRecorder(self._video_grpc_stub)
+                    self._teleop_recorder._start_sync_in_bg()
                 elif c.name == CameraType.SR.value:
                     self._logger.debug("SR Camera initialized.")
                     self._SR = SRCamera(c, self._video_stub)
@@ -99,3 +104,12 @@ class CameraManager:
             return None
 
         return self._SR
+
+    @property
+    def teleop_recorder(self) -> Optional[CameraTeleopRecorder]:
+        """Get Teleop recorder"""
+        if self._teleop_recorder is None:
+            self._logger.error("Teleop recorder is not initialized.")
+            return None
+
+        return self._teleop_recorder
