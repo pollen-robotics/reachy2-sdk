@@ -10,12 +10,11 @@ from typing import Any, List, Tuple
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
-from scipy.spatial.transform import Rotation as R
-
 from reachy2_sdk_api.arm_pb2 import ArmPosition
 from reachy2_sdk_api.goto_pb2 import GoToInterpolation, InterpolationMode
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
+from scipy.spatial.transform import Rotation as R
 
 
 def convert_to_radians(my_list: List[float]) -> Any:

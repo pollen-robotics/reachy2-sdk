@@ -452,6 +452,20 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
     print(f"l2 xyz distance to goal: {precision_distance_xyz}")
 
 
+def test_goto_cartesian_with_interpolation(reachy: ReachySDK) -> None:
+    pose = build_pose_matrix(0.3, -0.4, -0.3)
+    reachy.r_arm.goto_from_matrix(pose, 2.0, interpolation_mode="minimum_jerk", with_cartesian_interpolation=True)
+
+    pose = build_pose_matrix(0.3, -0.4, 0.0)
+    reachy.r_arm.goto_from_matrix(pose, 2.0, interpolation_mode="minimum_jerk", with_cartesian_interpolation=True)
+
+    pose = build_pose_matrix(0.3, -0.1, 0.0)
+    reachy.r_arm.goto_from_matrix(pose, 2.0, interpolation_mode="minimum_jerk", with_cartesian_interpolation=True)
+
+    pose = build_pose_matrix(0.3, -0.1, -0.3)
+    reachy.r_arm.goto_from_matrix(pose, 2.0, interpolation_mode="minimum_jerk", with_cartesian_interpolation=True)
+
+
 def test_goto_rejection(reachy: ReachySDK) -> None:
     print("Trying a goto with duration 0.0")
     id = reachy.r_arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), 0.0)
@@ -527,8 +541,8 @@ def main_test() -> None:
     # while True:
     #     test_both_arms(reachy)
 
-    print("\n###5)Testing the goto_cartesian function")
-    test_goto_single_pose(reachy)
+    # print("\n###5)Testing the goto_cartesian function")
+    # test_goto_single_pose(reachy)
     while True:
         # test_goto_cartesian(reachy)
         # test_task_space_interpolation_goto(reachy)
@@ -545,6 +559,9 @@ def main_test() -> None:
 
     # print("\n###8)Testing the look_at function")
     # test_head_look_at(reachy)
+
+    print("\n###9)Testing the goto_cartesian_with_interpolation function")
+    test_goto_cartesian_with_interpolation(reachy)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
