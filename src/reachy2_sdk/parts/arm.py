@@ -377,11 +377,8 @@ class Arm:
         nb_steps = int(duration * interpolation_frequency)
         time_step = duration / nb_steps
 
-        rot1, trans1 = decompose_matrix(origin_matrix)
-        rot2, trans2 = decompose_matrix(target)
-
-        q1 = Quaternion(matrix=rot1.as_matrix())
-        q2 = Quaternion(matrix=rot2.as_matrix())
+        q1, trans1 = decompose_matrix(origin_matrix)
+        q2, trans2 = decompose_matrix(target)
 
         for t in np.linspace(0, 1, nb_steps):
             # Linear interpolation for translation

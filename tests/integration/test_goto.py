@@ -50,15 +50,13 @@ def recompose_matrix(rotation, translation):
 
 def interpolate_matrices(matrix1, matrix2, t):
     """Interpolate between two 4x4 matrices at time t [0, 1]."""
-    rot1, trans1 = decompose_matrix(matrix1)
-    rot2, trans2 = decompose_matrix(matrix2)
+    q1, trans1 = decompose_matrix(matrix1)
+    q2, trans2 = decompose_matrix(matrix2)
 
     # Linear interpolation for translation
     trans_interpolated = (1 - t) * trans1 + t * trans2
 
     # SLERP for rotation interpolation
-    q1 = Quaternion(matrix=rot1.as_matrix())
-    q2 = Quaternion(matrix=rot2.as_matrix())
     q_interpolated = Quaternion.slerp(q1, q2, t)
     rot_interpolated = q_interpolated.rotation_matrix
 
