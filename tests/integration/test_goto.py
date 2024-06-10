@@ -5,7 +5,6 @@ import numpy.typing as npt
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 from scipy.spatial.transform import Rotation as R
 from pyquaternion import Quaternion
-from sympy import li
 
 from reachy2_sdk import ReachySDK
 
