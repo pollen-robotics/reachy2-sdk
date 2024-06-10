@@ -353,7 +353,7 @@ class Arm:
         target: npt.NDArray[np.float64],
         duration: float = 2,
         interpolation_frequency: float = 10,
-    ) -> bool:
+    ) -> GoToId:
         """Move the arm to a matrix target (or get close).
 
         Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
@@ -371,7 +371,7 @@ class Arm:
             self.inverse_kinematics(target)
         except ValueError:
             print("Goal pose is not reachable!")
-            return False
+            return GoToId(id=-1)
 
         origin_matrix = self.forward_kinematics()
         nb_steps = int(duration * interpolation_frequency)
@@ -402,7 +402,7 @@ class Arm:
             self._arm_stub.SendArmCartesianGoal(request)
             time.sleep(time_step)
 
-        return True
+        return GoToId(id=0)
 
     def goto_joints(
         self, positions: List[float], duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
