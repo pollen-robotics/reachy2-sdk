@@ -7,6 +7,11 @@ from scipy.spatial.transform import Rotation as R
 from pyquaternion import Quaternion
 
 from reachy2_sdk import ReachySDK
+from reachy2_sdk_api.arm_pb2 import ArmCartesianGoal
+from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
+from google.protobuf.wrappers_pb2 import FloatValue
+
+# from reachy2_sdk.utils.utils import recompose_matrix, decompose_matrix
 
 
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
@@ -50,19 +55,57 @@ def recompose_matrix(rotation, translation):
 
 def interpolate_matrices(matrix1, matrix2, t):
     """Interpolate between two 4x4 matrices at time t [0, 1]."""
-    q1, trans1 = decompose_matrix(matrix1)
-    q2, trans2 = decompose_matrix(matrix2)
+    rot1, trans1 = decompose_matrix(matrix1)
+    rot2, trans2 = decompose_matrix(matrix2)
 
     # Linear interpolation for translation
     trans_interpolated = (1 - t) * trans1 + t * trans2
 
     # SLERP for rotation interpolation
+    q1 = Quaternion(matrix=rot1.as_matrix())
+    q2 = Quaternion(matrix=rot2.as_matrix())
     q_interpolated = Quaternion.slerp(q1, q2, t)
     rot_interpolated = q_interpolated.rotation_matrix
 
     # Recompose the interpolated matrix
     interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
     return interpolated_matrix
+
+
+# def decompose_matrix(matrix):
+#     """Decompose a homogeneous 4x4 matrix into rotation (quaternion) and translation components."""
+#     rotation_matrix = matrix[:3, :3]
+#     translation = matrix[:3, 3]
+#     rotation = R.from_matrix(rotation_matrix)
+#     return rotation, translation
+
+
+# def recompose_matrix(rotation, translation):
+#     """Recompose a homogeneous 4x4 matrix from rotation (quaternion) and translation components."""
+#     matrix = np.eye(4)
+#     matrix[:3, :3] = rotation  # .as_matrix()
+#     matrix[:3, 3] = translation
+#     return matrix
+
+
+# def interpolate_matrices(matrix1, matrix2, t):
+#     """Interpolate between two 4x4 matrices at time t [0, 1]."""
+#     rot1, trans1 = decompose_matrix(matrix1)
+#     rot2, trans2 = decompose_matrix(matrix2)
+
+#     q1 = Quaternion(matrix=rot1)
+#     q2 = Quaternion(matrix=rot2)
+
+#     # Linear interpolation for translation
+#     trans_interpolated = (1 - t) * trans1 + t * trans2
+
+#     # SLERP for rotation interpolation
+#     q_interpolated = Quaternion.slerp(q1, q2, t)
+#     rot_interpolated = q_interpolated.rotation_matrix
+
+#     # Recompose the interpolated matrix
+#     interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
+#     return interpolated_matrix
 
 
 def test_goto_joint(reachy: ReachySDK) -> None:
@@ -400,11 +443,19 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
     # mat2 = build_pose_matrix(0.3, -0.45, -0.3)
     # SimSim probelmatic pose on l_arm:
     mat1 = build_pose_matrix(0.3, 0.45, 0.0)
+    # mat2 = np.array(
+    #     [
+    #         [0.36861, 0.089736, -0.92524, 0.37213],
+    #         [-0.068392, 0.99525, 0.069279, -0.028012],
+    #         [0.92706, 0.037742, 0.373, -0.38572],
+    #         [0, 0, 0, 1],
+    #     ]
+    # )
     mat2 = np.array(
         [
-            [0.36861, 0.089736, -0.92524, 0.37213],
-            [-0.068392, 0.99525, 0.069279, -0.028012],
-            [0.92706, 0.037742, 0.373, -0.38572],
+            [-0.83356, -0.2197, -0.50686, 0.35384],
+            [0.21478, -0.97422, 0.06905, 0.2214],
+            [-0.50896, -0.051306, 0.85926, -0.2526],
             [0, 0, 0, 1],
         ]
     )
@@ -421,9 +472,12 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
     # l2 distance between the two matrices in x, y, z only
     l2_distance_xyz = np.linalg.norm(mat1[:3, 3] - mat2[:3, 3])
     # distance in orientation TODO
-    speed = 0.1
-    nb_points = 20
-    duration = (l2_distance_xyz / speed) / nb_points
+    # speed = 0.1
+    # nb_points = 20
+    # duration = (l2_distance_xyz / speed) / nb_points
+    freq = 120
+    total_duration = 3.0
+    nb_points = int(total_duration * freq)
     try:
         l_ik_sol = reachy.l_arm.inverse_kinematics(mat2)
         goal_pose = reachy.l_arm.forward_kinematics(l_ik_sol)
@@ -433,14 +487,31 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
         print("Goal pose is not reachable!")
     for t in np.linspace(0, 1, nb_points):
         interpolated_matrix = interpolate_matrices(mat1, mat2, t)
-        id = reachy.l_arm.goto_from_matrix(interpolated_matrix, duration, interpolation_mode="linear")
-        if id.id < 0:
-            print(f"The goto t={t} was rejected! Unreachable pose.")
-            time.sleep(duration)
-        else:
-            print(f"The goto t={t} was accepted.")
-            while not reachy.is_move_finished(id):
-                time.sleep(0.01)
+        request = ArmCartesianGoal(
+            id=reachy.l_arm._part_id,
+            goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+        )
+        reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
+        time.sleep(1 / freq)
+
+        # id = reachy.l_arm.goto_from_matrix(interpolated_matrix, duration, interpolation_mode="linear")
+        # if id.id < 0:
+        #     print(f"The goto t={t} was rejected! Unreachable pose.")
+        #     time.sleep(duration)
+        # else:
+        #     print(f"The goto t={t} was accepted.")
+        #     while not reachy.is_move_finished(id):
+        #         time.sleep(0.01)
+
+    # for t in np.linspace(0, 1, nb_points):
+    #     request = ArmCartesianGoal(
+    #         id=reachy.l_arm._part_id,
+    #         goal_pose=Matrix4x4(data=mat2.flatten().tolist()),
+    #         duration=FloatValue(value=duration),
+    #     )
+    #     reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
+    #     time.sleep(1.0)
+    #     print(f"t={t}")
 
     # time.sleep(duration*nb_points + 1)
     time.sleep(0.5)
@@ -542,7 +613,7 @@ def main_test() -> None:
     # test_goto_single_pose(reachy)
     while True:
         # test_goto_cartesian(reachy)
-        # test_task_space_interpolation_goto(reachy)
+        test_task_space_interpolation_goto(reachy)
         break
     # print("\n###6)Testing goto REJECTION")
     # test_goto_rejection(reachy)
@@ -557,8 +628,8 @@ def main_test() -> None:
     # print("\n###8)Testing the look_at function")
     # test_head_look_at(reachy)
 
-    print("\n###9)Testing the goto_cartesian_with_interpolation function")
-    test_goto_cartesian_with_interpolation(reachy)
+    # print("\n###9)Testing the goto_cartesian_with_interpolation function")
+    # test_goto_cartesian_with_interpolation(reachy)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
