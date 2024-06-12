@@ -1,4 +1,5 @@
 import time
+import copy
 
 import numpy as np
 import numpy.typing as npt
@@ -423,8 +424,52 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
                 time.sleep(0.1)
 
 
+def fix_multiturn_if_needed(reachy: ReachySDK) -> None:
+    # reachy.l_arm.goto_joints([0, 90, 0, -15, 0, 0, 0], 2.0, degrees=True)
+    # reachy.r_arm.goto_joints([0, -90, 0, -15, 0, 0, 0], 2.0, degrees=True)
+    l_t_pose = reachy.l_arm.forward_kinematics([0, 90, 0, -15, 0, 0, 0])
+    r_t_pose = reachy.r_arm.forward_kinematics([0, -90, 0, -15, 0, 0, 0])
+
+    current_joints = reachy.l_arm.get_joints_positions()
+    indexes_that_can_multiturn = [6, 2, 0]
+    max_values = [180, 180, 180]
+    wrist_elbow_shoulder = [
+        reachy.l_arm.wrist.yaw.present_position,
+        reachy.l_arm.elbow.yaw.present_position,
+        reachy.l_arm.shoulder.pitch.present_position,
+    ]
+    names = ["wrist", "elbow", "shoulder"]
+    are_ok = [True, True, True]
+    for i, value in enumerate(wrist_elbow_shoulder):
+        if abs(value) > max_values[i]:
+            print(f"Fixing {names[i]} joint value: {value}")
+            are_ok[i] = False
+        else:
+            print(f"{names[i]} has no problem!")
+    if all(are_ok):
+        print("All joints are fine!")
+    elif are_ok[0] is False and are_ok[1] is True and are_ok[2] is True:
+        print("The wrist is the only joint that has a multiturn, fixing in place")
+        goal_joints = copy.deepcopy(current_joints)
+        goal_joints[6] = 0
+        reachy.l_arm.goto_joints(goal_joints, 2.0, degrees=True)
+    else:
+        print("At least the elbow or the shoulder are problematic, T-Posing")
+        task_space_interpolation_goto(reachy, l_t_pose)
+        time.sleep(0.1)
+        current_joints = reachy.l_arm.get_joints_positions()
+        goal_joints = copy.deepcopy(current_joints)
+        goal_joints[6] = 0
+        goal_joints[2] = 0
+        goal_joints[0] = 0
+        reachy.l_arm.goto_joints(goal_joints, 2.0, degrees=True)
+
+
 def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
     list_of_mats = []
+    l_t_pose = reachy.l_arm.forward_kinematics([0, 90, 0, -15, 0, 0, 0])
+    # r_t_pose = reachy.r_arm.forward_kinematics([0, -90, 0, -15, 0, 0, 0])
+    list_of_mats.append(l_t_pose)
     list_of_mats.append(build_pose_matrix(0.3, 0.45, 0.0))
     list_of_mats.append(
         np.array(
@@ -446,8 +491,7 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
             ]
         )
     )
-    # list_of_mats.append(np.array([[0, 0, -1.0, 0.25249], [0, 1.0, 0, -0.099362], [1.0, 0, 0, -0.32934], [0, 0, 0, 1]]))
-    # list_of_mats.append(build_pose_matrix(0.3, -0.45, -0.3))
+
     list_of_mats.append(
         np.array(
             [
@@ -469,9 +513,74 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
         )
     )
 
+    list_of_mats.append(
+        np.array(
+            [
+                [0.056889, 0.99439, -0.089147, 0.25249],
+                [-0.14988, 0.096786, 0.98395, -0.099362],
+                [0.98707, -0.042614, 0.15455, -0.32934],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+    list_of_mats.append(
+        np.array(
+            [
+                [0.36861, 0.089736, -0.92524, 0.37213],
+                [-0.068392, 0.99525, 0.069279, -0.028012],
+                [0.92706, 0.037742, 0.373, -0.38572],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.29157, 0.95649, -0.010922, 0.39481],
+                [-0.27455, 0.094617, 0.95691, -0.065782],
+                [0.9163, -0.276, 0.29019, -0.27771],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.30741, 0.95003, -0.054263, 0.38327],
+                [-0.77787, 0.28373, 0.56073, -0.059699],
+                [0.54811, -0.13017, 0.82622, -0.2948],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.46129, 0.27709, -0.84288, 0.38394],
+                [-0.22793, 0.95511, 0.18924, -0.0087053],
+                [0.85747, 0.10482, 0.50373, -0.28038],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+    list_of_mats.append(
+        np.array(
+            [
+                [-0.030111, 0.99613, -0.082526, 0.31861],
+                [-0.18163, 0.075737, 0.98045, 0.035154],
+                [0.98291, 0.044511, 0.17864, -0.25577],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
     for mat in list_of_mats:
         input("press enter to go to the next pose!")
         task_space_interpolation_goto(reachy, mat)
+        fix_multiturn_if_needed(reachy)
 
 
 def task_space_interpolation_goto(reachy: ReachySDK, target_pose) -> None:
@@ -486,6 +595,7 @@ def task_space_interpolation_goto(reachy: ReachySDK, target_pose) -> None:
     freq = 120
     total_duration = 3.0
     nb_points = int(total_duration * freq)
+    nb_points_final = int(1.0 * freq)
     try:
         l_ik_sol = reachy.l_arm.inverse_kinematics(mat2)
         goal_pose = reachy.l_arm.forward_kinematics(l_ik_sol)
@@ -502,31 +612,24 @@ def task_space_interpolation_goto(reachy: ReachySDK, target_pose) -> None:
         reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
         time.sleep(1 / freq)
 
-        # id = reachy.l_arm.goto_from_matrix(interpolated_matrix, duration, interpolation_mode="linear")
-        # if id.id < 0:
-        #     print(f"The goto t={t} was rejected! Unreachable pose.")
-        #     time.sleep(duration)
-        # else:
-        #     print(f"The goto t={t} was accepted.")
-        #     while not reachy.is_move_finished(id):
-        #         time.sleep(0.01)
-
-    # for t in np.linspace(0, 1, nb_points):
-    #     request = ArmCartesianGoal(
-    #         id=reachy.l_arm._part_id,
-    #         goal_pose=Matrix4x4(data=mat2.flatten().tolist()),
-    #         duration=FloatValue(value=duration),
-    #     )
-    #     reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
-    #     time.sleep(1.0)
-    #     print(f"t={t}")
-
-    # time.sleep(duration*nb_points + 1)
-    time.sleep(0.5)
+    time.sleep(0.1)
     current_pose = reachy.l_arm.forward_kinematics()
     precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
+    if precision_distance_xyz > 0.003:
+        print("Precision is not good enough, spamming the goal position!")
+        for t in np.linspace(0, 1, nb_points):
+            # Spamming the goal position to make sure its reached
+            request = ArmCartesianGoal(
+                id=reachy.l_arm._part_id,
+                goal_pose=Matrix4x4(data=mat2.flatten().tolist()),
+            )
+            reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
+            time.sleep(1 / freq)
+
+        time.sleep(0.1)
+        current_pose = reachy.l_arm.forward_kinematics()
+        precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
     print(f"l2 xyz distance to goal: {precision_distance_xyz}")
-    print(reachy.l_arm)
 
 
 def test_goto_cartesian_with_interpolation(reachy: ReachySDK) -> None:
