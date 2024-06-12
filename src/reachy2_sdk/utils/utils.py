@@ -129,7 +129,7 @@ def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Tuple[Quaternion, npt.N
 
     # increase tolerance to avoid errors when checking if the matrix is a valid rotation matrix
     # See https://github.com/KieranWynn/pyquaternion/pull/44
-    rotation = Quaternion(matrix=rotation_matrix, atol=1e-07, rtol=1e-07)
+    rotation = Quaternion(matrix=rotation_matrix, atol=1e-05, rtol=1e-05)
     return rotation, translation
 
 
