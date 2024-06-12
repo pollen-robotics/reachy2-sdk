@@ -126,7 +126,10 @@ def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Tuple[Quaternion, npt.N
     """Decompose a homogeneous 4x4 matrix into rotation (quaternion) and translation components."""
     rotation_matrix = matrix[:3, :3]
     translation = matrix[:3, 3]
-    rotation = Quaternion(matrix=rotation_matrix)
+
+    # increase tolerance to avoid errors when checking if the matrix is a valid rotation matrix
+    # See https://github.com/KieranWynn/pyquaternion/pull/44
+    rotation = Quaternion(matrix=rotation_matrix,  atol=1e-07, rtol=1e-07)
     return rotation, translation
 
 
