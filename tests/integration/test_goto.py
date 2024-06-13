@@ -11,6 +11,7 @@ from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.arm_pb2 import ArmCartesianGoal
 from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 from google.protobuf.wrappers_pb2 import FloatValue
+import random
 
 # from reachy2_sdk.utils.utils import recompose_matrix, decompose_matrix
 
@@ -424,51 +425,139 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
                 time.sleep(0.1)
 
 
-def fix_multiturn_if_needed(reachy: ReachySDK) -> None:
-    # reachy.l_arm.goto_joints([0, 90, 0, -15, 0, 0, 0], 2.0, degrees=True)
-    # reachy.r_arm.goto_joints([0, -90, 0, -15, 0, 0, 0], 2.0, degrees=True)
+def fix_3_multiturn_if_needed(reachy: ReachySDK, max_values_wrist_elbow_shoulder=[180, 180, 180]) -> None:
+    """
+    Keeping this function for reference, when well have to handle the wrist too
+    """
     l_t_pose = reachy.l_arm.forward_kinematics([0, 90, 0, -15, 0, 0, 0])
     r_t_pose = reachy.r_arm.forward_kinematics([0, -90, 0, -15, 0, 0, 0])
-
-    current_joints = reachy.l_arm.get_joints_positions()
     indexes_that_can_multiturn = [6, 2, 0]
-    max_values = [180, 180, 180]
-    wrist_elbow_shoulder = [
-        reachy.l_arm.wrist.yaw.present_position,
-        reachy.l_arm.elbow.yaw.present_position,
-        reachy.l_arm.shoulder.pitch.present_position,
-    ]
     names = ["wrist", "elbow", "shoulder"]
-    are_ok = [True, True, True]
-    for i, value in enumerate(wrist_elbow_shoulder):
-        if abs(value) > max_values[i]:
-            print(f"Fixing {names[i]} joint value: {value}")
-            are_ok[i] = False
+
+    for arm_name in ["l", "r"]:
+        print(f"Checking {arm_name}_arm for multiturns...")
+        if arm_name == "l":
+            reachy_arm = reachy.l_arm
+            t_pose = l_t_pose
         else:
-            print(f"{names[i]} has no problem!")
-    if all(are_ok):
-        print("All joints are fine!")
-    elif are_ok[0] is False and are_ok[1] is True and are_ok[2] is True:
-        print("The wrist is the only joint that has a multiturn, fixing in place")
-        goal_joints = copy.deepcopy(current_joints)
-        goal_joints[6] = 0
-        reachy.l_arm.goto_joints(goal_joints, 2.0, degrees=True)
-    else:
-        print("At least the elbow or the shoulder are problematic, T-Posing")
-        task_space_interpolation_goto(reachy, l_t_pose)
-        time.sleep(0.1)
-        current_joints = reachy.l_arm.get_joints_positions()
-        goal_joints = copy.deepcopy(current_joints)
-        goal_joints[6] = 0
-        goal_joints[2] = 0
-        goal_joints[0] = 0
-        reachy.l_arm.goto_joints(goal_joints, 2.0, degrees=True)
+            reachy_arm = reachy.r_arm
+            t_pose = r_t_pose
+
+        current_joints = reachy_arm.get_joints_positions()
+        print(f"Current joints for {arm_name}_arm: {current_joints}")
+
+        wrist_elbow_shoulder = [
+            reachy_arm.wrist.yaw.present_position,
+            reachy_arm.elbow.yaw.present_position,
+            reachy_arm.shoulder.pitch.present_position,
+        ]
+        are_ok = [True, True, True]
+        for i, value in enumerate(wrist_elbow_shoulder):
+            if abs(value) > max_values_wrist_elbow_shoulder[i]:
+                print(f"{arm_name}_{names[i]} is too far: {value}")
+                are_ok[i] = False
+            else:
+                print(f"{arm_name}_{names[i]} has no problem!")
+        if all(are_ok):
+            print(f"All joints are fine for {arm_name}_arm!")
+        elif are_ok[0] is False and are_ok[1] is True and are_ok[2] is True:
+            print(f"The wrist is the only joint that has a multiturn for {arm_name}_arm, fixing in place")
+            goal_joints = copy.deepcopy(current_joints)
+            goal_joints[6] = 0
+            reachy_arm.goto_joints(goal_joints, 2.0, degrees=True)
+        else:
+            print(f"At least the elbow or the shoulder are problematic, T-Posing for {arm_name}_arm!")
+            task_space_interpolation_goto(reachy_arm, t_pose)
+            time.sleep(0.1)
+            current_joints = reachy_arm.get_joints_positions()
+            goal_joints = copy.deepcopy(current_joints)
+            goal_joints[6] = 0
+            goal_joints[2] = 0
+            goal_joints[0] = 0
+            reachy_arm.goto_joints(goal_joints, 2.0, degrees=True)
+
+
+def fix_multiturn_if_needed(reachy: ReachySDK, max_values_elbow_shoulder=[180, 180]) -> None:
+    l_t_pose = reachy.l_arm.forward_kinematics([0, 90, 0, -15, 0, 0, 0])
+    r_t_pose = reachy.r_arm.forward_kinematics([0, -90, 0, -15, 0, 0, 0])
+    indexes_that_can_multiturn = [2, 0]
+    names = ["elbow", "shoulder"]
+
+    for arm_name in ["l", "r"]:
+        print(f"Checking {arm_name}_arm for multiturns...")
+        if arm_name == "l":
+            reachy_arm = reachy.l_arm
+            t_pose = l_t_pose
+        else:
+            reachy_arm = reachy.r_arm
+            t_pose = r_t_pose
+
+        current_joints = reachy_arm.get_joints_positions()
+        print(f"Current joints for {arm_name}_arm: {current_joints}")
+
+        elbow_shoulder = [
+            reachy_arm.elbow.yaw.present_position,
+            reachy_arm.shoulder.pitch.present_position,
+        ]
+        are_ok = [True, True]
+        for i, value in enumerate(elbow_shoulder):
+            if abs(value) > max_values_elbow_shoulder[i]:
+                print(f"{arm_name}_{names[i]} is too far: {value}")
+                are_ok[i] = False
+            else:
+                print(f"{arm_name}_{names[i]} has no problem!")
+        if all(are_ok):
+            print(f"All joints are fine for {arm_name}_arm!")
+        else:
+            print(f"At least the elbow or the shoulder are problematic, T-Posing for {arm_name}_arm!")
+            task_space_interpolation_goto(reachy_arm, t_pose)
+            time.sleep(0.1)
+            current_joints = reachy_arm.get_joints_positions()
+            goal_joints = copy.deepcopy(current_joints)
+            goal_joints[2] = 0
+            goal_joints[0] = 0
+            reachy_arm.goto_joints(goal_joints, 2.0, degrees=True)
 
 
 def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
     list_of_mats = []
     l_t_pose = reachy.l_arm.forward_kinematics([0, 90, 0, -15, 0, 0, 0])
     # r_t_pose = reachy.r_arm.forward_kinematics([0, -90, 0, -15, 0, 0, 0])
+
+    # SimSim's start pose
+    list_of_mats.append(
+        np.array(
+            [
+                [0.0, 0.0, -1.0, 0.20],
+                [0.0, 1.0, 0.0, 0.24],
+                [1.0, 0.0, 0.0, -0.23],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [-0.20852, 0.90069, -0.38116, 0.25596],
+                [-0.97297, -0.2306, -0.012651, 0.032521],
+                [-0.099292, 0.36822, 0.92442, -0.27823],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.0, 0.0, -1.0, 0.20],
+                [0.0, 1.0, 0.0, 0.24],
+                [1.0, 0.0, 0.0, -0.23],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+    )
+
     list_of_mats.append(l_t_pose)
     list_of_mats.append(build_pose_matrix(0.3, 0.45, 0.0))
     list_of_mats.append(
@@ -579,12 +668,38 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
 
     for mat in list_of_mats:
         input("press enter to go to the next pose!")
-        task_space_interpolation_goto(reachy, mat)
+        task_space_interpolation_goto(reachy.l_arm, mat)
+        # important sleep to make sure the present positions are correct
+        time.sleep(0.1)
         fix_multiturn_if_needed(reachy)
 
 
-def task_space_interpolation_goto(reachy: ReachySDK, target_pose) -> None:
-    mat1 = reachy.l_arm.forward_kinematics()
+def test_multiturn_fix(reachy: ReachySDK) -> None:
+    q_amps = [360, 30.0, 360, 45.0, 25.0, 25.0, 360]
+    list_of_l_q = []
+    # list_of_l_q.append([0, 20, 0, -45, 10, 10, 0])
+    list_of_l_q.append([0, 20, 300, -45, 10, 10, 0])
+    list_of_l_q.append([300, 20, 0, -45, 10, 10, 0])
+    list_of_l_q.append([0, 20, 0, -45, 10, 10, 300])
+    list_of_l_q.append([210, 20, 195, -45, 10, 10, 225])
+    list_of_l_q.append([-210, 20, 195, -45, 10, 10, -225])
+    while True:
+        # generate q, a 7 value list of random angles in +- q_amps
+        # q = [random.uniform(-q_amps[i], q_amps[i]) for i in range(7)]
+        for l_q in list_of_l_q:
+            r_q = [l_q[0], -l_q[1], -l_q[2], l_q[3], -l_q[4], l_q[5], -l_q[6]]
+
+            input(f"press enter to go to the next random joints: {l_q}")
+            duration = 2.0
+            reachy.l_arm.goto_joints(l_q, duration, degrees=True)
+            reachy.r_arm.goto_joints(r_q, duration, degrees=True)
+            time.sleep(duration + 0.1)
+
+            fix_multiturn_if_needed(reachy)
+
+
+def task_space_interpolation_goto(reachy_arm, target_pose) -> None:
+    mat1 = reachy_arm.forward_kinematics()
     mat2 = target_pose
     # l2 distance between the two matrices in x, y, z only
     l2_distance_xyz = np.linalg.norm(mat1[:3, 3] - mat2[:3, 3])
@@ -597,8 +712,8 @@ def task_space_interpolation_goto(reachy: ReachySDK, target_pose) -> None:
     nb_points = int(total_duration * freq)
     nb_points_final = int(1.0 * freq)
     try:
-        l_ik_sol = reachy.l_arm.inverse_kinematics(mat2)
-        goal_pose = reachy.l_arm.forward_kinematics(l_ik_sol)
+        l_ik_sol = reachy_arm.inverse_kinematics(mat2)
+        goal_pose = reachy_arm.forward_kinematics(l_ik_sol)
         precision_distance_xyz_to_sol = np.linalg.norm(goal_pose[:3, 3] - mat2[:3, 3])
         print(f"l2 xyz distance Ik SOL vs goal pose: {precision_distance_xyz_to_sol}")
     except:
@@ -606,28 +721,28 @@ def task_space_interpolation_goto(reachy: ReachySDK, target_pose) -> None:
     for t in np.linspace(0, 1, nb_points):
         interpolated_matrix = interpolate_matrices(mat1, mat2, t)
         request = ArmCartesianGoal(
-            id=reachy.l_arm._part_id,
+            id=reachy_arm._part_id,
             goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
         )
-        reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
+        reachy_arm._arm_stub.SendArmCartesianGoal(request)
         time.sleep(1 / freq)
 
     time.sleep(0.1)
-    current_pose = reachy.l_arm.forward_kinematics()
+    current_pose = reachy_arm.forward_kinematics()
     precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
     if precision_distance_xyz > 0.003:
         print("Precision is not good enough, spamming the goal position!")
         for t in np.linspace(0, 1, nb_points):
             # Spamming the goal position to make sure its reached
             request = ArmCartesianGoal(
-                id=reachy.l_arm._part_id,
+                id=reachy_arm._part_id,
                 goal_pose=Matrix4x4(data=mat2.flatten().tolist()),
             )
-            reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
+            reachy_arm._arm_stub.SendArmCartesianGoal(request)
             time.sleep(1 / freq)
 
         time.sleep(0.1)
-        current_pose = reachy.l_arm.forward_kinematics()
+        current_pose = reachy_arm.forward_kinematics()
         precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
     print(f"l2 xyz distance to goal: {precision_distance_xyz}")
 
@@ -705,6 +820,8 @@ def main_test() -> None:
     id = reachy.r_arm.goto_joints([0, -20, 0, 0, 0, 0, 0], duration=2)
     while not reachy.is_move_finished(id):
         time.sleep(0.1)
+
+    # test_multiturn_fix(reachy)
 
     # init_pose(reachy)
 
