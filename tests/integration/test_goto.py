@@ -1,4 +1,5 @@
 import time
+import copy
 
 import numpy as np
 import numpy.typing as npt
@@ -368,94 +369,326 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
                 time.sleep(0.1)
 
 
-def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
-    delay = 2.0
-    # goal = ([x, y, z], [roll, pitch, yaw])
-    # Problematic goal :
-    # goals = [([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])]
-    # mat2 = np.array(
-    #     [
-    #         [0.056889, 0.99439, -0.089147, 0.25249],
-    #         [-0.14988, 0.096786, 0.98395, -0.099362],
-    #         [0.98707, -0.042614, 0.15455, -0.32934],
-    #         [0, 0, 0, 1],
-    #     ]
-    # )
-    # mat1 = np.array([[0, 0, -1.0, 0.25249], [0, 1.0, 0, -0.099362], [1.0, 0, 0, -0.32934], [0, 0, 0, 1]])
+def fix_3_multiturn_if_needed(reachy: ReachySDK, max_values_wrist_elbow_shoulder=[180, 180, 180]) -> None:
+    """
+    Keeping this function for reference, when well have to handle the wrist too
+    """
+    l_t_pose = reachy.l_arm.forward_kinematics([0, 90, 0, -15, 0, 0, 0])
+    r_t_pose = reachy.r_arm.forward_kinematics([0, -90, 0, -15, 0, 0, 0])
+    indexes_that_can_multiturn = [6, 2, 0]
+    names = ["wrist", "elbow", "shoulder"]
 
-    # r_arm
-    # mat1 = build_pose_matrix(0.3, -0.45, 0.0)
-    # mat2 = build_pose_matrix(0.3, -0.45, -0.3)
-    # SimSim probelmatic pose on l_arm:
-    mat1 = build_pose_matrix(0.3, 0.45, 0.0)
-    mat2 = np.array(
-        [
-            [0.36861, 0.089736, -0.92524, 0.37213],
-            [-0.068392, 0.99525, 0.069279, -0.028012],
-            [0.92706, 0.037742, 0.373, -0.38572],
-            [0, 0, 0, 1],
+    for arm_name in ["l", "r"]:
+        print(f"Checking {arm_name}_arm for multiturns...")
+        if arm_name == "l":
+            reachy_arm = reachy.l_arm
+            t_pose = l_t_pose
+        else:
+            reachy_arm = reachy.r_arm
+            t_pose = r_t_pose
+
+        current_joints = reachy_arm.get_joints_positions()
+        print(f"Current joints for {arm_name}_arm: {current_joints}")
+
+        wrist_elbow_shoulder = [
+            reachy_arm.wrist.yaw.present_position,
+            reachy_arm.elbow.yaw.present_position,
+            reachy_arm.shoulder.pitch.present_position,
         ]
+        are_ok = [True, True, True]
+        for i, value in enumerate(wrist_elbow_shoulder):
+            if abs(value) > max_values_wrist_elbow_shoulder[i]:
+                print(f"{arm_name}_{names[i]} is too far: {value}")
+                are_ok[i] = False
+            else:
+                print(f"{arm_name}_{names[i]} has no problem!")
+        if all(are_ok):
+            print(f"All joints are fine for {arm_name}_arm!")
+        elif are_ok[0] is False and are_ok[1] is True and are_ok[2] is True:
+            print(f"The wrist is the only joint that has a multiturn for {arm_name}_arm, fixing in place")
+            goal_joints = copy.deepcopy(current_joints)
+            goal_joints[6] = 0
+            reachy_arm.goto_joints(goal_joints, 2.0, degrees=True)
+        else:
+            print(f"At least the elbow or the shoulder are problematic, T-Posing for {arm_name}_arm!")
+            task_space_interpolation_goto(reachy_arm, t_pose)
+            time.sleep(0.1)
+            current_joints = reachy_arm.get_joints_positions()
+            goal_joints = copy.deepcopy(current_joints)
+            goal_joints[6] = 0
+            goal_joints[2] = 0
+            goal_joints[0] = 0
+            reachy_arm.goto_joints(goal_joints, 2.0, degrees=True)
+
+
+def fix_multiturn_if_needed(reachy: ReachySDK, max_values_elbow_shoulder=[180, 180]) -> None:
+    l_t_pose = reachy.l_arm.forward_kinematics([0, 90, 0, -15, 0, 0, 0])
+    r_t_pose = reachy.r_arm.forward_kinematics([0, -90, 0, -15, 0, 0, 0])
+    indexes_that_can_multiturn = [2, 0]
+    names = ["elbow", "shoulder"]
+
+    for arm_name in ["l", "r"]:
+        print(f"Checking {arm_name}_arm for multiturns...")
+        if arm_name == "l":
+            reachy_arm = reachy.l_arm
+            t_pose = l_t_pose
+        else:
+            reachy_arm = reachy.r_arm
+            t_pose = r_t_pose
+
+        current_joints = reachy_arm.get_joints_positions()
+        print(f"Current joints for {arm_name}_arm: {current_joints}")
+
+        elbow_shoulder = [
+            reachy_arm.elbow.yaw.present_position,
+            reachy_arm.shoulder.pitch.present_position,
+        ]
+        are_ok = [True, True]
+        for i, value in enumerate(elbow_shoulder):
+            if abs(value) > max_values_elbow_shoulder[i]:
+                print(f"{arm_name}_{names[i]} is too far: {value}")
+                are_ok[i] = False
+            else:
+                print(f"{arm_name}_{names[i]} has no problem!")
+        if all(are_ok):
+            print(f"All joints are fine for {arm_name}_arm!")
+        else:
+            print(f"At least the elbow or the shoulder are problematic, T-Posing for {arm_name}_arm!")
+            task_space_interpolation_goto(reachy_arm, t_pose)
+            time.sleep(0.1)
+            current_joints = reachy_arm.get_joints_positions()
+            goal_joints = copy.deepcopy(current_joints)
+            goal_joints[2] = 0
+            goal_joints[0] = 0
+            reachy_arm.goto_joints(goal_joints, 2.0, degrees=True)
+
+
+def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
+    list_of_mats = []
+    l_t_pose = reachy.l_arm.forward_kinematics([0, 90, 0, -15, 0, 0, 0])
+    # r_t_pose = reachy.r_arm.forward_kinematics([0, -90, 0, -15, 0, 0, 0])
+
+    # SimSim's start pose
+    list_of_mats.append(
+        np.array(
+            [
+                [0.0, 0.0, -1.0, 0.20],
+                [0.0, 1.0, 0.0, 0.24],
+                [1.0, 0.0, 0.0, -0.23],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
     )
 
-    # Test is problematic with this pose
-    # mat2 = np.array(
-    #     [
-    #         [-0.83356, -0.2197, -0.50686, 0.35384],
-    #         [0.21478, -0.97422, 0.06905, 0.2214],
-    #         [-0.50896, -0.051306, 0.85926, -0.2526],
-    #         [0, 0, 0, 1],
-    #     ]
-    # )
+    list_of_mats.append(
+        np.array(
+            [
+                [-0.20852, 0.90069, -0.38116, 0.25596],
+                [-0.97297, -0.2306, -0.012651, 0.032521],
+                [-0.099292, 0.36822, 0.92442, -0.27823],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
 
-    # mat2 = np.array([[    0.29157,     0.95649,   -0.010922,     0.39481],
-    #    [   -0.27455,    0.094617,     0.95691,   -0.065782],
-    #    [     0.9163,      -0.276,     0.29019,    -0.27771],
-    #    [          0,           0,           0,           1]])
+    list_of_mats.append(
+        np.array(
+            [
+                [0.0, 0.0, -1.0, 0.20],
+                [0.0, 1.0, 0.0, 0.24],
+                [1.0, 0.0, 0.0, -0.23],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+    )
 
-    # mat2 = np.array([[    0.30741,     0.95003,   -0.054263,     0.38327],
-    #     [   -0.77787,     0.28373,     0.56073,   -0.059699],
-    #     [    0.54811,    -0.13017,     0.82622,     -0.2948],
-    #     [          0,           0,           0,           1]])
+    list_of_mats.append(l_t_pose)
+    list_of_mats.append(build_pose_matrix(0.3, 0.45, 0.0))
+    list_of_mats.append(
+        np.array(
+            [
+                [-0.83356, -0.2197, -0.50686, 0.35384],
+                [0.21478, -0.97422, 0.06905, 0.2214],
+                [-0.50896, -0.051306, 0.85926, -0.2526],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+    list_of_mats.append(
+        np.array(
+            [
+                [0.056889, 0.99439, -0.089147, 0.25249],
+                [-0.14988, 0.096786, 0.98395, -0.099362],
+                [0.98707, -0.042614, 0.15455, -0.32934],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.29157, 0.95649, -0.010922, 0.39481],
+                [-0.27455, 0.094617, 0.95691, -0.065782],
+                [0.9163, -0.276, 0.29019, -0.27771],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+    list_of_mats.append(
+        np.array(
+            [
+                [0.30741, 0.95003, -0.054263, 0.38327],
+                [-0.77787, 0.28373, 0.56073, -0.059699],
+                [0.54811, -0.13017, 0.82622, -0.2948],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.056889, 0.99439, -0.089147, 0.25249],
+                [-0.14988, 0.096786, 0.98395, -0.099362],
+                [0.98707, -0.042614, 0.15455, -0.32934],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+    list_of_mats.append(
+        np.array(
+            [
+                [0.36861, 0.089736, -0.92524, 0.37213],
+                [-0.068392, 0.99525, 0.069279, -0.028012],
+                [0.92706, 0.037742, 0.373, -0.38572],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.29157, 0.95649, -0.010922, 0.39481],
+                [-0.27455, 0.094617, 0.95691, -0.065782],
+                [0.9163, -0.276, 0.29019, -0.27771],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.30741, 0.95003, -0.054263, 0.38327],
+                [-0.77787, 0.28373, 0.56073, -0.059699],
+                [0.54811, -0.13017, 0.82622, -0.2948],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    list_of_mats.append(
+        np.array(
+            [
+                [0.46129, 0.27709, -0.84288, 0.38394],
+                [-0.22793, 0.95511, 0.18924, -0.0087053],
+                [0.85747, 0.10482, 0.50373, -0.28038],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+    list_of_mats.append(
+        np.array(
+            [
+                [-0.030111, 0.99613, -0.082526, 0.31861],
+                [-0.18163, 0.075737, 0.98045, 0.035154],
+                [0.98291, 0.044511, 0.17864, -0.25577],
+                [0, 0, 0, 1],
+            ]
+        )
+    )
+
+    for mat in list_of_mats:
+        print(40 * "-")
+        input("press enter to go to the next pose!")
+        task_space_interpolation_goto(reachy.l_arm, mat)
+        # important sleep to make sure the present positions are correct
+        time.sleep(0.1)
+        fix_multiturn_if_needed(reachy)
+
+
+def test_multiturn_fix(reachy: ReachySDK) -> None:
+    q_amps = [360, 30.0, 360, 45.0, 25.0, 25.0, 360]
+    list_of_l_q = []
+    # list_of_l_q.append([0, 20, 0, -45, 10, 10, 0])
+    list_of_l_q.append([0, 20, 300, -45, 10, 10, 0])
+    list_of_l_q.append([300, 20, 0, -45, 10, 10, 0])
+    list_of_l_q.append([0, 20, 0, -45, 10, 10, 300])
+    list_of_l_q.append([210, 20, 195, -45, 10, 10, 225])
+    list_of_l_q.append([-210, 20, 195, -45, 10, 10, -225])
+    while True:
+        # generate q, a 7 value list of random angles in +- q_amps
+        # q = [random.uniform(-q_amps[i], q_amps[i]) for i in range(7)]
+        for l_q in list_of_l_q:
+            r_q = [l_q[0], -l_q[1], -l_q[2], l_q[3], -l_q[4], l_q[5], -l_q[6]]
+
+            input(f"press enter to go to the next random joints: {l_q}")
+            duration = 2.0
+            reachy.l_arm.goto_joints(l_q, duration, degrees=True)
+            reachy.r_arm.goto_joints(r_q, duration, degrees=True)
+            time.sleep(duration + 0.1)
+
+            fix_multiturn_if_needed(reachy)
+
+
+def task_space_interpolation_goto(reachy_arm, target_pose) -> None:
+    mat1 = reachy_arm.forward_kinematics()
+    mat2 = target_pose
     # l2 distance between the two matrices in x, y, z only
     l2_distance_xyz = np.linalg.norm(mat1[:3, 3] - mat2[:3, 3])
     # distance in orientation TODO
-    speed = 0.1
-    nb_points = 20
-    duration = (l2_distance_xyz / speed) / nb_points
+    # speed = 0.1
+    # nb_points = 20
+    # duration = (l2_distance_xyz / speed) / nb_points
+    freq = 120
+    total_duration = 3.0
+    nb_points = int(total_duration * freq)
+    nb_points_final = int(1.0 * freq)
     try:
-        l_ik_sol = reachy.l_arm.inverse_kinematics(mat2)
-        goal_pose = reachy.l_arm.forward_kinematics(l_ik_sol)
+        l_ik_sol = reachy_arm.inverse_kinematics(mat2)
+        goal_pose = reachy_arm.forward_kinematics(l_ik_sol)
         precision_distance_xyz_to_sol = np.linalg.norm(goal_pose[:3, 3] - mat2[:3, 3])
         print(f"l2 xyz distance Ik SOL vs goal pose: {precision_distance_xyz_to_sol}")
     except:
         print("Goal pose is not reachable!")
     for t in np.linspace(0, 1, nb_points):
         interpolated_matrix = interpolate_matrices(mat1, mat2, t)
-        id = reachy.l_arm.goto_from_matrix(interpolated_matrix, duration, interpolation_mode="linear")
-        if id.id < 0:
-            print(f"The goto t={t} was rejected! Unreachable pose.")
-            time.sleep(duration)
-        else:
-            print(f"The goto t={t} was accepted.")
-            while not reachy.is_move_finished(id):
-                time.sleep(0.01)
-    time.sleep(duration * nb_points + 1)
+        request = ArmCartesianGoal(
+            id=reachy_arm._part_id,
+            goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+        )
+        reachy_arm._arm_stub.SendArmCartesianGoal(request)
+        time.sleep(1 / freq)
 
-    ## Leaving the code made during debug
-
-    # for t in np.linspace(0, 1, nb_points * 10):
-    #     interpolated_matrix = interpolate_matrices(mat1, mat2, t)
-    #     request = ArmCartesianGoal(
-    #         id=reachy.l_arm._part_id,
-    #         goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
-    #         duration=FloatValue(value=duration),
-    #     )
-    #     reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
-    #     time.sleep(duration)
-
-    time.sleep(0.5)
-    current_pose = reachy.l_arm.forward_kinematics()
+    time.sleep(0.1)
+    current_pose = reachy_arm.forward_kinematics()
     precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
+    if precision_distance_xyz > 0.003:
+        print("Precision is not good enough, spamming the goal position!")
+        for t in np.linspace(0, 1, nb_points):
+            # Spamming the goal position to make sure its reached
+            request = ArmCartesianGoal(
+                id=reachy_arm._part_id,
+                goal_pose=Matrix4x4(data=mat2.flatten().tolist()),
+            )
+            reachy_arm._arm_stub.SendArmCartesianGoal(request)
+            time.sleep(1 / freq)
+
+        time.sleep(0.1)
+        current_pose = reachy_arm.forward_kinematics()
+        precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
     print(f"l2 xyz distance to goal: {precision_distance_xyz}")
 
 
@@ -532,6 +765,8 @@ def main_test() -> None:
     id = reachy.r_arm.goto_joints([0, -20, 0, 0, 0, 0, 0], duration=2)
     while not reachy.is_move_finished(id):
         time.sleep(0.1)
+
+    # test_multiturn_fix(reachy)
 
     # init_pose(reachy)
 

@@ -298,7 +298,7 @@ class Arm:
         interpolation_mode: str = "minimum_jerk",
         q0: Optional[List[float]] = None,
         with_cartesian_interpolation: bool = False,
-        interpolation_frequency: float = 10,
+        interpolation_frequency: float = 120,
     ) -> GoToId:
         """Move the arm to a matrix target (or get close).
 
@@ -352,7 +352,8 @@ class Arm:
         self,
         target: npt.NDArray[np.float64],
         duration: float = 2,
-        interpolation_frequency: float = 10,
+        interpolation_frequency: float = 120,
+        precision_distance_xyz: float = 0.003,
     ) -> GoToId:
         """Move the arm to a matrix target (or get close).
 
@@ -394,10 +395,28 @@ class Arm:
             request = ArmCartesianGoal(
                 id=self._part_id,
                 goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
-                duration=FloatValue(value=time_step),
             )
             self._arm_stub.SendArmCartesianGoal(request)
             time.sleep(time_step)
+
+        current_pose = self.forward_kinematics()
+        current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
+        if current_precision_distance_xyz > precision_distance_xyz:
+            print("Precision is not good enough, spamming the goal position!")
+            for t in np.linspace(0, 1, nb_steps):
+                # Spamming the goal position to make sure its reached
+                request = ArmCartesianGoal(
+                    id=self._part_id,
+                    goal_pose=Matrix4x4(data=target.flatten().tolist()),
+                )
+                self._arm_stub.SendArmCartesianGoal(request)
+                time.sleep(time_step)
+
+            # Small delay to make sure the present position is correctly read
+            time.sleep(0.1)
+            current_pose = self.forward_kinematics()
+            current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
+            print(f"l2 xyz distance to goal: {current_precision_distance_xyz}")
 
         return GoToId(id=0)
 
