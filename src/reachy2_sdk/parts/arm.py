@@ -353,6 +353,7 @@ class Arm:
         target: npt.NDArray[np.float64],
         duration: float = 2,
         interpolation_frequency: float = 120,
+        precision_distance_xyz: float = 0.003,
     ) -> GoToId:
         """Move the arm to a matrix target (or get close).
 
@@ -399,8 +400,8 @@ class Arm:
             time.sleep(time_step)
 
         current_pose = self.forward_kinematics()
-        precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
-        if precision_distance_xyz > 0.003:
+        current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
+        if current_precision_distance_xyz > precision_distance_xyz:
             print("Precision is not good enough, spamming the goal position!")
             for t in np.linspace(0, 1, nb_steps):
                 # Spamming the goal position to make sure its reached
@@ -411,10 +412,11 @@ class Arm:
                 self._arm_stub.SendArmCartesianGoal(request)
                 time.sleep(time_step)
 
+            # Small delay to make sure the present position is correctly read
             time.sleep(0.1)
             current_pose = self.forward_kinematics()
-            precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
-            print(f"l2 xyz distance to goal: {precision_distance_xyz}")
+            current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
+            print(f"l2 xyz distance to goal: {current_precision_distance_xyz}")
 
         return GoToId(id=0)
 
