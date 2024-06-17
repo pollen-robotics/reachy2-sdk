@@ -611,7 +611,7 @@ def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
     )
 
     for mat in list_of_mats:
-        print(40*'-')
+        print(40 * "-")
         input("press enter to go to the next pose!")
         task_space_interpolation_goto(reachy.l_arm, mat)
         # important sleep to make sure the present positions are correct
