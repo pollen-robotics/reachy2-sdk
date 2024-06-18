@@ -36,8 +36,12 @@ from reachy2_sdk_api.goto_pb2 import (
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
-from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
+from reachy2_sdk_api.kinematics_pb2 import Matrix4x4, Point
+from reachy2_sdk_api.kinematics_pb2 import Quaternion as QuaternionSdkApi
+from reachy2_sdk_api.marker_pb2 import Marker, MarkerArray, MarkerColor, MarkerPose, MarkerPublicationRequest, MarkerShape
 from reachy2_sdk_api.part_pb2 import PartId
+
+import uuid
 
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
@@ -465,6 +469,36 @@ class Arm:
         response = self._arm_stub.GetJointPosition(self._part_id)
         positions = arm_position_to_list(response)
         return positions
+
+    def publish_grasp_poses(self, pose_array: npt.NDArray[np.float64], scores: List[float]) -> None:
+        marker_array = MarkerArray()
+
+        for pose, score in zip(pose_array, scores):
+            x, y, z = pose[:3, 3]
+            rotation_matrix = pose[:3, :3]
+            q = Quaternion(matrix=rotation_matrix, atol=1e-05, rtol=1e-05)
+
+            marker_pose = MarkerPose(
+                position=Point(x=x, y=y, z=z),
+                orientation=QuaternionSdkApi(x=q.x, y=q.y, z=q.z, w=q.w),
+            )
+            marker_color = MarkerColor(
+                 r=FloatValue(value=score),
+                 g=FloatValue(value=0.0),
+                 b=FloatValue(value=0.0),
+                 a=FloatValue(value=1.0),
+            )
+            marker = Marker(
+                pose=marker_pose,
+                color=marker_color,
+                id=np.random.randint(1, 100000),
+                lifetime=FloatValue(value=20.0),
+                shape=MarkerShape.GRASP_FORK,
+            )
+            marker_array.markers.append(marker)
+
+        request = MarkerPublicationRequest(part_id=self._part_id, markers=marker_array)
+        self._arm_stub.PublishMarker(request)
 
     # @property
     # def joints_limits(self) -> ArmLimits:
