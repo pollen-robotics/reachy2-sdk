@@ -56,7 +56,7 @@ GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 """Named tuple for easy access to goto request on full body"""
 
 
-class ReachySDK(metaclass=Singleton):
+class ReachySDK:
     """The ReachySDK class handles the connection with your robot.
     Only one instance of this class can be created in a session.
 
@@ -74,6 +74,7 @@ class ReachySDK(metaclass=Singleton):
         sdk_port: int = 50051,
         audio_port: int = 50063,
         video_port: int = 50065,
+        with_synchro: bool = True,
     ) -> None:
         """Set up the connection with the robot."""
         self._logger = getLogger(__name__)
@@ -91,6 +92,7 @@ class ReachySDK(metaclass=Singleton):
         self._cameras: Optional[CameraManager] = None
         self._mobile_base: Optional[MobileBaseSDK] = None
 
+        self._should_sync = with_synchro
         self.connect()
 
     def connect(self) -> None:
@@ -121,9 +123,10 @@ class ReachySDK(metaclass=Singleton):
         # self._setup_audio()
         self._cameras = self._setup_video()
 
-        self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
-        self._sync_thread.daemon = True
-        self._sync_thread.start()
+        if self._should_sync:
+            self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
+            self._sync_thread.daemon = True
+            self._sync_thread.start()
 
         self._grpc_connected = True
         self._lost_connection = False
