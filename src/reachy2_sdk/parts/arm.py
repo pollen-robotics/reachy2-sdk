@@ -378,7 +378,7 @@ class Arm:
             print("Goal pose is not reachable!")
             return GoToId(id=-1)
 
-        origin_matrix = self.forward_kinematics()
+        origin_matrix = self.forward_kinematics(self.get_joints_positions())
         nb_steps = int(duration * interpolation_frequency)
         time_step = duration / nb_steps
 
