@@ -753,11 +753,12 @@ def flush_connection() -> None:
     Cancel any pending asyncio task.
     """
     for reachy in _open_connection:
-        reachy._pushed_2dcommand.wait(timeout=0.5)
-        reachy._pushed_3dcommand.wait(timeout=0.5)
+        if reachy._should_sync:
+            reachy._pushed_2dcommand.wait(timeout=0.5)
+            reachy._pushed_3dcommand.wait(timeout=0.5)
 
-        for task in asyncio.all_tasks(loop=reachy._loop):
-            task.cancel()
+            for task in asyncio.all_tasks(loop=reachy._loop):
+                task.cancel()
 
 
 atexit.register(flush_connection)
