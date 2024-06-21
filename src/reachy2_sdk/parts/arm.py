@@ -375,7 +375,7 @@ class Arm:
         try:
             self.inverse_kinematics(target)
         except ValueError:
-            print("Goal pose is not reachable!")
+            print(f"Goal pose {target} is not reachable!")
             return GoToId(id=-1)
 
         origin_matrix = self.forward_kinematics(self.get_joints_positions())
@@ -415,6 +415,11 @@ class Arm:
                 )
                 self._arm_stub.SendArmCartesianGoal(request)
                 time.sleep(time_step)
+
+                current_pose = self.forward_kinematics()
+                current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
+                if current_precision_distance_xyz <= precision_distance_xyz:
+                    break
 
             # Small delay to make sure the present position is correctly read
             time.sleep(0.1)
