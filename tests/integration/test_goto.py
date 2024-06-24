@@ -14,6 +14,16 @@ from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk.utils.utils import recompose_matrix, decompose_matrix
 
 
+def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
+    state = reachy._get_move_state(id)
+    result = bool(
+        state.goal_status == GoalStatus.STATUS_ABORTED
+        or state.goal_status == GoalStatus.STATUS_CANCELED
+        or state.goal_status == GoalStatus.STATUS_SUCCEEDED
+    )
+    return result
+
+
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
     # The effector is always at the same orientation in the world frame
     return np.array(
@@ -143,24 +153,12 @@ def test_both_arms(reachy: ReachySDK) -> None:
     init_pose(reachy)
 
 
-def is_goto_finished(reachy: ReachySDK, id: GoToId, verbose=False) -> bool:
-    state = reachy.get_goto_state(id)
-    if verbose:
-        print(f"Goal status: {state.goal_status}")
-    result = bool(
-        state.goal_status == GoalStatus.STATUS_ABORTED
-        or state.goal_status == GoalStatus.STATUS_CANCELED
-        or state.goal_status == GoalStatus.STATUS_SUCCEEDED
-    )
-    return result
-
-
 def test_state(reachy: ReachySDK) -> None:
     pose = build_pose_matrix(0.3, -0.4, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
     id = reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
     print(f"goto id={id}")
-    while is_goto_finished(reachy, id, verbose=True) is False:
+    while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
 
     time.sleep(1.0)
@@ -719,22 +717,22 @@ def test_goto_rejection(reachy: ReachySDK) -> None:
 
 def test_head_orient(reachy: ReachySDK) -> None:
     id = reachy.head.rotate_to(0, 0, 0.5, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
+    while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
     id = reachy.head.rotate_to(0, 0.5, 0.5, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
+    while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
     id = reachy.head.rotate_to(0.5, 0.5, 0.5, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
+    while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
     id = reachy.head.rotate_to(0.5, 0.5, 0.0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
+    while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
     id = reachy.head.rotate_to(0.5, 0.0, 0.0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
+    while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
     id = reachy.head.rotate_to(0.0, 0.0, 0.0, duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
-    while is_goto_finished(reachy, id, verbose=True) is False:
+    while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
 
 
@@ -745,7 +743,7 @@ def test_head_look_at(reachy: ReachySDK) -> None:
         if id.id < 0:
             print("The goto was rejected!")
             return
-        while is_goto_finished(reachy, id, verbose=True) is False:
+        while is_goto_finished(reachy, id) is False:
             time.sleep(0.1)
 
 
@@ -817,7 +815,7 @@ def head_test() -> None:
     reachy = ReachySDK(host="localhost")
 
     time.sleep(1.0)
-    if reachy.grpc_status == "disconnected":
+    if reachy._grpc_status == "disconnected":
         print("Failed to connect to Reachy, exiting...")
         return
 
