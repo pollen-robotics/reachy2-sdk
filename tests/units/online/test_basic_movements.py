@@ -40,7 +40,7 @@ def test_triangle(reachy_sdk_zeroed: ReachySDK) -> None:
 
     while not is_goto_finished(reachy_sdk_zeroed, m1):
         time.sleep(0.1)
-    
+
     current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, A, atol=1e-03)
 
@@ -49,7 +49,7 @@ def test_triangle(reachy_sdk_zeroed: ReachySDK) -> None:
 
     while not is_goto_finished(reachy_sdk_zeroed, m2):
         time.sleep(0.1)
-    
+
     current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, B, atol=1e-03)
 
@@ -58,7 +58,7 @@ def test_triangle(reachy_sdk_zeroed: ReachySDK) -> None:
 
     while not is_goto_finished(reachy_sdk_zeroed, m3):
         time.sleep(0.1)
-    
+
     current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, C, atol=1e-03)
 
@@ -67,7 +67,7 @@ def test_triangle(reachy_sdk_zeroed: ReachySDK) -> None:
 
     while not is_goto_finished(reachy_sdk_zeroed, m1):
         time.sleep(0.1)
-    
+
     current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, A, atol=1e-03)
 
@@ -95,7 +95,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.isclose(Quaternion.distance(q0, q1), 0, atol=1e-04)
 
     id = reachy_sdk_zeroed.head.rotate_to(roll=0, pitch=60, yaw=0, duration=1)
-    q2 = Quaternion(axis=[0, 1, 0], degrees=70) # 10 degrees between joint and cartesian spaces
+    q2 = Quaternion(axis=[0, 1, 0], degrees=70)  # 10 degrees between joint and cartesian spaces
 
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
