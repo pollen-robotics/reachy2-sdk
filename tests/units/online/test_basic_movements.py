@@ -106,9 +106,7 @@ def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
 @pytest.mark.online
 def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.head.turn_on()
-    print(reachy_sdk_zeroed.head.is_on())
-    print(reachy_sdk_zeroed.head.is_off())
-    q0 = Quaternion(axis=[1, 0, 0], angle=np.pi / 6.0)  # Rotate 30 about X
+    q0 = Quaternion(axis=[1, 0, 0], degrees=30)
     id = reachy_sdk_zeroed.head.orient(q0, duration=1)
 
     while not is_goto_finished(reachy_sdk_zeroed, id):
@@ -118,7 +116,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.isclose(Quaternion.distance(q0, q1), 0, atol=1e-04)
 
     id = reachy_sdk_zeroed.head.rotate_to(roll=0, pitch=60, yaw=0, duration=1)
-    q2 = Quaternion(axis=[0, 1, 0], angle=np.pi / 3.0)  # Rotate 60 about Y
+    q2 = Quaternion(axis=[0, 1, 0], degrees=70) # 10 degrees between joint and cartesian spaces
 
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
@@ -127,7 +125,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.isclose(Quaternion.distance(q2, q3), 0, atol=1e-04)
 
     id = reachy_sdk_zeroed.head.look_at(10000, 10000, 0, duration=1)
-    q4 = Quaternion(axis=[0, 0, 1], angle=np.pi / 4.0)  # Rotate 45 about Z
+    q4 = Quaternion(axis=[0, 0, 1], degrees=45)
 
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
@@ -136,13 +134,13 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.isclose(Quaternion.distance(q4, q5), 0, atol=1e-04)
 
     id = reachy_sdk_zeroed.head.look_at(10000, 0, -10000, duration=1)
-    q6 = Quaternion(axis=[0, 1, 0], angle=np.pi / 4.0)  # Rotate 45 about Y
+    q6 = Quaternion(axis=[0, 1, 0], degrees=45)
 
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
 
     q7 = reachy_sdk_zeroed.head.get_orientation()
-    assert np.isclose(Quaternion.distance(q6, q7), 0.0218, atol=1e-04)  # not 0 because head movement is limited
+    assert np.isclose(Quaternion.distance(q6, q7), 0, atol=1e-04)
 
 
 @pytest.mark.online
