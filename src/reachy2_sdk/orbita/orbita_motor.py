@@ -4,8 +4,7 @@ from typing import Any, Dict, List, Tuple
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
 
-from ..motors.register import Register
-from .utils import to_internal_position, to_position
+from .utils import to_internal_position, to_position, unwrapped_proto_value, unwrapped_pid_value
 
 
 class OrbitaMotor:
@@ -19,18 +18,6 @@ class OrbitaMotor:
         - its pid (RW)
     """
 
-    temperature = Register(readonly=True, type=FloatValue, label="temperature")
-    speed_limit = Register(
-        readonly=True,
-        type=FloatValue,
-        label="speed_limit",
-        conversion=(to_internal_position, to_position),
-    )
-    torque_limit = Register(readonly=True, type=FloatValue, label="torque_limit")
-    compliant = Register(readonly=True, type=BoolValue, label="compliant")
-
-    pid = Register(readonly=True, type=PIDGains, label="pid")
-
     def __init__(self, initial_state: Dict[str, Any], actuator: Any) -> None:
         """Initialize the motor with its initial state."""
         self._actuator = actuator
@@ -41,11 +28,39 @@ class OrbitaMotor:
         self._tmp_state: Dict[str, float | None] = initial_state.copy()
         self._tmp_pid: Tuple[float, float, float]
 
-        for field in dir(self):
-            value = getattr(self, field)
-            if isinstance(value, Register):
-                value.label = field
-                if not value.readonly:
-                    self._tmp_fields[field] = None
+        self._temperature = unwrapped_proto_value(initial_state['temperature'])
+        self._speed_limit = unwrapped_proto_value(initial_state['speed_limit'])
+        self._torque_limit = unwrapped_proto_value(initial_state['torque_limit'])
+        self._compliant = unwrapped_proto_value(initial_state['compliant'])
+
+        self._pid = unwrapped_pid_value(initial_state['pid'])
 
         self._register_needing_sync: List[str] = []
+
+    @property
+    def speed_limit(self) -> float:
+        return to_position(self._speed_limit)
+
+    @property
+    def temperature(self) -> float:
+        return self._temperature
+
+    @property
+    def torque_limit(self) -> float:
+        return self._torque_limit
+
+    @property
+    def compliant(self) -> float:
+        return self._compliant
+
+    @property
+    def pid(self) -> PIDGains:
+        return self._pid
+
+    def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
+        self._temperature = unwrapped_proto_value(new_state['temperature'])
+        self._speed_limit = unwrapped_proto_value(new_state['speed_limit'])
+        self._torque_limit = unwrapped_proto_value(new_state['torque_limit'])
+        self._compliant = unwrapped_proto_value(new_state['compliant'])
+
+        self._pid = unwrapped_pid_value(new_state['pid'])

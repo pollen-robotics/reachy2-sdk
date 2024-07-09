@@ -28,7 +28,6 @@ from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
 
-# from reachy2_sdk_api.dynamixel_motor_pb2 import DynamixelMotorsCommand
 from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 from reachy2_sdk_api.orbita3d_pb2 import Orbita3dsCommand
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
@@ -105,7 +104,6 @@ class ReachySDK(metaclass=Singleton):
         self._ready = threading.Event()
         self._pushed_2dcommand = threading.Event()
         self._pushed_3dcommand = threading.Event()
-        # self._pushed_dmcommand = threading.Event()
 
         try:
             self._get_info()
@@ -400,31 +398,6 @@ class ReachySDK(metaclass=Singleton):
         else:
             pass
 
-    # async def _poll_waiting_dmcommands(self) -> DynamixelMotorsCommand:
-    #     tasks = []
-
-    #     for part in self._enabled_parts.values():
-    #         for actuator in part._actuators.values():
-    #             if isinstance(actuator, DynamixelMotor):
-    #                 tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
-
-    #     if len(tasks) > 0:
-    #         await asyncio.wait(
-    #             tasks,
-    #             return_when=asyncio.FIRST_COMPLETED,
-    #         )
-
-    #         commands = []
-
-    #         for part in self._enabled_parts.values():
-    #             for actuator in part._actuators.values():
-    #                 if isinstance(actuator, DynamixelMotor) and actuator._need_sync.is_set():
-    #                     commands.append(actuator._pop_command())
-
-    #         return DynamixelMotorsCommand(cmd=commands)
-
-    #     else:
-    #         pass
 
     def _start_sync_in_bg(self) -> None:
         """Start the synchronization asyncio tasks with the robot in background."""
@@ -466,13 +439,11 @@ class ReachySDK(metaclass=Singleton):
         reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
         orbita2d_stub = Orbita2dServiceStub(async_channel)
         orbita3d_stub = Orbita3dServiceStub(async_channel)
-        # dynamixel_motor_stub = DynamixelMotorServiceStub(async_channel)
 
         try:
             await asyncio.gather(
                 self._stream_orbita2d_commands_loop(orbita2d_stub, freq=80),
                 self._stream_orbita3d_commands_loop(orbita3d_stub, freq=80),
-                # self._stream_dynamixel_motor_commands_loop(dynamixel_motor_stub, freq=100),
                 self._get_stream_update_loop(reachy_stub, freq=100),
                 self._wait_for_stop(),
             )
