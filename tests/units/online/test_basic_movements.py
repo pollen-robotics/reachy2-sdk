@@ -30,65 +30,44 @@ def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
 
 
 @pytest.mark.online
-def test_square(reachy_sdk_zeroed: ReachySDK) -> None:
+def test_triangle(reachy_sdk_zeroed: ReachySDK) -> None:
     # In A position, the effector is at (0.3, -0,4, -0.3) in the world frame
     # In B position, the effector is at (0.3, -0.4, 0) in the world frame
-    # In C position, the effector is at (0.3, -0.1, 0.0) in the world frame
-    # In D position, the effector is at (0.3, -0.1, -0.3) in the world frame
+    # In C position, the effector is at (0.3, -0.1, -0.3) in the world frame
 
-    # Going from A to B
-    for z in np.arange(-0.3, 0.01, 0.01):
-        target_pose = build_pose_matrix(0.3, -0.4, z)
-        ik = reachy_sdk_zeroed.r_arm.inverse_kinematics(target_pose)
+    A = build_pose_matrix(0.3, -0.4, -0.3)
+    m1 = reachy_sdk_zeroed.r_arm.goto_from_matrix(A)
 
-        for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
-            joint.goal_position = goal_pos
-
-    time.sleep(2)
+    while not is_goto_finished(reachy_sdk_zeroed, m1):
+        time.sleep(0.1)
+    
+    current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    assert np.allclose(current_pos, A, atol=1e-03)
 
     B = build_pose_matrix(0.3, -0.4, 0)
+    m2 = reachy_sdk_zeroed.r_arm.goto_from_matrix(B)
+
+    while not is_goto_finished(reachy_sdk_zeroed, m2):
+        time.sleep(0.1)
+    
     current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, B, atol=1e-03)
 
-    # Going from B to C
-    for y in np.arange(-0.4, -0.1, 0.01):
-        target_pose = build_pose_matrix(0.3, y, 0.0)
-        ik = reachy_sdk_zeroed.r_arm.inverse_kinematics(target_pose)
+    C = build_pose_matrix(0.3, -0.2, -0.3)
+    m3 = reachy_sdk_zeroed.r_arm.goto_from_matrix(C)
 
-        for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
-            joint.goal_position = goal_pos
-
-    time.sleep(2)
-
-    C = build_pose_matrix(0.3, -0.1, 0)
+    while not is_goto_finished(reachy_sdk_zeroed, m3):
+        time.sleep(0.1)
+    
     current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, C, atol=1e-03)
 
-    # Going from C to D
-    for z in np.arange(0.0, -0.31, -0.01):
-        target_pose = build_pose_matrix(0.3, -0.1, z)
-        ik = reachy_sdk_zeroed.r_arm.inverse_kinematics(target_pose)
-
-        for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
-            joint.goal_position = goal_pos
-
-    time.sleep(2)
-
-    D = build_pose_matrix(0.3, -0.1, -0.3)
-    current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
-    assert np.allclose(current_pos, D, atol=1e-03)
-
-    # Going from D to A
-    for y in np.arange(-0.1, -0.4, -0.01):
-        target_pose = build_pose_matrix(0.3, y, -0.3)
-        ik = reachy_sdk_zeroed.r_arm.inverse_kinematics(target_pose)
-
-        for joint, goal_pos in zip(reachy_sdk_zeroed.r_arm.joints.values(), ik):
-            joint.goal_position = goal_pos
-
-    time.sleep(2)
-
     A = build_pose_matrix(0.3, -0.4, -0.3)
+    m1 = reachy_sdk_zeroed.r_arm.goto_from_matrix(A)
+
+    while not is_goto_finished(reachy_sdk_zeroed, m1):
+        time.sleep(0.1)
+    
     current_pos = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(current_pos, A, atol=1e-03)
 
