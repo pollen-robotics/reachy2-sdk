@@ -194,7 +194,7 @@ class Orbita3d(Orbita):
 
         return command
 
-    def _update_with(self, new_state: Orbita3dState) -> None:
+    def _update_with(self, new_state: Orbita3dState) -> None:  # noqa: C901
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
         state: Dict[str, Dict[str, FloatValue]] = {}
 

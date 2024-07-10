@@ -10,9 +10,6 @@ from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
 from .orbita_motor import OrbitaMotor
-from .utils import wrapped_proto_value
-
-# from .utils import to_internal_position
 
 
 class Orbita(ABC):

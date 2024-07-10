@@ -4,11 +4,7 @@ from typing import Any, Dict, List, Tuple
 from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
 
-from .utils import (
-    to_position,
-    unwrapped_pid_value,
-    unwrapped_proto_value,
-)
+from .utils import to_position, unwrapped_pid_value, unwrapped_proto_value
 
 
 class OrbitaMotor:
