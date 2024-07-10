@@ -16,7 +16,7 @@ from reachy2_sdk.orbita.utils import to_position
 
 
 @pytest.mark.offline
-def test_class() -> None:
+def test_orbita2d() -> None:
     grpc_channel = grpc.insecure_channel("dummy:5050")
     compliance = BoolValue(value=True)
     present_position = Pose2d(axis_1=FloatValue(value=1), axis_2=FloatValue(value=2))
@@ -140,15 +140,14 @@ def test_class() -> None:
     assert orbita2d.pitch.goal_position == to_position(goal_position.axis_1.value)
     assert orbita2d.pitch.present_position == to_position(present_position.axis_1.value)
 
-    # pid not changed. testing against old values
     pid_set = orbita2d.get_pid()
-    assert pid_set["motor_1"][0] == pid.motor_1.p.value
-    assert pid_set["motor_1"][1] == pid.motor_1.i.value
-    assert pid_set["motor_1"][2] == pid.motor_1.d.value
+    assert pid_set["motor_1"][0] == pid_new.motor_1.p.value
+    assert pid_set["motor_1"][1] == pid_new.motor_1.i.value
+    assert pid_set["motor_1"][2] == pid_new.motor_1.d.value
 
-    assert pid_set["motor_2"][0] == pid.motor_2.p.value
-    assert pid_set["motor_2"][1] == pid.motor_2.i.value
-    assert pid_set["motor_2"][2] == pid.motor_2.d.value
+    assert pid_set["motor_2"][0] == pid_new.motor_2.p.value
+    assert pid_set["motor_2"][1] == pid_new.motor_2.i.value
+    assert pid_set["motor_2"][2] == pid_new.motor_2.d.value
 
     torques_set = orbita2d.get_torque_limit()
     assert torques_set["motor_1"] == torque_limit.motor_1.value
