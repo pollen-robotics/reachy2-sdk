@@ -638,7 +638,7 @@ class ReachySDK(metaclass=Singleton):
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.head is not None:
-            head_id = self.head.rotate_to(0, 0, 0, duration, interpolation_mode)
+            head_id = self.head.rotate_to(0, -10, 0, duration, interpolation_mode)
         if self.r_arm is not None:
             r_arm_id = self.r_arm.goto_joints([0, 0, 0, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
         if self.l_arm is not None:
