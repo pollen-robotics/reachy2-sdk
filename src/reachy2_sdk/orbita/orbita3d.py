@@ -227,5 +227,5 @@ class Orbita3d(Orbita):
         for name, axis in self._axis.items():
             axis._update_with(state[name])
 
-        for name, joint in self._joints.items():
-            joint._update_with(state[name])
+        for name, joints in self._joints.items():
+            joints._update_with(state[name])
