@@ -24,7 +24,7 @@ def to_internal_position(pos: float) -> Any:
         raise TypeError(f"Excepted one of: int, float, got {type(pos).__name__}")
 
 
-def unwrapped_proto_value(value: BoolValue | FloatValue | UInt32Value) -> bool | float | int:
+def unwrapped_proto_value(value: Any) -> Any:
     """Unwrap the internal value from gRPC protobuf to a simple Python value."""
     return value.value
 

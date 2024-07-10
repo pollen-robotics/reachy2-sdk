@@ -1,11 +1,10 @@
 """This module describes Orbita2d and Orbita3d motors."""
 from typing import Any, Dict, List, Tuple
 
-from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
+from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
 
 from .utils import (
-    to_internal_position,
     to_position,
     unwrapped_pid_value,
     unwrapped_proto_value,
@@ -48,15 +47,15 @@ class OrbitaMotor:
 
     @property
     def temperature(self) -> float:
-        return self._temperature
+        return float(self._temperature)
 
     @property
     def torque_limit(self) -> float:
-        return self._torque_limit
+        return float(self._torque_limit)
 
     @property
     def compliant(self) -> float:
-        return self._compliant
+        return float(self._compliant)
 
     @property
     def pid(self) -> PIDGains:

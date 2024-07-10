@@ -3,7 +3,7 @@ from typing import Dict
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
-from .utils import to_internal_position, to_position, unwrapped_proto_value
+from .utils import to_position, unwrapped_proto_value
 
 
 class OrbitaAxis:
@@ -28,7 +28,7 @@ class OrbitaAxis:
 
     @property
     def present_load(self) -> float:
-        return self._present_load
+        return float(self._present_load)
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
         self._present_speed = unwrapped_proto_value(new_state["present_speed"])
