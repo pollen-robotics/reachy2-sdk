@@ -1,4 +1,4 @@
-"""MobileBaseSDK package.
+"""Reachy MobileBase module.
 
 This package provides remote access (via socket) to the mobile base of a Reachy robot.
 You can have access to basic information from the mobile base such as the battery voltage
@@ -17,10 +17,21 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from numpy import deg2rad, rad2deg, round
-from reachy2_sdk_api import mobile_base_mobility_pb2 as mob_pb2
-from reachy2_sdk_api import mobile_base_mobility_pb2_grpc as mob_pb2_grpc
-from reachy2_sdk_api import mobile_base_utility_pb2 as util_pb2
-from reachy2_sdk_api import mobile_base_utility_pb2_grpc as util_pb2_grpc
+from reachy2_sdk_api.mobile_base_mobility_pb2 import (
+    DirectionVector,
+    GoToVector,
+    SetZuuuSafetyRequest,
+    TargetDirectionCommand,
+)
+from reachy2_sdk_api.mobile_base_mobility_pb2_grpc import MobileBaseUtilityServiceStub
+from reachy2_sdk_api.mobile_base_utility_pb2 import (
+    ControlModeCommand,
+    ControlModePossiblities,
+    MobileBaseState,
+    ZuuuModeCommand,
+    ZuuuModePossiblities,
+)
+from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseMobilityServiceStub
 
 from subparts.lidar import Lidar
 
@@ -45,8 +56,8 @@ class MobileBaseSDK:
         self._mobile_base_port = mobile_base_port
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._mobile_base_port}")
 
-        self._utility_stub = util_pb2_grpc.MobileBaseUtilityServiceStub(self._grpc_channel)
-        self._mobility_stub = mob_pb2_grpc.MobileBaseMobilityServiceStub(self._grpc_channel)
+        self._utility_stub = MobileBaseUtilityServiceStub(self._grpc_channel)
+        self._mobility_stub = MobileBaseMobilityServiceStub(self._grpc_channel)
 
         self._drive_mode = self._get_drive_mode().lower()
         self._control_mode = self._get_control_mode().lower()
@@ -71,13 +82,13 @@ class MobileBaseSDK:
             battery_voltage=self.battery_voltage,
         )
 
-    def _get_drive_mode(self) -> util_pb2.ZuuuModeCommand:
+    def _get_drive_mode(self) -> ZuuuModeCommand:
         mode_id = self._utility_stub.GetZuuuMode(Empty()).mode
-        return util_pb2.ZuuuModePossiblities.keys()[mode_id]
+        return ZuuuModePossiblities.keys()[mode_id]
 
-    def _get_control_mode(self) -> util_pb2.ControlModePossiblities:
+    def _get_control_mode(self) -> ControlModePossiblities:
         mode_id = self._utility_stub.GetControlMode(Empty()).mode
-        return util_pb2.ControlModePossiblities.keys()[mode_id]
+        return ControlModePossiblities.keys()[mode_id]
 
     @property
     def battery_voltage(self) -> float:
@@ -97,10 +108,10 @@ class MobileBaseSDK:
 
     def _set_drive_mode(self, mode: str) -> None:
         """Set the base's drive mode."""
-        all_drive_modes = [mode.lower() for mode in util_pb2.ZuuuModePossiblities.keys()][1:]
+        all_drive_modes = [mode.lower() for mode in ZuuuModePossiblities.keys()][1:]
         possible_drive_modes = [mode for mode in all_drive_modes if mode not in ("speed", "goto")]
         if mode in possible_drive_modes:
-            req = util_pb2.ZuuuModeCommand(mode=getattr(util_pb2.ZuuuModePossiblities, mode.upper()))
+            req = ZuuuModeCommand(mode=getattr(ZuuuModePossiblities, mode.upper()))
             self._utility_stub.SetZuuuMode(req)
             self._drive_mode = mode
         else:
@@ -108,9 +119,9 @@ class MobileBaseSDK:
 
     def _set_control_mode(self, mode: str) -> None:
         """Set the base's control mode."""
-        possible_control_modes = [mode.lower() for mode in util_pb2.ControlModePossiblities.keys()][1:]
+        possible_control_modes = [mode.lower() for mode in ControlModePossiblities.keys()][1:]
         if mode in possible_control_modes:
-            req = util_pb2.ControlModeCommand(mode=getattr(util_pb2.ControlModePossiblities, mode.upper()))
+            req = ControlModeCommand(mode=getattr(ControlModePossiblities, mode.upper()))
             self._utility_stub.SetControlMode(req)
             self._control_mode = mode
         else:
@@ -137,8 +148,8 @@ class MobileBaseSDK:
         if abs(rot_vel) > self._max_rot_vel:
             raise ValueError(f"The asbolute value of rot_vel should not be more than {self._max_rot_vel}!")
 
-        req = mob_pb2.TargetDirectionCommand(
-            direction=mob_pb2.DirectionVector(
+        req = TargetDirectionCommand(
+            direction=DirectionVector(
                 x=FloatValue(value=x_vel),
                 y=FloatValue(value=y_vel),
                 theta=FloatValue(value=deg2rad(rot_vel)),
@@ -206,7 +217,7 @@ class MobileBaseSDK:
             if abs(value) > self._max_xy_goto:
                 raise ValueError(f"The asbolute value of {pos} should not be more than {self._max_xy_goto}!")
 
-        req = mob_pb2.GoToVector(
+        req = GoToVector(
             x_goal=FloatValue(value=x),
             y_goal=FloatValue(value=y),
             theta_goal=FloatValue(value=deg2rad(theta)),
@@ -261,5 +272,8 @@ class MobileBaseSDK:
         return False
 
     def _set_safety(self, safety_on: bool) -> None:
-        req = mob_pb2.SetZuuuSafetyRequest(safety_on=BoolValue(value=safety_on))
+        req = SetZuuuSafetyRequest(safety_on=BoolValue(value=safety_on))
         self._utility_stub.SetZuuuSafety(req)
+
+    def _update_with(self, new_state: MobileBaseState) -> None:
+        pass

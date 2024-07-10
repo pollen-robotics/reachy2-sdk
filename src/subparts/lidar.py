@@ -13,12 +13,12 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from PIL import Image
-from reachy2_sdk_api import mobile_base_lidar_pb2_grpc as lidar_pb2_grpc
 from reachy2_sdk_api.mobile_base_lidar_pb2 import (
     LidarObstacleDetectionEnum,
     LidarObstacleDetectionStatus,
     LidarSafety,
 )
+from reachy2_sdk_api.mobile_base_lidar_pb2_grpc import MobileBaseLidarServiceStub
 
 
 class Lidar:
@@ -26,7 +26,7 @@ class Lidar:
 
     def __init__(self, grpc_channel: grpc.Channel) -> None:
         """Initialize the LIDAR class."""
-        self._stub = lidar_pb2_grpc.MobileBaseLidarServiceStub(grpc_channel)
+        self._stub = MobileBaseLidarServiceStub(grpc_channel)
 
         self._safety_enabled: bool
         self._safety_distance: float
