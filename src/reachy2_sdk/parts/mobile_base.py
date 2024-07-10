@@ -36,7 +36,7 @@ from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseMobilityServi
 from subparts.lidar import Lidar
 
 
-class MobileBaseSDK:
+class MobileBase:
     """The MobileBaseSDK class handles the connection with Reachy's mobile base.
 
     It holds:

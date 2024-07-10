@@ -22,7 +22,6 @@ from typing import Dict, List, Optional
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
-from mobile_base_sdk import MobileBaseSDK
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
@@ -39,6 +38,7 @@ from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
 from .parts.head import Head
+from .parts.mobile_base import MobileBase
 from .utils.custom_dict import CustomDict
 from .utils.singleton import Singleton
 from .utils.utils import (
@@ -87,7 +87,7 @@ class ReachySDK(metaclass=Singleton):
         self._l_arm: Optional[Arm] = None
         self._head: Optional[Head] = None
         self._cameras: Optional[CameraManager] = None
-        self._mobile_base: Optional[MobileBaseSDK] = None
+        self._mobile_base: Optional[MobileBase] = None
 
         self.connect()
 
@@ -198,7 +198,7 @@ class ReachySDK(metaclass=Singleton):
         return self._l_arm
 
     @property
-    def mobile_base(self) -> Optional[MobileBaseSDK]:
+    def mobile_base(self) -> Optional[MobileBase]:
         """Get Reachy's mobile base."""
         if self._mobile_base is None:
             self._logger.error("mobile_base does not exist with this configuration")
@@ -333,7 +333,7 @@ class ReachySDK(metaclass=Singleton):
                 self.info._disabled_parts.append("head")
 
         if self._robot.HasField("mobile_base"):
-            self._mobile_base = MobileBaseSDK(self._host)
+            self._mobile_base = MobileBase(self._host)
             self.info._set_mobile_base(self._mobile_base)
 
     async def _wait_for_stop(self) -> None:
