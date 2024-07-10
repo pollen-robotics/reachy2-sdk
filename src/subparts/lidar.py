@@ -24,13 +24,15 @@ from reachy2_sdk_api.mobile_base_lidar_pb2_grpc import MobileBaseLidarServiceStu
 class Lidar:
     """LIDAR class for mobile base SDK."""
 
-    def __init__(self, grpc_channel: grpc.Channel) -> None:
+    def __init__(self, initial_state: LidarObstacleDetectionStatus, grpc_channel: grpc.Channel) -> None:
         """Initialize the LIDAR class."""
         self._stub = MobileBaseLidarServiceStub(grpc_channel)
 
         self._safety_enabled: bool
         self._safety_distance: float
         self._critical_distance: float
+
+        self._obstacle_detection_status: str = LidarObstacleDetectionEnum.Name(initial_state.status)
 
         self._update_safety_info()
 
@@ -116,7 +118,7 @@ class Lidar:
 
         Can be either NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP or DETECTION_ERROR.
         """
-        return LidarObstacleDetectionEnum.Name(self._stub.GetZuuuSafety(Empty()).obstacle_detection_status.status)
+        return self._obstacle_detection_status
 
     def reset_safety_default_values(self) -> None:
         """Reset default distances values for safety detection.
@@ -127,3 +129,7 @@ class Lidar:
         """
         self.safety_critical_distance = 0.55
         self.safety_slowdown_distance = 0.7
+
+    def _update_with(self, new_lidar_detection: LidarObstacleDetectionStatus) -> None:
+        """Update the lidar info with a new state received from the gRPC server."""
+        self._obstacle_detection_status = LidarObstacleDetectionEnum.Name(new_lidar_detection.status)

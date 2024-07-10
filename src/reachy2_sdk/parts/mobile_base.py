@@ -9,7 +9,6 @@ in cartesian coordinates (x, y, theta) or directly send velocities (x_vel, y_vel
 import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
-from logging import getLogger
 from queue import Queue
 from typing import Dict, Optional
 
@@ -27,6 +26,9 @@ from reachy2_sdk_api.mobile_base_mobility_pb2_grpc import MobileBaseUtilityServi
 from reachy2_sdk_api.mobile_base_utility_pb2 import (
     ControlModeCommand,
     ControlModePossiblities,
+)
+from reachy2_sdk_api.mobile_base_utility_pb2 import MobileBase as MobileBase_proto
+from reachy2_sdk_api.mobile_base_utility_pb2 import (
     MobileBaseState,
     ZuuuModeCommand,
     ZuuuModePossiblities,
@@ -49,15 +51,15 @@ class MobileBase:
     If you encounter a problem when using the base, you have access to an emergency shutdown method.
     """
 
-    def __init__(self, host: str, mobile_base_port: int = 50051) -> None:
+    def __init__(
+        self,
+        mb_msg: MobileBase_proto,
+        initial_state: MobileBaseState,
+        grpc_channel: grpc.Channel,
+    ) -> None:
         """Set up the connection with the mobile base."""
-        self._logger = getLogger()
-        self._host = host
-        self._mobile_base_port = mobile_base_port
-        self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._mobile_base_port}")
-
-        self._utility_stub = MobileBaseUtilityServiceStub(self._grpc_channel)
-        self._mobility_stub = MobileBaseMobilityServiceStub(self._grpc_channel)
+        self._utility_stub = MobileBaseUtilityServiceStub(grpc_channel)
+        self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
 
         self._drive_mode = self._get_drive_mode().lower()
         self._control_mode = self._get_control_mode().lower()
@@ -66,7 +68,9 @@ class MobileBase:
         self._max_rot_vel = 180.0
         self._max_xy_goto = 1.0
 
-        self.lidar = Lidar(self._grpc_channel)
+        self.lidar = Lidar(initial_state.lidar_obstacle_detection_status, grpc_channel)
+
+        self._update_with(initial_state)
 
     def __repr__(self) -> str:
         """Clean representation of a mobile base."""
@@ -76,7 +80,6 @@ class MobileBase:
             " battery_voltage={battery_voltage}>"
         )
         return repr_template.format(
-            host=self._host,
             on=self.is_on(),
             lidar_safety_enabled=self.lidar.safety_enabled,
             battery_voltage=self.battery_voltage,
@@ -115,7 +118,7 @@ class MobileBase:
             self._utility_stub.SetZuuuMode(req)
             self._drive_mode = mode
         else:
-            self._logger.warning(f"Drive mode requested should be in {possible_drive_modes}!")
+            raise ValueError(f"Drive mode requested should be in {possible_drive_modes}!")
 
     def _set_control_mode(self, mode: str) -> None:
         """Set the base's control mode."""
@@ -125,7 +128,7 @@ class MobileBase:
             self._utility_stub.SetControlMode(req)
             self._control_mode = mode
         else:
-            self._logger.warning(f"Control mode requested should be in {possible_control_modes}!")
+            raise ValueError(f"Control mode requested should be in {possible_control_modes}!")
 
     def reset_odometry(self) -> None:
         """Reset the odometry."""
@@ -239,7 +242,8 @@ class MobileBase:
                 break
 
         if not arrived and self.lidar.obstacle_detection_status == "OBJECT_DETECTED_STOP":
-            self._logger.warning("Target not reached. Mobile base stopped because of obstacle.")
+            # Error type must be modified
+            raise ValueError("Target not reached. Mobile base stopped because of obstacle.")
 
     def _distance_to_goto_goal(self) -> Dict[str, float]:
         response = self._mobility_stub.DistanceToGoal(Empty())
@@ -276,4 +280,5 @@ class MobileBase:
         self._utility_stub.SetZuuuSafety(req)
 
     def _update_with(self, new_state: MobileBaseState) -> None:
-        pass
+        self._battery_level = new_state.battery_level.level.value
+        self.lidar._update_with(new_state.lidar_obstacle_detection_status)
