@@ -4,7 +4,12 @@ from typing import Any, Dict, List, Tuple
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
 
-from .utils import to_internal_position, to_position, unwrapped_proto_value, unwrapped_pid_value
+from .utils import (
+    to_internal_position,
+    to_position,
+    unwrapped_pid_value,
+    unwrapped_proto_value,
+)
 
 
 class OrbitaMotor:
@@ -28,12 +33,12 @@ class OrbitaMotor:
         self._tmp_state: Dict[str, float | None] = initial_state.copy()
         self._tmp_pid: Tuple[float, float, float]
 
-        self._temperature = unwrapped_proto_value(initial_state['temperature'])
-        self._speed_limit = unwrapped_proto_value(initial_state['speed_limit'])
-        self._torque_limit = unwrapped_proto_value(initial_state['torque_limit'])
-        self._compliant = unwrapped_proto_value(initial_state['compliant'])
+        self._temperature = unwrapped_proto_value(initial_state["temperature"])
+        self._speed_limit = unwrapped_proto_value(initial_state["speed_limit"])
+        self._torque_limit = unwrapped_proto_value(initial_state["torque_limit"])
+        self._compliant = unwrapped_proto_value(initial_state["compliant"])
 
-        self._pid = unwrapped_pid_value(initial_state['pid'])
+        self._pid = unwrapped_pid_value(initial_state["pid"])
 
         self._register_needing_sync: List[str] = []
 
@@ -58,9 +63,9 @@ class OrbitaMotor:
         return self._pid
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
-        self._temperature = unwrapped_proto_value(new_state['temperature'])
-        self._speed_limit = unwrapped_proto_value(new_state['speed_limit'])
-        self._torque_limit = unwrapped_proto_value(new_state['torque_limit'])
-        self._compliant = unwrapped_proto_value(new_state['compliant'])
+        self._temperature = unwrapped_proto_value(new_state["temperature"])
+        self._speed_limit = unwrapped_proto_value(new_state["speed_limit"])
+        self._torque_limit = unwrapped_proto_value(new_state["torque_limit"])
+        self._compliant = unwrapped_proto_value(new_state["compliant"])
 
-        self._pid = unwrapped_pid_value(new_state['pid'])
+        self._pid = unwrapped_pid_value(new_state["pid"])

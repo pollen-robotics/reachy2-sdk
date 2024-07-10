@@ -4,7 +4,6 @@ from typing import Any
 
 import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue, UInt32Value
-
 from reachy2_sdk_api.component_pb2 import PIDGains
 
 

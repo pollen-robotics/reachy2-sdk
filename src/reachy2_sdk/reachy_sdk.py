@@ -27,7 +27,6 @@ from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
-
 from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 from reachy2_sdk_api.orbita3d_pb2 import Orbita3dsCommand
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
@@ -398,7 +397,6 @@ class ReachySDK(metaclass=Singleton):
         else:
             pass
 
-
     def _start_sync_in_bg(self) -> None:
         """Start the synchronization asyncio tasks with the robot in background."""
         self._loop = asyncio.new_event_loop()
@@ -444,7 +442,7 @@ class ReachySDK(metaclass=Singleton):
             await asyncio.gather(
                 self._stream_orbita2d_commands_loop(orbita2d_stub, freq=80),
                 self._stream_orbita3d_commands_loop(orbita3d_stub, freq=80),
-                self._get_stream_update_loop(reachy_stub, freq=100),
+                self._get_stream_update_loop(reachy_stub, freq=1),
                 self._wait_for_stop(),
             )
         except ConnectionError:

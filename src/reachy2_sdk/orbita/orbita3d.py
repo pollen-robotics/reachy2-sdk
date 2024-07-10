@@ -18,6 +18,7 @@ from .orbita import Orbita
 from .orbita_axis import OrbitaAxis
 from .orbita_joint import OrbitaJoint
 from .orbita_motor import OrbitaMotor
+from .utils import unwrapped_proto_value
 
 
 class Orbita3d(Orbita):
@@ -72,7 +73,7 @@ class Orbita3d(Orbita):
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
-                self._state[field.name] = value
+                self._compliant = unwrapped_proto_value(value)
                 init_state["motor_1"][field.name] = value
                 init_state["motor_2"][field.name] = value
                 init_state["motor_3"][field.name] = value
@@ -199,7 +200,7 @@ class Orbita3d(Orbita):
 
         for field, value in new_state.ListFields():
             if field.name == "compliant":
-                self._state[field.name] = value
+                self._compliant = unwrapped_proto_value(value)
                 state["motor_1"][field.name] = value
                 state["motor_2"][field.name] = value
                 state["motor_3"][field.name] = value

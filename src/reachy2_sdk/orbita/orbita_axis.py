@@ -17,8 +17,8 @@ class OrbitaAxis:
     def __init__(self, initial_state: Dict[str, FloatValue]) -> None:
         """Initialize the axis with its initial state."""
 
-        self._present_speed = unwrapped_proto_value(initial_state['present_speed'])
-        self._present_load = unwrapped_proto_value(initial_state['present_load'])
+        self._present_speed = unwrapped_proto_value(initial_state["present_speed"])
+        self._present_load = unwrapped_proto_value(initial_state["present_load"])
 
         self._state = initial_state
 
@@ -31,5 +31,5 @@ class OrbitaAxis:
         return self._present_load
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
-        self._present_speed = unwrapped_proto_value(new_state['present_speed'])
-        self._present_load = unwrapped_proto_value(new_state['present_load'])
+        self._present_speed = unwrapped_proto_value(new_state["present_speed"])
+        self._present_load = unwrapped_proto_value(new_state["present_load"])

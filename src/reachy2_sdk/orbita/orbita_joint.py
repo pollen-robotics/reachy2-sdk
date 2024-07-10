@@ -1,10 +1,15 @@
 """This module describes Orbita2d and Orbita3d joints."""
-from typing import Any, Dict, List
 import asyncio
+from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
-from .utils import to_internal_position, to_position, unwrapped_proto_value, wrapped_proto_value
+from .utils import (
+    to_internal_position,
+    to_position,
+    unwrapped_proto_value,
+    wrapped_proto_value,
+)
 
 
 class OrbitaJoint:
@@ -21,8 +26,8 @@ class OrbitaJoint:
         self._state = initial_state
         self._tmp_state = initial_state.copy()
 
-        self._present_position = unwrapped_proto_value(initial_state['present_position'])
-        self._goal_position = unwrapped_proto_value(initial_state['goal_position'])
+        self._present_position = unwrapped_proto_value(initial_state["present_position"])
+        self._goal_position = unwrapped_proto_value(initial_state["goal_position"])
 
         self._register_needing_sync: List[str] = []
 
@@ -47,10 +52,10 @@ class OrbitaJoint:
     @goal_position.setter
     def goal_position(self, value: float | int) -> None:
         if isinstance(value, float) | isinstance(value, int):
-            self._tmp_state['goal_position'] = wrapped_proto_value(to_internal_position(value))
+            self._tmp_state["goal_position"] = wrapped_proto_value(to_internal_position(value))
 
             async def set_in_loop() -> None:
-                self._register_needing_sync.append('goal_position')
+                self._register_needing_sync.append("goal_position")
                 self._actuator._need_sync.set()
 
             fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._actuator._loop)
@@ -59,5 +64,5 @@ class OrbitaJoint:
             raise TypeError("goal_position must be a float or int")
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
-        self._present_position = unwrapped_proto_value(new_state['present_position'])
-        self._goal_position = unwrapped_proto_value(new_state['goal_position'])
+        self._present_position = unwrapped_proto_value(new_state["present_position"])
+        self._goal_position = unwrapped_proto_value(new_state["goal_position"])
