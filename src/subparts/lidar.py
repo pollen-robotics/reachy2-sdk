@@ -28,13 +28,11 @@ class Lidar:
         """Initialize the LIDAR class."""
         self._stub = MobileBaseLidarServiceStub(grpc_channel)
 
-        self._safety_enabled: bool
-        self._safety_distance: float
-        self._critical_distance: float
+        self._safety_enabled: bool = initial_state.safety_on.value
+        self._safety_distance: float = initial_state.safety_distance.value
+        self._critical_distance: float = initial_state.critical_distance.value
 
-        self._obstacle_detection_status: str = LidarObstacleDetectionEnum.Name(initial_state.status)
-
-        self._update_safety_info()
+        self._obstacle_detection_status: str = LidarObstacleDetectionEnum.Name(initial_state.obstacle_detection_status.status)
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
@@ -47,12 +45,6 @@ class Lidar:
         buf = io.BytesIO(uncompressed_bytes)
         self.map = Image.open(buf)
         return self.map
-
-    def _update_safety_info(self) -> None:
-        response = self._stub.GetZuuuSafety(Empty())
-        self._safety_distance = round(response.safety_distance.value, 2)
-        self._critical_distance = round(response.critical_distance.value, 2)
-        self._safety_enabled = response.safety_on.value
 
     @property
     def safety_slowdown_distance(self) -> float:
@@ -72,7 +64,6 @@ class Lidar:
                 safety_on=BoolValue(value=self._safety_enabled),
             )
         )
-        self._update_safety_info()
 
     @property
     def safety_critical_distance(self) -> float:
@@ -94,7 +85,6 @@ class Lidar:
                 safety_on=BoolValue(value=self._safety_enabled),
             )
         )
-        self._update_safety_info()
 
     @property
     def safety_enabled(self) -> bool:
@@ -110,7 +100,6 @@ class Lidar:
                 safety_on=BoolValue(value=value),
             )
         )
-        self._update_safety_info()
 
     @property
     def obstacle_detection_status(self) -> LidarObstacleDetectionStatus:
@@ -130,6 +119,10 @@ class Lidar:
         self.safety_critical_distance = 0.55
         self.safety_slowdown_distance = 0.7
 
-    def _update_with(self, new_lidar_detection: LidarObstacleDetectionStatus) -> None:
+    def _update_with(self, new_lidar_state: LidarSafety) -> None:
         """Update the lidar info with a new state received from the gRPC server."""
-        self._obstacle_detection_status = LidarObstacleDetectionEnum.Name(new_lidar_detection.status)
+        self._safety_enabled = new_lidar_state.safety_on.value
+        self._safety_distance = new_lidar_state.safety_distance.value
+        self._critical_distance = new_lidar_state.critical_distance.value
+
+        self._obstacle_detection_status = LidarObstacleDetectionEnum.Name(new_lidar_state.obstacle_detection_status.status)

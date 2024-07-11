@@ -61,14 +61,14 @@ class MobileBase:
         self._utility_stub = MobileBaseUtilityServiceStub(grpc_channel)
         self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
 
-        self._drive_mode = self._get_drive_mode().lower()
-        self._control_mode = self._get_control_mode().lower()
+        self._drive_mode: str = ZuuuModePossiblities.keys()[initial_state.zuuu_mode.mode].lower()
+        self._control_mode: str = ControlModePossiblities.keys()[initial_state.control_mode.mode].lower()
 
         self._max_xy_vel = 1.0
         self._max_rot_vel = 180.0
         self._max_xy_goto = 1.0
 
-        self.lidar = Lidar(initial_state.lidar_obstacle_detection_status, grpc_channel)
+        self.lidar = Lidar(initial_state.lidar_safety, grpc_channel)
 
         self._update_with(initial_state)
 
@@ -281,4 +281,6 @@ class MobileBase:
 
     def _update_with(self, new_state: MobileBaseState) -> None:
         self._battery_level = new_state.battery_level.level.value
-        self.lidar._update_with(new_state.lidar_obstacle_detection_status)
+        self.lidar._update_with(new_state.lidar_safety)
+        self._drive_mode = ZuuuModePossiblities.keys()[new_state.zuuu_mode.mode].lower()
+        self._control_mode = ControlModePossiblities.keys()[new_state.control_mode.mode].lower()
