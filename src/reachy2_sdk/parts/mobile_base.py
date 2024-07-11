@@ -16,13 +16,13 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from numpy import deg2rad, rad2deg, round
+from reachy2_sdk_api.mobile_base_lidar_pb2 import LidarSafety
 from reachy2_sdk_api.mobile_base_mobility_pb2 import (
     DirectionVector,
     GoToVector,
-    SetZuuuSafetyRequest,
     TargetDirectionCommand,
 )
-from reachy2_sdk_api.mobile_base_mobility_pb2_grpc import MobileBaseUtilityServiceStub
+from reachy2_sdk_api.mobile_base_mobility_pb2_grpc import MobileBaseMobilityServiceStub
 from reachy2_sdk_api.mobile_base_utility_pb2 import (
     ControlModeCommand,
     ControlModePossiblities,
@@ -33,7 +33,7 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
     ZuuuModeCommand,
     ZuuuModePossiblities,
 )
-from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseMobilityServiceStub
+from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseUtilityServiceStub
 
 from subparts.lidar import Lidar
 
@@ -276,7 +276,7 @@ class MobileBase:
         return False
 
     def _set_safety(self, safety_on: bool) -> None:
-        req = SetZuuuSafetyRequest(safety_on=BoolValue(value=safety_on))
+        req = LidarSafety(safety_on=BoolValue(value=safety_on))
         self._utility_stub.SetZuuuSafety(req)
 
     def _update_with(self, new_state: MobileBaseState) -> None:
