@@ -88,23 +88,6 @@ class Orbita(ABC):
     #     else:
     #         raise ValueError("pid should be of type Tuple[float, float, float]")
 
-    # def __setattr__(self, __name: str, __value: Any) -> None:
-    #     """Set the value of the register."""
-    #     if __name == "_compliant":
-    #         if not isinstance(__value, bool):
-    #             raise ValueError(f"Expected bool for compliant value, got {type(__value).__name__}")
-    #         # self._state["compliant"] = __value
-
-    #         async def set_in_loop() -> None:
-    #             self._register_needing_sync.append("compliant")
-    #             self._need_sync.set()
-
-    #         fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
-    #         fut.result()
-
-    #     else:
-    #         super().__setattr__(__name, __value)
-
     def get_speed_limit(self) -> Dict[str, float]:
         """Get speed_limit of all motors of the actuator"""
         return {motor_name: m.speed_limit for motor_name, m in self._motors.items()}
