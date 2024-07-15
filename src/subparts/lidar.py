@@ -6,13 +6,15 @@ Handles the LIDAR features:
     - set the critical distance
     - enable/disable the safety feature
 """
-import io
-import zlib
+import logging
+from typing import Optional
 
+import cv2
 import grpc
+import numpy as np
+import numpy.typing as npt
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-from PIL import Image
 from reachy2_sdk_api.mobile_base_lidar_pb2 import (
     LidarObstacleDetectionEnum,
     LidarObstacleDetectionStatus,
@@ -26,6 +28,7 @@ class Lidar:
 
     def __init__(self, initial_state: LidarObstacleDetectionStatus, grpc_channel: grpc.Channel) -> None:
         """Initialize the LIDAR class."""
+        self._logger = logging.getLogger(__name__)
         self._stub = MobileBaseLidarServiceStub(grpc_channel)
 
         self._safety_enabled: bool
@@ -40,13 +43,15 @@ class Lidar:
         """Clean representation of a Reachy."""
         return f"""<Lidar safety_enabled={self.safety_enabled}>"""
 
-    def get_map(self) -> Image.Image:
+    def get_map(self) -> Optional[npt.NDArray[np.uint8]]:
         """Get the current map of the environment."""
-        compressed_map = self._stub.GetLidarMap(Empty()).data
-        uncompressed_bytes = zlib.decompress(compressed_map)
-        buf = io.BytesIO(uncompressed_bytes)
-        self.map = Image.open(buf)
-        return self.map
+        compressed_map = self._stub.GetLidarMap(Empty())
+        if compressed_map.data == b"":
+            self._logger.error("No lidar map retrieved")
+            return None
+        np_data = np.frombuffer(compressed_map.data, np.uint8)
+        img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
+        return img  # type: ignore[no-any-return]
 
     def _update_safety_info(self) -> None:
         response = self._stub.GetZuuuSafety(Empty())
