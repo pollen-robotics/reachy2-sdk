@@ -333,7 +333,9 @@ class ReachySDK(metaclass=Singleton):
                 self.info._disabled_parts.append("head")
 
         if self._robot.HasField("mobile_base"):
-            self._mobile_base = MobileBase(self._robot.head, initial_state.mobile_base_state, self._grpc_channel)
+            self._mobile_base = MobileBase(
+                self._robot.head, initial_state.mobile_base_state, self._grpc_channel, self._goto_stub
+            )
             self.info._set_mobile_base(self._mobile_base)
 
     async def _wait_for_stop(self) -> None:

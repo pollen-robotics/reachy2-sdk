@@ -7,6 +7,7 @@ Handles all specific method to a Hand:
 """
 import grpc
 import numpy as np
+from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
 from reachy2_sdk_api.hand_pb2 import (
     HandPosition,
@@ -17,10 +18,19 @@ from reachy2_sdk_api.hand_pb2 import (
 from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
 from reachy2_sdk_api.part_pb2 import PartId
 
+from .part import Part
 
-class Hand:
-    def __init__(self, hand_msg: Hand_proto, initial_state: HandState, grpc_channel: grpc.Channel) -> None:
+
+class Hand(Part):
+    def __init__(
+        self,
+        hand_msg: Hand_proto,
+        initial_state: HandState,
+        grpc_channel: grpc.Channel,
+        goto_stub: GoToServiceStub,
+    ) -> None:
         """Set up the hand."""
+        super().__init__(hand_msg, grpc_channel, HandServiceStub(grpc_channel), goto_stub)
         self._hand_stub = HandServiceStub(grpc_channel)
 
         self._setup_hand(hand_msg, initial_state)
@@ -75,23 +85,13 @@ class Hand:
             raise RuntimeError("Gripper is off. Close request not sent.")
         self._hand_stub.CloseHand(self._part_id)
 
-    def turn_on(self) -> None:
-        """Turn all motors of the hand on.
-
-        All hand's motors will then be stiff.
-        """
-        self._hand_stub.TurnOn(self._part_id)
-
-    def turn_off(self) -> None:
-        """Turn all motors of the hand off.
-
-        All hand's motors will then be compliant.
-        """
-        self._hand_stub.TurnOff(self._part_id)
-
     def is_on(self) -> bool:
         """Get compliancy of the hand"""
         return not self._compliant
+
+    def is_off(self) -> bool:
+        """Get compliancy of the hand"""
+        return self._compliant
 
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state received from the gRPC server."""

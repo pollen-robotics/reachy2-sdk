@@ -29,15 +29,15 @@ from reachy2_sdk_api.head_pb2 import (
 )
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
-from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.orbita3d import Orbita3d
 from ..orbita.orbita_joint import OrbitaJoint
 from ..utils.custom_dict import CustomDict
 from ..utils.utils import get_grpc_interpolation_mode
+from .part import Part
 
 
-class Head:
+class Head(Part):
     """Head class.
 
     It exposes the neck orbita actuator at the base of the head.
@@ -53,10 +53,7 @@ class Head:
         goto_stub: GoToServiceStub,
     ) -> None:
         """Initialize the head with its actuators."""
-        self._grpc_channel = grpc_channel
-        self._goto_stub = goto_stub
-        self._head_stub = HeadServiceStub(grpc_channel)
-        self._part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
+        super().__init__(head_msg, grpc_channel, HeadServiceStub(grpc_channel), goto_stub)
 
         self._setup_head(head_msg, initial_state)
         self._actuators = {
@@ -101,7 +98,7 @@ class Head:
 
         It will return the quaternion (x, y, z, w).
         """
-        quat = self._head_stub.GetOrientation(self._part_id).q
+        quat = self._stub.GetOrientation(self._part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def get_joints_positions(self) -> List[float]:
@@ -198,27 +195,13 @@ class Head:
         response = self._goto_stub.GoToJoints(request)
         return response
 
-    def turn_on(self) -> None:
-        """Turn all motors of the part on.
-
-        All head's motors will then be stiff.
-        """
-        self._head_stub.TurnOn(self._part_id)
-
-    def turn_off(self) -> None:
-        """Turn all motors of the part off.
-
-        All head's motors will then be compliant.
-        """
-        self._head_stub.TurnOff(self._part_id)
-
     def set_torque_limit(self, value: int) -> None:
         """Choose percentage of torque max value applied as limit to the head."""
         req = TorqueLimitRequest(
             id=self._part_id,
             limit=value,
         )
-        self._head_stub.SetTorqueLimit(req)
+        self._stub.SetTorqueLimit(req)
 
     def set_speed_limit(self, value: int) -> None:
         """Choose percentage of speed max value applied as limit to the head."""
@@ -226,21 +209,7 @@ class Head:
             id=self._part_id,
             limit=value,
         )
-        self._head_stub.SetSpeedLimit(req)
-
-    def is_on(self) -> bool:
-        """Return True if all actuators of the arm are stiff"""
-        for actuator in self._actuators.values():
-            if not actuator.is_on():
-                return False
-        return True
-
-    def is_off(self) -> bool:
-        """Return True if all actuators of the arm are stiff"""
-        for actuator in self._actuators.values():
-            if actuator.is_on():
-                return False
-        return True
+        self._stub.SetSpeedLimit(req)
 
     def get_move_playing(self) -> GoToId:
         """Return the id of the goto currently playing on the head"""

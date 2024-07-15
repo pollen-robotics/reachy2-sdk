@@ -16,6 +16,7 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from numpy import deg2rad, rad2deg, round
+from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.mobile_base_lidar_pb2 import LidarSafety
 from reachy2_sdk_api.mobile_base_mobility_pb2 import (
     DirectionVector,
@@ -36,9 +37,10 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
 from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseUtilityServiceStub
 
 from ..subparts.lidar import Lidar
+from .part import Part
 
 
-class MobileBase:
+class MobileBase(Part):
     """The MobileBaseSDK class handles the connection with Reachy's mobile base.
 
     It holds:
@@ -56,9 +58,10 @@ class MobileBase:
         mb_msg: MobileBase_proto,
         initial_state: MobileBaseState,
         grpc_channel: grpc.Channel,
+        goto_stub: GoToServiceStub,
     ) -> None:
         """Set up the connection with the mobile base."""
-        self._utility_stub = MobileBaseUtilityServiceStub(grpc_channel)
+        super().__init__(mb_msg, grpc_channel, MobileBaseUtilityServiceStub(grpc_channel), goto_stub)
         self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
 
         self._drive_mode: str = ZuuuModePossiblities.keys()[initial_state.zuuu_mode.mode].lower()
@@ -93,7 +96,7 @@ class MobileBase:
     @property
     def odometry(self) -> Dict[str, float]:
         """Return the odometry of the base. x, y are in meters and theta in degree."""
-        response = self._utility_stub.GetOdometry(Empty())
+        response = self._stub.GetOdometry(Empty())
         odom = {
             "x": round(response.x.value, 3),
             "y": round(response.y.value, 3),
@@ -107,7 +110,7 @@ class MobileBase:
         possible_drive_modes = [mode for mode in all_drive_modes if mode not in ("speed", "goto")]
         if mode in possible_drive_modes:
             req = ZuuuModeCommand(mode=getattr(ZuuuModePossiblities, mode.upper()))
-            self._utility_stub.SetZuuuMode(req)
+            self._stub.SetZuuuMode(req)
             self._drive_mode = mode
         else:
             raise ValueError(f"Drive mode requested should be in {possible_drive_modes}!")
@@ -117,14 +120,14 @@ class MobileBase:
         possible_control_modes = [mode.lower() for mode in ControlModePossiblities.keys()][1:]
         if mode in possible_control_modes:
             req = ControlModeCommand(mode=getattr(ControlModePossiblities, mode.upper()))
-            self._utility_stub.SetControlMode(req)
+            self._stub.SetControlMode(req)
             self._control_mode = mode
         else:
             raise ValueError(f"Control mode requested should be in {possible_control_modes}!")
 
     def reset_odometry(self) -> None:
         """Reset the odometry."""
-        self._utility_stub.ResetOdometry(Empty())
+        self._stub.ResetOdometry(Empty())
         time.sleep(0.03)
 
     def set_speed(self, x_vel: float, y_vel: float, rot_vel: float) -> None:
@@ -267,7 +270,7 @@ class MobileBase:
 
     def _set_safety(self, safety_on: bool) -> None:
         req = LidarSafety(safety_on=BoolValue(value=safety_on))
-        self._utility_stub.SetZuuuSafety(req)
+        self._stub.SetZuuuSafety(req)
 
     def _update_with(self, new_state: MobileBaseState) -> None:
         self._battery_level = new_state.battery_level.level.value

@@ -37,7 +37,6 @@ from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
 from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
-from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
@@ -51,9 +50,10 @@ from ..utils.utils import (
     recompose_matrix,
 )
 from .hand import Hand
+from .part import Part
 
 
-class Arm:
+class Arm(Part):
     """Arm class used for both left/right arms.
 
     It exposes the kinematics functions for the arm:
@@ -73,10 +73,7 @@ class Arm:
 
         Connect to the arm's gRPC server stub and set up the arm's actuators.
         """
-        self._grpc_channel = grpc_channel
-        self._arm_stub = ArmServiceStub(grpc_channel)
-        self._goto_stub = goto_stub
-        self._part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
+        super().__init__(arm_msg, grpc_channel, ArmServiceStub(grpc_channel), goto_stub)
 
         self._setup_arm(arm_msg, initial_state)
         self._gripper: Optional[Hand] = None
@@ -116,7 +113,7 @@ class Arm:
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
-        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel)
+        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel, self._goto_stub)
 
     @property
     def shoulder(self) -> Orbita2d:
@@ -148,7 +145,7 @@ class Arm:
 
         All arm's motors will then be stiff.
         """
-        self._arm_stub.TurnOn(self._part_id)
+        super().turn_on()
         if self._gripper is not None:
             self._gripper.turn_on()
 
@@ -157,7 +154,7 @@ class Arm:
 
         All arm's motors will then be compliant.
         """
-        self._arm_stub.TurnOff(self._part_id)
+        super().turn_off()
         if self._gripper is not None:
             self._gripper.turn_off()
 
@@ -168,7 +165,7 @@ class Arm:
         """
         self.set_torque_limit(20)
         time.sleep(duration)
-        self._arm_stub.TurnOff(self._part_id)
+        super().turn_off()
         if self._gripper is not None:
             self._gripper.turn_off()
         time.sleep(0.2)
@@ -180,7 +177,7 @@ class Arm:
             id=self._part_id,
             limit=value,
         )
-        self._arm_stub.SetTorqueLimit(req)
+        self._stub.SetTorqueLimit(req)
 
     def set_speed_limit(self, value: int) -> None:
         """Choose percentage of speed max value applied as limit to the arms."""
@@ -188,22 +185,20 @@ class Arm:
             id=self._part_id,
             limit=value,
         )
-        self._arm_stub.SetSpeedLimit(req)
+        self._stub.SetSpeedLimit(req)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
-        for actuator in self._actuators.values():
-            if not actuator.is_on():
-                return False
+        if not super().is_on():
+            return False
         if self._gripper is not None and not self._gripper.is_on():
             return False
         return True
 
     def is_off(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
-        for actuator in self._actuators.values():
-            if actuator.is_on():
-                return False
+        if not super().is_off():
+            return False
         if self._gripper is not None and self._gripper.is_on():
             return False
         return True
@@ -237,7 +232,7 @@ class Arm:
                 raise ValueError(f"joints_positions should be length 7 (got {len(joints_positions)} instead)!")
             req_params["position"] = list_to_arm_position(joints_positions, degrees)
         req = ArmFKRequest(**req_params)
-        resp = self._arm_stub.ComputeArmFK(req)
+        resp = self._stub.ComputeArmFK(req)
         if not resp.success:
             raise ValueError(f"No solution found for the given joints ({joints_positions})!")
 
@@ -284,7 +279,7 @@ class Arm:
             req_params["q0"] = list_to_arm_position(present_joints_positions, degrees)
 
         req = ArmIKRequest(**req_params)
-        resp = self._arm_stub.ComputeArmIK(req)
+        resp = self._stub.ComputeArmIK(req)
 
         if not resp.success:
             raise ValueError(f"No solution found for the given target ({target})!")
@@ -396,7 +391,7 @@ class Arm:
                 id=self._part_id,
                 goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
             )
-            self._arm_stub.SendArmCartesianGoal(request)
+            self._stub.SendArmCartesianGoal(request)
             time.sleep(time_step)
 
         current_pose = self.forward_kinematics()
@@ -409,7 +404,7 @@ class Arm:
                     id=self._part_id,
                     goal_pose=Matrix4x4(data=target.flatten().tolist()),
                 )
-                self._arm_stub.SendArmCartesianGoal(request)
+                self._stub.SendArmCartesianGoal(request)
                 time.sleep(time_step)
 
             # Small delay to make sure the present position is correctly read
@@ -462,21 +457,9 @@ class Arm:
 
     def get_joints_positions(self) -> List[float]:
         """Return the current joints positions of the arm in degrees"""
-        response = self._arm_stub.GetJointPosition(self._part_id)
+        response = self._stub.GetJointPosition(self._part_id)
         positions = arm_position_to_list(response)
         return positions
-
-    # @property
-    # def joints_limits(self) -> ArmLimits:
-    #     """Get limits of all the part's joints"""
-    #     limits = self._arm_stub.GetJointsLimits(self._part_id)
-    #     return limits
-
-    # @property
-    # def temperatures(self) -> ArmTemperatures:
-    #     """Get temperatures of all the part's motors"""
-    #     temperatures = self._arm_stub.GetTemperatures(self._part_id)
-    #     return temperatures
 
     def _update_with(self, new_state: ArmState) -> None:
         """Update the arm with a newly received (partial) state received from the gRPC server."""
