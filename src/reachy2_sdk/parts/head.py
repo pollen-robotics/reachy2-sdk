@@ -257,6 +257,10 @@ class Head:
         response = self._goto_stub.CancelPartAllGoTo(self._part_id)
         return response
 
+    def send_goal_positions(self) -> None:
+        for actuator in self._actuators.values():
+            actuator.send_goal_positions()
+
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state received from the gRPC server."""
         self.neck._update_with(new_state.neck_state)

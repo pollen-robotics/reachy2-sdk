@@ -478,6 +478,10 @@ class Arm:
     #     temperatures = self._arm_stub.GetTemperatures(self._part_id)
     #     return temperatures
 
+    def send_goal_positions(self) -> None:
+        for actuator in self._actuators.values():
+            actuator.send_goal_positions()
+
     def _update_with(self, new_state: ArmState) -> None:
         """Update the arm with a newly received (partial) state received from the gRPC server."""
         self.shoulder._update_with(new_state.shoulder_state)
