@@ -13,6 +13,7 @@ from reachy2_sdk.reachy_sdk import ReachySDK
 def test_basic(reachy_sdk_zeroed: ReachySDK) -> None:
     goal_position = -90
     reachy_sdk_zeroed.r_arm.elbow.pitch.goal_position = goal_position
+    reachy_sdk_zeroed.send_goal_positions()
     time.sleep(1)
     assert reachy_sdk_zeroed.r_arm.elbow.pitch.present_position == goal_position
 

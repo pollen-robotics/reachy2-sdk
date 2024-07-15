@@ -34,6 +34,7 @@ def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
     reachy_sdk.cancel_all_moves()
     for joint in reachy_sdk.joints.values():
         joint.goal_position = 0
+    reachy_sdk.send_goal_positions()
 
     time.sleep(1)
 

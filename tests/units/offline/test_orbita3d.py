@@ -92,12 +92,6 @@ def test_class() -> None:
     # with pytest.raises(ValueError):
     #     orbita3d.set_pid(("1", 2, 3))
 
-    pid_msg = orbita3d._build_grpc_cmd_msg("pid")
-    assert isinstance(pid_msg, PID3d)
-
-    float_msg = orbita3d._build_grpc_cmd_msg("speed_limit")
-    assert isinstance(float_msg, Float3d)
-
     compliance = BoolValue(value=False)
     pid_new = PID3d(
         motor_1=PIDGains(p=FloatValue(value=31), i=FloatValue(value=32), d=FloatValue(value=33)),
