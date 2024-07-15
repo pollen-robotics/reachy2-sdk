@@ -615,7 +615,7 @@ class ReachySDK(metaclass=Singleton):
 
     def set_pose(
         self,
-        common_pose: str = "zero",
+        common_pose: str = "default",
         wait_for_moves_end: bool = True,
         duration: float = 2,
         interpolation_mode: str = "minimum_jerk",
@@ -626,7 +626,7 @@ class ReachySDK(metaclass=Singleton):
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the 0 commands.
         Otherwise, the 0 commands will be sent to a part when all gotos of its queue has been played.
         """
-        if common_pose not in ["zero", "elbow_90"]:
+        if common_pose not in ["default", "elbow_90"]:
             raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'zero' or 'elbow_90'")
         if common_pose == "elbow_90":
             elbow_pitch = -90
@@ -640,9 +640,9 @@ class ReachySDK(metaclass=Singleton):
         if self.head is not None:
             head_id = self.head.rotate_to(0, -10, 0, duration, interpolation_mode)
         if self.r_arm is not None:
-            r_arm_id = self.r_arm.goto_joints([0, 0, 0, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+            r_arm_id = self.r_arm.goto_joints([0, -10, -15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
         if self.l_arm is not None:
-            l_arm_id = self.l_arm.goto_joints([0, 0, 0, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+            l_arm_id = self.l_arm.goto_joints([0, 10, 15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
         ids = GoToHomeId(
             head=head_id,
             r_arm=r_arm_id,
