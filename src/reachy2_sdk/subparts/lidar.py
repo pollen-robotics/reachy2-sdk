@@ -26,7 +26,7 @@ from reachy2_sdk_api.mobile_base_lidar_pb2_grpc import MobileBaseLidarServiceStu
 class Lidar:
     """LIDAR class for mobile base SDK."""
 
-    def __init__(self, initial_state: LidarObstacleDetectionStatus, grpc_channel: grpc.Channel) -> None:
+    def __init__(self, initial_state: LidarSafety, grpc_channel: grpc.Channel) -> None:
         """Initialize the LIDAR class."""
         self._logger = logging.getLogger(__name__)
         self._stub = MobileBaseLidarServiceStub(grpc_channel)

@@ -85,18 +85,10 @@ class MobileBase:
             battery_voltage=self.battery_voltage,
         )
 
-    def _get_drive_mode(self) -> ZuuuModeCommand:
-        mode_id = self._utility_stub.GetZuuuMode(Empty()).mode
-        return ZuuuModePossiblities.keys()[mode_id]
-
-    def _get_control_mode(self) -> ControlModePossiblities:
-        mode_id = self._utility_stub.GetControlMode(Empty()).mode
-        return ControlModePossiblities.keys()[mode_id]
-
     @property
     def battery_voltage(self) -> float:
         """Return the battery voltage. Battery should be recharged if it reaches 24.5V or below."""
-        return float(round(self._utility_stub.GetBatteryLevel(Empty()).level.value, 1))
+        return float(round(self._battery_level, 1))
 
     @property
     def odometry(self) -> Dict[str, float]:
@@ -265,12 +257,10 @@ class MobileBase:
 
     def is_on(self) -> bool:
         """Return True if the mobile base is not compliant."""
-        self._drive_mode = self._get_drive_mode().lower()
         return not self._drive_mode == "free_wheel"
 
     def is_off(self) -> bool:
         """Return True if the mobile base is compliant."""
-        self._drive_mode = self._get_drive_mode().lower()
         if self._drive_mode == "free_wheel":
             return True
         return False
