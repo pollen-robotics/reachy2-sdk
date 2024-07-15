@@ -12,7 +12,7 @@ import zlib
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-from PIL.Image import Image
+from PIL import Image
 from reachy2_sdk_api.mobile_base_lidar_pb2 import (
     LidarObstacleDetectionEnum,
     LidarObstacleDetectionStatus,
@@ -40,7 +40,7 @@ class Lidar:
         """Clean representation of a Reachy."""
         return f"""<Lidar safety_enabled={self.safety_enabled}>"""
 
-    def get_map(self) -> Image:
+    def get_map(self) -> Image.Image:
         """Get the current map of the environment."""
         compressed_map = self._stub.GetLidarMap(Empty()).data
         uncompressed_bytes = zlib.decompress(compressed_map)
