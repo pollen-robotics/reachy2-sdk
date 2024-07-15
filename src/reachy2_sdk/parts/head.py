@@ -10,13 +10,7 @@ import grpc
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
-from reachy2_sdk_api.goto_pb2 import (
-    CartesianGoal,
-    GoToAck,
-    GoToId,
-    GoToRequest,
-    JointsGoal,
-)
+from reachy2_sdk_api.goto_pb2 import CartesianGoal, GoToId, GoToRequest, JointsGoal
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
@@ -24,20 +18,17 @@ from reachy2_sdk_api.head_pb2 import (
     NeckCartesianGoal,
     NeckJointGoal,
     NeckOrientation,
-    SpeedLimitRequest,
-    TorqueLimitRequest,
 )
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
 
 from ..orbita.orbita3d import Orbita3d
-from ..orbita.orbita_joint import OrbitaJoint
-from ..utils.custom_dict import CustomDict
 from ..utils.utils import get_grpc_interpolation_mode
-from .part import Part
+from .goto_based_part import GoToBasedPart
+from .joints_based_part import JointsBasedPart
 
 
-class Head(Part):
+class Head(GoToBasedPart, JointsBasedPart):
     """Head class.
 
     It exposes the neck orbita actuator at the base of the head.
@@ -53,7 +44,8 @@ class Head(Part):
         goto_stub: GoToServiceStub,
     ) -> None:
         """Initialize the head with its actuators."""
-        super().__init__(head_msg, grpc_channel, HeadServiceStub(grpc_channel), goto_stub)
+        GoToBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel), goto_stub)
+        JointsBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel))
 
         self._setup_head(head_msg, initial_state)
         self._actuators = {
@@ -83,15 +75,6 @@ class Head(Part):
     @property
     def neck(self) -> Orbita3d:
         return self._neck
-
-    @property
-    def joints(self) -> CustomDict[str, OrbitaJoint]:
-        """Get all the arm's joints."""
-        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
-        for actuator_name, actuator in self._actuators.items():
-            for joint in actuator._joints.values():
-                _joints[actuator_name + "." + joint._axis_type] = joint
-        return _joints
 
     def get_orientation(self) -> pyQuat:
         """Get the current orientation of the head.
@@ -193,37 +176,6 @@ class Head(Part):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
-        return response
-
-    def set_torque_limit(self, value: int) -> None:
-        """Choose percentage of torque max value applied as limit to the head."""
-        req = TorqueLimitRequest(
-            id=self._part_id,
-            limit=value,
-        )
-        self._stub.SetTorqueLimit(req)
-
-    def set_speed_limit(self, value: int) -> None:
-        """Choose percentage of speed max value applied as limit to the head."""
-        req = SpeedLimitRequest(
-            id=self._part_id,
-            limit=value,
-        )
-        self._stub.SetSpeedLimit(req)
-
-    def get_move_playing(self) -> GoToId:
-        """Return the id of the goto currently playing on the head"""
-        response = self._goto_stub.GetPartGoToPlaying(self._part_id)
-        return response
-
-    def get_moves_queue(self) -> List[GoToId]:
-        """Return the list of all goto ids waiting to be played on the head"""
-        response = self._goto_stub.GetPartGoToQueue(self._part_id)
-        return [goal_id for goal_id in response.goto_ids]
-
-    def cancel_all_moves(self) -> GoToAck:
-        """Ask the cancellation of all waiting goto on the head"""
-        response = self._goto_stub.CancelPartAllGoTo(self._part_id)
         return response
 
     def _update_with(self, new_state: HeadState) -> None:

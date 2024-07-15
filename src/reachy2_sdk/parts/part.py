@@ -5,7 +5,6 @@ import grpc
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import ArmState
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
-from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
 from reachy2_sdk_api.hand_pb2 import HandState
 from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
@@ -29,12 +28,10 @@ class Part(ABC):
         proto_msg: Arm_proto | Head_proto | Hand_proto | MobileBase_proto,
         grpc_channel: grpc.Channel,
         stub: ArmServiceStub | HeadServiceStub | HandServiceStub | MobileBaseUtilityServiceStub,
-        goto_stub: GoToServiceStub,
     ) -> None:
         """Initialize the common attributes."""
         self._grpc_channel = grpc_channel
         self._stub = stub
-        self._goto_stub = goto_stub
         self._part_id = PartId(id=proto_msg.part_id.id, name=proto_msg.part_id.name)
 
         self._actuators: Dict[str, Any] = {}

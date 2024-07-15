@@ -16,7 +16,6 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from numpy import deg2rad, rad2deg, round
-from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.mobile_base_lidar_pb2 import LidarSafety
 from reachy2_sdk_api.mobile_base_mobility_pb2 import (
     DirectionVector,
@@ -58,10 +57,9 @@ class MobileBase(Part):
         mb_msg: MobileBase_proto,
         initial_state: MobileBaseState,
         grpc_channel: grpc.Channel,
-        goto_stub: GoToServiceStub,
     ) -> None:
         """Set up the connection with the mobile base."""
-        super().__init__(mb_msg, grpc_channel, MobileBaseUtilityServiceStub(grpc_channel), goto_stub)
+        super().__init__(mb_msg, grpc_channel, MobileBaseUtilityServiceStub(grpc_channel))
         self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
 
         self._drive_mode: str = ZuuuModePossiblities.keys()[initial_state.zuuu_mode.mode].lower()

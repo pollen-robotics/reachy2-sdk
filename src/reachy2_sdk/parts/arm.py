@@ -22,17 +22,9 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmIKRequest,
     ArmJointGoal,
     ArmState,
-    SpeedLimitRequest,
-    TorqueLimitRequest,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
-from reachy2_sdk_api.goto_pb2 import (
-    CartesianGoal,
-    GoToAck,
-    GoToId,
-    GoToRequest,
-    JointsGoal,
-)
+from reachy2_sdk_api.goto_pb2 import CartesianGoal, GoToId, GoToRequest, JointsGoal
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
@@ -40,8 +32,6 @@ from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
-from ..orbita.orbita_joint import OrbitaJoint
-from ..utils.custom_dict import CustomDict
 from ..utils.utils import (
     arm_position_to_list,
     decompose_matrix,
@@ -49,11 +39,12 @@ from ..utils.utils import (
     list_to_arm_position,
     recompose_matrix,
 )
+from .goto_based_part import GoToBasedPart
 from .hand import Hand
-from .part import Part
+from .joints_based_part import JointsBasedPart
 
 
-class Arm(Part):
+class Arm(GoToBasedPart, JointsBasedPart):
     """Arm class used for both left/right arms.
 
     It exposes the kinematics functions for the arm:
@@ -73,7 +64,8 @@ class Arm(Part):
 
         Connect to the arm's gRPC server stub and set up the arm's actuators.
         """
-        super().__init__(arm_msg, grpc_channel, ArmServiceStub(grpc_channel), goto_stub)
+        GoToBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel), goto_stub)
+        JointsBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel))
 
         self._setup_arm(arm_msg, initial_state)
         self._gripper: Optional[Hand] = None
@@ -113,7 +105,7 @@ class Arm(Part):
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
-        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel, self._goto_stub)
+        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel)
 
     @property
     def shoulder(self) -> Orbita2d:
@@ -130,15 +122,6 @@ class Arm(Part):
     @property
     def gripper(self) -> Optional[Hand]:
         return self._gripper
-
-    @property
-    def joints(self) -> CustomDict[str, OrbitaJoint]:
-        """Get all the arm's joints."""
-        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
-        for actuator_name, actuator in self._actuators.items():
-            for joint in actuator._joints.values():
-                _joints[actuator_name + "." + joint._axis_type] = joint
-        return _joints
 
     def turn_on(self) -> None:
         """Turn all motors of the part on.
@@ -170,22 +153,6 @@ class Arm(Part):
             self._gripper.turn_off()
         time.sleep(0.2)
         self.set_torque_limit(100)
-
-    def set_torque_limit(self, value: int) -> None:
-        """Choose percentage of torque max value applied as limit to the arms."""
-        req = TorqueLimitRequest(
-            id=self._part_id,
-            limit=value,
-        )
-        self._stub.SetTorqueLimit(req)
-
-    def set_speed_limit(self, value: int) -> None:
-        """Choose percentage of speed max value applied as limit to the arms."""
-        req = SpeedLimitRequest(
-            id=self._part_id,
-            limit=value,
-        )
-        self._stub.SetSpeedLimit(req)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
@@ -438,21 +405,6 @@ class Arm(Part):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
-        return response
-
-    def get_move_playing(self) -> GoToId:
-        """Return the id of the goto currently playing on the arm"""
-        response = self._goto_stub.GetPartGoToPlaying(self._part_id)
-        return response
-
-    def get_moves_queue(self) -> List[GoToId]:
-        """Return the list of all goto ids waiting to be played on the arm"""
-        response = self._goto_stub.GetPartGoToQueue(self._part_id)
-        return [goal_id for goal_id in response.goto_ids]
-
-    def cancel_all_moves(self) -> GoToAck:
-        """Ask the cancellation of all waiting goto on the arm"""
-        response = self._goto_stub.CancelPartAllGoTo(self._part_id)
         return response
 
     def get_joints_positions(self) -> List[float]:

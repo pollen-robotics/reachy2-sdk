@@ -7,7 +7,6 @@ Handles all specific method to a Hand:
 """
 import grpc
 import numpy as np
-from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
 from reachy2_sdk_api.hand_pb2 import (
     HandPosition,
@@ -27,10 +26,9 @@ class Hand(Part):
         hand_msg: Hand_proto,
         initial_state: HandState,
         grpc_channel: grpc.Channel,
-        goto_stub: GoToServiceStub,
     ) -> None:
         """Set up the hand."""
-        super().__init__(hand_msg, grpc_channel, HandServiceStub(grpc_channel), goto_stub)
+        super().__init__(hand_msg, grpc_channel, HandServiceStub(grpc_channel))
         self._hand_stub = HandServiceStub(grpc_channel)
 
         self._setup_hand(hand_msg, initial_state)
