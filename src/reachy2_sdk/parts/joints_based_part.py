@@ -1,21 +1,18 @@
-from typing import List
 from abc import abstractmethod
+from typing import List
 
 import grpc
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
+from reachy2_sdk_api.arm_pb2 import SpeedLimitRequest, TorqueLimitRequest
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.mobile_base_utility_pb2 import MobileBase as MobileBase_proto
 from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseUtilityServiceStub
-from .part import Part
 
-from ..utils.custom_dict import CustomDict
 from ..orbita.orbita_joint import OrbitaJoint
-from reachy2_sdk_api.arm_pb2 import (
-    SpeedLimitRequest,
-    TorqueLimitRequest,
-)
+from ..utils.custom_dict import CustomDict
+from .part import Part
 
 
 class JointsBasedPart(Part):
