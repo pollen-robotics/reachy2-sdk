@@ -12,7 +12,7 @@ import zlib
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
-from PIL import Image
+from PIL.Image import Image
 from reachy2_sdk_api.mobile_base_lidar_pb2 import (
     LidarObstacleDetectionEnum,
     LidarObstacleDetectionStatus,
