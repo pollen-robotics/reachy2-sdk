@@ -3,11 +3,12 @@ from typing import Any, Dict
 
 from google.protobuf.wrappers_pb2 import FloatValue
 from grpc import Channel
-from reachy2_sdk_api.component_pb2 import PIDGains
+from reachy2_sdk_api.component_pb2 import ComponentId
 from reachy2_sdk_api.orbita2d_pb2 import (
     Axis,
     Float2d,
     Orbita2dCommand,
+    Orbita2dsCommand,
     Orbita2dState,
     PID2d,
     Pose2d,
@@ -74,6 +75,10 @@ class Orbita2d(Orbita):
             "axis_1": getattr(self, axis1_name),
             "axis_2": getattr(self, axis2_name),
         }
+        self._reversed_joints = {
+            getattr(self, axis1_name): "axis_1",
+            getattr(self, axis2_name): "axis_2",
+        }
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
         self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
@@ -115,75 +120,23 @@ class Orbita2d(Orbita):
                 raise AttributeError(f"can't set attribute '{__name}'")
         super().__setattr__(__name, __value)
 
-    def _build_grpc_cmd_msg(self, field: str) -> Pose2d | PID2d | Float2d:
-        """Build a gRPC message from the registers that need to be synced at the joints and
-        motors level. Registers can either be goal_position, pid or speed_limit/torque_limit.
-        """
-        if field == "goal_position":
-            req = {}
-            if len(self._joints["axis_1"]._register_needing_sync) != 0:
-                req["axis_1"] = self._joints["axis_1"]._tmp_state["goal_position"]
-                self._joints["axis_1"]._register_needing_sync.clear()
-            if len(self._joints["axis_2"]._register_needing_sync) != 0:
-                req["axis_2"] = self._joints["axis_2"]._tmp_state["goal_position"]
-                self._joints["axis_2"]._register_needing_sync.clear()
-            return Pose2d(**req)
+    def send_goal_positions(self) -> None:
+        req_pos = {}
+        for joint_axis in self._joints.keys():
+            if joint_axis in self._waiting_goal_positions:
+                req_pos[joint_axis] = FloatValue(value=self._waiting_goal_positions[joint_axis])
+        pose = Pose2d(**req_pos)
 
-        elif field == "pid":
-            return PID2d(
-                motor_1=PIDGains(
-                    p=self.__motor_1._state[field].p,
-                    i=self.__motor_1._state[field].i,
-                    d=self.__motor_1._state[field].d,
-                ),
-                motor_2=PIDGains(
-                    p=self.__motor_2._state[field].p,
-                    i=self.__motor_2._state[field].i,
-                    d=self.__motor_2._state[field].d,
-                ),
-            )
-
-        return Float2d(
-            motor_1=self.__motor_1._state[field],
-            motor_2=self.__motor_2._state[field],
-        )
-
-    def _build_grpc_cmd_msg_actuator(self, field: str) -> Float2d:
-        """Build a gRPC message from the registers that need to be synced at the actuator level.
-        Registers can either be compliant, pid, speed_limit or torque_limit."""
-        if field == "pid":
-            motor_1_gains = self.__motor_1._tmp_pid
-            motor_2_gains = self.__motor_2._tmp_pid
-            if type(motor_1_gains) is tuple and type(motor_2_gains) is tuple:
-                return PID2d(
-                    motor_1=PIDGains(
-                        p=FloatValue(value=motor_1_gains[0]),
-                        i=FloatValue(value=motor_1_gains[1]),
-                        d=FloatValue(value=motor_1_gains[2]),
-                    ),
-                    motor_2=PIDGains(
-                        p=FloatValue(value=motor_2_gains[0]),
-                        i=FloatValue(value=motor_2_gains[1]),
-                        d=FloatValue(value=motor_2_gains[2]),
-                    ),
+        command = Orbita2dsCommand(
+            cmd=[
+                Orbita2dCommand(
+                    id=ComponentId(id=self._id),
+                    goal_position=pose,
                 )
-
-        motor_1_value = self.__motor_1._tmp_fields[field]
-        motor_2_value = self.__motor_2._tmp_fields[field]
-        return Float2d(
-            motor_1=FloatValue(value=motor_1_value),
-            motor_2=FloatValue(value=motor_2_value),
+            ]
         )
-
-    def _pop_command(self) -> Orbita2dCommand:
-        """Create a gRPC command from the registers that need to be synced."""
-        values = self._make_command()
-
-        command = Orbita2dCommand(**values)
-
-        self._reset_registers()
-
-        return command
+        self._waiting_goal_positions = {}
+        self._stub.SendCommand(command)
 
     def _update_with(self, new_state: Orbita2dState) -> None:  # noqa: C901
         """Update the orbita with a newly received (partial) state received from the gRPC server."""

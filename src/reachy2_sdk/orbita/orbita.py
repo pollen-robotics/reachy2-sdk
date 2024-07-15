@@ -1,12 +1,15 @@
-import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import ComponentId
-from reachy2_sdk_api.orbita2d_pb2 import Float2d, Orbita2dState, PID2d, Pose2d
+from reachy2_sdk_api.orbita2d_pb2 import (
+    Orbita2dCommand,
+    Orbita2dsCommand,
+    Orbita2dState,
+)
 from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
-from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState
+from reachy2_sdk_api.orbita3d_pb2 import Orbita3dState
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
 from .orbita_motor import OrbitaMotor
@@ -50,10 +53,10 @@ class Orbita(ABC):
 
         self._compliant: bool
 
-        self._state: Dict[str, bool] = {}
-        self._register_needing_sync: List[str] = []
         self._joints: Dict[str, Any] = {}
+        self._reversed_joints: Dict[Any, str] = {}
         self._motors: Dict[str, OrbitaMotor] = {}
+        self._waiting_goal_positions: Dict[str, float] = {}
 
     @abstractmethod
     def _create_init_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
@@ -104,27 +107,13 @@ class Orbita(ABC):
         """Turn all motors of the orbita2d on.
         All orbita2d's motors will then be stiff.
         """
-        self._state["compliant"] = False
-
-        async def set_in_loop() -> None:
-            self._register_needing_sync.append("compliant")
-            self._need_sync.set()
-
-        fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
-        fut.result()
+        self._set_compliant(False)
 
     def turn_off(self) -> None:
         """Turn all motors of the orbita2d on.
         All orbita2d's motors will then be stiff.
         """
-        self._state["compliant"] = True
-
-        async def set_in_loop() -> None:
-            self._register_needing_sync.append("compliant")
-            self._need_sync.set()
-
-        fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
-        fut.result()
+        self._set_compliant(True)
 
     def is_on(self) -> Any:
         """Get compliancy of the actuator"""
@@ -135,72 +124,22 @@ class Orbita(ABC):
         """Get temperatures of all the motors of the actuator"""
         return {motor_name: m.temperature for motor_name, m in self._motors.items()}
 
-    # def _set_motors_fields(self, field: str, value: float) -> None:
-    #     """Set the value of the register for all motors of the actuator.
+    def _set_compliant(self, compliant: bool) -> None:
+        command = Orbita2dsCommand(
+            cmd=[
+                Orbita2dCommand(
+                    id=ComponentId(id=self._id),
+                    compliant=BoolValue(value=compliant),
+                )
+            ]
+        )
+        self._stub.SendCommand(command)
 
-    #     It is used to set pid, speed_limit and torque_limit.
-    #     """
-    #     for m in self._motors.values():
-    #         m._tmp_fields[field] = value
-
-    #     self._update_loop(field)
-
-    def _setup_sync_loop(self) -> None:
-        """Set up the async synchronisation loop.
-
-        The setup is done separately, as the async Event should be created in the same EventLoop than it will be used.
-
-        The _need_sync Event is used to inform the robot that some data need to be pushed to the real robot.
-        The _register_needing_sync stores a list of the register that need to be synced.
-        """
-        self._need_sync = asyncio.Event()
-        self._loop = asyncio.get_running_loop()
-
-    def _update_loop(self, field: str) -> None:
-        """Update the registers that need to be synced.
-
-        Set a threading event to inform the stream command thread that some data need to be pushed
-        to the robot.
-        """
-
-        async def set_in_loop() -> None:
-            self._register_needing_sync.append(field)
-            self._need_sync.set()
-
-        fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
-        fut.result()
+    def _ask_for_new_goal_position(self, axis_name: str, goal_position: float) -> None:
+        joint = getattr(self, axis_name)
+        axis = self._reversed_joints[joint]
+        self._waiting_goal_positions[axis] = goal_position
 
     @abstractmethod
-    def _build_grpc_cmd_msg_actuator(self, field: str) -> Float2d | Float3d:
+    def send_goal_positions(self) -> None:
         pass
-
-    @abstractmethod
-    def _build_grpc_cmd_msg(self, field: str) -> Pose2d | PID2d | Float2d | Float3d:
-        pass
-
-    def _make_command(self) -> Dict[str, Any]:
-        """Create a gRPC command from the registers that need to be synced."""
-        values = {
-            "id": ComponentId(id=self._id),
-        }
-
-        set_reg_to_update = set(self._register_needing_sync)
-        for reg in set_reg_to_update:
-            if reg == "compliant":
-                values["compliant"] = BoolValue(value=self._state["compliant"])
-            else:
-                values[reg] = self._build_grpc_cmd_msg_actuator(reg)
-
-        set_reg_to_update = set()
-        for obj in list(self._joints.values()) + list(self._motors.values()):
-            set_reg_to_update = set_reg_to_update.union(set(obj._register_needing_sync))
-        for reg in set_reg_to_update:
-            values[reg] = self._build_grpc_cmd_msg(reg)
-
-        return values
-
-    def _reset_registers(self) -> None:
-        self._register_needing_sync.clear()
-        for obj in list(self._motors.values()):
-            obj._register_needing_sync.clear()
-        self._need_sync.clear()

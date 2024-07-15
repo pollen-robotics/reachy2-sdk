@@ -1,15 +1,9 @@
 """This module describes Orbita2d and Orbita3d joints."""
-import asyncio
 from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
-from .utils import (
-    to_internal_position,
-    to_position,
-    unwrapped_proto_value,
-    wrapped_proto_value,
-)
+from .utils import to_internal_position, to_position, unwrapped_proto_value
 
 
 class OrbitaJoint:
@@ -23,8 +17,6 @@ class OrbitaJoint:
     def __init__(self, initial_state: Dict[str, FloatValue], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
         self._axis_type = axis_type
-        self._state = initial_state
-        self._tmp_state = initial_state.copy()
 
         self._present_position = unwrapped_proto_value(initial_state["present_position"])
         self._goal_position = unwrapped_proto_value(initial_state["goal_position"])
@@ -52,14 +44,7 @@ class OrbitaJoint:
     @goal_position.setter
     def goal_position(self, value: float | int) -> None:
         if isinstance(value, float) | isinstance(value, int):
-            self._tmp_state["goal_position"] = wrapped_proto_value(to_internal_position(value))
-
-            async def set_in_loop() -> None:
-                self._register_needing_sync.append("goal_position")
-                self._actuator._need_sync.set()
-
-            fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._actuator._loop)
-            fut.result()
+            self._actuator._ask_for_new_goal_position(self._axis_type, to_internal_position(value))
         else:
             raise TypeError("goal_position must be a float or int")
 
