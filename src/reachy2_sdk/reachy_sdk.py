@@ -620,14 +620,14 @@ class ReachySDK(metaclass=Singleton):
         duration: float = 2,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToHomeId:
-        """Send all joints to 0 in specified duration.
+        """Send all joints to standard positions in specified duration.
 
-        common_pose can be 'zero' or 'elbow_90', default is set to 'zero'.
-        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the 0 commands.
-        Otherwise, the 0 commands will be sent to a part when all gotos of its queue has been played.
+        common_pose can be 'default', arms being straight, or 'elbow_90'.
+        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
+        Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
         if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'zero' or 'elbow_90'")
+            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
         if common_pose == "elbow_90":
             elbow_pitch = -90
         else:
