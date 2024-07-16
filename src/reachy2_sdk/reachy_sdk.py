@@ -638,11 +638,20 @@ class ReachySDK(metaclass=Singleton):
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.head is not None:
-            head_id = self.head.rotate_to(0, -10, 0, duration, interpolation_mode)
+            if self.head.neck.is_on():
+                head_id = self.head.rotate_to(0, -10, 0, duration, interpolation_mode)
+            else:
+                self._logger.warning("head.neck is off. No command sent.")
         if self.r_arm is not None:
-            r_arm_id = self.r_arm.goto_joints([0, -10, -15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+            if self.r_arm.is_on():
+                r_arm_id = self.r_arm.goto_joints([0, -10, -15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+            else:
+                self._logger.warning("r_arm is off. No command sent.")
         if self.l_arm is not None:
-            l_arm_id = self.l_arm.goto_joints([0, 10, 15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+            if self.l_arm.is_on():
+                l_arm_id = self.l_arm.goto_joints([0, 10, 15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+            else:
+                self._logger.warning("l_arm is off. No command sent.")
         ids = GoToHomeId(
             head=head_id,
             r_arm=r_arm_id,
