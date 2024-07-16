@@ -627,30 +627,17 @@ class ReachySDK(metaclass=Singleton):
         """
         if common_pose not in ["default", "elbow_90"]:
             raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
-        if common_pose == "elbow_90":
-            elbow_pitch = -90
-        else:
-            elbow_pitch = 0
         head_id = None
         r_arm_id = None
         l_arm_id = None
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.head is not None:
-            if self.head.neck.is_on():
-                head_id = self.head.rotate_to(0, -10, 0, duration, interpolation_mode)
-            else:
-                self._logger.warning("head.neck is off. No command sent.")
+            head_id = self.head.set_pose(wait_for_moves_end, duration, interpolation_mode)
         if self.r_arm is not None:
-            if self.r_arm.is_on():
-                r_arm_id = self.r_arm.goto_joints([0, -10, -15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
-            else:
-                self._logger.warning("r_arm is off. No command sent.")
+            r_arm_id = self.r_arm.set_pose(common_pose, wait_for_moves_end, duration, interpolation_mode)
         if self.l_arm is not None:
-            if self.l_arm.is_on():
-                l_arm_id = self.l_arm.goto_joints([0, 10, 15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
-            else:
-                self._logger.warning("l_arm is off. No command sent.")
+            l_arm_id = self.l_arm.set_pose(common_pose, wait_for_moves_end, duration, interpolation_mode)
         ids = GoToHomeId(
             head=head_id,
             r_arm=r_arm_id,
