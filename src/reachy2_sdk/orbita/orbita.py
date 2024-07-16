@@ -69,12 +69,13 @@ class Orbita(ABC):
             s
         }\n>"""
 
-    # def set_speed_limit(self, speed_limit: float) -> None:
-    #     """Set a speed_limit on all motors of the actuator"""
-    #     if not isinstance(speed_limit, float | int):
-    #         raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
-    #     speed_limit = to_internal_position(speed_limit)
-    #     self._set_motors_fields("speed_limit", speed_limit)
+    @abstractmethod
+    def set_speed_limit(self, speed_limit: float | int) -> None:
+        pass
+
+    @abstractmethod
+    def set_torque_limit(self, speed_limit: float | int) -> None:
+        pass
 
     # def set_torque_limit(self, torque_limit: float) -> None:
     #     """Set a torque_limit on all motors of the actuator"""
