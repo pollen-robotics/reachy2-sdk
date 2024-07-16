@@ -10,7 +10,6 @@ You can also send joint commands, compute forward or inverse kinematics.
 # from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 # from .dynamixel_motor import DynamixelMotor
 
-
 import asyncio
 import atexit
 import threading
