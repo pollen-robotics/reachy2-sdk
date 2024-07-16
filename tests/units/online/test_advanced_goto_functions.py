@@ -363,9 +363,7 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_move_state(req_h2).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_move_state(req_r2).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_move_state(req_l2).goal_status == GoalStatus.STATUS_SUCCEEDED
-    assert np.isclose(
-        Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-03
-    )  # why not 1e-04 here?
+    assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-04)
     assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_r_arm, atol=1e-01)
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_l_arm, atol=1e-01)
 
