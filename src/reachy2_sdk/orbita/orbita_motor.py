@@ -30,7 +30,7 @@ class OrbitaMotor:
 
         self._temperature = unwrapped_proto_value(initial_state["temperature"])
         self._speed_limit = unwrapped_proto_value(initial_state["speed_limit"])
-        self._torque_limit = unwrapped_proto_value(initial_state["torque_limit"]) * 100
+        self._torque_limit = unwrapped_proto_value(initial_state["torque_limit"])
         self._compliant = unwrapped_proto_value(initial_state["compliant"])
 
         self._pid = unwrapped_pid_value(initial_state["pid"])
@@ -39,7 +39,7 @@ class OrbitaMotor:
 
     @property
     def speed_limit(self) -> float:
-        return to_position(self._speed_limit)
+        return float(self._speed_limit)
 
     @property
     def temperature(self) -> float:
@@ -58,7 +58,7 @@ class OrbitaMotor:
         return self._pid
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
-        self._temperature = unwrapped_proto_value(new_state["temperature"]) * 100
+        self._temperature = unwrapped_proto_value(new_state["temperature"])
         self._speed_limit = unwrapped_proto_value(new_state["speed_limit"])
         self._torque_limit = unwrapped_proto_value(new_state["torque_limit"])
         self._compliant = unwrapped_proto_value(new_state["compliant"])
