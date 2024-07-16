@@ -505,7 +505,7 @@ class Arm:
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.is_on():
-            if self._part_id.name == "r_arm" :
+            if self._part_id.name == "r_arm":
                 return self.goto_joints([0, -10, -15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
             else:
                 return self.goto_joints([0, 10, 15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
