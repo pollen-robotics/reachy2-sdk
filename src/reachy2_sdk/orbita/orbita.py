@@ -77,12 +77,6 @@ class Orbita(ABC):
     def set_torque_limit(self, speed_limit: float | int) -> None:
         pass
 
-    # def set_torque_limit(self, torque_limit: float) -> None:
-    #     """Set a torque_limit on all motors of the actuator"""
-    #     if not isinstance(torque_limit, float | int):
-    #         raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
-    #     self._set_motors_fields("torque_limit", torque_limit)
-
     # def set_pid(self, pid: Tuple[float, float, float]) -> None:
     #     """Set a pid value on all motors of the actuator"""
     #     if isinstance(pid, tuple) and len(pid) == 3 and all(isinstance(n, float | int) for n in pid):
