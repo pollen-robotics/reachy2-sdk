@@ -24,11 +24,11 @@ from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Ro
 
 from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import get_grpc_interpolation_mode
-from .goto_based_part import GoToBasedPart
+from .goto_based_part import IGoToBasedPart
 from .joints_based_part import JointsBasedPart
 
 
-class Head(GoToBasedPart, JointsBasedPart):
+class Head(JointsBasedPart, IGoToBasedPart):
     """Head class.
 
     It exposes the neck orbita actuator at the base of the head.
@@ -44,8 +44,8 @@ class Head(GoToBasedPart, JointsBasedPart):
         goto_stub: GoToServiceStub,
     ) -> None:
         """Initialize the head with its actuators."""
-        GoToBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel), goto_stub)
         JointsBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel))
+        IGoToBasedPart.__init__(self, self, goto_stub)
 
         self._setup_head(head_msg, initial_state)
         self._actuators = {

@@ -39,12 +39,12 @@ from ..utils.utils import (
     list_to_arm_position,
     recompose_matrix,
 )
-from .goto_based_part import GoToBasedPart
+from .goto_based_part import IGoToBasedPart
 from .hand import Hand
 from .joints_based_part import JointsBasedPart
 
 
-class Arm(GoToBasedPart, JointsBasedPart):
+class Arm(JointsBasedPart, IGoToBasedPart):
     """Arm class used for both left/right arms.
 
     It exposes the kinematics functions for the arm:
@@ -64,8 +64,8 @@ class Arm(GoToBasedPart, JointsBasedPart):
 
         Connect to the arm's gRPC server stub and set up the arm's actuators.
         """
-        GoToBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel), goto_stub)
         JointsBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel))
+        IGoToBasedPart.__init__(self, self, goto_stub)
 
         self._setup_arm(arm_msg, initial_state)
         self._gripper: Optional[Hand] = None
