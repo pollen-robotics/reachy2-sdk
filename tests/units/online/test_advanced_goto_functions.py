@@ -264,10 +264,10 @@ def test_get_move_joints_request(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
-    zero_r_arm = [0, -10, -15, 0, 0, 0, 0]
-    zero_l_arm = [0, 10, 15, 0, 0, 0, 0]
-    elbow_90_r_arm = [0, -10, -15, -90, 0, 0, 0]
-    elbow_90_l_arm = [0, 10, 15, -90, 0, 0, 0]
+    zero_r_arm = [0, -15, -15, 0, 0, 0, 0]
+    zero_l_arm = [0, 15, 15, 0, 0, 0, 0]
+    elbow_90_r_arm = [0, -15, -15, -90, 0, 0, 0]
+    elbow_90_l_arm = [0, 15, 15, -90, 0, 0, 0]
     zero_head = Quaternion(axis=[1, 0, 0], angle=0.0)
 
     # Test waiting for part's gotos to end

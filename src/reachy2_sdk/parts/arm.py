@@ -506,9 +506,9 @@ class Arm:
             self.cancel_all_moves()
         if self.is_on():
             if self._part_id.name == "r_arm":
-                return self.goto_joints([0, -10, -15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+                return self.goto_joints([0, -15, -15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
             else:
-                return self.goto_joints([0, 10, 15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+                return self.goto_joints([0, 15, 15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
         else:
             self._logger.warning(f"{self._part_id.name} is off. No command sent.")
         return GoToId(id=-1)
