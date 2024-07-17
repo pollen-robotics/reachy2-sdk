@@ -126,12 +126,12 @@ class Orbita(ABC):
         fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
         fut.result()
 
-    def is_on(self) -> Any:
+    def is_on(self) -> bool:
         """Get compliancy of the actuator"""
         return not self._compliant
 
     @property
-    def temperatures(self) -> Dict[str, Any]:
+    def temperatures(self) -> Dict[str, float]:
         """Get temperatures of all the motors of the actuator"""
         return {motor_name: m.temperature for motor_name, m in self._motors.items()}
 
