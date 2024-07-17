@@ -1,10 +1,11 @@
 """This module describes Orbita2d and Orbita3d motors."""
 from typing import Any, Dict, List, Tuple
 
+import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
 
-from .utils import to_position, unwrapped_pid_value, unwrapped_proto_value
+from .utils import unwrapped_pid_value, unwrapped_proto_value
 
 
 class OrbitaMotor:
@@ -29,8 +30,8 @@ class OrbitaMotor:
         self._tmp_pid: Tuple[float, float, float]
 
         self._temperature = unwrapped_proto_value(initial_state["temperature"])
-        self._speed_limit = unwrapped_proto_value(initial_state["speed_limit"])
-        self._torque_limit = unwrapped_proto_value(initial_state["torque_limit"])
+        self._speed_limit = unwrapped_proto_value(initial_state["speed_limit"]) * 100
+        self._torque_limit = unwrapped_proto_value(initial_state["torque_limit"]) * 100
         self._compliant = unwrapped_proto_value(initial_state["compliant"])
 
         self._pid = unwrapped_pid_value(initial_state["pid"])
@@ -39,7 +40,7 @@ class OrbitaMotor:
 
     @property
     def speed_limit(self) -> float:
-        return float(self._speed_limit)
+        return float(np.round(self._speed_limit, 3))
 
     @property
     def temperature(self) -> float:
@@ -47,7 +48,7 @@ class OrbitaMotor:
 
     @property
     def torque_limit(self) -> float:
-        return float(self._torque_limit)
+        return float(np.round(self._torque_limit, 3))
 
     @property
     def compliant(self) -> float:
@@ -59,8 +60,8 @@ class OrbitaMotor:
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
         self._temperature = unwrapped_proto_value(new_state["temperature"])
-        self._speed_limit = unwrapped_proto_value(new_state["speed_limit"])
-        self._torque_limit = unwrapped_proto_value(new_state["torque_limit"])
+        self._speed_limit = unwrapped_proto_value(new_state["speed_limit"]) * 100
+        self._torque_limit = unwrapped_proto_value(new_state["torque_limit"]) * 100
         self._compliant = unwrapped_proto_value(new_state["compliant"])
 
         self._pid = unwrapped_pid_value(new_state["pid"])
