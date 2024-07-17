@@ -16,9 +16,9 @@ from .part import Part
 
 
 class JointsBasedPart(Part):
-    """The Part class is an abstract class to represent any part of the robot.
+    """The JointsBasedPart class is an class to represent any part of the robot composed of controllable joints.
 
-    This class is meant to be derived by any part of the robot : Arm, Hand, Head, MobileBase
+    This class is meant to be derived by relevant parts of the robot : Arm, Head
     """
 
     def __init__(
