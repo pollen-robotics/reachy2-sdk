@@ -7,6 +7,7 @@ in cartesian coordinates (x, y, theta) or directly send velocities (x_vel, y_vel
 """
 
 import asyncio
+import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
@@ -58,6 +59,7 @@ class MobileBase:
         grpc_channel: grpc.Channel,
     ) -> None:
         """Set up the connection with the mobile base."""
+        self._logger = logging.getLogger(__name__)
         self._utility_stub = MobileBaseUtilityServiceStub(grpc_channel)
         self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
 
@@ -88,6 +90,9 @@ class MobileBase:
     @property
     def battery_voltage(self) -> float:
         """Return the battery voltage. Battery should be recharged if it reaches 24.5V or below."""
+        battery_level = float(round(self._battery_level, 1))
+        if battery_level < 24.5:
+            self._logger.warning(f"Low battery level: {battery_level}V. Consider recharging.")
         return float(round(self._battery_level, 1))
 
     @property
