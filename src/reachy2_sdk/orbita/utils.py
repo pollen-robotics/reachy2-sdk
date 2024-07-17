@@ -24,11 +24,6 @@ def to_internal_position(pos: float) -> Any:
         raise TypeError(f"Excepted one of: int, float, got {type(pos).__name__}")
 
 
-def unwrapped_proto_value(value: Any) -> Any:
-    """Unwrap the internal value from gRPC protobuf to a simple Python value."""
-    return value.value
-
-
 def unwrapped_pid_value(value: Any) -> Any:
     """Unwrap the internal pid value from gRPC protobuf to a Python value."""
     return (value.p.value, value.i.value, value.d.value)
