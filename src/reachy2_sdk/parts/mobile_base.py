@@ -35,7 +35,7 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
 )
 from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseUtilityServiceStub
 
-from ..subparts.lidar import Lidar
+from ..sensors.lidar import Lidar
 
 
 class MobileBase:
