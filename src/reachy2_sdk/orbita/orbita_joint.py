@@ -44,7 +44,7 @@ class OrbitaJoint:
     @goal_position.setter
     def goal_position(self, value: float | int) -> None:
         if isinstance(value, float) | isinstance(value, int):
-            self._actuator._ask_for_new_goal_position(self._axis_type, to_internal_position(value))
+            self._actuator._set_outgoing_goal_position(self._axis_type, to_internal_position(value))
         else:
             raise TypeError("goal_position must be a float or int")
 

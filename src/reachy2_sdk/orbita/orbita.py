@@ -56,7 +56,7 @@ class Orbita(ABC):
         self._joints: Dict[str, Any] = {}
         self._reversed_joints: Dict[Any, str] = {}
         self._motors: Dict[str, OrbitaMotor] = {}
-        self._waiting_goal_positions: Dict[str, float] = {}
+        self._outgoing_goal_positions: Dict[str, float] = {}
 
     @abstractmethod
     def _create_init_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
@@ -135,10 +135,10 @@ class Orbita(ABC):
         )
         self._stub.SendCommand(command)
 
-    def _ask_for_new_goal_position(self, axis_name: str, goal_position: float) -> None:
+    def _set_outgoing_goal_position(self, axis_name: str, goal_position: float) -> None:
         joint = getattr(self, axis_name)
         axis = self._reversed_joints[joint]
-        self._waiting_goal_positions[axis] = goal_position
+        self._outgoing_goal_positions[axis] = goal_position
 
     @abstractmethod
     def send_goal_positions(self) -> None:

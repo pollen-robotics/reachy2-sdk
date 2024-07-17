@@ -18,7 +18,6 @@ def test_cancel_move_by_id(reachy_sdk_zeroed: ReachySDK) -> None:
     assert cancel.ack
 
     # 40*2/10 -> 8° ideally. but timing is not precise
-    print(reachy_sdk_zeroed.head.neck.pitch.present_position)
     assert np.isclose(reachy_sdk_zeroed.head.neck.pitch.present_position, 8, atol=1)
     assert np.isclose(reachy_sdk_zeroed.head.neck.roll.present_position, 0)
     assert np.isclose(reachy_sdk_zeroed.head.neck.yaw.present_position, 0)
