@@ -9,10 +9,7 @@ from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
-from ..motors.register import Register
 from .orbita_motor import OrbitaMotor
-
-# from .utils import to_internal_position
 
 
 class Orbita(ABC):
@@ -38,8 +35,6 @@ class Orbita(ABC):
     This class is meant to be derived by Orbita2d and Orbita3d
     """
 
-    _compliant = Register(readonly=False, type=BoolValue, label="compliant")
-
     def __init__(
         self,
         uid: int,
@@ -52,6 +47,8 @@ class Orbita(ABC):
         self._id = uid
         self._orbita_type = orbita_type
         self._stub = stub
+
+        self._compliant: bool
 
         self._state: Dict[str, bool] = {}
         self._register_needing_sync: List[str] = []
@@ -107,39 +104,36 @@ class Orbita(ABC):
         """Turn all motors of the orbita2d on.
         All orbita2d's motors will then be stiff.
         """
-        self._compliant = False
+        self._state["compliant"] = False
+
+        async def set_in_loop() -> None:
+            self._register_needing_sync.append("compliant")
+            self._need_sync.set()
+
+        fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
+        fut.result()
 
     def turn_off(self) -> None:
         """Turn all motors of the orbita2d on.
         All orbita2d's motors will then be stiff.
         """
-        self._compliant = True
+        self._state["compliant"] = True
 
-    def is_on(self) -> Any:
+        async def set_in_loop() -> None:
+            self._register_needing_sync.append("compliant")
+            self._need_sync.set()
+
+        fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
+        fut.result()
+
+    def is_on(self) -> bool:
         """Get compliancy of the actuator"""
         return not self._compliant
 
     @property
-    def temperatures(self) -> Dict[str, Register]:
+    def temperatures(self) -> Dict[str, float]:
         """Get temperatures of all the motors of the actuator"""
         return {motor_name: m.temperature for motor_name, m in self._motors.items()}
-
-    def __setattr__(self, __name: str, __value: Any) -> None:
-        """Set the value of the register."""
-        if __name == "_compliant":
-            if not isinstance(__value, bool):
-                raise ValueError(f"Expected bool for compliant value, got {type(__value).__name__}")
-            self._state["compliant"] = __value
-
-            async def set_in_loop() -> None:
-                self._register_needing_sync.append("compliant")
-                self._need_sync.set()
-
-            fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
-            fut.result()
-
-        else:
-            super().__setattr__(__name, __value)
 
     # def _set_motors_fields(self, field: str, value: float) -> None:
     #     """Set the value of the register for all motors of the actuator.

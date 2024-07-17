@@ -137,19 +137,18 @@ def test_class() -> None:
     assert orbita3d.yaw.goal_position == to_position(goal_rot.rpy.yaw.value)
     assert orbita3d.yaw.present_position == to_position(present_rot.rpy.yaw.value)
 
-    # pid not changed. testing against old values
     pid_set = orbita3d.get_pid()
-    assert pid_set["motor_1"][0] == pid.motor_1.p.value
-    assert pid_set["motor_1"][1] == pid.motor_1.i.value
-    assert pid_set["motor_1"][2] == pid.motor_1.d.value
+    assert pid_set["motor_1"][0] == pid_new.motor_1.p.value
+    assert pid_set["motor_1"][1] == pid_new.motor_1.i.value
+    assert pid_set["motor_1"][2] == pid_new.motor_1.d.value
 
-    assert pid_set["motor_2"][0] == pid.motor_2.p.value
-    assert pid_set["motor_2"][1] == pid.motor_2.i.value
-    assert pid_set["motor_2"][2] == pid.motor_2.d.value
+    assert pid_set["motor_2"][0] == pid_new.motor_2.p.value
+    assert pid_set["motor_2"][1] == pid_new.motor_2.i.value
+    assert pid_set["motor_2"][2] == pid_new.motor_2.d.value
 
-    assert pid_set["motor_3"][0] == pid.motor_3.p.value
-    assert pid_set["motor_3"][1] == pid.motor_3.i.value
-    assert pid_set["motor_3"][2] == pid.motor_3.d.value
+    assert pid_set["motor_3"][0] == pid_new.motor_3.p.value
+    assert pid_set["motor_3"][1] == pid_new.motor_3.i.value
+    assert pid_set["motor_3"][2] == pid_new.motor_3.d.value
 
     torques_set = orbita3d.get_torque_limit()
     assert torques_set["motor_1"] == torque_limit.motor_1.value

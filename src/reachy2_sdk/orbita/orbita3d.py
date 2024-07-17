@@ -72,7 +72,7 @@ class Orbita3d(Orbita):
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
-                self._state[field.name] = value
+                self._compliant = value.value
                 init_state["motor_1"][field.name] = value
                 init_state["motor_2"][field.name] = value
                 init_state["motor_3"][field.name] = value
@@ -193,23 +193,38 @@ class Orbita3d(Orbita):
 
         return command
 
-    def _update_with(self, new_state: Orbita3dState) -> None:
+    def _update_with(self, new_state: Orbita3dState) -> None:  # noqa: C901
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
+        state: Dict[str, Dict[str, FloatValue]] = {}
+
         for field, value in new_state.ListFields():
             if field.name == "compliant":
-                self._state[field.name] = value
-                for m in self._motors.values():
-                    m._state[field.name] = value
+                self._compliant = value.value
+                state["motor_1"][field.name] = value
+                state["motor_2"][field.name] = value
+                state["motor_3"][field.name] = value
             else:
                 if isinstance(value, Rotation3d):
-                    self.roll._state[field.name] = value.rpy.roll
-                    self.pitch._state[field.name] = value.rpy.pitch
-                    self.yaw._state[field.name] = value.rpy.yaw
-                if isinstance(value, Float3d):
+                    for joint in ["roll", "pitch", "yaw"]:
+                        if joint not in state:
+                            state[joint] = {}
+                        state[joint][field.name] = getattr(value.rpy, joint)
+                if isinstance(value, Float3d | PID3d):
                     for motor, val in value.ListFields():
-                        m = self._motors[motor.name]
-                        m._state[field.name] = val
+                        if motor.name not in state:
+                            state[motor.name] = {}
+                        state[motor.name][field.name] = val
                 if isinstance(value, Vector3d):
                     for axis, val in value.ListFields():
-                        a = self._axis[axis.name]
-                        a._state[field.name] = val
+                        if axis.name not in state:
+                            state[axis.name] = {}
+                        state[axis.name][field.name] = val
+
+        for name, motor in self._motors.items():
+            motor._update_with(state[name])
+
+        for name, axis in self._axis.items():
+            axis._update_with(state[name])
+
+        for name, joints in self._joints.items():
+            joints._update_with(state[name])

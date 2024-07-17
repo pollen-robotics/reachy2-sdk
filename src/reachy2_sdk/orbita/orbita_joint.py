@@ -1,10 +1,10 @@
 """This module describes Orbita2d and Orbita3d joints."""
+import asyncio
 from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
-from ..motors.register import Register
-from .utils import to_internal_position, to_position
+from .utils import to_internal_position, to_position, wrapped_proto_value
 
 
 class OrbitaJoint:
@@ -15,29 +15,14 @@ class OrbitaJoint:
         - its goal_position (RW)
     """
 
-    present_position = Register(
-        readonly=True,
-        type=FloatValue,
-        label="present_position",
-        conversion=(to_internal_position, to_position),
-    )
-    goal_position = Register(
-        readonly=False,
-        type=FloatValue,
-        label="goal_position",
-        conversion=(to_internal_position, to_position),
-    )
-
     def __init__(self, initial_state: Dict[str, FloatValue], axis_type: str, actuator: Any) -> None:
         self._actuator = actuator
         self._axis_type = axis_type
         self._state = initial_state
         self._tmp_state = initial_state.copy()
 
-        for field in dir(self):
-            value = getattr(self, field)
-            if isinstance(value, Register):
-                value.label = field
+        self._present_position = initial_state["present_position"].value
+        self._goal_position = initial_state["goal_position"].value
 
         self._register_needing_sync: List[str] = []
 
@@ -50,3 +35,29 @@ class OrbitaJoint:
             present_position=self.present_position,
             goal_position=self.goal_position,
         )
+
+    @property
+    def present_position(self) -> float:
+        return to_position(self._present_position)
+
+    @property
+    def goal_position(self) -> float:
+        return to_position(self._goal_position)
+
+    @goal_position.setter
+    def goal_position(self, value: float | int) -> None:
+        if isinstance(value, float) | isinstance(value, int):
+            self._tmp_state["goal_position"] = wrapped_proto_value(to_internal_position(value))
+
+            async def set_in_loop() -> None:
+                self._register_needing_sync.append("goal_position")
+                self._actuator._need_sync.set()
+
+            fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._actuator._loop)
+            fut.result()
+        else:
+            raise TypeError("goal_position must be a float or int")
+
+    def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
+        self._present_position = new_state["present_position"].value
+        self._goal_position = new_state["goal_position"].value

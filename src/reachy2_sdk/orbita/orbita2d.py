@@ -87,7 +87,7 @@ class Orbita2d(Orbita):
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
-                self._state[field.name] = value
+                self._compliant = value.value
                 init_state["motor_1"][field.name] = value
                 init_state["motor_2"][field.name] = value
             else:
@@ -184,22 +184,37 @@ class Orbita2d(Orbita):
 
         return command
 
-    def _update_with(self, new_state: Orbita2dState) -> None:
+    def _update_with(self, new_state: Orbita2dState) -> None:  # noqa: C901
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
+        state: Dict[str, Dict[str, FloatValue]] = {}
+
         for field, value in new_state.ListFields():
             if field.name == "compliant":
-                self._state[field.name] = value
-                for m in self._motors.values():
-                    m._state[field.name] = value
+                self._compliant = value.value
+                state["motor_1"][field.name] = value
+                state["motor_2"][field.name] = value
             else:
                 if isinstance(value, Pose2d):
-                    for joint, val in value.ListFields():
-                        self._joints[joint.name]._state[field.name] = val
-
-                if isinstance(value, Float2d):
+                    for axis, val in value.ListFields():
+                        if axis.name not in state:
+                            state[axis.name] = {}
+                        state[axis.name][field.name] = val
+                if isinstance(value, Float2d | PID2d):
                     for motor, val in value.ListFields():
-                        self._motors[motor.name]._state[field.name] = val
-
+                        if motor.name not in state:
+                            state[motor.name] = {}
+                        state[motor.name][field.name] = val
                 if isinstance(value, Vector2d):
                     for axis, val in value.ListFields():
-                        self._axis[axis.name]._state[field.name] = val
+                        if axis.name not in state:
+                            state[axis.name] = {}
+                        state[axis.name][field.name] = val
+
+        for name, motor in self._motors.items():
+            motor._update_with(state[name])
+
+        for name, axis in self._axis.items():
+            axis._update_with(state[name])
+
+        for name, joint in self._joints.items():
+            joint._update_with(state[name])
