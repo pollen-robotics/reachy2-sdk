@@ -54,7 +54,7 @@ class Orbita(ABC):
         self._compliant: bool
 
         self._joints: Dict[str, Any] = {}
-        self._reversed_joints: Dict[Any, str] = {}
+        self._axis_name_by_joint: Dict[Any, str] = {}
         self._motors: Dict[str, OrbitaMotor] = {}
         self._outgoing_goal_positions: Dict[str, float] = {}
 
@@ -137,7 +137,7 @@ class Orbita(ABC):
 
     def _set_outgoing_goal_position(self, axis_name: str, goal_position: float) -> None:
         joint = getattr(self, axis_name)
-        axis = self._reversed_joints[joint]
+        axis = self._axis_name_by_joint[joint]
         self._outgoing_goal_positions[axis] = goal_position
 
     @abstractmethod

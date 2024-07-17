@@ -75,10 +75,7 @@ class Orbita2d(Orbita):
             "axis_1": getattr(self, axis1_name),
             "axis_2": getattr(self, axis2_name),
         }
-        self._reversed_joints = {
-            getattr(self, axis1_name): "axis_1",
-            getattr(self, axis2_name): "axis_2",
-        }
+        self._axis_name_by_joint = {v: k for k, v in self._joints.items()}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
         self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)

@@ -52,7 +52,7 @@ class Orbita3d(Orbita):
         self._pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
         self._yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
         self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
-        self._reversed_joints = {self.roll: "roll", self.pitch: "pitch", self.yaw: "yaw"}
+        self._axis_name_by_joint = {v: k for k, v in self._joints.items()}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
         self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
