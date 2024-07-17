@@ -110,8 +110,8 @@ class Orbita3d(Orbita):
     def send_goal_positions(self) -> None:
         req_pos = {}
         for joint_axis in self._joints.keys():
-            if joint_axis in self._waiting_goal_positions:
-                req_pos[joint_axis] = FloatValue(value=self._waiting_goal_positions[joint_axis])
+            if joint_axis in self._outgoing_goal_positions:
+                req_pos[joint_axis] = FloatValue(value=self._outgoing_goal_positions[joint_axis])
         pose = Rotation3d(rpy=ExtEulerAngles(**req_pos))
 
         command = Orbita3dsCommand(
@@ -122,7 +122,7 @@ class Orbita3d(Orbita):
                 )
             ]
         )
-        self._waiting_goal_positions = {}
+        self._outgoing_goal_positions = {}
         self._stub.SendCommand(command)
 
     def _update_with(self, new_state: Orbita3dState) -> None:  # noqa: C901
