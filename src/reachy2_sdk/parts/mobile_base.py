@@ -77,9 +77,7 @@ class MobileBase:
     def __repr__(self) -> str:
         """Clean representation of a mobile base."""
         repr_template = (
-            '<MobileBase host="{host}" on={on} \n'
-            " lidar_safety_enabled={lidar_safety_enabled} \n"
-            " battery_voltage={battery_voltage}>"
+            "<MobileBase on={on} \n" " lidar_safety_enabled={lidar_safety_enabled} \n" " battery_voltage={battery_voltage}>"
         )
         return repr_template.format(
             on=self.is_on(),
@@ -138,15 +136,15 @@ class MobileBase:
         The 200ms duration is predifined at the ROS level of the mobile base's code.
         This mode is prefered if the user wants to send speed instructions frequently.
         """
-        if self._drive_mode != "cmd_vel":
-            self._set_drive_mode("cmd_vel")
-
         for vel, value in {"x_vel": x_vel, "y_vel": y_vel}.items():
             if abs(value) > self._max_xy_vel:
                 raise ValueError(f"The asbolute value of {vel} should not be more than {self._max_xy_vel}!")
 
         if abs(rot_vel) > self._max_rot_vel:
             raise ValueError(f"The asbolute value of rot_vel should not be more than {self._max_rot_vel}!")
+
+        if self._drive_mode != "cmd_vel":
+            self._set_drive_mode("cmd_vel")
 
         req = TargetDirectionCommand(
             direction=DirectionVector(
@@ -222,7 +220,6 @@ class MobileBase:
             y_goal=FloatValue(value=y),
             theta_goal=FloatValue(value=deg2rad(theta)),
         )
-        self._drive_mode = "go_to"
         self._mobility_stub.SendGoTo(req)
 
         arrived = await self._is_arrived_in_given_time(time.time(), timeout, tolerance)
