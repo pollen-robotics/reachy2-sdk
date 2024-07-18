@@ -1,5 +1,5 @@
 """This module describes Orbita2d and Orbita3d motors."""
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict
 
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
@@ -22,16 +22,7 @@ class OrbitaMotor:
     def __init__(self, initial_state: Dict[str, Any], actuator: Any) -> None:
         """Initialize the motor with its initial state."""
         self._actuator = actuator
-
-        self._state = initial_state
-
-        self._tmp_fields: Dict[str, float | None] = {}
-        self._tmp_state: Dict[str, float | None] = initial_state.copy()
-        self._tmp_pid: Tuple[float, float, float]
-
         self._update_with(initial_state)
-
-        self._register_needing_sync: List[str] = []
 
     @property
     def speed_limit(self) -> float:
@@ -58,5 +49,4 @@ class OrbitaMotor:
         self._speed_limit = new_state["speed_limit"].value * 100
         self._torque_limit = new_state["torque_limit"].value * 100
         self._compliant = new_state["compliant"].value
-
         self._pid = unwrapped_pid_value(new_state["pid"])
