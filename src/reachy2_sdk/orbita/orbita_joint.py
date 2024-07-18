@@ -4,12 +4,7 @@ from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
-from .utils import (
-    to_internal_position,
-    to_position,
-    unwrapped_proto_value,
-    wrapped_proto_value,
-)
+from .utils import to_internal_position, to_position, wrapped_proto_value
 
 
 class OrbitaJoint:
@@ -26,8 +21,8 @@ class OrbitaJoint:
         self._state = initial_state
         self._tmp_state = initial_state.copy()
 
-        self._present_position = unwrapped_proto_value(initial_state["present_position"])
-        self._goal_position = unwrapped_proto_value(initial_state["goal_position"])
+        self._present_position = initial_state["present_position"].value
+        self._goal_position = initial_state["goal_position"].value
 
         self._register_needing_sync: List[str] = []
 
@@ -64,5 +59,5 @@ class OrbitaJoint:
             raise TypeError("goal_position must be a float or int")
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
-        self._present_position = unwrapped_proto_value(new_state["present_position"])
-        self._goal_position = unwrapped_proto_value(new_state["goal_position"])
+        self._present_position = new_state["present_position"].value
+        self._goal_position = new_state["goal_position"].value

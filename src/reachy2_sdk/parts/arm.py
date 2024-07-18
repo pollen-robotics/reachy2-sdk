@@ -6,6 +6,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 - goto functions
 """
 
+import logging
 import time
 from typing import Dict, List, Optional
 
@@ -64,6 +65,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         Connect to the arm's gRPC server stub and set up the arm's actuators.
         """
+        self._logger = logging.getLogger(__name__)
         JointsBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel))
         IGoToBasedPart.__init__(self, self, goto_stub)
 
@@ -278,7 +280,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
         if self.is_off():
-            raise RuntimeError("Arm is off. Goto not sent.")
+            self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
+            return GoToId(id=-1)
 
         if with_cartesian_interpolation:
             return self._goto_cartesian_interpolation(target, duration, interpolation_frequency)
@@ -329,7 +332,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
         if self.is_off():
-            raise RuntimeError("Arm is off. Goto not sent.")
+            self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
+            return GoToId(id=-1)
         try:
             self.inverse_kinematics(target)
         except ValueError:
@@ -395,7 +399,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
         if self.is_off():
-            raise RuntimeError("Arm is off. Goto not sent.")
+            self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
+            return GoToId(id=-1)
 
         arm_pos = list_to_arm_position(positions, degrees)
         request = GoToRequest(
@@ -412,6 +417,48 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._stub.GetJointPosition(self._part_id)
         positions = arm_position_to_list(response)
         return positions
+
+    # @property
+    # def joints_limits(self) -> ArmLimits:
+    #     """Get limits of all the part's joints"""
+    #     limits = self._arm_stub.GetJointsLimits(self._part_id)
+    #     return limits
+
+    # @property
+    # def temperatures(self) -> ArmTemperatures:
+    #     """Get temperatures of all the part's motors"""
+    #     temperatures = self._arm_stub.GetTemperatures(self._part_id)
+    #     return temperatures
+
+    def set_pose(
+        self,
+        common_pose: str = "default",
+        wait_for_moves_end: bool = True,
+        duration: float = 2,
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        """Send all joints to standard positions in specified duration.
+
+        common_pose can be 'default', arms being straight, or 'elbow_90'.
+        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
+        Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
+        """
+        if common_pose not in ["default", "elbow_90"]:
+            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
+        if common_pose == "elbow_90":
+            elbow_pitch = -90
+        else:
+            elbow_pitch = 0
+        if not wait_for_moves_end:
+            self.cancel_all_moves()
+        if self.is_on():
+            if self._part_id.name == "r_arm":
+                return self.goto_joints([0, -15, -15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+            else:
+                return self.goto_joints([0, 15, 15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+        else:
+            self._logger.warning(f"{self._part_id.name} is off. No command sent.")
+        return GoToId(id=-1)
 
     def _update_with(self, new_state: ArmState) -> None:
         """Update the arm with a newly received (partial) state received from the gRPC server."""
