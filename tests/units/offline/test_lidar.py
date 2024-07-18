@@ -7,7 +7,7 @@ from reachy2_sdk_api.mobile_base_lidar_pb2 import (
     LidarSafety,
 )
 
-from reachy2_sdk.subparts.lidar import Lidar
+from reachy2_sdk.sensors.lidar import Lidar
 
 
 @pytest.mark.offline
@@ -28,6 +28,8 @@ def test_class() -> None:
     assert lidar.safety_slowdown_distance == 3.0
     assert lidar.safety_critical_distance == 1.0
     assert lidar.obstacle_detection_status == "NO_OBJECT_DETECTED"
+
+    assert lidar.__repr__() != ""
 
     new_lidar_detection = LidarObstacleDetectionStatus(status=LidarObstacleDetectionEnum.OBJECT_DETECTED_SLOWDOWN)
     new_lidar_safety = LidarSafety(

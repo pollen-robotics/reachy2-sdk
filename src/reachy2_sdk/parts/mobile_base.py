@@ -176,7 +176,7 @@ class MobileBase:
         that the mobile base has arrived its goal.
         """
         if self.is_off():
-            raise RuntimeError(("Mobile base is off. Goto not sent."))
+            self._logger.warning("Mobile base is off. Goto not sent.")
 
         exc_queue: Queue[Exception] = Queue()
 
