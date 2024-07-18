@@ -136,9 +136,7 @@ class Orbita2d(Orbita):
 
     def set_speed_limit(self, speed_limit: float | int) -> None:
         """Set a speed_limit as a percentage of the max speed on all motors of the actuator"""
-        if not isinstance(speed_limit, float | int):
-            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
-        # speed_limit = speed_limit / 100.0
+        super().set_speed_limit(speed_limit)
         command = Orbita2dsCommand(
             cmd=[
                 Orbita2dCommand(
@@ -154,9 +152,7 @@ class Orbita2d(Orbita):
 
     def set_torque_limit(self, torque_limit: float | int) -> None:
         """Set a torque_limit as a percentage of the max torque on all motors of the actuator"""
-        if not isinstance(torque_limit, float | int):
-            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
-        # torque_limit = torque_limit / 100.0
+        super().set_torque_limit(torque_limit)
         command = Orbita2dsCommand(
             cmd=[
                 Orbita2dCommand(
