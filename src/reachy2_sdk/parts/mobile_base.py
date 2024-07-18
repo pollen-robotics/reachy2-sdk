@@ -228,7 +228,7 @@ class MobileBase:
         self._drive_mode = "go_to"
         self._mobility_stub.SendGoTo(req)
 
-        arrived = self._is_arrived_in_given_time(time.time(), timeout, tolerance)
+        arrived = await self._is_arrived_in_given_time(time.time(), timeout, tolerance)
 
         if not arrived and self.lidar.obstacle_detection_status == "OBJECT_DETECTED_STOP":
             # Error type must be modified
