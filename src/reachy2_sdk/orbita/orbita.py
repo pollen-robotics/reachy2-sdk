@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Tuple
 
@@ -46,6 +47,8 @@ class Orbita(ABC):
         stub: Orbita2dServiceStub | Orbita3dServiceStub,
     ):
         """Initialize the common attributes."""
+        self._logger = logging.getLogger(__name__)
+        logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
         self._name = name
         self._id = uid
         self._orbita_type = orbita_type

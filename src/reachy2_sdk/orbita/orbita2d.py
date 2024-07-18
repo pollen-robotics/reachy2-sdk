@@ -165,6 +165,7 @@ class Orbita2d(Orbita):
             ]
         )
         self._stub.SendCommand(command)
+        self._logger.info(f"Set torque at {torque_limit}% of max capabilities for all motors of {self._name}.")
 
     def _update_with(self, new_state: Orbita2dState) -> None:  # noqa: C901
         """Update the orbita with a newly received (partial) state received from the gRPC server."""
