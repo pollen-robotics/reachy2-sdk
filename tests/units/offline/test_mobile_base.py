@@ -1,3 +1,4 @@
+import asyncio
 import grpc
 import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
@@ -102,5 +103,5 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         mobile_base.set_speed(1.5, 1.5, 100)
 
-    with pytest.raises(RuntimeError):
-        mobile_base._goto_async(x=1.5, y=1.5, theta=10, timeout=4)
+    with pytest.raises(ValueError):
+        asyncio.run(mobile_base._goto_async(x=1.5, y=1.5, theta=10, timeout=4))
