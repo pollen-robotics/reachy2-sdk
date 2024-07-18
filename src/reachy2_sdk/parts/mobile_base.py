@@ -7,6 +7,7 @@ in cartesian coordinates (x, y, theta) or directly send velocities (x_vel, y_vel
 """
 
 import asyncio
+import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
@@ -35,7 +36,7 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
 )
 from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseUtilityServiceStub
 
-from ..subparts.lidar import Lidar
+from ..sensors.lidar import Lidar
 
 
 class MobileBase:
@@ -58,6 +59,7 @@ class MobileBase:
         grpc_channel: grpc.Channel,
     ) -> None:
         """Set up the connection with the mobile base."""
+        self._logger = logging.getLogger(__name__)
         self._utility_stub = MobileBaseUtilityServiceStub(grpc_channel)
         self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
 
@@ -88,6 +90,9 @@ class MobileBase:
     @property
     def battery_voltage(self) -> float:
         """Return the battery voltage. Battery should be recharged if it reaches 24.5V or below."""
+        battery_level = float(round(self._battery_level, 1))
+        if battery_level < 24.5:
+            self._logger.warning(f"Low battery level: {battery_level}V. Consider recharging.")
         return float(round(self._battery_level, 1))
 
     @property
@@ -171,7 +176,7 @@ class MobileBase:
         that the mobile base has arrived its goal.
         """
         if self.is_off():
-            raise RuntimeError(("Mobile base is off. Goto not sent."))
+            self._logger.warning("Mobile base is off. Goto not sent.")
 
         exc_queue: Queue[Exception] = Queue()
 
@@ -220,9 +225,15 @@ class MobileBase:
         self._drive_mode = "go_to"
         self._mobility_stub.SendGoTo(req)
 
-        tic = time.time()
-        arrived: bool
-        while time.time() - tic < timeout:
+        arrived = await self._is_arrived_in_given_time(time.time(), timeout, tolerance)
+
+        if not arrived and self.lidar.obstacle_detection_status == "OBJECT_DETECTED_STOP":
+            # Error type must be modified
+            raise ValueError("Target not reached. Mobile base stopped because of obstacle.")
+
+    async def _is_arrived_in_given_time(self, starting_time: float, timeout: float, tolerance: Dict[str, float]) -> bool:
+        arrived: bool = False
+        while time.time() - starting_time < timeout:
             arrived = True
             distance_to_goal = self._distance_to_goto_goal()
             for delta_key in tolerance.keys():
@@ -232,10 +243,7 @@ class MobileBase:
             await asyncio.sleep(0.1)
             if arrived:
                 break
-
-        if not arrived and self.lidar.obstacle_detection_status == "OBJECT_DETECTED_STOP":
-            # Error type must be modified
-            raise ValueError("Target not reached. Mobile base stopped because of obstacle.")
+        return arrived
 
     def _distance_to_goto_goal(self) -> Dict[str, float]:
         response = self._mobility_stub.DistanceToGoal(Empty())
