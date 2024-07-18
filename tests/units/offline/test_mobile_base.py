@@ -18,6 +18,7 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
     ZuuuModeCommand,
     ZuuuModePossiblities,
 )
+from reachy2_sdk_api.part_pb2 import PartId
 
 from reachy2_sdk.parts.mobile_base import MobileBase
 
@@ -33,6 +34,7 @@ def test_class() -> None:
     )
 
     mb_proto = MobileBase_proto(
+        part_id=PartId(name="mobile_base", id=100),
         info=mb_info,
     )
 
