@@ -77,9 +77,7 @@ class MobileBase:
     def __repr__(self) -> str:
         """Clean representation of a mobile base."""
         repr_template = (
-            '<MobileBase on={on} \n'
-            " lidar_safety_enabled={lidar_safety_enabled} \n"
-            " battery_voltage={battery_voltage}>"
+            "<MobileBase on={on} \n" " lidar_safety_enabled={lidar_safety_enabled} \n" " battery_voltage={battery_voltage}>"
         )
         return repr_template.format(
             on=self.is_on(),
