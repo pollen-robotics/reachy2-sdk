@@ -134,9 +134,9 @@ class Orbita2d(Orbita):
         self._outgoing_goal_positions = {}
         self._stub.SendCommand(command)
 
-    def set_speed_limit(self, speed_limit: float | int) -> None:
+    def set_speed_limits(self, speed_limit: float | int) -> None:
         """Set a speed_limit as a percentage of the max speed on all motors of the actuator"""
-        super().set_speed_limit(speed_limit)
+        super().set_speed_limits(speed_limit)
         command = Orbita2dsCommand(
             cmd=[
                 Orbita2dCommand(
@@ -150,9 +150,9 @@ class Orbita2d(Orbita):
         )
         self._stub.SendCommand(command)
 
-    def set_torque_limit(self, torque_limit: float | int) -> None:
+    def set_torque_limits(self, torque_limit: float | int) -> None:
         """Set a torque_limit as a percentage of the max torque on all motors of the actuator"""
-        super().set_torque_limit(torque_limit)
+        super().set_torque_limits(torque_limit)
         command = Orbita2dsCommand(
             cmd=[
                 Orbita2dCommand(

@@ -218,16 +218,16 @@ class Head:
         """
         self._head_stub.TurnOff(self._part_id)
 
-    def set_torque_limit(self, value: int) -> None:
-        """Choose percentage of torque max value applied as limit to the head."""
+    def set_torque_limits(self, value: int) -> None:
+        """Choose percentage of torque max value applied as limit of all head's motors."""
         req = TorqueLimitRequest(
             id=self._part_id,
             limit=value,
         )
         self._head_stub.SetTorqueLimit(req)
 
-    def set_speed_limit(self, value: int) -> None:
-        """Choose percentage of speed max value applied as limit to the head."""
+    def set_speed_limits(self, value: int) -> None:
+        """Choose percentage of speed max value applied as limit of all head's motors."""
         req = SpeedLimitRequest(
             id=self._part_id,
             limit=value,

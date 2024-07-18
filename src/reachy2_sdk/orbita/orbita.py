@@ -70,7 +70,7 @@ class Orbita(ABC):
         }\n>"""
 
     @abstractmethod
-    def set_speed_limit(self, speed_limit: float | int) -> None:
+    def set_speed_limits(self, speed_limit: float | int) -> None:
         if not isinstance(speed_limit, float | int):
             raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
         if not (0 < speed_limit < 100):
@@ -78,7 +78,7 @@ class Orbita(ABC):
         speed_limit = speed_limit / 100.0
 
     @abstractmethod
-    def set_torque_limit(self, torque_limit: float | int) -> None:
+    def set_torque_limits(self, torque_limit: float | int) -> None:
         if not isinstance(torque_limit, float | int):
             raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
         if not (0 < torque_limit < 100):
@@ -94,15 +94,15 @@ class Orbita(ABC):
     #     else:
     #         raise ValueError("pid should be of type Tuple[float, float, float]")
 
-    def get_speed_limit(self) -> Dict[str, float]:
+    def get_speed_limits(self) -> Dict[str, float]:
         """Get speed_limit of all motors of the actuator"""
         return {motor_name: m.speed_limit for motor_name, m in self._motors.items()}
 
-    def get_torque_limit(self) -> Dict[str, float]:
+    def get_torque_limits(self) -> Dict[str, float]:
         """Get torque_limit of all motors of the actuator"""
         return {motor_name: m.torque_limit for motor_name, m in self._motors.items()}
 
-    def get_pid(self) -> Dict[str, Tuple[float, float, float]]:
+    def get_pids(self) -> Dict[str, Tuple[float, float, float]]:
         """Get pid of all motors of the actuator"""
         return {motor_name: m.pid for motor_name, m in self._motors.items()}
 

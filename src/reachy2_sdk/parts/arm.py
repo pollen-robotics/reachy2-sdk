@@ -168,24 +168,24 @@ class Arm:
 
         All arm's motors will see their torque limit reduces from a determined duration, then will be fully compliant.
         """
-        self.set_torque_limit(20)
+        self.set_torque_limits(20)
         time.sleep(duration)
         self._arm_stub.TurnOff(self._part_id)
         if self._gripper is not None:
             self._gripper.turn_off()
         time.sleep(0.2)
-        self.set_torque_limit(100)
+        self.set_torque_limits(100)
 
-    def set_torque_limit(self, value: int) -> None:
-        """Choose percentage of torque max value applied as limit to the arms."""
+    def set_torque_limits(self, value: int) -> None:
+        """Choose percentage of torque max value applied as limit of all arm's motors."""
         req = TorqueLimitRequest(
             id=self._part_id,
             limit=value,
         )
         self._arm_stub.SetTorqueLimit(req)
 
-    def set_speed_limit(self, value: int) -> None:
-        """Choose percentage of speed max value applied as limit to the arms."""
+    def set_speed_limits(self, value: int) -> None:
+        """Choose percentage of speed max value applied as limit of all arm's motors."""
         req = SpeedLimitRequest(
             id=self._part_id,
             limit=value,
