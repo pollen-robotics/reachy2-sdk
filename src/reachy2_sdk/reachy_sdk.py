@@ -10,7 +10,6 @@ You can also send joint commands, compute forward or inverse kinematics.
 # from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 # from .dynamixel_motor import DynamixelMotor
 
-
 import asyncio
 import atexit
 import threading
@@ -617,34 +616,30 @@ class ReachySDK(metaclass=Singleton):
 
     def set_pose(
         self,
-        common_pose: str = "zero",
+        common_pose: str = "default",
         wait_for_moves_end: bool = True,
         duration: float = 2,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToHomeId:
-        """Send all joints to 0 in specified duration.
+        """Send all joints to standard positions in specified duration.
 
-        common_pose can be 'zero' or 'elbow_90', default is set to 'zero'.
-        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the 0 commands.
-        Otherwise, the 0 commands will be sent to a part when all gotos of its queue has been played.
+        common_pose can be 'default', arms being straight, or 'elbow_90'.
+        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
+        Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        if common_pose not in ["zero", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'zero' or 'elbow_90'")
-        if common_pose == "elbow_90":
-            elbow_pitch = -90
-        else:
-            elbow_pitch = 0
+        if common_pose not in ["default", "elbow_90"]:
+            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
         head_id = None
         r_arm_id = None
         l_arm_id = None
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.head is not None:
-            head_id = self.head.rotate_to(0, -10, 0, duration, interpolation_mode)
+            head_id = self.head.set_pose(wait_for_moves_end, duration, interpolation_mode)
         if self.r_arm is not None:
-            r_arm_id = self.r_arm.goto_joints([0, 0, 0, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+            r_arm_id = self.r_arm.set_pose(common_pose, wait_for_moves_end, duration, interpolation_mode)
         if self.l_arm is not None:
-            l_arm_id = self.l_arm.goto_joints([0, 0, 0, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+            l_arm_id = self.l_arm.set_pose(common_pose, wait_for_moves_end, duration, interpolation_mode)
         ids = GoToHomeId(
             head=head_id,
             r_arm=r_arm_id,

@@ -36,7 +36,7 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
 )
 from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseUtilityServiceStub
 
-from ..subparts.lidar import Lidar
+from ..sensors.lidar import Lidar
 
 
 class MobileBase:
@@ -225,9 +225,15 @@ class MobileBase:
         self._drive_mode = "go_to"
         self._mobility_stub.SendGoTo(req)
 
-        tic = time.time()
-        arrived: bool
-        while time.time() - tic < timeout:
+        arrived = await self._is_arrived_in_given_time(time.time(), timeout, tolerance)
+
+        if not arrived and self.lidar.obstacle_detection_status == "OBJECT_DETECTED_STOP":
+            # Error type must be modified
+            raise ValueError("Target not reached. Mobile base stopped because of obstacle.")
+
+    async def _is_arrived_in_given_time(self, starting_time: float, timeout: float, tolerance: Dict[str, float]) -> bool:
+        arrived: bool = False
+        while time.time() - starting_time < timeout:
             arrived = True
             distance_to_goal = self._distance_to_goto_goal()
             for delta_key in tolerance.keys():
@@ -237,10 +243,7 @@ class MobileBase:
             await asyncio.sleep(0.1)
             if arrived:
                 break
-
-        if not arrived and self.lidar.obstacle_detection_status == "OBJECT_DETECTED_STOP":
-            # Error type must be modified
-            raise ValueError("Target not reached. Mobile base stopped because of obstacle.")
+        return arrived
 
     def _distance_to_goto_goal(self) -> Dict[str, float]:
         response = self._mobility_stub.DistanceToGoal(Empty())
