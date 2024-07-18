@@ -4,6 +4,8 @@ Handles all specific method to an Head:
 - the inverse kinematics
 - look_at function
 """
+
+import logging
 from typing import List
 
 import grpc
@@ -53,6 +55,7 @@ class Head:
         goto_stub: GoToServiceStub,
     ) -> None:
         """Initialize the head with its actuators."""
+        self._logger = logging.getLogger(__name__)
         self._grpc_channel = grpc_channel
         self._goto_stub = goto_stub
         self._head_stub = HeadServiceStub(grpc_channel)
@@ -121,8 +124,9 @@ class Head:
         """
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
-        if self.is_off():
-            raise RuntimeError("Head is off. Look_at not sent.")
+        if not self.neck.is_on():
+            self._logger.warning("head.neck is off. No command sent.")
+            return GoToId(id=-1)
 
         request = GoToRequest(
             cartesian_goal=CartesianGoal(
@@ -152,8 +156,9 @@ class Head:
         """
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
-        if self.is_off():
-            raise RuntimeError("Head is off. Rotate_to not sent.")
+        if not self.neck.is_on():
+            self._logger.warning("head.neck is off. No command sent.")
+            return GoToId(id=-1)
 
         if degrees:
             roll = np.deg2rad(roll)
@@ -182,8 +187,9 @@ class Head:
         """Send neck to the orientation given as a quaternion."""
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
-        if self.is_off():
-            raise RuntimeError("Head is off. Orient not sent.")
+        if not self.neck.is_on():
+            self._logger.warning("head.neck is off. No command sent.")
+            return GoToId(id=-1)
 
         request = GoToRequest(
             joints_goal=JointsGoal(
@@ -260,6 +266,25 @@ class Head:
     def send_goal_positions(self) -> None:
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
+
+    def set_pose(
+        self,
+        wait_for_moves_end: bool = True,
+        duration: float = 2,
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        """Send all joints to standard positions in specified duration.
+
+        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
+        Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
+        """
+        if not wait_for_moves_end:
+            self.cancel_all_moves()
+        if self.neck.is_on():
+            return self.rotate_to(0, -10, 0, duration, interpolation_mode)
+        else:
+            self._logger.warning("head.neck is off. No command sent.")
+        return GoToId(id=-1)
 
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state received from the gRPC server."""

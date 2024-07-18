@@ -5,7 +5,7 @@ import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
 
-from .utils import unwrapped_pid_value, unwrapped_proto_value
+from .utils import unwrapped_pid_value
 
 
 class OrbitaMotor:
@@ -29,12 +29,7 @@ class OrbitaMotor:
         self._tmp_state: Dict[str, float | None] = initial_state.copy()
         self._tmp_pid: Tuple[float, float, float]
 
-        self._temperature = unwrapped_proto_value(initial_state["temperature"])
-        self._speed_limit = unwrapped_proto_value(initial_state["speed_limit"]) * 100
-        self._torque_limit = unwrapped_proto_value(initial_state["torque_limit"]) * 100
-        self._compliant = unwrapped_proto_value(initial_state["compliant"])
-
-        self._pid = unwrapped_pid_value(initial_state["pid"])
+        self._update_with(initial_state)
 
         self._register_needing_sync: List[str] = []
 
@@ -59,9 +54,9 @@ class OrbitaMotor:
         return self._pid
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
-        self._temperature = unwrapped_proto_value(new_state["temperature"])
-        self._speed_limit = unwrapped_proto_value(new_state["speed_limit"]) * 100
-        self._torque_limit = unwrapped_proto_value(new_state["torque_limit"]) * 100
-        self._compliant = unwrapped_proto_value(new_state["compliant"])
+        self._temperature = new_state["temperature"].value
+        self._speed_limit = new_state["speed_limit"].value * 100
+        self._torque_limit = new_state["torque_limit"].value * 100
+        self._compliant = new_state["compliant"].value
 
         self._pid = unwrapped_pid_value(new_state["pid"])

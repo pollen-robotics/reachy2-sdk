@@ -54,9 +54,9 @@ class Orbita(ABC):
         self._compliant: bool
 
         self._joints: Dict[str, Any] = {}
-        self._reversed_joints: Dict[Any, str] = {}
+        self._axis_name_by_joint: Dict[Any, str] = {}
         self._motors: Dict[str, OrbitaMotor] = {}
-        self._waiting_goal_positions: Dict[str, float] = {}
+        self._outgoing_goal_positions: Dict[str, float] = {}
 
     @abstractmethod
     def _create_init_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
@@ -110,12 +110,12 @@ class Orbita(ABC):
         """
         self._set_compliant(True)
 
-    def is_on(self) -> Any:
+    def is_on(self) -> bool:
         """Get compliancy of the actuator"""
         return not self._compliant
 
     @property
-    def temperatures(self) -> Dict[str, Any]:
+    def temperatures(self) -> Dict[str, float]:
         """Get temperatures of all the motors of the actuator"""
         return {motor_name: m.temperature for motor_name, m in self._motors.items()}
 
@@ -130,10 +130,10 @@ class Orbita(ABC):
         )
         self._stub.SendCommand(command)
 
-    def _ask_for_new_goal_position(self, axis_name: str, goal_position: float) -> None:
+    def _set_outgoing_goal_position(self, axis_name: str, goal_position: float) -> None:
         joint = getattr(self, axis_name)
-        axis = self._reversed_joints[joint]
-        self._waiting_goal_positions[axis] = goal_position
+        axis = self._axis_name_by_joint[joint]
+        self._outgoing_goal_positions[axis] = goal_position
 
     @abstractmethod
     def send_goal_positions(self) -> None:

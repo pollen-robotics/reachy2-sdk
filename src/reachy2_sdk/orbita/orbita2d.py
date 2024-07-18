@@ -20,7 +20,6 @@ from .orbita import Orbita
 from .orbita_axis import OrbitaAxis
 from .orbita_joint import OrbitaJoint
 from .orbita_motor import OrbitaMotor
-from .utils import unwrapped_proto_value
 
 
 class Orbita2d(Orbita):
@@ -75,10 +74,7 @@ class Orbita2d(Orbita):
             "axis_1": getattr(self, axis1_name),
             "axis_2": getattr(self, axis2_name),
         }
-        self._reversed_joints = {
-            getattr(self, axis1_name): "axis_1",
-            getattr(self, axis2_name): "axis_2",
-        }
+        self._axis_name_by_joint = {v: k for k, v in self._joints.items()}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
         self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
@@ -93,7 +89,7 @@ class Orbita2d(Orbita):
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
-                self._compliant = unwrapped_proto_value(value)
+                self._compliant = value.value
                 init_state["motor_1"][field.name] = value
                 init_state["motor_2"][field.name] = value
             else:
@@ -123,8 +119,8 @@ class Orbita2d(Orbita):
     def send_goal_positions(self) -> None:
         req_pos = {}
         for joint_axis in self._joints.keys():
-            if joint_axis in self._waiting_goal_positions:
-                req_pos[joint_axis] = FloatValue(value=self._waiting_goal_positions[joint_axis])
+            if joint_axis in self._outgoing_goal_positions:
+                req_pos[joint_axis] = FloatValue(value=self._outgoing_goal_positions[joint_axis])
         pose = Pose2d(**req_pos)
 
         command = Orbita2dsCommand(
@@ -135,7 +131,7 @@ class Orbita2d(Orbita):
                 )
             ]
         )
-        self._waiting_goal_positions = {}
+        self._outgoing_goal_positions = {}
         self._stub.SendCommand(command)
 
     def set_speed_limit(self, speed_limit: float | int) -> None:
@@ -180,7 +176,7 @@ class Orbita2d(Orbita):
 
         for field, value in new_state.ListFields():
             if field.name == "compliant":
-                self._compliant = unwrapped_proto_value(value)
+                self._compliant = value.value
                 state["motor_1"][field.name] = value
                 state["motor_2"][field.name] = value
             else:

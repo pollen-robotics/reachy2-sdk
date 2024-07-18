@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
-from .utils import to_internal_position, to_position, unwrapped_proto_value
+from .utils import to_internal_position, to_position
 
 
 class OrbitaJoint:
@@ -18,8 +18,8 @@ class OrbitaJoint:
         self._actuator = actuator
         self._axis_type = axis_type
 
-        self._present_position = unwrapped_proto_value(initial_state["present_position"])
-        self._goal_position = unwrapped_proto_value(initial_state["goal_position"])
+        self._present_position = initial_state["present_position"].value
+        self._goal_position = initial_state["goal_position"].value
 
         self._register_needing_sync: List[str] = []
 
@@ -44,10 +44,10 @@ class OrbitaJoint:
     @goal_position.setter
     def goal_position(self, value: float | int) -> None:
         if isinstance(value, float) | isinstance(value, int):
-            self._actuator._ask_for_new_goal_position(self._axis_type, to_internal_position(value))
+            self._actuator._set_outgoing_goal_position(self._axis_type, to_internal_position(value))
         else:
             raise TypeError("goal_position must be a float or int")
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
-        self._present_position = unwrapped_proto_value(new_state["present_position"])
-        self._goal_position = unwrapped_proto_value(new_state["goal_position"])
+        self._present_position = new_state["present_position"].value
+        self._goal_position = new_state["goal_position"].value

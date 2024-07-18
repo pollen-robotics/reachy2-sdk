@@ -19,7 +19,6 @@ from .orbita import Orbita
 from .orbita_axis import OrbitaAxis
 from .orbita_joint import OrbitaJoint
 from .orbita_motor import OrbitaMotor
-from .utils import unwrapped_proto_value
 
 
 class Orbita3d(Orbita):
@@ -52,7 +51,7 @@ class Orbita3d(Orbita):
         self._pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
         self._yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
         self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
-        self._reversed_joints = {self.roll: "roll", self.pitch: "pitch", self.yaw: "yaw"}
+        self._axis_name_by_joint = {v: k for k, v in self._joints.items()}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
         self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
@@ -73,7 +72,7 @@ class Orbita3d(Orbita):
 
         for field, value in initial_state.ListFields():
             if field.name == "compliant":
-                self._compliant = unwrapped_proto_value(value)
+                self._compliant = value.value
                 init_state["motor_1"][field.name] = value
                 init_state["motor_2"][field.name] = value
                 init_state["motor_3"][field.name] = value
@@ -110,8 +109,8 @@ class Orbita3d(Orbita):
     def send_goal_positions(self) -> None:
         req_pos = {}
         for joint_axis in self._joints.keys():
-            if joint_axis in self._waiting_goal_positions:
-                req_pos[joint_axis] = FloatValue(value=self._waiting_goal_positions[joint_axis])
+            if joint_axis in self._outgoing_goal_positions:
+                req_pos[joint_axis] = FloatValue(value=self._outgoing_goal_positions[joint_axis])
         pose = Rotation3d(rpy=ExtEulerAngles(**req_pos))
 
         command = Orbita3dsCommand(
@@ -122,7 +121,7 @@ class Orbita3d(Orbita):
                 )
             ]
         )
-        self._waiting_goal_positions = {}
+        self._outgoing_goal_positions = {}
         self._stub.SendCommand(command)
 
     def set_speed_limit(self, speed_limit: float | int) -> None:
@@ -169,7 +168,7 @@ class Orbita3d(Orbita):
 
         for field, value in new_state.ListFields():
             if field.name == "compliant":
-                self._compliant = unwrapped_proto_value(value)
+                self._compliant = value.value
                 state["motor_1"][field.name] = value
                 state["motor_2"][field.name] = value
                 state["motor_3"][field.name] = value

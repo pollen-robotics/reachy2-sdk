@@ -1,3 +1,5 @@
+import asyncio
+
 import grpc
 import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
@@ -65,6 +67,8 @@ def test_class() -> None:
     assert mobile_base.is_on()
     assert not mobile_base.is_off()
 
+    assert mobile_base.__repr__() != ""
+
     new_battery = BatteryLevel(level=FloatValue(value=20))
 
     new_drive_mode = ZuuuModeCommand(mode=ZuuuModePossiblities.FREE_WHEEL)
@@ -85,3 +89,18 @@ def test_class() -> None:
 
     assert not mobile_base.is_on()
     assert mobile_base.is_off()
+
+    with pytest.raises(ValueError):
+        mobile_base._set_control_mode("wrong")
+
+    with pytest.raises(ValueError):
+        mobile_base._set_drive_mode("wrong")
+
+    with pytest.raises(ValueError):
+        mobile_base.set_speed(0.5, 0.5, 200)
+
+    with pytest.raises(ValueError):
+        mobile_base.set_speed(1.5, 1.5, 100)
+
+    with pytest.raises(ValueError):
+        asyncio.run(mobile_base._goto_async(x=1.5, y=1.5, theta=10, timeout=4))
