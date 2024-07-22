@@ -53,7 +53,7 @@ def test_class() -> None:
     assert orbita3d.yaw.goal_position == to_position(goal_rot.rpy.yaw.value)
     assert orbita3d.yaw.present_position == to_position(present_rot.rpy.yaw.value)
 
-    pid_set = orbita3d.get_pid()
+    pid_set = orbita3d.get_pids()
     assert pid_set["motor_1"][0] == pid.motor_1.p.value
     assert pid_set["motor_1"][1] == pid.motor_1.i.value
     assert pid_set["motor_1"][2] == pid.motor_1.d.value
@@ -66,15 +66,15 @@ def test_class() -> None:
     assert pid_set["motor_3"][1] == pid.motor_3.i.value
     assert pid_set["motor_3"][2] == pid.motor_3.d.value
 
-    torques_set = orbita3d.get_torque_limit()
-    assert torques_set["motor_1"] == torque_limit.motor_1.value
-    assert torques_set["motor_2"] == torque_limit.motor_2.value
-    assert torques_set["motor_3"] == torque_limit.motor_3.value
+    torques_set = orbita3d.get_torque_limits()
+    assert torques_set["motor_1"] == torque_limit.motor_1.value * 100
+    assert torques_set["motor_2"] == torque_limit.motor_2.value * 100
+    assert torques_set["motor_3"] == torque_limit.motor_3.value * 100
 
-    speed_set = orbita3d.get_speed_limit()
-    assert speed_set["motor_1"] == to_position(speed_limit.motor_1.value)
-    assert speed_set["motor_2"] == to_position(speed_limit.motor_2.value)
-    assert speed_set["motor_3"] == to_position(speed_limit.motor_3.value)
+    speed_set = orbita3d.get_speed_limits()
+    assert speed_set["motor_1"] == speed_limit.motor_1.value * 100
+    assert speed_set["motor_2"] == speed_limit.motor_2.value * 100
+    assert speed_set["motor_3"] == speed_limit.motor_3.value * 100
 
     orbita3d.temperatures["motor_1"] == temperature.motor_1.value
     orbita3d.temperatures["motor_2"] == temperature.motor_1.value
@@ -131,7 +131,7 @@ def test_class() -> None:
     assert orbita3d.yaw.goal_position == to_position(goal_rot.rpy.yaw.value)
     assert orbita3d.yaw.present_position == to_position(present_rot.rpy.yaw.value)
 
-    pid_set = orbita3d.get_pid()
+    pid_set = orbita3d.get_pids()
     assert pid_set["motor_1"][0] == pid_new.motor_1.p.value
     assert pid_set["motor_1"][1] == pid_new.motor_1.i.value
     assert pid_set["motor_1"][2] == pid_new.motor_1.d.value
@@ -144,15 +144,15 @@ def test_class() -> None:
     assert pid_set["motor_3"][1] == pid_new.motor_3.i.value
     assert pid_set["motor_3"][2] == pid_new.motor_3.d.value
 
-    torques_set = orbita3d.get_torque_limit()
-    assert torques_set["motor_1"] == torque_limit.motor_1.value
-    assert torques_set["motor_2"] == torque_limit.motor_2.value
-    assert torques_set["motor_3"] == torque_limit.motor_3.value
+    torques_set = orbita3d.get_torque_limits()
+    assert torques_set["motor_1"] == torque_limit.motor_1.value * 100
+    assert torques_set["motor_2"] == torque_limit.motor_2.value * 100
+    assert torques_set["motor_3"] == torque_limit.motor_3.value * 100
 
-    speed_set = orbita3d.get_speed_limit()
-    assert speed_set["motor_1"] == to_position(speed_limit.motor_1.value)
-    assert speed_set["motor_2"] == to_position(speed_limit.motor_2.value)
-    assert speed_set["motor_3"] == to_position(speed_limit.motor_3.value)
+    speed_set = orbita3d.get_speed_limits()
+    assert speed_set["motor_1"] == speed_limit.motor_1.value * 100
+    assert speed_set["motor_2"] == speed_limit.motor_2.value * 100
+    assert speed_set["motor_3"] == speed_limit.motor_3.value * 100
 
     orbita3d.temperatures["motor_1"] == temperature.motor_1.value
     orbita3d.temperatures["motor_2"] == temperature.motor_1.value

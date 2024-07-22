@@ -127,6 +127,7 @@ class Orbita3d(Orbita):
     def set_speed_limits(self, speed_limit: float | int) -> None:
         """Set a speed_limit as a percentage of the max speed on all motors of the actuator"""
         super().set_speed_limits(speed_limit)
+        speed_limit = speed_limit / 100.0
         command = Orbita3dsCommand(
             cmd=[
                 Orbita3dCommand(
@@ -144,6 +145,7 @@ class Orbita3d(Orbita):
     def set_torque_limits(self, torque_limit: float | int) -> None:
         """Set a torque_limit as a percentage of the max torque on all motors of the actuator"""
         super().set_torque_limits(torque_limit)
+        torque_limit = torque_limit / 100.0
         command = Orbita3dsCommand(
             cmd=[
                 Orbita3dCommand(
