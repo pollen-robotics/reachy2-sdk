@@ -13,11 +13,17 @@ def circlePoints(r: float, n: int = 100) -> List[Tuple[float, float]]:
     return [(math.cos(2 * math.pi / n * x) * r, math.sin(2 * math.pi / n * x) * r) for x in range(0, n + 1)]
 
 
-def ellipsePoints(r1: float, r2: float, n: int = 100) -> List[Tuple[float, float]]:
-    return [
-        (math.cos(2 * math.pi / n * x + math.pi / 2) * r1, math.sin(2 * math.pi / n * x + math.pi / 2) * r2)
-        for x in range(n, -1, -1)
-    ]
+def ellipsePoints(
+    r1: float, r2: float, n: int = 100, clockwise: bool = True, phase: float = math.pi / 2
+) -> List[Tuple[float, float]]:
+    if clockwise:
+        return [
+            (math.cos(2 * math.pi / n * x + phase) * r1, math.sin(2 * math.pi / n * x + phase) * r2) for x in range(n, -1, -1)
+        ]
+    else:
+        return [
+            (math.cos(2 * math.pi / n * x + phase) * r1, math.sin(2 * math.pi / n * x + phase) * r2) for x in range(0, n + 1)
+        ]
 
 
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
@@ -78,6 +84,47 @@ def write_A(reachy: ReachySDK, x: float, y: float, z: float) -> None:
     while not reachy.is_move_finished(last_pos):
         time.sleep(0.1)
     print("A finished")
+
+
+def write_B(reachy: ReachySDK, x: float, y: float, z: float) -> None:
+    print("Starting B")
+    z_range = np.linspace(z + 0.01, z, num=20)
+
+    reachy.head.look_at(x, y, z, duration=1)
+
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + 0.01))
+    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + 0.01), duration=1)
+    while not reachy.is_move_finished(first_pos):
+        time.sleep(0.1)
+
+    for zp in z_range:
+        target_pose = build_pose_matrix(x, y, zp)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + 0.01))
+    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + 0.01))
+    while not reachy.is_move_finished(inter_pos):
+        time.sleep(0.1)
+
+    nb_points = 30
+    points = ellipsePoints(0.01, 0.0025, nb_points)
+    for yp, zp in points[: nb_points // 2 + 1]:
+        target_pose = build_pose_matrix(x, y - yp, z + zp + 0.0075)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+    for yp, zp in points[: nb_points // 2 + 1]:
+        target_pose = build_pose_matrix(x, y - yp, z + zp + 0.0025)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+
+    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z), duration=1)
+    while not reachy.is_move_finished(last_pos):
+        time.sleep(0.1)
+    print("B finished")
 
 
 def write_C(reachy: ReachySDK, x: float, y: float, z: float) -> None:
@@ -239,6 +286,30 @@ def write_H(reachy: ReachySDK, x: float, y: float, z: float) -> None:
     print("H finished")
 
 
+def write_I(reachy: ReachySDK, x: float, y: float, z: float) -> None:
+    print("Starting I")
+
+    z_range = np.linspace(z + 0.01, z, num=20)
+
+    reachy.head.look_at(x, y, z, duration=1)
+
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - 0.005, z + 0.01))
+    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - 0.005, z + 0.01), duration=1)
+    while not reachy.is_move_finished(first_pos):
+        time.sleep(0.1)
+
+    for zi in z_range:
+        target_pose = build_pose_matrix(x, y - 0.005, zi)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+
+    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - 0.005, z), duration=1)
+    while not reachy.is_move_finished(last_pos):
+        time.sleep(0.1)
+    print("I finished")
+
+
 def write_L(reachy: ReachySDK, x: float, y: float, z: float) -> None:
     print("Starting L")
 
@@ -269,6 +340,41 @@ def write_L(reachy: ReachySDK, x: float, y: float, z: float) -> None:
     print("L finished")
 
 
+def write_N(reachy: ReachySDK, x: float, y: float, z: float) -> None:
+    print("Starting N")
+
+    z_range = np.linspace(z, z + 0.01, num=20)
+    y_range = np.linspace(y, y - 0.01, num=20)
+
+    reachy.head.look_at(x, y, z, duration=1)
+
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z))
+    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z), duration=1)
+    while not reachy.is_move_finished(first_pos):
+        time.sleep(0.1)
+
+    for zn in z_range:
+        target_pose = build_pose_matrix(x, y, zn)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+    for yn, zn in zip(y_range, reversed(z_range)):
+        target_pose = build_pose_matrix(x, yn, zn)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+    for zn in z_range:
+        target_pose = build_pose_matrix(x, y - 0.01, zn)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+
+    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - 0.01, z + 0.01), duration=1)
+    while not reachy.is_move_finished(last_pos):
+        time.sleep(0.1)
+    print("N finished")
+
+
 def write_O(reachy: ReachySDK, x: float, y: float, z: float) -> None:
     print("Starting O")
     nb_points = 30
@@ -295,6 +401,42 @@ def write_O(reachy: ReachySDK, x: float, y: float, z: float) -> None:
     while not reachy.is_move_finished(last_pos):
         time.sleep(0.1)
     print("O finished")
+
+
+def write_P(reachy: ReachySDK, x: float, y: float, z: float) -> None:
+    print("Starting P")
+    z_range = np.linspace(z + 0.01, z, num=20)
+
+    reachy.head.look_at(x, y, z, duration=1)
+
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + 0.01))
+    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + 0.01), duration=1)
+    while not reachy.is_move_finished(first_pos):
+        time.sleep(0.1)
+
+    for zp in z_range:
+        target_pose = build_pose_matrix(x, y, zp)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + 0.01))
+    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + 0.01))
+    while not reachy.is_move_finished(inter_pos):
+        time.sleep(0.1)
+
+    nb_points = 30
+    points = ellipsePoints(0.01, 0.0025, nb_points)
+    for yp, zp in points[: nb_points // 2 + 1]:
+        target_pose = build_pose_matrix(x, y - yp, z + zp + 0.0075)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+
+    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + 0.005), duration=1)
+    while not reachy.is_move_finished(last_pos):
+        time.sleep(0.1)
+    print("P finished")
 
 
 def write_R(reachy: ReachySDK, x: float, y: float, z: float) -> None:
@@ -340,6 +482,79 @@ def write_R(reachy: ReachySDK, x: float, y: float, z: float) -> None:
     while not reachy.is_move_finished(last_pos):
         time.sleep(0.1)
     print("R finished")
+
+
+def write_S(reachy: ReachySDK, x: float, y: float, z: float) -> None:
+    print("Starting S")
+
+    reachy.head.look_at(x, y, z, duration=1)
+
+    nb_points = 36
+    points_top = ellipsePoints(0.005, 0.0025, nb_points, clockwise=False, phase=math.pi / 6)
+    points_bottom = ellipsePoints(0.005, 0.0025, nb_points)
+
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - points_top[0][0] - 0.005, z + points_top[0][1] + 0.0075))
+    first_pos = reachy.r_arm.goto_from_matrix(
+        build_pose_matrix(x, y - points_top[0][0] - 0.005, z + points_top[0][1] + 0.0075), duration=1
+    )
+    while not reachy.is_move_finished(first_pos):
+        time.sleep(0.1)
+
+    for ys, zs in points_top[: 2 * nb_points // 3]:
+        target_pose = build_pose_matrix(x, y - ys - 0.005, z + zs + 0.0075)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+    for ys, zs in points_bottom[: 2 * nb_points // 3]:
+        target_pose = build_pose_matrix(x, y - ys - 0.005, z + zs + 0.0025)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+
+    last_pos = reachy.r_arm.goto_from_matrix(
+        build_pose_matrix(
+            x - 0.02, y - points_bottom[2 * nb_points // 3][0] - 0.005, z + points_bottom[2 * nb_points // 3][1] + 0.0025
+        ),
+        duration=1,
+    )
+    while not reachy.is_move_finished(last_pos):
+        time.sleep(0.1)
+    print("S finished")
+
+
+def write_T(reachy: ReachySDK, x: float, y: float, z: float) -> None:
+    print("Starting T")
+
+    z_range = np.linspace(z + 0.01, z, num=20)
+    y_range = np.linspace(y, y - 0.01, num=20)
+
+    reachy.head.look_at(x, y, z, duration=1)
+
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - 0.005, z + 0.01))
+    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - 0.005, z + 0.01), duration=1)
+    while not reachy.is_move_finished(first_pos):
+        time.sleep(0.1)
+
+    for zt in z_range:
+        target_pose = build_pose_matrix(x, y - 0.005, zt)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + 0.01))
+    inter_pos_2 = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + 0.01))
+    while not reachy.is_move_finished(inter_pos_2):
+        time.sleep(0.1)
+    for yt in y_range:
+        target_pose = build_pose_matrix(x, yt, z + 0.01)
+        ik = reachy.r_arm.inverse_kinematics(target_pose)
+        send_arm_position(reachy, ik)
+        time.sleep(0.1)
+
+    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - 0.01, z + 0.01), duration=1)
+    while not reachy.is_move_finished(last_pos):
+        time.sleep(0.1)
+    print("T finished")
 
 
 def write_Y(reachy: ReachySDK, x: float, y: float, z: float) -> None:
@@ -414,6 +629,22 @@ if __name__ == "__main__":
     # write_L(reachy, x, starting_y-0.015*3, z)
     # write_L(reachy, x, starting_y-0.015*4, z)
     # write_E(reachy, x, starting_y-0.015*5, z)
+
+    # write_P(reachy, x, starting_y, z)
+    # write_O(reachy, x, starting_y-0.015, z)
+    # write_L(reachy, x, starting_y-0.015*2, z)
+    # write_L(reachy, x, starting_y-0.015*3, z)
+    # write_E(reachy, x, starting_y-0.015*4, z)
+    # write_N(reachy, x, starting_y-0.015*5, z)
+
+    # write_R(reachy, x, starting_y, z)
+    # write_O(reachy, x, starting_y-0.015, z)
+    # write_B(reachy, x, starting_y-0.015*2, z)
+    # write_O(reachy, x, starting_y-0.015*3, z)
+    # write_T(reachy, x, starting_y-0.015*4, z)
+    # write_I(reachy, x, starting_y-0.015*5, z)
+    # write_C(reachy, x, starting_y-0.015*6, z)
+    # write_S(reachy, x, starting_y-0.015*7, z)
 
     print("Set back to Elbow 90 pose ...")
     r_arm_90 = reachy.head.set_pose("default")
