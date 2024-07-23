@@ -80,11 +80,23 @@ def test_class() -> None:
     orbita3d.temperatures["motor_2"] == temperature.motor_1.value
     orbita3d.temperatures["motor_3"] == temperature.motor_3.value
 
-    # with pytest.raises(ValueError):
-    #     orbita3d.set_speed_limit("wrong value")
+    with pytest.raises(ValueError):
+        orbita3d.set_speed_limits("wrong value")
 
-    # with pytest.raises(ValueError):
-    #     orbita3d.set_torque_limit("wrong value")
+    with pytest.raises(ValueError):
+        orbita3d.set_speed_limits(120)
+
+    with pytest.raises(ValueError):
+        orbita3d.set_speed_limits(-10)
+
+    with pytest.raises(ValueError):
+        orbita3d.set_torque_limits("wrong value")
+
+    with pytest.raises(ValueError):
+        orbita3d.set_torque_limits(120)
+
+    with pytest.raises(ValueError):
+        orbita3d.set_torque_limits(-10)
 
     # with pytest.raises(ValueError):
     #     orbita3d.set_pid("wrong value")

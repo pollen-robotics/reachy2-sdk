@@ -100,6 +100,24 @@ def test_class() -> None:
     assert len(arm._actuators) == 3
     assert isinstance(arm._actuators, dict)
 
+    with pytest.raises(ValueError):
+        arm.set_speed_limits("wrong value")
+
+    with pytest.raises(ValueError):
+        arm.set_speed_limits(120)
+
+    with pytest.raises(ValueError):
+        arm.set_speed_limits(-10)
+
+    with pytest.raises(ValueError):
+        arm.set_torque_limits("wrong value")
+
+    with pytest.raises(ValueError):
+        arm.set_torque_limits(120)
+
+    with pytest.raises(ValueError):
+        arm.set_torque_limits(-10)
+
     # use to_position()  to convert radian to degree
     assert arm.shoulder.roll.goal_position == to_position(goal_position.axis_2.value)
     assert arm.shoulder.roll.present_position == to_position(present_position.axis_2.value)
