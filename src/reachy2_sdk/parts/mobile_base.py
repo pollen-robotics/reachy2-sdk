@@ -7,6 +7,7 @@ in cartesian coordinates (x, y, theta) or directly send velocities (x_vel, y_vel
 """
 
 import asyncio
+import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
@@ -58,26 +59,25 @@ class MobileBase:
         grpc_channel: grpc.Channel,
     ) -> None:
         """Set up the connection with the mobile base."""
+        self._logger = logging.getLogger(__name__)
         self._utility_stub = MobileBaseUtilityServiceStub(grpc_channel)
         self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
 
-        self._drive_mode = self._get_drive_mode().lower()
-        self._control_mode = self._get_control_mode().lower()
+        self._drive_mode: str = ZuuuModePossiblities.keys()[initial_state.zuuu_mode.mode].lower()
+        self._control_mode: str = ControlModePossiblities.keys()[initial_state.control_mode.mode].lower()
 
         self._max_xy_vel = 1.0
         self._max_rot_vel = 180.0
         self._max_xy_goto = 1.0
 
-        self.lidar = Lidar(initial_state.lidar_obstacle_detection_status, grpc_channel)
+        self.lidar = Lidar(initial_state.lidar_safety, grpc_channel)
 
         self._update_with(initial_state)
 
     def __repr__(self) -> str:
         """Clean representation of a mobile base."""
         repr_template = (
-            '<MobileBase host="{host}" on={on} \n'
-            " lidar_safety_enabled={lidar_safety_enabled} \n"
-            " battery_voltage={battery_voltage}>"
+            "<MobileBase on={on} \n" " lidar_safety_enabled={lidar_safety_enabled} \n" " battery_voltage={battery_voltage}>"
         )
         return repr_template.format(
             on=self.is_on(),
@@ -85,18 +85,13 @@ class MobileBase:
             battery_voltage=self.battery_voltage,
         )
 
-    def _get_drive_mode(self) -> ZuuuModeCommand:
-        mode_id = self._utility_stub.GetZuuuMode(Empty()).mode
-        return ZuuuModePossiblities.keys()[mode_id]
-
-    def _get_control_mode(self) -> ControlModePossiblities:
-        mode_id = self._utility_stub.GetControlMode(Empty()).mode
-        return ControlModePossiblities.keys()[mode_id]
-
     @property
     def battery_voltage(self) -> float:
         """Return the battery voltage. Battery should be recharged if it reaches 24.5V or below."""
-        return float(round(self._utility_stub.GetBatteryLevel(Empty()).level.value, 1))
+        battery_level = float(round(self._battery_level, 1))
+        if battery_level < 24.5:
+            self._logger.warning(f"Low battery level: {battery_level}V. Consider recharging.")
+        return float(round(self._battery_level, 1))
 
     @property
     def odometry(self) -> Dict[str, float]:
@@ -141,15 +136,15 @@ class MobileBase:
         The 200ms duration is predifined at the ROS level of the mobile base's code.
         This mode is prefered if the user wants to send speed instructions frequently.
         """
-        if self._drive_mode != "cmd_vel":
-            self._set_drive_mode("cmd_vel")
-
         for vel, value in {"x_vel": x_vel, "y_vel": y_vel}.items():
             if abs(value) > self._max_xy_vel:
                 raise ValueError(f"The asbolute value of {vel} should not be more than {self._max_xy_vel}!")
 
         if abs(rot_vel) > self._max_rot_vel:
             raise ValueError(f"The asbolute value of rot_vel should not be more than {self._max_rot_vel}!")
+
+        if self._drive_mode != "cmd_vel":
+            self._set_drive_mode("cmd_vel")
 
         req = TargetDirectionCommand(
             direction=DirectionVector(
@@ -179,7 +174,7 @@ class MobileBase:
         that the mobile base has arrived its goal.
         """
         if self.is_off():
-            raise RuntimeError(("Mobile base is off. Goto not sent."))
+            self._logger.warning("Mobile base is off. Goto not sent.")
 
         exc_queue: Queue[Exception] = Queue()
 
@@ -225,7 +220,6 @@ class MobileBase:
             y_goal=FloatValue(value=y),
             theta_goal=FloatValue(value=deg2rad(theta)),
         )
-        self._drive_mode = "go_to"
         self._mobility_stub.SendGoTo(req)
 
         arrived = await self._is_arrived_in_given_time(time.time(), timeout, tolerance)
@@ -268,12 +262,10 @@ class MobileBase:
 
     def is_on(self) -> bool:
         """Return True if the mobile base is not compliant."""
-        self._drive_mode = self._get_drive_mode().lower()
         return not self._drive_mode == "free_wheel"
 
     def is_off(self) -> bool:
         """Return True if the mobile base is compliant."""
-        self._drive_mode = self._get_drive_mode().lower()
         if self._drive_mode == "free_wheel":
             return True
         return False
@@ -284,4 +276,6 @@ class MobileBase:
 
     def _update_with(self, new_state: MobileBaseState) -> None:
         self._battery_level = new_state.battery_level.level.value
-        self.lidar._update_with(new_state.lidar_obstacle_detection_status)
+        self.lidar._update_with(new_state.lidar_safety)
+        self._drive_mode = ZuuuModePossiblities.keys()[new_state.zuuu_mode.mode].lower()
+        self._control_mode = ControlModePossiblities.keys()[new_state.control_mode.mode].lower()
