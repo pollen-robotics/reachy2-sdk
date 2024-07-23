@@ -220,6 +220,10 @@ class Head:
 
     def set_torque_limits(self, value: int) -> None:
         """Choose percentage of torque max value applied as limit of all head's motors."""
+        if not isinstance(value, float | int):
+            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(value).__name__}")
+        if not (0 <= value <= 100):
+            raise ValueError(f"torque_limit must be in [0, 100], got {value}.")
         req = TorqueLimitRequest(
             id=self._part_id,
             limit=value,
@@ -228,6 +232,10 @@ class Head:
 
     def set_speed_limits(self, value: int) -> None:
         """Choose percentage of speed max value applied as limit of all head's motors."""
+        if not isinstance(value, float | int):
+            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(value).__name__}")
+        if not (0 <= value <= 100):
+            raise ValueError(f"speed_limit must be in [0, 100], got {value}.")
         req = SpeedLimitRequest(
             id=self._part_id,
             limit=value,
