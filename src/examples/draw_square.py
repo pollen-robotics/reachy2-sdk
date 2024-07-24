@@ -21,10 +21,10 @@ def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
 
 
 def draw_square(reachy: ReachySDK) -> None:
-    # In A position, the effector is at (0.3, -0,4, -0.3) in the world frame
-    # In B position, the effector is at (0.3, -0.4, 0) in the world frame
-    # In C position, the effector is at (0.3, -0.1, 0.0) in the world frame
-    # In D position, the effector is at (0.3, -0.1, -0.3) in the world frame
+    # In A position, the effector is at (0.4, -0,5, -0.2) in the world frame
+    # In B position, the effector is at (0.4, -0.5, 0) in the world frame
+    # In C position, the effector is at (0.4, -0.3, 0.0) in the world frame
+    # In D position, the effector is at (0.4, -0.3, -0.2) in the world frame
     # see https://docs.pollen-robotics.com/sdk/first-moves/kinematics/ for Reachy's coordinate system
 
     # Going from A to B
