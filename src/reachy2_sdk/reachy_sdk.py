@@ -24,10 +24,6 @@ from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
-from reachy2_sdk_api.orbita2d_pb2 import Orbita2dsCommand
-from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
-from reachy2_sdk_api.orbita3d_pb2 import Orbita3dsCommand
-from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
 from .config.reachy_info import ReachyInfo
 from .media.audio import Audio
@@ -99,9 +95,6 @@ class ReachySDK(metaclass=Singleton):
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
 
         self._stop_flag = threading.Event()
-        self._ready = threading.Event()
-        self._pushed_2dcommand = threading.Event()
-        self._pushed_3dcommand = threading.Event()
 
         try:
             self._get_info()
@@ -131,10 +124,6 @@ class ReachySDK(metaclass=Singleton):
         if not self._grpc_connected:
             self._logger.warning("Already disconnected from Reachy.")
             return
-
-        for part in self.info._enabled_parts.values():
-            for actuator in part._actuators.values():
-                actuator._need_sync.clear()
 
         self._lost_connection = lost_connection
         self._grpc_connected = False
@@ -226,7 +215,7 @@ class ReachySDK(metaclass=Singleton):
         _actuators: Dict[str, Orbita2d | Orbita3d] = {}
         for part_name in self.info._enabled_parts:
             part = getattr(self, part_name)
-            for actuator_name, actuator in part.actuators.items():
+            for actuator_name, actuator in part._actuators.items():
                 _actuators[part_name + "." + actuator_name] = actuator
         return _actuators
 
@@ -341,61 +330,6 @@ class ReachySDK(metaclass=Singleton):
         if self._lost_connection:
             raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
-    async def _poll_waiting_2dcommands(self) -> Orbita2dsCommand:
-        """Poll registers to update for Orbita2d actuators of the robot."""
-        tasks = []
-
-        for part in self.info._enabled_parts.values():
-            for actuator in part._actuators.values():
-                if isinstance(actuator, Orbita2d):
-                    # tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
-                    tasks.append(asyncio.create_task(actuator._need_sync.wait()))
-
-        if len(tasks) > 0:
-            await asyncio.wait(
-                tasks,
-                return_when=asyncio.FIRST_COMPLETED,
-            )
-            commands = []
-
-            for part in self.info._enabled_parts.values():
-                for actuator in part._actuators.values():
-                    if isinstance(actuator, Orbita2d) and actuator._need_sync.is_set():
-                        commands.append(actuator._pop_command())
-
-            return Orbita2dsCommand(cmd=commands)
-
-        else:
-            pass
-
-    async def _poll_waiting_3dcommands(self) -> Orbita3dsCommand:
-        """Poll registers to update for Orbita3d actuators of the robot."""
-        tasks = []
-
-        for part in self.info._enabled_parts.values():
-            for actuator in part._actuators.values():
-                if isinstance(actuator, Orbita3d):
-                    tasks.append(asyncio.create_task(actuator._need_sync.wait()))
-                    # tasks.append(asyncio.create_task(actuator._need_sync.wait(), name=f"Task for {actuator.name}"))
-
-        if len(tasks) > 0:
-            await asyncio.wait(
-                tasks,
-                return_when=asyncio.FIRST_COMPLETED,
-            )
-
-            commands = []
-
-            for part in self.info._enabled_parts.values():
-                for actuator in part._actuators.values():
-                    if isinstance(actuator, Orbita3d) and actuator._need_sync.is_set():
-                        commands.append(actuator._pop_command())
-
-            return Orbita3dsCommand(cmd=commands)
-
-        else:
-            pass
-
     def _start_sync_in_bg(self) -> None:
         """Start the synchronization asyncio tasks with the robot in background."""
         self._loop = asyncio.new_event_loop()
@@ -408,20 +342,6 @@ class ReachySDK(metaclass=Singleton):
         except asyncio.CancelledError:
             self._logger.error("Sync loop cancelled.")
 
-    def _setup_parts_sync_loops(self) -> None:
-        """Start sync loop of each part"""
-        if self._r_arm is not None:
-            for actuator in self._r_arm._actuators.values():
-                actuator._setup_sync_loop()
-
-        if self._l_arm is not None:
-            for actuator in self._l_arm._actuators.values():
-                actuator._setup_sync_loop()
-
-        if self._head is not None:
-            for actuator in self._head._actuators.values():
-                actuator._setup_sync_loop()
-
     async def _sync_loop(self) -> None:
         """Define the synchronization loop.
 
@@ -430,17 +350,11 @@ class ReachySDK(metaclass=Singleton):
             - update the state of the robot
         """
 
-        self._setup_parts_sync_loops()
-
         async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
         reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
-        orbita2d_stub = Orbita2dServiceStub(async_channel)
-        orbita3d_stub = Orbita3dServiceStub(async_channel)
 
         try:
             await asyncio.gather(
-                self._stream_orbita2d_commands_loop(orbita2d_stub, freq=80),
-                self._stream_orbita3d_commands_loop(orbita3d_stub, freq=80),
                 self._get_stream_update_loop(reachy_stub, freq=100),
                 self._wait_for_stop(),
             )
@@ -457,12 +371,10 @@ class ReachySDK(metaclass=Singleton):
             async for state_update in reachy_stub.StreamReachyState(stream_req):
                 if self._l_arm is not None:
                     self._l_arm._update_with(state_update.l_arm_state)
-                    # if hasattr(self._l_arm, "gripper"):
                     if self._l_arm.gripper is not None:
                         self._l_arm.gripper._update_with(state_update.l_hand_state)
                 if self._r_arm is not None:
                     self._r_arm._update_with(state_update.r_arm_state)
-                    # if hasattr(self._r_arm, "gripper"):
                     if self._r_arm.gripper is not None:
                         self._r_arm.gripper._update_with(state_update.r_hand_state)
                 if self._head is not None:
@@ -471,78 +383,6 @@ class ReachySDK(metaclass=Singleton):
                     self._mobile_base._update_with(state_update.mobile_base_state)
         except grpc.aio._call.AioRpcError:
             raise ConnectionError("")
-
-    async def _stream_orbita2d_commands_loop(self, orbita2d_stub: Orbita2dServiceStub, freq: float) -> None:
-        """Stream commands for the 2d actuators of the robot at a given frequency.
-
-        Poll the waiting commands at a given frequency and stream them to the server.
-        Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
-        """
-
-        async def command_poll_2d() -> Orbita2dsCommand:
-            last_pub = 0.0
-            dt = 1.0 / freq
-
-            while True:
-                elapsed_time = time.time() - last_pub
-                if elapsed_time < dt:
-                    await asyncio.sleep(dt - elapsed_time)
-
-                commands = await self._poll_waiting_2dcommands()
-                yield commands
-                self._pushed_2dcommand.set()
-                self._pushed_2dcommand.clear()
-                last_pub = time.time()
-
-        try:
-            await orbita2d_stub.StreamCommand(command_poll_2d())
-        except grpc.aio._call.AioRpcError:
-            pass
-
-    async def _stream_orbita3d_commands_loop(self, orbita3d_stub: Orbita3dServiceStub, freq: float) -> None:
-        """Stream commands for the 3d actuators of the robot at a given frequency.
-
-        Poll the waiting commands at a given frequency and stream them to the server.
-        Catch if the server is not reachable anymore and set the status of the connection to 'disconnected'.
-        """
-
-        async def command_poll_3d() -> Orbita3dsCommand:
-            last_pub = 0.0
-            dt = 1.0 / freq
-
-            while True:
-                elapsed_time = time.time() - last_pub
-                if elapsed_time < dt:
-                    await asyncio.sleep(dt - elapsed_time)
-
-                commands = await self._poll_waiting_3dcommands()
-                yield commands
-                self._pushed_3dcommand.set()
-                self._pushed_3dcommand.clear()
-                last_pub = time.time()
-
-        try:
-            await orbita3d_stub.StreamCommand(command_poll_3d())
-        except grpc.aio._call.AioRpcError:
-            pass
-
-    # async def _stream_dynamixel_motor_commands_loop(self, dynamixel_motor_stub: DynamixelMotorServiceStub, freq: float) -> None:  # noqa: E501
-    #     async def command_poll_dm() -> DynamixelMotorsCommand:
-    #         last_pub = 0.0
-    #         dt = 1.0 / freq
-
-    #         while True:
-    #             elapsed_time = time.time() - last_pub
-    #             if elapsed_time < dt:
-    #                 await asyncio.sleep(dt - elapsed_time)
-
-    #             commands = await self._poll_waiting_dmcommands()
-    #             yield commands
-    #             self._pushed_dmcommand.set()
-    #             self._pushed_dmcommand.clear()
-    #             last_pub = time.time()
-
-    #     await dynamixel_motor_stub.StreamCommand(command_poll_dm())
 
     def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.
@@ -613,6 +453,10 @@ class ReachySDK(metaclass=Singleton):
         if self._mobile_base is not None and self._mobile_base.is_on():
             return False
         return True
+
+    def send_goal_positions(self) -> None:
+        for actuator in self._actuators.values():
+            actuator.send_goal_positions()
 
     def set_pose(
         self,
@@ -716,9 +560,6 @@ def flush_connection() -> None:
     Cancel any pending asyncio task.
     """
     for reachy in _open_connection:
-        reachy._pushed_2dcommand.wait(timeout=0.5)
-        reachy._pushed_3dcommand.wait(timeout=0.5)
-
         for task in asyncio.all_tasks(loop=reachy._loop):
             task.cancel()
 

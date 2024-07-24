@@ -430,6 +430,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     #     temperatures = self._arm_stub.GetTemperatures(self._part_id)
     #     return temperatures
 
+    def send_goal_positions(self) -> None:
+        for actuator in self._actuators.values():
+            actuator.send_goal_positions()
+
     def set_pose(
         self,
         common_pose: str = "default",

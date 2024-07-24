@@ -89,22 +89,6 @@ def test_orbita2d() -> None:
     # with pytest.raises(ValueError):
     #     orbita2d.set_pid(("1", 2, 3))
 
-    pid_msg = orbita2d._build_grpc_cmd_msg("pid")
-    assert isinstance(pid_msg, PID2d)
-    assert pid.motor_1.p.value == pid_msg.motor_1.p.value
-    assert pid.motor_1.i.value == pid_msg.motor_1.i.value
-    assert pid.motor_1.d.value == pid_msg.motor_1.d.value
-
-    assert pid.motor_2.p.value == pid_msg.motor_2.p.value
-    assert pid.motor_2.i.value == pid_msg.motor_2.i.value
-    assert pid.motor_2.d.value == pid_msg.motor_2.d.value
-
-    float_msg = orbita2d._build_grpc_cmd_msg("speed_limit")
-    assert isinstance(float_msg, Float2d)
-
-    assert float_msg.motor_1.value == speed_limit.motor_1.value
-    assert float_msg.motor_2.value == speed_limit.motor_2.value
-
     # simulated update
 
     compliance = BoolValue(value=False)

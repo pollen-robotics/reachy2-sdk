@@ -10,7 +10,7 @@ from .part import Part
 class IGoToBasedPart(ABC):
     """The IGoToBasedPart class is an interface to define default behavior of all parts using goto functions.
 
-    This interface is meant to be implemented by any relevant part of the robot : Arm, Head, MobileBase
+    This interface is meant to be implemented by any relevant part of the robot : Arm, Head, (MobileBase in the future)
     """
 
     def __init__(

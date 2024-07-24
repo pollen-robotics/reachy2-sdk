@@ -1,13 +1,14 @@
 """This module defines the Orbita3d class and its registers, joints, motors and axis."""
-from typing import Dict, List
+from typing import Dict
 
 from google.protobuf.wrappers_pb2 import FloatValue
 from grpc import Channel
-from reachy2_sdk_api.component_pb2 import PIDGains
+from reachy2_sdk_api.component_pb2 import ComponentId
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita3d_pb2 import (
     Float3d,
     Orbita3dCommand,
+    Orbita3dsCommand,
     Orbita3dState,
     PID3d,
     Vector3d,
@@ -46,12 +47,11 @@ class Orbita3d(Orbita):
         super().__init__(uid, name, "3d", Orbita3dServiceStub(grpc_channel))
         init_state: Dict[str, Dict[str, FloatValue]] = self._create_dict_state(initial_state)
 
-        self._register_needing_sync: List[str] = []
-
         self._roll = OrbitaJoint(initial_state=init_state["roll"], axis_type="roll", actuator=self)
         self._pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
         self._yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
         self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
+        self._axis_name_by_joint = {v: k for k, v in self._joints.items()}
 
         self.__motor_1 = OrbitaMotor(initial_state=init_state["motor_1"], actuator=self)
         self.__motor_2 = OrbitaMotor(initial_state=init_state["motor_2"], actuator=self)
@@ -106,89 +106,20 @@ class Orbita3d(Orbita):
     def yaw(self) -> OrbitaJoint:
         return self._yaw
 
-    def _build_grpc_cmd_msg(self, field: str) -> Float3d:
-        """Build a gRPC message from the registers that need to be synced at the joints and
-        motors level. Registers can either be goal_position, pid or speed_limit/torque_limit.
-        """
-        if field == "goal_position":
-            req = {}
-            if len(self.roll._register_needing_sync) != 0:
-                req["roll"] = self.roll._tmp_state["goal_position"]
-                self.roll._register_needing_sync.clear()
-            if len(self.pitch._register_needing_sync) != 0:
-                req["pitch"] = self.pitch._tmp_state["goal_position"]
-                self.pitch._register_needing_sync.clear()
-            if len(self.yaw._register_needing_sync) != 0:
-                req["yaw"] = self.yaw._tmp_state["goal_position"]
-                self.yaw._register_needing_sync.clear()
-            return Rotation3d(rpy=ExtEulerAngles(**req))
+    def send_goal_positions(self) -> None:
+        req_pos = {}
+        for joint_axis in self._joints.keys():
+            if joint_axis in self._outgoing_goal_positions:
+                req_pos[joint_axis] = FloatValue(value=self._outgoing_goal_positions[joint_axis])
+        pose = Rotation3d(rpy=ExtEulerAngles(**req_pos))
 
-        elif field == "pid":
-            return PID3d(
-                motor_1=PIDGains(
-                    p=self.__motor_1._state[field].p,
-                    i=self.__motor_1._state[field].i,
-                    d=self.__motor_1._state[field].d,
-                ),
-                motor_2=PIDGains(
-                    p=self.__motor_2._state[field].p,
-                    i=self.__motor_2._state[field].i,
-                    d=self.__motor_2._state[field].d,
-                ),
-                motor_3=PIDGains(
-                    p=self.__motor_3._state[field].p,
-                    i=self.__motor_3._state[field].i,
-                    d=self.__motor_3._state[field].d,
-                ),
-            )
-
-        return Float3d(
-            motor_1=self.__motor_1._state[field],
-            motor_2=self.__motor_2._state[field],
-            motor_3=self.__motor_3._state[field],
-        )
-
-    def _build_grpc_cmd_msg_actuator(self, field: str) -> Float3d:
-        """Build a gRPC message from the registers that need to be synced at the actuator level.
-        Registers can either be compliant, pid, speed_limit or torque_limit."""
-        if field == "pid":
-            motor_1_gains = self.__motor_1._tmp_pid
-            motor_2_gains = self.__motor_2._tmp_pid
-            motor_3_gains = self.__motor_3._tmp_pid
-            if type(motor_1_gains) is tuple and type(motor_2_gains) is tuple and type(motor_3_gains) is tuple:
-                return PID3d(
-                    motor_1=PIDGains(
-                        p=FloatValue(value=motor_1_gains[0]),
-                        i=FloatValue(value=motor_1_gains[1]),
-                        d=FloatValue(value=motor_1_gains[2]),
-                    ),
-                    motor_2=PIDGains(
-                        p=FloatValue(value=motor_2_gains[0]),
-                        i=FloatValue(value=motor_2_gains[1]),
-                        d=FloatValue(value=motor_2_gains[2]),
-                    ),
-                    motor_3=PIDGains(
-                        p=FloatValue(value=motor_3_gains[0]),
-                        i=FloatValue(value=motor_3_gains[1]),
-                        d=FloatValue(value=motor_3_gains[2]),
-                    ),
+        command = Orbita3dsCommand(
+            cmd=[
+                Orbita3dCommand(
+                    id=ComponentId(id=self._id),
+                    goal_position=pose,
                 )
-
-        motor_1_value = self.__motor_1._tmp_fields[field]
-        motor_2_value = self.__motor_2._tmp_fields[field]
-        motor_3_value = self.__motor_3._tmp_fields[field]
-        return Float3d(
-            motor_1=FloatValue(value=motor_1_value),
-            motor_2=FloatValue(value=motor_2_value),
-            motor_3=FloatValue(value=motor_3_value),
+            ]
         )
-
-    def _pop_command(self) -> Orbita3dCommand:
-        """Create a gRPC command from the registers that need to be synced."""
-        values = self._make_command()
-
-        command = Orbita3dCommand(**values)
-
-        self._reset_registers()
-
-        return command
+        self._outgoing_goal_positions = {}
+        self._stub.SendCommand(command)
