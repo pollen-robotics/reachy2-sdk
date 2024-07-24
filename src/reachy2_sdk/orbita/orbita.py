@@ -12,6 +12,7 @@ from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 from reachy2_sdk_api.orbita3d_pb2 import Orbita3dState
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
+from .orbita_axis import OrbitaAxis
 from .orbita_motor import OrbitaMotor
 
 
@@ -57,9 +58,10 @@ class Orbita(ABC):
         self._axis_name_by_joint: Dict[Any, str] = {}
         self._motors: Dict[str, OrbitaMotor] = {}
         self._outgoing_goal_positions: Dict[str, float] = {}
+        self._axis: Dict[str, OrbitaAxis] = {}
 
     @abstractmethod
-    def _create_init_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
+    def _create_dict_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
         pass
 
     def __repr__(self) -> str:
@@ -73,14 +75,14 @@ class Orbita(ABC):
     def set_speed_limits(self, speed_limit: float | int) -> None:
         if not isinstance(speed_limit, float | int):
             raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
-        if not (0 < speed_limit < 100):
+        if not (0 <= speed_limit <= 100):
             raise ValueError(f"speed_limit must be in [0, 100], got {speed_limit}.")
 
     @abstractmethod
     def set_torque_limits(self, torque_limit: float | int) -> None:
         if not isinstance(torque_limit, float | int):
             raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
-        if not (0 < torque_limit < 100):
+        if not (0 <= torque_limit <= 100):
             raise ValueError(f"torque_limit must be in [0, 100], got {torque_limit}.")
 
     # def set_pid(self, pid: Tuple[float, float, float]) -> None:
@@ -93,11 +95,11 @@ class Orbita(ABC):
     #         raise ValueError("pid should be of type Tuple[float, float, float]")
 
     def get_speed_limits(self) -> Dict[str, float]:
-        """Get speed_limit of all motors of the actuator"""
+        """Get speed_limit of all motors of the actuator, as a percentage of the max speed"""
         return {motor_name: m.speed_limit for motor_name, m in self._motors.items()}
 
     def get_torque_limits(self) -> Dict[str, float]:
-        """Get torque_limit of all motors of the actuator"""
+        """Get torque_limit of all motors of the actuator, as a percentage of the max torque"""
         return {motor_name: m.torque_limit for motor_name, m in self._motors.items()}
 
     def get_pids(self) -> Dict[str, Tuple[float, float, float]]:
@@ -144,3 +146,15 @@ class Orbita(ABC):
     @abstractmethod
     def send_goal_positions(self) -> None:
         pass
+
+    def _update_with(self, new_state: Orbita2dState | Orbita3dState) -> None:
+        state: Dict[str, Dict[str, FloatValue]] = self._create_dict_state(new_state)
+
+        for name, motor in self._motors.items():
+            motor._update_with(state[name])
+
+        for name, axis in self._axis.items():
+            axis._update_with(state[name])
+
+        for name, joints in self._joints.items():
+            joints._update_with(state[name])

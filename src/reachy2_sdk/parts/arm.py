@@ -27,23 +27,14 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     TorqueLimitRequest,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
-from reachy2_sdk_api.goto_pb2 import (
-    CartesianGoal,
-    GoToAck,
-    GoToId,
-    GoToRequest,
-    JointsGoal,
-)
+from reachy2_sdk_api.goto_pb2 import CartesianGoal, GoToId, GoToRequest, JointsGoal
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
 from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
-from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
-from ..orbita.orbita_joint import OrbitaJoint
-from ..utils.custom_dict import CustomDict
 from ..utils.utils import (
     arm_position_to_list,
     decompose_matrix,
@@ -51,10 +42,12 @@ from ..utils.utils import (
     list_to_arm_position,
     recompose_matrix,
 )
+from .goto_based_part import IGoToBasedPart
 from .hand import Hand
+from .joints_based_part import JointsBasedPart
 
 
-class Arm:
+class Arm(JointsBasedPart, IGoToBasedPart):
     """Arm class used for both left/right arms.
 
     It exposes the kinematics functions for the arm:
@@ -75,10 +68,8 @@ class Arm:
         Connect to the arm's gRPC server stub and set up the arm's actuators.
         """
         self._logger = logging.getLogger(__name__)
-        self._grpc_channel = grpc_channel
-        self._arm_stub = ArmServiceStub(grpc_channel)
-        self._goto_stub = goto_stub
-        self._part_id = PartId(id=arm_msg.part_id.id, name=arm_msg.part_id.name)
+        JointsBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel))
+        IGoToBasedPart.__init__(self, self, goto_stub)
 
         self._setup_arm(arm_msg, initial_state)
         self._gripper: Optional[Hand] = None
@@ -136,21 +127,12 @@ class Arm:
     def gripper(self) -> Optional[Hand]:
         return self._gripper
 
-    @property
-    def joints(self) -> CustomDict[str, OrbitaJoint]:
-        """Get all the arm's joints."""
-        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
-        for actuator_name, actuator in self._actuators.items():
-            for joint in actuator._joints.values():
-                _joints[actuator_name + "." + joint._axis_type] = joint
-        return _joints
-
     def turn_on(self) -> None:
         """Turn all motors of the part on.
 
         All arm's motors will then be stiff.
         """
-        self._arm_stub.TurnOn(self._part_id)
+        super().turn_on()
         if self._gripper is not None:
             self._gripper.turn_on()
 
@@ -159,7 +141,7 @@ class Arm:
 
         All arm's motors will then be compliant.
         """
-        self._arm_stub.TurnOff(self._part_id)
+        super().turn_off()
         if self._gripper is not None:
             self._gripper.turn_off()
 
@@ -170,7 +152,7 @@ class Arm:
         """
         self.set_torque_limits(20)
         time.sleep(duration)
-        self._arm_stub.TurnOff(self._part_id)
+        super().turn_off()
         if self._gripper is not None:
             self._gripper.turn_off()
         time.sleep(0.2)
@@ -178,34 +160,40 @@ class Arm:
 
     def set_torque_limits(self, value: int) -> None:
         """Choose percentage of torque max value applied as limit of all arm's motors."""
+        if not isinstance(value, float | int):
+            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(value).__name__}")
+        if not (0 <= value <= 100):
+            raise ValueError(f"torque_limit must be in [0, 100], got {value}.")
         req = TorqueLimitRequest(
             id=self._part_id,
             limit=value,
         )
-        self._arm_stub.SetTorqueLimit(req)
+        self._stub.SetTorqueLimit(req)
 
     def set_speed_limits(self, value: int) -> None:
         """Choose percentage of speed max value applied as limit of all arm's motors."""
+        if not isinstance(value, float | int):
+            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(value).__name__}")
+        if not (0 <= value <= 100):
+            raise ValueError(f"speed_limit must be in [0, 100], got {value}.")
         req = SpeedLimitRequest(
             id=self._part_id,
             limit=value,
         )
-        self._arm_stub.SetSpeedLimit(req)
+        self._stub.SetSpeedLimit(req)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
-        for actuator in self._actuators.values():
-            if not actuator.is_on():
-                return False
+        if not super().is_on():
+            return False
         if self._gripper is not None and not self._gripper.is_on():
             return False
         return True
 
     def is_off(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
-        for actuator in self._actuators.values():
-            if actuator.is_on():
-                return False
+        if not super().is_off():
+            return False
         if self._gripper is not None and self._gripper.is_on():
             return False
         return True
@@ -239,7 +227,7 @@ class Arm:
                 raise ValueError(f"joints_positions should be length 7 (got {len(joints_positions)} instead)!")
             req_params["position"] = list_to_arm_position(joints_positions, degrees)
         req = ArmFKRequest(**req_params)
-        resp = self._arm_stub.ComputeArmFK(req)
+        resp = self._stub.ComputeArmFK(req)
         if not resp.success:
             raise ValueError(f"No solution found for the given joints ({joints_positions})!")
 
@@ -286,7 +274,7 @@ class Arm:
             req_params["q0"] = list_to_arm_position(present_joints_positions, degrees)
 
         req = ArmIKRequest(**req_params)
-        resp = self._arm_stub.ComputeArmIK(req)
+        resp = self._stub.ComputeArmIK(req)
 
         if not resp.success:
             raise ValueError(f"No solution found for the given target ({target})!")
@@ -400,7 +388,7 @@ class Arm:
                 id=self._part_id,
                 goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
             )
-            self._arm_stub.SendArmCartesianGoal(request)
+            self._stub.SendArmCartesianGoal(request)
             time.sleep(time_step)
 
         current_pose = self.forward_kinematics()
@@ -413,7 +401,7 @@ class Arm:
                     id=self._part_id,
                     goal_pose=Matrix4x4(data=target.flatten().tolist()),
                 )
-                self._arm_stub.SendArmCartesianGoal(request)
+                self._stub.SendArmCartesianGoal(request)
                 time.sleep(time_step)
 
             # Small delay to make sure the present position is correctly read
@@ -450,24 +438,9 @@ class Arm:
         response = self._goto_stub.GoToJoints(request)
         return response
 
-    def get_move_playing(self) -> GoToId:
-        """Return the id of the goto currently playing on the arm"""
-        response = self._goto_stub.GetPartGoToPlaying(self._part_id)
-        return response
-
-    def get_moves_queue(self) -> List[GoToId]:
-        """Return the list of all goto ids waiting to be played on the arm"""
-        response = self._goto_stub.GetPartGoToQueue(self._part_id)
-        return [goal_id for goal_id in response.goto_ids]
-
-    def cancel_all_moves(self) -> GoToAck:
-        """Ask the cancellation of all waiting goto on the arm"""
-        response = self._goto_stub.CancelPartAllGoTo(self._part_id)
-        return response
-
     def get_joints_positions(self) -> List[float]:
         """Return the current joints positions of the arm in degrees"""
-        response = self._arm_stub.GetJointPosition(self._part_id)
+        response = self._stub.GetJointPosition(self._part_id)
         positions = arm_position_to_list(response)
         return positions
 
