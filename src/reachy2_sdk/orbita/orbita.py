@@ -95,11 +95,11 @@ class Orbita(ABC):
     #         raise ValueError("pid should be of type Tuple[float, float, float]")
 
     def get_speed_limits(self) -> Dict[str, float]:
-        """Get speed_limit of all motors of the actuator"""
+        """Get speed_limit of all motors of the actuator, as a percentage of the max speed"""
         return {motor_name: m.speed_limit for motor_name, m in self._motors.items()}
 
     def get_torque_limits(self) -> Dict[str, float]:
-        """Get torque_limit of all motors of the actuator"""
+        """Get torque_limit of all motors of the actuator, as a percentage of the max torque"""
         return {motor_name: m.torque_limit for motor_name, m in self._motors.items()}
 
     def get_pids(self) -> Dict[str, Tuple[float, float, float]]:

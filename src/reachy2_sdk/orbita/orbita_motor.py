@@ -46,7 +46,7 @@ class OrbitaMotor:
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
         self._temperature = new_state["temperature"].value
-        self._speed_limit = new_state["speed_limit"].value * 100
-        self._torque_limit = new_state["torque_limit"].value * 100
+        self._speed_limit = new_state["speed_limit"].value * 100  # received value in [0, 1]
+        self._torque_limit = new_state["torque_limit"].value * 100  # received value in [0, 1]
         self._compliant = new_state["compliant"].value
         self._pid = unwrapped_pid_value(new_state["pid"])
