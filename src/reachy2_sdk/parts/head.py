@@ -12,13 +12,7 @@ import grpc
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
-from reachy2_sdk_api.goto_pb2 import (
-    CartesianGoal,
-    GoToAck,
-    GoToId,
-    GoToRequest,
-    JointsGoal,
-)
+from reachy2_sdk_api.goto_pb2 import CartesianGoal, GoToId, GoToRequest, JointsGoal
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
@@ -31,15 +25,14 @@ from reachy2_sdk_api.head_pb2 import (
 )
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
-from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.orbita3d import Orbita3d
-from ..orbita.orbita_joint import OrbitaJoint
-from ..utils.custom_dict import CustomDict
 from ..utils.utils import get_grpc_interpolation_mode
+from .goto_based_part import IGoToBasedPart
+from .joints_based_part import JointsBasedPart
 
 
-class Head:
+class Head(JointsBasedPart, IGoToBasedPart):
     """Head class.
 
     It exposes the neck orbita actuator at the base of the head.
@@ -56,10 +49,8 @@ class Head:
     ) -> None:
         """Initialize the head with its actuators."""
         self._logger = logging.getLogger(__name__)
-        self._grpc_channel = grpc_channel
-        self._goto_stub = goto_stub
-        self._head_stub = HeadServiceStub(grpc_channel)
-        self._part_id = PartId(id=head_msg.part_id.id, name=head_msg.part_id.name)
+        JointsBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel))
+        IGoToBasedPart.__init__(self, self, goto_stub)
 
         self._setup_head(head_msg, initial_state)
         self._actuators = {
@@ -90,21 +81,12 @@ class Head:
     def neck(self) -> Orbita3d:
         return self._neck
 
-    @property
-    def joints(self) -> CustomDict[str, OrbitaJoint]:
-        """Get all the arm's joints."""
-        _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
-        for actuator_name, actuator in self._actuators.items():
-            for joint in actuator._joints.values():
-                _joints[actuator_name + "." + joint._axis_type] = joint
-        return _joints
-
     def get_orientation(self) -> pyQuat:
         """Get the current orientation of the head.
 
         It will return the quaternion (x, y, z, w).
         """
-        quat = self._head_stub.GetOrientation(self._part_id).q
+        quat = self._stub.GetOrientation(self._part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def get_joints_positions(self) -> List[float]:
@@ -204,20 +186,6 @@ class Head:
         response = self._goto_stub.GoToJoints(request)
         return response
 
-    def turn_on(self) -> None:
-        """Turn all motors of the part on.
-
-        All head's motors will then be stiff.
-        """
-        self._head_stub.TurnOn(self._part_id)
-
-    def turn_off(self) -> None:
-        """Turn all motors of the part off.
-
-        All head's motors will then be compliant.
-        """
-        self._head_stub.TurnOff(self._part_id)
-
     def set_torque_limits(self, value: int) -> None:
         """Choose percentage of torque max value applied as limit of all head's motors."""
         if not isinstance(value, float | int):
@@ -228,7 +196,7 @@ class Head:
             id=self._part_id,
             limit=value,
         )
-        self._head_stub.SetTorqueLimit(req)
+        self._stub.SetTorqueLimit(req)
 
     def set_speed_limits(self, value: int) -> None:
         """Choose percentage of speed max value applied as limit of all head's motors."""
@@ -240,36 +208,7 @@ class Head:
             id=self._part_id,
             limit=value,
         )
-        self._head_stub.SetSpeedLimit(req)
-
-    def is_on(self) -> bool:
-        """Return True if all actuators of the arm are stiff"""
-        for actuator in self._actuators.values():
-            if not actuator.is_on():
-                return False
-        return True
-
-    def is_off(self) -> bool:
-        """Return True if all actuators of the arm are stiff"""
-        for actuator in self._actuators.values():
-            if actuator.is_on():
-                return False
-        return True
-
-    def get_move_playing(self) -> GoToId:
-        """Return the id of the goto currently playing on the head"""
-        response = self._goto_stub.GetPartGoToPlaying(self._part_id)
-        return response
-
-    def get_moves_queue(self) -> List[GoToId]:
-        """Return the list of all goto ids waiting to be played on the head"""
-        response = self._goto_stub.GetPartGoToQueue(self._part_id)
-        return [goal_id for goal_id in response.goto_ids]
-
-    def cancel_all_moves(self) -> GoToAck:
-        """Ask the cancellation of all waiting goto on the head"""
-        response = self._goto_stub.CancelPartAllGoTo(self._part_id)
-        return response
+        self._stub.SetSpeedLimit(req)
 
     def send_goal_positions(self) -> None:
         for actuator in self._actuators.values():
