@@ -9,6 +9,7 @@ from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
+from .orbita_axis import OrbitaAxis
 from .orbita_motor import OrbitaMotor
 
 
@@ -54,9 +55,10 @@ class Orbita(ABC):
         self._register_needing_sync: List[str] = []
         self._joints: Dict[str, Any] = {}
         self._motors: Dict[str, OrbitaMotor] = {}
+        self._axis: Dict[str, OrbitaAxis] = {}
 
     @abstractmethod
-    def _create_init_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
+    def _create_dict_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
         pass
 
     def __repr__(self) -> str:
@@ -204,3 +206,15 @@ class Orbita(ABC):
         for obj in list(self._motors.values()):
             obj._register_needing_sync.clear()
         self._need_sync.clear()
+
+    def _update_with(self, new_state: Orbita2dState | Orbita3dState) -> None:
+        state: Dict[str, Dict[str, FloatValue]] = self._create_dict_state(new_state)
+
+        for name, motor in self._motors.items():
+            motor._update_with(state[name])
+
+        for name, axis in self._axis.items():
+            axis._update_with(state[name])
+
+        for name, joints in self._joints.items():
+            joints._update_with(state[name])

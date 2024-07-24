@@ -57,7 +57,7 @@ class Orbita2d(Orbita):
         axis1_name = Axis.DESCRIPTOR.values_by_number[axis1].name.lower()
         axis2_name = Axis.DESCRIPTOR.values_by_number[axis2].name.lower()
 
-        init_state: Dict[str, Dict[str, FloatValue]] = self._create_init_state(initial_state)
+        init_state: Dict[str, Dict[str, FloatValue]] = self._create_dict_state(initial_state)
 
         setattr(
             self,
@@ -82,7 +82,7 @@ class Orbita2d(Orbita):
         self.__y = OrbitaAxis(initial_state=init_state["y"])
         self._axis = {"x": self.__x, "y": self.__y}
 
-    def _create_init_state(self, initial_state: Orbita2dState) -> Dict[str, Dict[str, FloatValue]]:  # noqa: C901
+    def _create_dict_state(self, initial_state: Orbita2dState) -> Dict[str, Dict[str, FloatValue]]:  # noqa: C901
         init_state: Dict[str, Dict[str, FloatValue]] = {}
 
         for field, value in initial_state.ListFields():
@@ -183,38 +183,3 @@ class Orbita2d(Orbita):
         self._reset_registers()
 
         return command
-
-    def _update_with(self, new_state: Orbita2dState) -> None:  # noqa: C901
-        """Update the orbita with a newly received (partial) state received from the gRPC server."""
-        state: Dict[str, Dict[str, FloatValue]] = {}
-
-        for field, value in new_state.ListFields():
-            if field.name == "compliant":
-                self._compliant = value.value
-                state["motor_1"][field.name] = value
-                state["motor_2"][field.name] = value
-            else:
-                if isinstance(value, Pose2d):
-                    for axis, val in value.ListFields():
-                        if axis.name not in state:
-                            state[axis.name] = {}
-                        state[axis.name][field.name] = val
-                if isinstance(value, Float2d | PID2d):
-                    for motor, val in value.ListFields():
-                        if motor.name not in state:
-                            state[motor.name] = {}
-                        state[motor.name][field.name] = val
-                if isinstance(value, Vector2d):
-                    for axis, val in value.ListFields():
-                        if axis.name not in state:
-                            state[axis.name] = {}
-                        state[axis.name][field.name] = val
-
-        for name, motor in self._motors.items():
-            motor._update_with(state[name])
-
-        for name, axis in self._axis.items():
-            axis._update_with(state[name])
-
-        for name, joint in self._joints.items():
-            joint._update_with(state[name])
