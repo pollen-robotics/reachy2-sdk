@@ -168,7 +168,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             id=self._part_id,
             limit=value,
         )
-        self._arm_stub.SetTorqueLimit(req)
+        self._stub.SetTorqueLimit(req)
 
     def set_speed_limits(self, value: int) -> None:
         """Choose percentage of speed max value applied as limit of all arm's motors."""
@@ -180,7 +180,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             id=self._part_id,
             limit=value,
         )
-        self._arm_stub.SetSpeedLimit(req)
+        self._stub.SetSpeedLimit(req)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
