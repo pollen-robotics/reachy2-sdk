@@ -552,12 +552,14 @@ class ReachySDK:
     @staticmethod
     def patch_exception_handler(loop: asyncio.AbstractEventLoop) -> None:
         """
-        Patches to ignore the asyncio exception handler `BlockingIOError: [Errno 11] Resource temporarily unavailable`, error
-        that is emitted by `aio.grpc` when multiple event loops are used in separate threads. This error is not actually an implementation/call error,
-        it's just a problem with grpc's cython implementation of `aio.Channel.__init__` whereby a `socket.recv(1)` call only works on the first call with
-        all subsequent calls to `aio.Channel.__init__` throwing the above error.
+        Patches to ignore the asyncio exception handler `BlockingIOError: [Errno 11] Resource temporarily unavailable`.
+        This error is emitted by `aio.grpc` when multiple event loops are used in separate threads. This error is not actually
+        an implementation/call error, it's just a problem with grpc's cython implementation of `aio.Channel.__init__` whereby a
+        `socket.recv(1)` call only works on the first call with all subsequent calls to `aio.Channel.__init__` throwing the
+        above error.
 
-        This call within the `aio.Channel.__init__` method does not affect the functionality of the library and can be safely ignored.
+        It seems this call within the `aio.Channel.__init__` method does not affect the functionality of the library
+        and can be safely ignored.
 
         Context:
             - https://github.com/grpc/grpc/issues/25364
