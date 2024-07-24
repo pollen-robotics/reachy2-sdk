@@ -35,7 +35,6 @@ from .parts.arm import Arm
 from .parts.head import Head
 from .parts.mobile_base import MobileBase
 from .utils.custom_dict import CustomDict
-from .utils.singleton import Singleton
 from .utils.utils import (
     arm_position_to_list,
     ext_euler_angles_to_list,
