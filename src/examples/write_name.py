@@ -9,6 +9,10 @@ import numpy.typing as npt
 from reachy2_sdk import ReachySDK
 
 
+# For scale 1
+SIZE = 0.01
+
+
 def circlePoints(r: float, n: int = 100) -> List[Tuple[float, float]]:
     return [(math.cos(2 * math.pi / n * x) * r, math.sin(2 * math.pi / n * x) * r) for x in range(0, n + 1)]
 
@@ -49,12 +53,15 @@ def send_arm_position(reachy: ReachySDK, ik_sol: List[float]) -> None:
     reachy.send_goal_positions()
 
 
-def write_A(reachy: ReachySDK, x: float, y: float, z: float) -> None:
+def write_A(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
     print("Starting A")
 
-    y_range = np.linspace(y, y - 0.005, num=20)
-    y2_range = np.linspace(y - 0.005, y - 0.01, num=20)
-    z_range = np.linspace(z, z + 0.01, num=20)
+    half_size = (SIZE / 2) * scale
+    size = SIZE * scale
+
+    y_range = np.linspace(y, y - half_size, num=20)
+    y2_range = np.linspace(y - half_size, y - size, num=20)
+    z_range = np.linspace(z, z + size, num=20)
     line_1 = [(ya, za) for ya, za in zip(y_range, z_range)]
     line_2 = [(ya, za) for ya, za in zip(y2_range, reversed(z_range))]
 
@@ -88,12 +95,16 @@ def write_A(reachy: ReachySDK, x: float, y: float, z: float) -> None:
 
 def write_B(reachy: ReachySDK, x: float, y: float, z: float) -> None:
     print("Starting B")
-    z_range = np.linspace(z + 0.01, z, num=20)
+
+    half_size = (SIZE / 2) * scale
+    size = SIZE * scale
+
+    z_range = np.linspace(z + size, z, num=20)
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + 0.01))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + 0.01), duration=1)
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
     while not reachy.is_move_finished(first_pos):
         time.sleep(0.1)
 
@@ -103,20 +114,20 @@ def write_B(reachy: ReachySDK, x: float, y: float, z: float) -> None:
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + 0.01))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + 0.01))
+    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
     while not reachy.is_move_finished(inter_pos):
         time.sleep(0.1)
 
     nb_points = 30
-    points = ellipsePoints(0.01, 0.0025, nb_points)
+    points = ellipsePoints(size, size / 4, nb_points)
     for yp, zp in points[: nb_points // 2 + 1]:
-        target_pose = build_pose_matrix(x, y - yp, z + zp + 0.0075)
+        target_pose = build_pose_matrix(x, y - yp, z + zp + 3 * size / 4)
         ik = reachy.r_arm.inverse_kinematics(target_pose)
         send_arm_position(reachy, ik)
         time.sleep(0.1)
     for yp, zp in points[: nb_points // 2 + 1]:
-        target_pose = build_pose_matrix(x, y - yp, z + zp + 0.0025)
+        target_pose = build_pose_matrix(x, y - yp, z + zp + size / 4)
         ik = reachy.r_arm.inverse_kinematics(target_pose)
         send_arm_position(reachy, ik)
         time.sleep(0.1)
@@ -613,9 +624,13 @@ if __name__ == "__main__":
     while not reachy.is_move_finished(r_arm_90):
         time.sleep(0.1)
 
+    letters_space = SIZE + SIZE / 2
+
     starting_y = -0.35
     x = 0.45
     z = 0
+    scale = 1
+
     write_R(reachy, x, starting_y, z)
     write_E(reachy, x, starting_y - 0.015, z)
     write_A(reachy, x, starting_y - 0.015 * 2, z)
