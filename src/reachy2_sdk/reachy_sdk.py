@@ -16,7 +16,7 @@ import threading
 import time
 from collections import namedtuple
 from logging import getLogger
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
@@ -49,7 +49,7 @@ GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 """Named tuple for easy access to goto request on full body"""
 
 
-class ReachySDK(metaclass=Singleton):
+class ReachySDK:
     """The ReachySDK class handles the connection with your robot.
     Only one instance of this class can be created in a session.
 
@@ -109,6 +109,10 @@ class ReachySDK(metaclass=Singleton):
         self._setup_parts()
         # self._setup_audio()
         self._cameras = self._setup_video()
+
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
+        ReachySDK.patch_exception_handler(self._loop)
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
@@ -332,9 +336,6 @@ class ReachySDK(metaclass=Singleton):
 
     def _start_sync_in_bg(self) -> None:
         """Start the synchronization asyncio tasks with the robot in background."""
-        self._loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self._loop)
-
         try:
             self._loop.run_until_complete(self._sync_loop())
             if self._grpc_connected:
@@ -548,6 +549,29 @@ class ReachySDK(metaclass=Singleton):
             mode=mode,
         )
         return request
+
+    @staticmethod
+    def patch_exception_handler(loop: asyncio.AbstractEventLoop) -> None:
+        """
+        Patches to ignore the asyncio exception handler `BlockingIOError: [Errno 11] Resource temporarily unavailable`, error
+        that is emitted by `aio.grpc` when multiple event loops are used in separate threads. This error is not actually an implementation/call error,
+        it's just a problem with grpc's cython implementation of `aio.Channel.__init__` whereby a `socket.recv(1)` call only works on the first call with
+        all subsequent calls to `aio.Channel.__init__` throwing the above error.
+
+        This call within the `aio.Channel.__init__` method does not affect the functionality of the library and can be safely ignored.
+
+        Context:
+            - https://github.com/grpc/grpc/issues/25364
+        """
+
+        def exception_handler(loop: asyncio.AbstractEventLoop, context: Dict[str, Any]) -> None:
+            if "exception" in context:
+                err = f"{type(context['exception']).__name__}: {context['exception']}"
+                if "BlockingIOError: [Errno 11] Resource temporarily unavailable" == err:
+                    return
+            loop.default_exception_handler(context)
+
+        loop.set_exception_handler(exception_handler)
 
 
 _open_connection: List[ReachySDK] = []
