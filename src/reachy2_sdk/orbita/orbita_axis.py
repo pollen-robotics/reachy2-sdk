@@ -17,10 +17,7 @@ class OrbitaAxis:
     def __init__(self, initial_state: Dict[str, FloatValue]) -> None:
         """Initialize the axis with its initial state."""
 
-        self._present_speed = initial_state["present_speed"].value
-        self._present_load = initial_state["present_load"].value
-
-        self._state = initial_state
+        self._update_with(initial_state)
 
     @property
     def present_speed(self) -> float:

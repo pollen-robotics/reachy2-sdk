@@ -1,5 +1,5 @@
 """This module describes Orbita2d and Orbita3d joints."""
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from google.protobuf.wrappers_pb2 import FloatValue
 
@@ -18,10 +18,7 @@ class OrbitaJoint:
         self._actuator = actuator
         self._axis_type = axis_type
 
-        self._present_position = initial_state["present_position"].value
-        self._goal_position = initial_state["goal_position"].value
-
-        self._register_needing_sync: List[str] = []
+        self._update_with(initial_state)
 
     def __repr__(self) -> str:
         repr_template = (

@@ -119,6 +119,24 @@ def test_class() -> None:
     assert len(head._actuators) == 1
     assert isinstance(head._actuators, dict)
 
+    with pytest.raises(ValueError):
+        head.set_speed_limits("wrong value")
+
+    with pytest.raises(ValueError):
+        head.set_speed_limits(120)
+
+    with pytest.raises(ValueError):
+        head.set_speed_limits(-10)
+
+    with pytest.raises(ValueError):
+        head.set_torque_limits("wrong value")
+
+    with pytest.raises(ValueError):
+        head.set_torque_limits(120)
+
+    with pytest.raises(ValueError):
+        head.set_torque_limits(-10)
+
     assert head.neck.roll.goal_position == to_position(goal_rot.rpy.roll.value)
     assert head.neck.roll.present_position == to_position(present_rot.rpy.roll.value)
     assert head.neck.pitch.goal_position == to_position(goal_rot.rpy.pitch.value)

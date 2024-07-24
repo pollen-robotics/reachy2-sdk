@@ -133,3 +133,38 @@ class Orbita2d(Orbita):
         )
         self._outgoing_goal_positions = {}
         self._stub.SendCommand(command)
+
+    def set_speed_limits(self, speed_limit: float | int) -> None:
+        """Set a speed_limit as a percentage of the max speed on all motors of the actuator"""
+        super().set_speed_limits(speed_limit)
+        speed_limit = speed_limit / 100.0
+        command = Orbita2dsCommand(
+            cmd=[
+                Orbita2dCommand(
+                    id=ComponentId(id=self._id),
+                    speed_limit=Float2d(
+                        motor_1=FloatValue(value=speed_limit),
+                        motor_2=FloatValue(value=speed_limit),
+                    ),
+                )
+            ]
+        )
+        self._stub.SendCommand(command)
+
+    def set_torque_limits(self, torque_limit: float | int) -> None:
+        """Set a torque_limit as a percentage of the max torque on all motors of the actuator"""
+        super().set_torque_limits(torque_limit)
+        torque_limit = torque_limit / 100.0
+        command = Orbita2dsCommand(
+            cmd=[
+                Orbita2dCommand(
+                    id=ComponentId(id=self._id),
+                    torque_limit=Float2d(
+                        motor_1=FloatValue(value=torque_limit),
+                        motor_2=FloatValue(value=torque_limit),
+                    ),
+                )
+            ]
+        )
+        print(command)
+        self._stub.SendCommand(command)

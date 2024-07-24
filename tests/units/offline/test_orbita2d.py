@@ -57,7 +57,7 @@ def test_orbita2d() -> None:
     with pytest.raises(AttributeError):
         orbita2d.yaw
 
-    pid_set = orbita2d.get_pid()
+    pid_set = orbita2d.get_pids()
     assert pid_set["motor_1"][0] == pid.motor_1.p.value
     assert pid_set["motor_1"][1] == pid.motor_1.i.value
     assert pid_set["motor_1"][2] == pid.motor_1.d.value
@@ -66,22 +66,34 @@ def test_orbita2d() -> None:
     assert pid_set["motor_2"][1] == pid.motor_2.i.value
     assert pid_set["motor_2"][2] == pid.motor_2.d.value
 
-    torques_set = orbita2d.get_torque_limit()
-    assert torques_set["motor_1"] == torque_limit.motor_1.value
-    assert torques_set["motor_2"] == torque_limit.motor_2.value
+    torques_set = orbita2d.get_torque_limits()
+    assert torques_set["motor_1"] == torque_limit.motor_1.value * 100
+    assert torques_set["motor_2"] == torque_limit.motor_2.value * 100
 
-    speed_set = orbita2d.get_speed_limit()
-    assert speed_set["motor_1"] == to_position(speed_limit.motor_1.value)
-    assert speed_set["motor_2"] == to_position(speed_limit.motor_2.value)
+    speed_set = orbita2d.get_speed_limits()
+    assert speed_set["motor_1"] == speed_limit.motor_1.value * 100
+    assert speed_set["motor_2"] == speed_limit.motor_2.value * 100
 
     orbita2d.temperatures["motor_1"] == temperature.motor_1.value
     orbita2d.temperatures["motor_2"] == temperature.motor_1.value
 
-    # with pytest.raises(ValueError):
-    #     orbita2d.set_speed_limit("wrong value")
+    with pytest.raises(ValueError):
+        orbita2d.set_speed_limits("wrong value")
 
-    # with pytest.raises(ValueError):
-    #     orbita2d.set_torque_limit("wrong value")
+    with pytest.raises(ValueError):
+        orbita2d.set_speed_limits(120)
+
+    with pytest.raises(ValueError):
+        orbita2d.set_speed_limits(-10)
+
+    with pytest.raises(ValueError):
+        orbita2d.set_torque_limits("wrong value")
+
+    with pytest.raises(ValueError):
+        orbita2d.set_torque_limits(120)
+
+    with pytest.raises(ValueError):
+        orbita2d.set_torque_limits(-10)
 
     # with pytest.raises(ValueError):
     #     orbita2d.set_pid("wrong value")
@@ -124,7 +136,7 @@ def test_orbita2d() -> None:
     assert orbita2d.pitch.goal_position == to_position(goal_position.axis_1.value)
     assert orbita2d.pitch.present_position == to_position(present_position.axis_1.value)
 
-    pid_set = orbita2d.get_pid()
+    pid_set = orbita2d.get_pids()
     assert pid_set["motor_1"][0] == pid_new.motor_1.p.value
     assert pid_set["motor_1"][1] == pid_new.motor_1.i.value
     assert pid_set["motor_1"][2] == pid_new.motor_1.d.value
@@ -133,13 +145,13 @@ def test_orbita2d() -> None:
     assert pid_set["motor_2"][1] == pid_new.motor_2.i.value
     assert pid_set["motor_2"][2] == pid_new.motor_2.d.value
 
-    torques_set = orbita2d.get_torque_limit()
-    assert torques_set["motor_1"] == torque_limit.motor_1.value
-    assert torques_set["motor_2"] == torque_limit.motor_2.value
+    torques_set = orbita2d.get_torque_limits()
+    assert torques_set["motor_1"] == torque_limit.motor_1.value * 100
+    assert torques_set["motor_2"] == torque_limit.motor_2.value * 100
 
-    speed_set = orbita2d.get_speed_limit()
-    assert speed_set["motor_1"] == to_position(speed_limit.motor_1.value)
-    assert speed_set["motor_2"] == to_position(speed_limit.motor_2.value)
+    speed_set = orbita2d.get_speed_limits()
+    assert speed_set["motor_1"] == speed_limit.motor_1.value * 100
+    assert speed_set["motor_2"] == speed_limit.motor_2.value * 100
 
     orbita2d.temperatures["motor_1"] == temperature.motor_1.value
     orbita2d.temperatures["motor_2"] == temperature.motor_1.value

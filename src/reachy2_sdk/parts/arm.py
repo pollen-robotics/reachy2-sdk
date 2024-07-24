@@ -23,6 +23,8 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmIKRequest,
     ArmJointGoal,
     ArmState,
+    SpeedLimitRequest,
+    TorqueLimitRequest,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import CartesianGoal, GoToId, GoToRequest, JointsGoal
@@ -148,13 +150,37 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         All arm's motors will see their torque limit reduces from a determined duration, then will be fully compliant.
         """
-        self.set_torque_limit(20)
+        self.set_torque_limits(20)
         time.sleep(duration)
         super().turn_off()
         if self._gripper is not None:
             self._gripper.turn_off()
         time.sleep(0.2)
-        self.set_torque_limit(100)
+        self.set_torque_limits(100)
+
+    def set_torque_limits(self, value: int) -> None:
+        """Choose percentage of torque max value applied as limit of all arm's motors."""
+        if not isinstance(value, float | int):
+            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(value).__name__}")
+        if not (0 <= value <= 100):
+            raise ValueError(f"torque_limit must be in [0, 100], got {value}.")
+        req = TorqueLimitRequest(
+            id=self._part_id,
+            limit=value,
+        )
+        self._stub.SetTorqueLimit(req)
+
+    def set_speed_limits(self, value: int) -> None:
+        """Choose percentage of speed max value applied as limit of all arm's motors."""
+        if not isinstance(value, float | int):
+            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(value).__name__}")
+        if not (0 <= value <= 100):
+            raise ValueError(f"speed_limit must be in [0, 100], got {value}.")
+        req = SpeedLimitRequest(
+            id=self._part_id,
+            limit=value,
+        )
+        self._stub.SetSpeedLimit(req)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
