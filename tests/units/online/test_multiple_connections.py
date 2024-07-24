@@ -41,11 +41,14 @@ def test_same_robot(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy2.r_arm.get_joints_positions() == [0, 0, 0, 0, 0, 0, 0]
     assert reachy2.r_arm.get_joints_positions() == reachy_sdk_zeroed.r_arm.get_joints_positions()
 
-    move1 = reachy_sdk_zeroed.l_arm.goto_joints([10, 20, 25, -90, 10, 10, 10], duration=5)
+    move1_goal = [10, 20, 25, -90, 10, 10, 10]
+    move1_id = reachy_sdk_zeroed.l_arm.goto_joints(move1_goal, duration=5)
 
     time.sleep(0.1)
-    assert reachy_sdk_zeroed.is_move_playing(move1) == reachy2.is_move_playing(move1)
+    assert reachy_sdk_zeroed.is_move_playing(move1_id) == reachy2.is_move_playing(move1_id)
 
-    while not reachy_sdk_zeroed.is_move_finished(move1):
+    while not reachy_sdk_zeroed.is_move_finished(move1_id):
         # update loops are not synchronized, we do not expect the same values
         assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), reachy2.l_arm.get_joints_positions(), atol=1)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), move1_goal, atol=1e-01)
+    assert np.allclose(reachy2.l_arm.get_joints_positions(), move1_goal, atol=1e-01)
