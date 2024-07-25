@@ -24,6 +24,7 @@ from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
+from reachy2_sdk_api.reachy_pb2 import ReachyState
 
 from .config.reachy_info import ReachyInfo
 from .media.audio import Audio
@@ -83,6 +84,7 @@ class ReachySDK(metaclass=Singleton):
         self._head: Optional[Head] = None
         self._cameras: Optional[CameraManager] = None
         self._mobile_base: Optional[MobileBase] = None
+        self.info: Optional[ReachyInfo] = None
 
         self.connect()
 
@@ -147,6 +149,10 @@ class ReachySDK(metaclass=Singleton):
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
+
+        if self.info is None:
+            return "Reachy is not connected"
+
         s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self.info._enabled_parts.items()])
         repr_template = (
             '<Reachy host="{host}" connected={connected} on={on} \n'
@@ -196,7 +202,7 @@ class ReachySDK(metaclass=Singleton):
     @property
     def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all joints of the robot."""
-        if not self._grpc_connected:
+        if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot get joints, not connected to Reachy.")
             return CustomDict({})
         _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
@@ -209,7 +215,7 @@ class ReachySDK(metaclass=Singleton):
     @property
     def _actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
         """Get all actuators of the robot."""
-        if not self._grpc_connected:
+        if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot get actuators, not connected to Reachy.")
             return {}
         _actuators: Dict[str, Orbita2d | Orbita3d] = {}
@@ -282,15 +288,10 @@ class ReachySDK(metaclass=Singleton):
             self._logger.error(f"Failed to connect to video server with error {e}.\nReachySDK.video will not be available.")
             return None
 
-    def _setup_parts(self) -> None:
-        """Setup all parts of the robot.
-
-        Get the state of each part of the robot, create an instance for each of them and add
-        it to the ReachySDK instance.
-        """
-        setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
-        self._goto_stub = GoToServiceStub(self._grpc_channel)
-        initial_state = setup_stub.GetReachyState(self._robot.id)
+    def _setup_part_r_arm(self, initial_state: ReachyState) -> None:
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
 
         if self._robot.HasField("r_arm"):
             if initial_state.r_arm_state.activated:
@@ -302,6 +303,11 @@ class ReachySDK(metaclass=Singleton):
             else:
                 self.info._disabled_parts.append("r_arm")
 
+    def _setup_part_l_arm(self, initial_state: ReachyState) -> None:
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
+
         if self._robot.HasField("l_arm"):
             if initial_state.l_arm_state.activated:
                 l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel, self._goto_stub)
@@ -312,6 +318,20 @@ class ReachySDK(metaclass=Singleton):
             else:
                 self.info._disabled_parts.append("l_arm")
 
+    def _setup_part_mobile_base(self, initial_state: ReachyState) -> None:
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
+
+        if self._robot.HasField("mobile_base"):
+            self._mobile_base = MobileBase(self._robot.head, initial_state.mobile_base_state, self._grpc_channel)
+            self.info._set_mobile_base(self._mobile_base)
+
+    def _setup_part_head(self, initial_state: ReachyState) -> None:
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
+
         if self._robot.HasField("head"):
             if initial_state.head_state.activated:
                 head = Head(self._robot.head, initial_state.head_state, self._grpc_channel, self._goto_stub)
@@ -320,9 +340,20 @@ class ReachySDK(metaclass=Singleton):
             else:
                 self.info._disabled_parts.append("head")
 
-        if self._robot.HasField("mobile_base"):
-            self._mobile_base = MobileBase(self._robot.head, initial_state.mobile_base_state, self._grpc_channel)
-            self.info._set_mobile_base(self._mobile_base)
+    def _setup_parts(self) -> None:
+        """Setup all parts of the robot.
+
+        Get the state of each part of the robot, create an instance for each of them and add
+        it to the ReachySDK instance.
+        """
+        setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
+        self._goto_stub = GoToServiceStub(self._grpc_channel)
+        initial_state = setup_stub.GetReachyState(self._robot.id)
+
+        self._setup_part_r_arm(initial_state)
+        self._setup_part_l_arm(initial_state)
+        self._setup_part_head(initial_state)
+        self._setup_part_mobile_base(initial_state)
 
     async def _wait_for_stop(self) -> None:
         while not self._stop_flag.is_set():
@@ -389,7 +420,7 @@ class ReachySDK(metaclass=Singleton):
 
         All enabled parts' motors will then be stiff.
         """
-        if not self._grpc_connected:
+        if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
         for part in self.info._enabled_parts.values():
@@ -404,7 +435,7 @@ class ReachySDK(metaclass=Singleton):
 
         All enabled parts' motors will then be compliant.
         """
-        if not self._grpc_connected:
+        if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         for part in self.info._enabled_parts.values():
@@ -419,7 +450,7 @@ class ReachySDK(metaclass=Singleton):
 
         All enabled parts' motors will then be compliant.
         """
-        if not self._grpc_connected:
+        if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         if hasattr(self, "_mobile_base") and self._mobile_base is not None:
@@ -438,6 +469,10 @@ class ReachySDK(metaclass=Singleton):
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
+        if not self.info:
+            self._logger.warning("Reachy is not connected !")
+            return False
+
         for part in self.info._enabled_parts.values():
             if not part.is_on():
                 return False
@@ -447,6 +482,11 @@ class ReachySDK(metaclass=Singleton):
 
     def is_off(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
+
+        if not self.info:
+            self._logger.warning("Reachy is not connected !")
+            return True
+
         for part in self.info._enabled_parts.values():
             if part.is_on():
                 return False
