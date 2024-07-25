@@ -139,10 +139,6 @@ class ReachySDK(metaclass=Singleton):
         for task in asyncio.all_tasks(loop=self._loop):
             task.cancel()
 
-        if self._cameras is not None:
-            self._cameras._cleanup()
-            self._cameras = None
-
         self._logger.info("Disconnected from Reachy.")
 
     def __repr__(self) -> str:
@@ -247,8 +243,6 @@ class ReachySDK(metaclass=Singleton):
     @property
     def cameras(self) -> CameraManager:
         """Get Reachy's cameras."""
-        self._cameras.wait_end_of_initialization()  # type: ignore[union-attr]
-
         return self._cameras  # type: ignore[return-value]
 
     def _get_info(self) -> None:
@@ -278,8 +272,9 @@ class ReachySDK(metaclass=Singleton):
     def _setup_video(self) -> Optional[CameraManager]:
         try:
             return CameraManager(self._host, self._video_port)
+
         except Exception as e:
-            self._logger.error(f"Failed to connect to video server with error {e}.\nReachySDK.video will not be available.")
+            self._logger.error(f"Failed to connect to video server with error: {e}.\nReachySDK.video will not be available.")
             return None
 
     def _setup_parts(self) -> None:
