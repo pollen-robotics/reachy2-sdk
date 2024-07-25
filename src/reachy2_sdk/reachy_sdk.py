@@ -11,7 +11,7 @@ You can also send joint commands, compute forward or inverse kinematics.
 # from .dynamixel_motor import DynamixelMotor
 
 import asyncio
-import atexit
+# import atexit
 import threading
 import time
 from collections import namedtuple
@@ -109,9 +109,10 @@ class ReachySDK:
         # self._setup_audio()
         self._cameras = self._setup_video()
 
-        self._loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self._loop)
-        ReachySDK.patch_exception_handler(self._loop)
+        # self._loop = asyncio.new_event_loop()
+        # asyncio.set_event_loop(self._loop)
+        # self._loop: asyncio.AbstractEventLoop
+        # ReachySDK.patch_exception_handler(self._loop)
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
@@ -119,7 +120,7 @@ class ReachySDK:
 
         self._grpc_connected = True
         self._lost_connection = False
-        _open_connection.append(self)
+        # _open_connection.append(self)
         self._logger.info("Connected to Reachy.")
 
     def disconnect(self, lost_connection: bool = False) -> None:
@@ -139,8 +140,8 @@ class ReachySDK:
         self._l_arm = None
         self._mobile_base = None
 
-        for task in asyncio.all_tasks(loop=self._loop):
-            task.cancel()
+        # for task in asyncio.all_tasks(loop=self._loop):
+        #    task.cancel()
 
         if self._cameras is not None:
             self._cameras._cleanup()
@@ -327,48 +328,60 @@ class ReachySDK:
             self._mobile_base = MobileBase(self._robot.head, initial_state.mobile_base_state, self._grpc_channel)
             self.info._set_mobile_base(self._mobile_base)
 
-    async def _wait_for_stop(self) -> None:
-        while not self._stop_flag.is_set():
-            await asyncio.sleep(0.1)
-        if self._lost_connection:
-            raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
+    # async def _wait_for_stop(self) -> None:
+    #     while not self._stop_flag.is_set():
+    #         await asyncio.sleep(0.1)
+    #     if self._lost_connection:
+    #         raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
     def _start_sync_in_bg(self) -> None:
         """Start the synchronization asyncio tasks with the robot in background."""
-        try:
-            self._loop.run_until_complete(self._sync_loop())
-            if self._grpc_connected:
-                self.disconnect(lost_connection=True)
-        except asyncio.CancelledError:
-            self._logger.error("Sync loop cancelled.")
+        # try:
+        # self._loop = asyncio.new_event_loop()
+        # asyncio.set_event_loop(self._loop)
+        # self._loop.run_until_complete(self._sync_loop())
+        # self.patch_exception_handler(self._loop)
 
-    async def _sync_loop(self) -> None:
-        """Define the synchronization loop.
+        # async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
+        channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
+        reachy_stub = reachy_pb2_grpc.ReachyServiceStub(channel)
+        self._get_stream_update_loop(reachy_stub, freq=100)
 
-        The synchronization loop is used to:
-            - stream commands to the robot
-            - update the state of the robot
-        """
+        # asyncio.run(self._sync_loop())
 
-        async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
-        reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
+        if self._grpc_connected:
+            self.disconnect(lost_connection=True)
 
-        try:
-            await asyncio.gather(
-                self._get_stream_update_loop(reachy_stub, freq=100),
-                self._wait_for_stop(),
-            )
-        except ConnectionError:
-            self._logger.error("Connection with Reachy lost, check the sdk server status.")
-        except asyncio.CancelledError:
-            if self._lost_connection:
-                self._logger.error("Stopped streaming commands.")
+        # except asyncio.CancelledError:
+        #     self._logger.error("Sync loop cancelled.")
 
-    async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
+    # async def _sync_loop(self) -> None:
+    #     """Define the synchronization loop.
+
+    #     The synchronization loop is used to:
+    #         - stream commands to the robot
+    #         - update the state of the robot
+    #     """
+
+    #     async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
+    #     reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
+
+    #     try:
+    #         await asyncio.gather(
+    #             self._get_stream_update_loop(reachy_stub, freq=100),
+    #             self._wait_for_stop(),
+    #         )
+    #     except ConnectionError:
+    #         self._logger.error("Connection with Reachy lost, check the sdk server status.")
+    #     except asyncio.CancelledError:
+    #         if self._lost_connection:
+    #             self._logger.error("Stopped streaming commands.")
+
+    def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         """Update the state of the robot at a given frequency."""
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         try:
-            async for state_update in reachy_stub.StreamReachyState(stream_req):
+            for state_update in reachy_stub.StreamReachyState(stream_req):
                 if self._l_arm is not None:
                     self._l_arm._update_with(state_update.l_arm_state)
                     if self._l_arm.gripper is not None:
@@ -381,8 +394,9 @@ class ReachySDK:
                     self._head._update_with(state_update.head_state)
                 if self._mobile_base is not None:
                     self._mobile_base._update_with(state_update.mobile_base_state)
-        except grpc.aio._call.AioRpcError:
-            raise ConnectionError("")
+        except grpc._channel._MultiThreadedRendezvous:
+            # if self._lost_connection:
+            raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
     def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.
@@ -575,9 +589,9 @@ class ReachySDK:
         loop.set_exception_handler(exception_handler)
 
 
-_open_connection: List[ReachySDK] = []
+# _open_connection: List[ReachySDK] = []
 
-
+'''
 def flush_connection() -> None:
     """Flush communication before leaving.
 
@@ -590,3 +604,4 @@ def flush_connection() -> None:
 
 
 atexit.register(flush_connection)
+'''
