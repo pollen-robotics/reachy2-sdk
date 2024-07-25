@@ -68,6 +68,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
             name=description.neck.id.name,
             initial_state=initial_state.neck_state,
             grpc_channel=self._grpc_channel,
+            part=self,
+            joints_position_order=[0, 1, 2],
         )
 
     def __repr__(self) -> str:
@@ -123,11 +125,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToCartesian(request)
         return response
 
-    def rotate_to(
+    def goto_joints(
         self,
-        roll: float,
-        pitch: float,
-        yaw: float,
+        positions: List[float],
         duration: float = 2.0,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
@@ -143,9 +143,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             return GoToId(id=-1)
 
         if degrees:
-            roll = np.deg2rad(roll)
-            pitch = np.deg2rad(pitch)
-            yaw = np.deg2rad(yaw)
+            deg_pos = np.deg2rad(positions)
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
@@ -153,7 +151,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
                     joints_goal=NeckOrientation(
                         rotation=Rotation3d(
                             rpy=ExtEulerAngles(
-                                roll=FloatValue(value=roll), pitch=FloatValue(value=pitch), yaw=FloatValue(value=yaw)
+                                roll=FloatValue(value=deg_pos[0]),
+                                pitch=FloatValue(value=deg_pos[1]),
+                                yaw=FloatValue(value=deg_pos[2]),
                             )
                         )
                     ),
@@ -228,7 +228,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.neck.is_on():
-            return self.rotate_to(0, -10, 0, duration, interpolation_mode)
+            return self.goto_joints([0, -10, 0], duration, interpolation_mode)
         else:
             self._logger.warning("head.neck is off. No command sent.")
         return GoToId(id=-1)

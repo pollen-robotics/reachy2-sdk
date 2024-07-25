@@ -92,6 +92,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             axis2=description.shoulder.axis_2,
             initial_state=initial_state.shoulder_state,
             grpc_channel=self._grpc_channel,
+            part=self,
+            joints_position_order=[0, 1],
         )
         self._elbow = Orbita2d(
             uid=description.elbow.id.id,
@@ -100,12 +102,16 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             axis2=description.elbow.axis_2,
             initial_state=initial_state.elbow_state,
             grpc_channel=self._grpc_channel,
+            part=self,
+            joints_position_order=[2, 3],
         )
         self._wrist = Orbita3d(
             uid=description.wrist.id.id,
             name=description.wrist.id.name,
             initial_state=initial_state.wrist_state,
             grpc_channel=self._grpc_channel,
+            part=self,
+            joints_position_order=[4, 5, 6],
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:

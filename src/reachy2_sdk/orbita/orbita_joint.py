@@ -1,7 +1,9 @@
 """This module describes Orbita2d and Orbita3d joints."""
 from typing import Any, Dict
 
+import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
+from reachy2_sdk_api.goto_pb2 import GoToId
 
 from .utils import to_internal_position, to_position
 
@@ -14,9 +16,12 @@ class OrbitaJoint:
         - its goal_position (RW)
     """
 
-    def __init__(self, initial_state: Dict[str, FloatValue], axis_type: str, actuator: Any) -> None:
+    def __init__(
+        self, initial_state: Dict[str, FloatValue], axis_type: str, actuator: Any, position_order_in_part: int
+    ) -> None:
         self._actuator = actuator
         self._axis_type = axis_type
+        self._position_order_in_part = position_order_in_part
 
         self._update_with(initial_state)
 
@@ -44,6 +49,15 @@ class OrbitaJoint:
             self._actuator._set_outgoing_goal_position(self._axis_type, to_internal_position(value))
         else:
             raise TypeError("goal_position must be a float or int")
+
+    def goto(
+        self, goal_position: float, duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
+    ) -> GoToId:
+        goal_positions = self._actuator._part.get_joints_positions()
+        if not degrees:
+            goal_positions = np.deg2rad(goal_positions)
+        goal_positions[self._position_order_in_part] = goal_position
+        return self._actuator._part.goto_joints(goal_positions, duration, interpolation_mode, degrees)
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
         self._present_position = new_state["present_position"].value
