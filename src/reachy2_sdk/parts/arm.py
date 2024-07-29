@@ -8,6 +8,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 
 import logging
 import time
+from enum import Enum
 from typing import Dict, List, Optional
 
 import grpc
@@ -45,6 +46,16 @@ from ..utils.utils import (
 from .goto_based_part import IGoToBasedPart
 from .hand import Hand
 from .joints_based_part import JointsBasedPart
+
+
+class ArmJointEnum(Enum):
+    SHOULDER_PITCH = 1
+    SHOULDER_ROLL = 2
+    ELBOW_YAW = 3
+    ELBOW_PITCH = 4
+    WRIST_ROLL = 5
+    WRIST_PITCH = 6
+    WRIST_YAW = 7
 
 
 class Arm(JointsBasedPart, IGoToBasedPart):
@@ -93,7 +104,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.shoulder_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[0, 1],
+            joints_position_order=[ArmJointEnum.SHOULDER_PITCH.value, ArmJointEnum.SHOULDER_ROLL.value],
         )
         self._elbow = Orbita2d(
             uid=description.elbow.id.id,
@@ -103,7 +114,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.elbow_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[2, 3],
+            joints_position_order=[ArmJointEnum.ELBOW_YAW.value, ArmJointEnum.ELBOW_PITCH.value],
         )
         self._wrist = Orbita3d(
             uid=description.wrist.id.id,
@@ -111,7 +122,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.wrist_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[4, 5, 6],
+            joints_position_order=[ArmJointEnum.WRIST_ROLL.value, ArmJointEnum.WRIST_PITCH.value, ArmJointEnum.WRIST_YAW.value],
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:

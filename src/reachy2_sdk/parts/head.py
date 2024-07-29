@@ -6,6 +6,7 @@ Handles all specific method to an Head:
 """
 
 import logging
+from enum import Enum
 from typing import List
 
 import grpc
@@ -30,6 +31,12 @@ from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import get_grpc_interpolation_mode
 from .goto_based_part import IGoToBasedPart
 from .joints_based_part import JointsBasedPart
+
+
+class HeadJointEnum(Enum):
+    NECK_ROLL = 1
+    NECK_PITCH = 2
+    NECK_YAW = 3
 
 
 class Head(JointsBasedPart, IGoToBasedPart):
@@ -69,7 +76,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.neck_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[0, 1, 2],
+            joints_position_order=[HeadJointEnum.NECK_ROLL.value, HeadJointEnum.NECK_PITCH.value, HeadJointEnum.NECK_YAW.value],
         )
 
     def __repr__(self) -> str:
