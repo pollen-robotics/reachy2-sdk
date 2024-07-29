@@ -56,7 +56,7 @@ class OrbitaJoint:
         goal_positions = self._actuator._part.get_joints_positions()
         if not degrees:
             goal_positions = np.deg2rad(goal_positions)
-        goal_positions[self._position_order_in_part] = goal_position
+        goal_positions[self._position_order_in_part-1] = goal_position
         return self._actuator._part.goto_joints(goal_positions, duration, interpolation_mode, degrees)
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:

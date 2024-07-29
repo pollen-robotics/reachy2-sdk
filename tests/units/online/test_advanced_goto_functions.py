@@ -507,3 +507,51 @@ def test_is_move_playing(reachy_sdk_zeroed: ReachySDK) -> None:
     assert not reachy_sdk_zeroed.is_move_playing(req4)
     assert not reachy_sdk_zeroed.is_move_playing(req5)
     assert reachy_sdk_zeroed.is_move_playing(req6)
+
+@pytest.mark.online
+def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
+    req1 = reachy_sdk_zeroed.r_arm.elbow.pitch.goto(-90, duration=3)
+    time.sleep(0.5)
+
+    assert reachy_sdk_zeroed.is_move_playing(req1)
+    while not is_goto_finished(reachy_sdk_zeroed, req1):
+        time.sleep(0.1)
+    
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), [0, 0, 0, -90, 0, 0, 0], atol=1e-01)
+
+    req2 = reachy_sdk_zeroed.r_arm.elbow.pitch.goto(0, duration=1)
+    time.sleep(0.5)
+
+    assert reachy_sdk_zeroed.is_move_playing(req2)
+    while not is_goto_finished(reachy_sdk_zeroed, req2):
+        time.sleep(0.1)
+    
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), [0, 0, 0, 0, 0, 0, 0], atol=1e-01)
+
+
+    req3 = reachy_sdk_zeroed.l_arm.shoulder.pitch.goto(-10, duration=1)
+    req4 = reachy_sdk_zeroed.l_arm.elbow.yaw.goto(20, duration=1)
+    req5 = reachy_sdk_zeroed.l_arm.wrist.pitch.goto(15, duration=1)
+    time.sleep(0.5)
+
+    assert reachy_sdk_zeroed.is_move_playing(req3)
+    assert not reachy_sdk_zeroed.is_move_playing(req4)
+    assert not reachy_sdk_zeroed.is_move_playing(req5)
+    assert len(reachy_sdk_zeroed.l_arm.get_moves_queue()) == 2
+    while not is_goto_finished(reachy_sdk_zeroed, req5):
+        time.sleep(0.1)
+
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), [-10, 0, 20, 0, 0, 15, 0], atol=1e-01)
+
+    req6 = reachy_sdk_zeroed.head.neck.roll.goto(15, duration=1)
+    req7 = reachy_sdk_zeroed.head.neck.yaw.goto(10, duration=1)
+    time.sleep(0.5)
+
+    assert reachy_sdk_zeroed.is_move_playing(req6)
+    assert not reachy_sdk_zeroed.is_move_playing(req7)
+    assert len(reachy_sdk_zeroed.head.get_moves_queue()) == 1
+    while not is_goto_finished(reachy_sdk_zeroed, req7):
+        time.sleep(0.1)
+
+    assert np.allclose(reachy_sdk_zeroed.head.get_joints_positions(), [-10, 0, 10], atol=1e-01)
+    
