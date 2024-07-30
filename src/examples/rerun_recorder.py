@@ -82,6 +82,11 @@ def _log_head_poses(rpy_head: List[float], urdf_logger: URDFLogger) -> None:
     urdf_logger.log_joint(urdf_logger.joint_entity_path(joint), joint=joint)
 
 
+def _log_gripper() -> None:
+    rr.log("reachy/l_arm/wrist/gripper", rr.Scalar(reachy.l_arm.gripper.opening))
+    rr.log("reachy/r_arm/wrist/gripper", rr.Scalar(reachy.l_arm.gripper.opening))
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     reachy = ReachySDK(host="localhost")
@@ -112,6 +117,8 @@ if __name__ == "__main__":
 
             r_arm_pos = np.deg2rad(reachy.r_arm.get_joints_positions())
             _log_arm_joints_poses(r_arm_pos, urdf_logger, False)
+
+            _log_gripper()
 
             _log_teleop_cameras()
 
