@@ -6,20 +6,26 @@ Handles all specific method to an Head:
 """
 
 import logging
-from enum import Enum
 from typing import List
 
 import grpc
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
-from reachy2_sdk_api.goto_pb2 import CartesianGoal, GoToId, GoToRequest, JointsGoal
+from reachy2_sdk_api.goto_pb2 import (
+    CartesianGoal,
+    GoToId,
+    GoToRequest,
+    JointsGoal,
+    SingleJointGoal,
+)
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
     HeadState,
     NeckCartesianGoal,
     NeckJointGoal,
+    NeckJointOrder,
     NeckOrientation,
     SpeedLimitRequest,
     TorqueLimitRequest,
@@ -31,12 +37,6 @@ from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import get_grpc_interpolation_mode
 from .goto_based_part import IGoToBasedPart
 from .joints_based_part import JointsBasedPart
-
-
-class HeadJointEnum(Enum):
-    NECK_ROLL = 1
-    NECK_PITCH = 2
-    NECK_YAW = 3
 
 
 class Head(JointsBasedPart, IGoToBasedPart):
@@ -76,7 +76,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.neck_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[HeadJointEnum.NECK_ROLL.value, HeadJointEnum.NECK_PITCH.value, HeadJointEnum.NECK_YAW.value],
+            joints_position_order=[NeckJointOrder.NECK_ROLL, NeckJointOrder.NECK_PITCH, NeckJointOrder.NECK_YAW],
         )
 
     def __repr__(self) -> str:
@@ -164,6 +164,25 @@ class Head(JointsBasedPart, IGoToBasedPart):
                             )
                         )
                     ),
+                    duration=FloatValue(value=duration),
+                )
+            ),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+        )
+        response = self._goto_stub.GoToJoints(request)
+        return response
+
+    def _goto_single_joint(
+        self, neck_joint: NeckJointOrder, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
+    ) -> GoToId:
+        if degrees:
+            goal_position = np.deg2rad(goal_position)
+        request = GoToRequest(
+            joints_goal=JointsGoal(
+                single_joint_goal=SingleJointGoal(
+                    id=self._part_id,
+                    neck_joint=neck_joint,
+                    joint_goal=FloatValue(value=goal_position),
                     duration=FloatValue(value=duration),
                 )
             ),

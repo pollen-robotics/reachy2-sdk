@@ -3,7 +3,9 @@ from typing import Any, Dict
 
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
+from reachy2_sdk_api.arm_pb2 import ArmJointOrder
 from reachy2_sdk_api.goto_pb2 import GoToId
+from reachy2_sdk_api.head_pb2 import NeckJointOrder
 
 from .utils import to_internal_position, to_position
 
@@ -17,7 +19,11 @@ class OrbitaJoint:
     """
 
     def __init__(
-        self, initial_state: Dict[str, FloatValue], axis_type: str, actuator: Any, position_order_in_part: int
+        self,
+        initial_state: Dict[str, FloatValue],
+        axis_type: str,
+        actuator: Any,
+        position_order_in_part: ArmJointOrder | NeckJointOrder,
     ) -> None:
         self._actuator = actuator
         self._axis_type = axis_type
@@ -53,11 +59,11 @@ class OrbitaJoint:
     def goto(
         self, goal_position: float, duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
     ) -> GoToId:
-        goal_positions = self._actuator._part.get_joints_positions()
-        if not degrees:
-            goal_positions = np.deg2rad(goal_positions)
-        goal_positions[self._position_order_in_part-1] = goal_position
-        return self._actuator._part.goto_joints(goal_positions, duration, interpolation_mode, degrees)
+        if degrees:
+            goal_position = np.deg2rad(goal_position)
+        return self._actuator._part._goto_single_joint(
+            self._position_order_in_part, goal_position, duration, interpolation_mode, degrees
+        )
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
         self._present_position = new_state["present_position"].value

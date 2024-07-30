@@ -8,7 +8,6 @@ Handles all specific method to an Arm (left and/or right) especially:
 
 import logging
 import time
-from enum import Enum
 from typing import Dict, List, Optional
 
 import grpc
@@ -23,12 +22,19 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmFKRequest,
     ArmIKRequest,
     ArmJointGoal,
+    ArmJointOrder,
     ArmState,
     SpeedLimitRequest,
     TorqueLimitRequest,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
-from reachy2_sdk_api.goto_pb2 import CartesianGoal, GoToId, GoToRequest, JointsGoal
+from reachy2_sdk_api.goto_pb2 import (
+    CartesianGoal,
+    GoToId,
+    GoToRequest,
+    JointsGoal,
+    SingleJointGoal,
+)
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
@@ -46,16 +52,6 @@ from ..utils.utils import (
 from .goto_based_part import IGoToBasedPart
 from .hand import Hand
 from .joints_based_part import JointsBasedPart
-
-
-class ArmJointEnum(Enum):
-    SHOULDER_PITCH = 1
-    SHOULDER_ROLL = 2
-    ELBOW_YAW = 3
-    ELBOW_PITCH = 4
-    WRIST_ROLL = 5
-    WRIST_PITCH = 6
-    WRIST_YAW = 7
 
 
 class Arm(JointsBasedPart, IGoToBasedPart):
@@ -104,7 +100,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.shoulder_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[ArmJointEnum.SHOULDER_PITCH.value, ArmJointEnum.SHOULDER_ROLL.value],
+            joints_position_order=[ArmJointOrder.SHOULDER_PITCH, ArmJointOrder.SHOULDER_ROLL],
         )
         self._elbow = Orbita2d(
             uid=description.elbow.id.id,
@@ -114,7 +110,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.elbow_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[ArmJointEnum.ELBOW_YAW.value, ArmJointEnum.ELBOW_PITCH.value],
+            joints_position_order=[ArmJointOrder.ELBOW_YAW, ArmJointOrder.ELBOW_PITCH],
         )
         self._wrist = Orbita3d(
             uid=description.wrist.id.id,
@@ -122,7 +118,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.wrist_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[ArmJointEnum.WRIST_ROLL.value, ArmJointEnum.WRIST_PITCH.value, ArmJointEnum.WRIST_YAW.value],
+            joints_position_order=[ArmJointOrder.WRIST_ROLL, ArmJointOrder.WRIST_PITCH, ArmJointOrder.WRIST_YAW],
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
@@ -449,6 +445,25 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         request = GoToRequest(
             joints_goal=JointsGoal(
                 arm_joint_goal=ArmJointGoal(id=self._part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
+            ),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+        )
+        response = self._goto_stub.GoToJoints(request)
+        return response
+
+    def _goto_single_joint(
+        self, arm_joint: ArmJointOrder, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
+    ) -> GoToId:
+        if degrees:
+            goal_position = np.deg2rad(goal_position)
+        request = GoToRequest(
+            joints_goal=JointsGoal(
+                single_joint_goal=SingleJointGoal(
+                    id=self._part_id,
+                    arm_joint=arm_joint,
+                    joint_goal=FloatValue(value=goal_position),
+                    duration=FloatValue(value=duration),
+                )
             ),
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )

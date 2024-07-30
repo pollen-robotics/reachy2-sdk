@@ -508,6 +508,7 @@ def test_is_move_playing(reachy_sdk_zeroed: ReachySDK) -> None:
     assert not reachy_sdk_zeroed.is_move_playing(req5)
     assert reachy_sdk_zeroed.is_move_playing(req6)
 
+
 @pytest.mark.online
 def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     req1 = reachy_sdk_zeroed.r_arm.elbow.pitch.goto(-90, duration=3)
@@ -516,7 +517,7 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed.is_move_playing(req1)
     while not is_goto_finished(reachy_sdk_zeroed, req1):
         time.sleep(0.1)
-    
+
     assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), [0, 0, 0, -90, 0, 0, 0], atol=1e-01)
 
     req2 = reachy_sdk_zeroed.r_arm.elbow.pitch.goto(0, duration=1)
@@ -525,9 +526,8 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed.is_move_playing(req2)
     while not is_goto_finished(reachy_sdk_zeroed, req2):
         time.sleep(0.1)
-    
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), [0, 0, 0, 0, 0, 0, 0], atol=1e-01)
 
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), [0, 0, 0, 0, 0, 0, 0], atol=1e-01)
 
     req3 = reachy_sdk_zeroed.l_arm.shoulder.pitch.goto(-10, duration=1)
     req4 = reachy_sdk_zeroed.l_arm.elbow.yaw.goto(20, duration=1)
@@ -554,4 +554,3 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         time.sleep(0.1)
 
     assert np.allclose(reachy_sdk_zeroed.head.get_joints_positions(), [-10, 0, 10], atol=1e-01)
-    
