@@ -52,7 +52,7 @@ class Orbita3d(Orbita):
         initial_state: Orbita3dState,
         grpc_channel: Channel,
         part: Part,
-        joints_position_order: List[ArmJointOrder | NeckJointOrder],
+        joints_position_order: List[int],
     ):
         """Initialize the Orbita2d with its joints, motors and axis."""
         super().__init__(uid, name, "3d", Orbita3dServiceStub(grpc_channel), part)

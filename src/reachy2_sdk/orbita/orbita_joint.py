@@ -23,7 +23,7 @@ class OrbitaJoint:
         initial_state: Dict[str, FloatValue],
         axis_type: str,
         actuator: Any,
-        position_order_in_part: ArmJointOrder | NeckJointOrder,
+        position_order_in_part: int,
     ) -> None:
         self._actuator = actuator
         self._axis_type = axis_type
@@ -59,8 +59,6 @@ class OrbitaJoint:
     def goto(
         self, goal_position: float, duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
     ) -> GoToId:
-        if degrees:
-            goal_position = np.deg2rad(goal_position)
         return self._actuator._part._goto_single_joint(
             self._position_order_in_part, goal_position, duration, interpolation_mode, degrees
         )

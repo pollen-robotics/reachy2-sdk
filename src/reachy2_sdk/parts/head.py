@@ -76,7 +76,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.neck_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[NeckJointOrder.NECK_ROLL, NeckJointOrder.NECK_PITCH, NeckJointOrder.NECK_YAW],
+            joints_position_order=[NeckJointOrder.ROLL, NeckJointOrder.PITCH, NeckJointOrder.YAW],
         )
 
     def __repr__(self) -> str:
@@ -173,7 +173,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         return response
 
     def _goto_single_joint(
-        self, neck_joint: NeckJointOrder, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
+        self, neck_joint: int, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
     ) -> GoToId:
         if degrees:
             goal_position = np.deg2rad(goal_position)
@@ -181,7 +181,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             joints_goal=JointsGoal(
                 single_joint_goal=SingleJointGoal(
                     id=self._part_id,
-                    neck_joint=neck_joint,
+                    neck_joint=NeckJointOrder(neck_joint),
                     joint_goal=FloatValue(value=goal_position),
                     duration=FloatValue(value=duration),
                 )

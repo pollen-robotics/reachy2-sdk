@@ -452,7 +452,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return response
 
     def _goto_single_joint(
-        self, arm_joint: ArmJointOrder, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
+        self, arm_joint: int, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
     ) -> GoToId:
         if degrees:
             goal_position = np.deg2rad(goal_position)

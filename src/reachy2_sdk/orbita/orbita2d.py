@@ -54,7 +54,7 @@ class Orbita2d(Orbita):
         initial_state: Orbita2dState,
         grpc_channel: Channel,
         part: Part,
-        joints_position_order: List[ArmJointOrder],
+        joints_position_order: List[int],
     ):
         """Initialize the Orbita2d with its joints, motors and its two axis (either roll, pitch or yaw for both)."""
         super().__init__(uid, name, "2d", Orbita2dServiceStub(grpc_channel), part)
