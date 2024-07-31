@@ -1,8 +1,9 @@
 import logging
 import time
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
+import numpy.typing as npt
 import rerun as rr
 from rerun_loader_urdf import URDFLogger
 from urdf_parser_py import urdf
@@ -10,22 +11,40 @@ from urdf_parser_py import urdf
 from reachy2_sdk import ReachySDK
 from reachy2_sdk.media.camera import CameraView
 
-"""
-def display_teleop_cam() -> None:
-    if reachy.cameras.teleop is None:
-        exit("There is no teleop camera.")
 
-    print(f"Left camara parameters {reachy.cameras.teleop.get_parameters(CameraView.LEFT)}")
-    # print(reachy.cameras.teleop.get_parameters(CameraView.RIGHT))
-"""
+def _log_camera_parameters(side: CameraView) -> Tuple[int, int, npt.NDArray[np.uint8]]:
+    side_str = "right"
+    if side == CameraView.LEFT:
+        side_str = "left"
+    height, width, distortion_model, D, K, R, P = reachy.cameras.teleop.get_parameters(side)
+    rr.log(f"/teleop_camera/{side_str}_image/camera_info/height", rr.Scalar(height), static=True)
+    rr.log(f"/teleop_camera/{side_str}/camera_info/width", rr.Scalar(width), static=True)
+    rr.log(
+        f"/teleop_camera/{side_str}/camera_info/distortion_model", rr.TextLog(text=distortion_model, level="INFO"), static=True
+    )
+    rr.log(f"/teleop_camera/{side_str}/camera_info/D", rr.TextLog(text=str(D), level="INFO"), static=True)
+    rr.log(f"/teleop_camera/{side_str}/camera_info/K", rr.TextLog(text=str(K), level="INFO"), static=True)
+    rr.log(f"/teleop_camera/{side_str}/camera_info/R", rr.TextLog(text=str(R), level="INFO"), static=True)
+    rr.log(f"/teleop_camera/{side_str}/camera_info/P", rr.TextLog(text=str(P), level="INFO"), static=True)
+
+    return height, width, K
 
 
-def _log_teleop_cameras() -> None:
-    frame, ts = reachy.cameras.teleop.get_compressed_frame(CameraView.LEFT)
-    frame_r, ts_r = reachy.cameras.teleop.get_compressed_frame(CameraView.RIGHT)
+def _log_teleop_cameras(height: int, width: int, K_left: npt.NDArray[np.uint8], joint_cam: str, side: CameraView) -> None:
+    frame, ts = reachy.cameras.teleop.get_compressed_frame(side)
 
-    rr.log("/teleop_camera/left_image/compressed", rr.ImageEncoded(contents=frame, format=rr.ImageFormat.JPEG))
-    rr.log("/teleop_camera/right_image/compressed", rr.ImageEncoded(contents=frame_r, format=rr.ImageFormat.JPEG))
+    rr.log(f"{joint_cam}/image", rr.ImageEncoded(contents=frame, format=rr.ImageFormat.JPEG))
+
+    rr.log(
+        f"{joint_cam}/image",
+        rr.Pinhole(
+            image_from_camera=rr.datatypes.Mat3x3(K_left),
+            width=width,
+            height=height,
+            image_plane_distance=0.5,
+            camera_xyz=rr.ViewCoordinates.RDF,
+        ),
+    )
 
 
 def _get_joints(joint_name: str, urdf: urdf) -> urdf.Joint:
@@ -84,7 +103,7 @@ def _log_head_poses(rpy_head: List[float], urdf_logger: URDFLogger) -> None:
 
 def _log_gripper() -> None:
     rr.log("reachy/l_arm/wrist/gripper", rr.Scalar(reachy.l_arm.gripper.opening))
-    rr.log("reachy/r_arm/wrist/gripper", rr.Scalar(reachy.l_arm.gripper.opening))
+    rr.log("reachy/r_arm/wrist/gripper", rr.Scalar(reachy.r_arm.gripper.opening))
 
 
 if __name__ == "__main__":
@@ -106,6 +125,13 @@ if __name__ == "__main__":
 
     urdf_logger.log()
 
+    height, width, K_left = _log_camera_parameters(CameraView.LEFT)
+    _, _, K_right = _log_camera_parameters(CameraView.RIGHT)
+    joint_left_cam = _get_joints("left_camera_optical_joint", urdf_logger.urdf)
+    name_joint_left_cam = urdf_logger.joint_entity_path(joint_left_cam)
+    joint_right_cam = _get_joints("right_camera_optical_joint", urdf_logger.urdf)
+    name_joint_right_cam = urdf_logger.joint_entity_path(joint_right_cam)
+
     try:
         while True:
             rpy_head = np.deg2rad(reachy.head.get_joints_positions())
@@ -120,7 +146,8 @@ if __name__ == "__main__":
 
             _log_gripper()
 
-            _log_teleop_cameras()
+            _log_teleop_cameras(height, width, K_left, name_joint_left_cam, CameraView.LEFT)
+            _log_teleop_cameras(height, width, K_right, name_joint_right_cam, CameraView.RIGHT)
 
             time.sleep(0.2)
 
