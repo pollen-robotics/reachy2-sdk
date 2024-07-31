@@ -45,7 +45,7 @@ class Camera:
             return None
         np_data = np.frombuffer(frame.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
-        return img, frame.timestamp.ToNanoseconds()  # type: ignore[no-any-return]
+        return img, frame.timestamp.ToNanoseconds()
 
     def get_parameters(
         self, view: CameraView = CameraView.LEFT
