@@ -13,7 +13,7 @@ reachy = ReachySDK(host="localhost")
 
 goal = build_pose_matrix(1, 1, 0)
 
-reachy.r_arm._arm_stub.TurnOn(reachy.r_arm.part_id)
+reachy.r_arm._stub.TurnOn(reachy.r_arm._part_id)
 
 
 # add hints
@@ -37,12 +37,12 @@ def goto(x: float, y: float, z: float) -> None:
         goal_pose=Matrix4x4(data=goal.flatten().tolist()),
         duration=FloatValue(value=1.0),
     )
-    reachy.r_arm._arm_stub.SendArmCartesianGoal(target)
+    reachy.r_arm._stub.SendArmCartesianGoal(target)
 
 
 goto(1, 1, 0)
 
-print("coucou")
+print("Starting circles")
 radius = 0.5  # Circle radius
 fixed_x = 1  # Fixed x-coordinate
 center_y, center_z = 0, 0  # Center of the circle in y-z plane
