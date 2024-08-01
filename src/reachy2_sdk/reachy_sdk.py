@@ -103,6 +103,12 @@ class ReachySDK:
                 "check that the sdk server is running and that the IP is correct."
             )
             self._grpc_connected = False
+            attributs = [attr for attr in dir(self) if not attr.startswith("_")]
+        for attr in attributs:
+            if attr in [
+                "cancel_all_moves",
+            ]:
+                delattr(self, attr)
             return
 
         self._setup_parts()
@@ -155,6 +161,9 @@ class ReachySDK:
     @property
     def head(self) -> Optional[Head]:
         """Get Reachy's head."""
+        if not self._grpc_connected:
+            self._logger.error("Cannot get r_arm, not connected to Reachy")
+            return None
         if self._head is None:
             self._logger.error("head does not exist with this configuration")
             return None
@@ -163,6 +172,9 @@ class ReachySDK:
     @property
     def r_arm(self) -> Optional[Arm]:
         """Get Reachy's right arm."""
+        if not self._grpc_connected:
+            self._logger.error("Cannot get r_arm, not connected to Reachy")
+            return None
         if self._r_arm is None:
             self._logger.error("r_arm does not exist with this configuration")
             return None
@@ -171,6 +183,9 @@ class ReachySDK:
     @property
     def l_arm(self) -> Optional[Arm]:
         """Get Reachy's left arm."""
+        if not self._grpc_connected:
+            self._logger.error("Cannot get r_arm, not connected to Reachy")
+            return None
         if self._l_arm is None:
             self._logger.error("l_arm does not exist with this configuration")
             return None
@@ -179,6 +194,9 @@ class ReachySDK:
     @property
     def mobile_base(self) -> Optional[MobileBase]:
         """Get Reachy's mobile base."""
+        if not self._grpc_connected:
+            self._logger.error("Cannot get r_arm, not connected to Reachy")
+            return None
         if self._mobile_base is None:
             self._logger.error("mobile_base does not exist with this configuration")
             return None
@@ -236,8 +254,10 @@ class ReachySDK:
             raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
 
     @property
-    def cameras(self) -> CameraManager:
+    def cameras(self) -> Optional[CameraManager]:
         """Get Reachy's cameras."""
+        if not self._grpc_connected:
+            self._logger.error("Cannot get cameras, not connected to Reachy")
         return self._cameras  # type: ignore[return-value]
 
     def _get_info(self) -> None:
