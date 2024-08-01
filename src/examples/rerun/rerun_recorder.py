@@ -1,3 +1,4 @@
+import argparse
 import logging
 import time
 from typing import List, Tuple
@@ -135,6 +136,11 @@ def _log_gripper(left: bool) -> None:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--urdf_path", type=str, required=True, help="reachy2.urdf")
+    args = parser.parse_args()
+
     reachy = ReachySDK(host="localhost")
 
     rr.init("recorder_example", spawn=True)
@@ -143,12 +149,9 @@ if __name__ == "__main__":
     if not reachy.is_connected:
         exit("Reachy is not connected.")
 
-    # if reachy.cameras is None:
-    #    exit("There is no connected camera.")
     torso_entity = "world/world_joint/base_link/back_bar_joint/back_bar/torso_base/torso"
-    urdf_path = "/home/fabien/Dev/Python/reachy2_rerun_test/reachy_v3_fix2.urdf"
 
-    urdf_logger = URDFLogger(urdf_path, torso_entity)
+    urdf_logger = URDFLogger(args.urdf_path, torso_entity)
 
     rr.set_time_nanos("reachy_ROS_time", reachy.get_update_timestamp())
 
