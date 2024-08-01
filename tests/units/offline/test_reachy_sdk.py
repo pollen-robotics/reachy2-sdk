@@ -16,6 +16,8 @@ def test_singleton() -> None:
 def test_unconnected() -> None:
     rsdk = ReachySDK(host="dummy")
 
+    assert str(rsdk) == "Reachy is not connected"
+
     assert rsdk._grpc_connected is False
     assert not rsdk.is_connected()
 

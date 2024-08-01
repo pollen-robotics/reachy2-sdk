@@ -45,7 +45,7 @@ class Camera:
             return None
         np_data = np.frombuffer(frame.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
-        return img, frame.timestamp.ToNanoseconds()  # type: ignore[no-any-return]
+        return img, frame.timestamp.ToNanoseconds()
 
     def get_compressed_frame(self, view: CameraView = CameraView.LEFT) -> Optional[Tuple[bytes, int]]:
         """Get JPEG frame (bytes) and timestamp in nanosecs"""
