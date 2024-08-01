@@ -22,18 +22,19 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmFKRequest,
     ArmIKRequest,
     ArmJointGoal,
-    ArmJointOrder,
+    ArmJoints,
     ArmState,
+    CustomArmJoints,
     SpeedLimitRequest,
     TorqueLimitRequest,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
+    CustomJointGoal,
     GoToId,
     GoToRequest,
     JointsGoal,
-    SingleJointGoal,
 )
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
@@ -100,7 +101,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.shoulder_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[ArmJointOrder.SHOULDER_PITCH, ArmJointOrder.SHOULDER_ROLL],
+            joints_position_order=[ArmJoints.SHOULDER_PITCH, ArmJoints.SHOULDER_ROLL],
         )
         self._elbow = Orbita2d(
             uid=description.elbow.id.id,
@@ -110,7 +111,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.elbow_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[ArmJointOrder.ELBOW_YAW, ArmJointOrder.ELBOW_PITCH],
+            joints_position_order=[ArmJoints.ELBOW_YAW, ArmJoints.ELBOW_PITCH],
         )
         self._wrist = Orbita3d(
             uid=description.wrist.id.id,
@@ -118,7 +119,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.wrist_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[ArmJointOrder.WRIST_ROLL, ArmJointOrder.WRIST_PITCH, ArmJointOrder.WRIST_YAW],
+            joints_position_order=[ArmJoints.WRIST_ROLL, ArmJoints.WRIST_PITCH, ArmJoints.WRIST_YAW],
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
@@ -458,10 +459,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             goal_position = np.deg2rad(goal_position)
         request = GoToRequest(
             joints_goal=JointsGoal(
-                single_joint_goal=SingleJointGoal(
+                custom_joint_goal=CustomJointGoal(
                     id=self._part_id,
-                    arm_joint=arm_joint,
-                    joint_goal=FloatValue(value=goal_position),
+                    arm_joints=CustomArmJoints(joints=[arm_joint]),
+                    joints_goals=[FloatValue(value=goal_position)],
                     duration=FloatValue(value=duration),
                 )
             ),

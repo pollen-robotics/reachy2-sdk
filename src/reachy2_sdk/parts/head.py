@@ -14,18 +14,19 @@ from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
+    CustomJointGoal,
     GoToId,
     GoToRequest,
     JointsGoal,
-    SingleJointGoal,
 )
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
+from reachy2_sdk_api.head_pb2 import CustomNeckJoints
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
     HeadState,
     NeckCartesianGoal,
     NeckJointGoal,
-    NeckJointOrder,
+    NeckJoints,
     NeckOrientation,
     SpeedLimitRequest,
     TorqueLimitRequest,
@@ -76,7 +77,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             initial_state=initial_state.neck_state,
             grpc_channel=self._grpc_channel,
             part=self,
-            joints_position_order=[NeckJointOrder.ROLL, NeckJointOrder.PITCH, NeckJointOrder.YAW],
+            joints_position_order=[NeckJoints.ROLL, NeckJoints.PITCH, NeckJoints.YAW],
         )
 
     def __repr__(self) -> str:
@@ -179,10 +180,10 @@ class Head(JointsBasedPart, IGoToBasedPart):
             goal_position = np.deg2rad(goal_position)
         request = GoToRequest(
             joints_goal=JointsGoal(
-                single_joint_goal=SingleJointGoal(
+                custom_joint_goal=CustomJointGoal(
                     id=self._part_id,
-                    neck_joint=NeckJointOrder(neck_joint),
-                    joint_goal=FloatValue(value=goal_position),
+                    neck_joint=CustomNeckJoints(joints=[neck_joint]),
+                    joint_goal=[FloatValue(value=goal_position)],
                     duration=FloatValue(value=duration),
                 )
             ),

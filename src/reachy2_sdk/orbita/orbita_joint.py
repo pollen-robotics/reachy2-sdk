@@ -1,11 +1,8 @@
 """This module describes Orbita2d and Orbita3d joints."""
 from typing import Any, Dict
 
-import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
-from reachy2_sdk_api.arm_pb2 import ArmJointOrder
 from reachy2_sdk_api.goto_pb2 import GoToId
-from reachy2_sdk_api.head_pb2 import NeckJointOrder
 
 from .utils import to_internal_position, to_position
 
