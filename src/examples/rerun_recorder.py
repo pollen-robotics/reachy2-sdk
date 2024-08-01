@@ -22,10 +22,11 @@ def _log_camera_parameters(side: CameraView) -> Tuple[int, int, npt.NDArray[np.u
     rr.log(
         f"/teleop_camera/{side_str}/camera_info/distortion_model", rr.TextLog(text=distortion_model, level="INFO"), static=True
     )
-    rr.log(f"/teleop_camera/{side_str}/camera_info/D", rr.TextLog(text=str(D), level="INFO"), static=True)
-    rr.log(f"/teleop_camera/{side_str}/camera_info/K", rr.TextLog(text=str(K), level="INFO"), static=True)
-    rr.log(f"/teleop_camera/{side_str}/camera_info/R", rr.TextLog(text=str(R), level="INFO"), static=True)
-    rr.log(f"/teleop_camera/{side_str}/camera_info/P", rr.TextLog(text=str(P), level="INFO"), static=True)
+
+    rr.log(f"/teleop_camera/{side_str}/camera_info/D", rr.Tensor(np.array(D)), static=True)
+    rr.log(f"/teleop_camera/{side_str}/camera_info/K", rr.Tensor(np.array(K).reshape((3, 3))), static=True)
+    rr.log(f"/teleop_camera/{side_str}/camera_info/R", rr.Tensor(np.array(R).reshape(3, 3)), static=True)
+    rr.log(f"/teleop_camera/{side_str}/camera_info/P", rr.Tensor(np.array(P).reshape((3, 4))), static=True)
 
     return height, width, K
 
@@ -101,9 +102,32 @@ def _log_head_poses(rpy_head: List[float], urdf_logger: URDFLogger) -> None:
     urdf_logger.log_joint(urdf_logger.joint_entity_path(joint), joint=joint)
 
 
-def _log_gripper() -> None:
-    rr.log("reachy/l_arm/wrist/gripper", rr.Scalar(reachy.l_arm.gripper.opening))
-    rr.log("reachy/r_arm/wrist/gripper", rr.Scalar(reachy.r_arm.gripper.opening))
+def _log_gripper(left: bool) -> None:
+    side = "r"
+    part = reachy.r_arm
+    if left:
+        side = "l"
+        part = reachy.l_arm
+    rr.log(f"reachy/{side}_arm/wrist/gripper", rr.Scalar(part.gripper.opening))
+
+    # this is for visual rendering only
+    scaled_opening = part.gripper.opening / 100 * 2 - 1  # from [0;100] to [-1;1]
+
+    joint = _get_joints(f"{side}_hand_finger_proximal", urdf_logger.urdf)
+    joint.origin.rotation = [scaled_opening * -0.4689, 0.0, 0]
+    urdf_logger.log_joint(urdf_logger.joint_entity_path(joint), joint=joint)
+
+    joint = _get_joints(f"{side}_hand_finger_distal", urdf_logger.urdf)
+    joint.origin.rotation = [scaled_opening * 0.4689, 0.0, 0]
+    urdf_logger.log_joint(urdf_logger.joint_entity_path(joint), joint=joint)
+
+    joint = _get_joints(f"{side}_hand_finger_proximal_mimic", urdf_logger.urdf)
+    joint.origin.rotation = [scaled_opening * -0.4689, 0.0, np.pi]
+    urdf_logger.log_joint(urdf_logger.joint_entity_path(joint), joint=joint)
+
+    joint = _get_joints(f"{side}_hand_finger_distal_mimic", urdf_logger.urdf)
+    joint.origin.rotation = [scaled_opening * 0.4689, 0.0, 0]
+    urdf_logger.log_joint(urdf_logger.joint_entity_path(joint), joint=joint)
 
 
 if __name__ == "__main__":
@@ -125,13 +149,14 @@ if __name__ == "__main__":
 
     urdf_logger.log()
 
+    """
     height, width, K_left = _log_camera_parameters(CameraView.LEFT)
     _, _, K_right = _log_camera_parameters(CameraView.RIGHT)
     joint_left_cam = _get_joints("left_camera_optical_joint", urdf_logger.urdf)
     name_joint_left_cam = urdf_logger.joint_entity_path(joint_left_cam)
     joint_right_cam = _get_joints("right_camera_optical_joint", urdf_logger.urdf)
     name_joint_right_cam = urdf_logger.joint_entity_path(joint_right_cam)
-
+    """
     try:
         while True:
             rpy_head = np.deg2rad(reachy.head.get_joints_positions())
@@ -144,10 +169,11 @@ if __name__ == "__main__":
             r_arm_pos = np.deg2rad(reachy.r_arm.get_joints_positions())
             _log_arm_joints_poses(r_arm_pos, urdf_logger, False)
 
-            _log_gripper()
+            _log_gripper(left=True)
+            _log_gripper(left=False)
 
-            _log_teleop_cameras(height, width, K_left, name_joint_left_cam, CameraView.LEFT)
-            _log_teleop_cameras(height, width, K_right, name_joint_right_cam, CameraView.RIGHT)
+            # _log_teleop_cameras(height, width, K_left, name_joint_left_cam, CameraView.LEFT)
+            # _log_teleop_cameras(height, width, K_right, name_joint_right_cam, CameraView.RIGHT)
 
             time.sleep(0.2)
 
