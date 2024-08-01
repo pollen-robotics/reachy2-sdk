@@ -342,6 +342,9 @@ class ReachySDK:
         self._setup_part_head(initial_state)
         self._setup_part_mobile_base(initial_state)
 
+    def get_update_timestamp(self) -> int:
+        return self._update_timestamp.ToNanoseconds()
+
     def _start_sync_in_bg(self) -> None:
         """Start the synchronization asyncio tasks with the robot in background."""
         channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
