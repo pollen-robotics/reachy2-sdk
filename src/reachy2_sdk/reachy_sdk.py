@@ -20,6 +20,7 @@ from typing import Dict, List, Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
+from google.protobuf.timestamp_pb2 import Timestamp
 from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
@@ -85,6 +86,8 @@ class ReachySDK(metaclass=Singleton):
         self._cameras: Optional[CameraManager] = None
         self._mobile_base: Optional[MobileBase] = None
         self.info: Optional[ReachyInfo] = None
+
+        self._update_timestamp: Timestamp = Timestamp(seconds=0)
 
         self.connect()
 
@@ -356,6 +359,9 @@ class ReachySDK(metaclass=Singleton):
         if self._lost_connection:
             raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
 
+    def get_update_timestamp(self) -> int:
+        return self._update_timestamp.ToNanoseconds()
+
     def _start_sync_in_bg(self) -> None:
         """Start the synchronization asyncio tasks with the robot in background."""
         self._loop = asyncio.new_event_loop()
@@ -395,6 +401,7 @@ class ReachySDK(metaclass=Singleton):
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         try:
             async for state_update in reachy_stub.StreamReachyState(stream_req):
+                self._update_timestamp = state_update.timestamp
                 if self._l_arm is not None:
                     self._l_arm._update_with(state_update.l_arm_state)
                     if self._l_arm.gripper is not None:

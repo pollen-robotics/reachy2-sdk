@@ -34,6 +34,8 @@ def _log_camera_parameters(side: CameraView) -> Tuple[int, int, npt.NDArray[np.u
 def _log_teleop_cameras(height: int, width: int, K_left: npt.NDArray[np.uint8], joint_cam: str, side: CameraView) -> None:
     frame, ts = reachy.cameras.teleop.get_compressed_frame(side)
 
+    rr.set_time_nanos("reachy_ROS_time", ts)
+
     rr.log(f"{joint_cam}/image", rr.ImageEncoded(contents=frame, format=rr.ImageFormat.JPEG))
 
     rr.log(
@@ -108,6 +110,7 @@ def _log_gripper(left: bool) -> None:
     if left:
         side = "l"
         part = reachy.l_arm
+
     rr.log(f"reachy/{side}_arm/wrist/gripper", rr.Scalar(part.gripper.opening))
 
     # this is for visual rendering only. coef are from the URDF
@@ -147,18 +150,24 @@ if __name__ == "__main__":
 
     urdf_logger = URDFLogger(urdf_path, torso_entity)
 
+    rr.set_time_nanos("reachy_ROS_time", reachy.get_update_timestamp())
+
     urdf_logger.log()
 
-    """
     height, width, K_left = _log_camera_parameters(CameraView.LEFT)
     _, _, K_right = _log_camera_parameters(CameraView.RIGHT)
     joint_left_cam = _get_joints("left_camera_optical_joint", urdf_logger.urdf)
     name_joint_left_cam = urdf_logger.joint_entity_path(joint_left_cam)
     joint_right_cam = _get_joints("right_camera_optical_joint", urdf_logger.urdf)
     name_joint_right_cam = urdf_logger.joint_entity_path(joint_right_cam)
-    """
+
+    # configure vizualisers
+    rr.log("reachy/l_arm/wrist/gripper", rr.SeriesLine(color=[255, 0, 0], name="left gripper", width=2), static=True)
+    rr.log("reachy/r_arm/wrist/gripper", rr.SeriesLine(color=[0, 255, 0], name="right gripper", width=2), static=True)
+
     try:
         while True:
+            rr.set_time_nanos("reachy_ROS_time", reachy.get_update_timestamp())
             rpy_head = np.deg2rad(reachy.head.get_joints_positions())
             _log_head_poses(rpy_head, urdf_logger)
 
@@ -171,8 +180,8 @@ if __name__ == "__main__":
             _log_gripper(left=True)
             _log_gripper(left=False)
 
-            # _log_teleop_cameras(height, width, K_left, name_joint_left_cam, CameraView.LEFT)
-            # _log_teleop_cameras(height, width, K_right, name_joint_right_cam, CameraView.RIGHT)
+            _log_teleop_cameras(height, width, K_left, name_joint_left_cam, CameraView.LEFT)
+            _log_teleop_cameras(height, width, K_right, name_joint_right_cam, CameraView.RIGHT)
 
             time.sleep(0.2)
 
