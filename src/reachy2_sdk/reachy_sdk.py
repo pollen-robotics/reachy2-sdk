@@ -10,13 +10,11 @@ You can also send joint commands, compute forward or inverse kinematics.
 # from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 # from .dynamixel_motor import DynamixelMotor
 
-import asyncio
-import atexit
 import threading
 import time
 from collections import namedtuple
 from logging import getLogger
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
@@ -37,7 +35,6 @@ from .parts.arm import Arm
 from .parts.head import Head
 from .parts.mobile_base import MobileBase
 from .utils.custom_dict import CustomDict
-from .utils.singleton import Singleton
 from .utils.utils import (
     arm_position_to_list,
     ext_euler_angles_to_list,
@@ -51,7 +48,7 @@ GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 """Named tuple for easy access to goto request on full body"""
 
 
-class ReachySDK(metaclass=Singleton):
+class ReachySDK:
     """The ReachySDK class handles the connection with your robot.
     Only one instance of this class can be created in a session.
 
@@ -120,8 +117,6 @@ class ReachySDK(metaclass=Singleton):
         self._sync_thread.start()
 
         self._grpc_connected = True
-        self._lost_connection = False
-        _open_connection.append(self)
         self._logger.info("Connected to Reachy.")
 
     def disconnect(self, lost_connection: bool = False) -> None:
@@ -130,19 +125,13 @@ class ReachySDK(metaclass=Singleton):
             self._logger.warning("Already disconnected from Reachy.")
             return
 
-        self._lost_connection = lost_connection
         self._grpc_connected = False
-        self._stop_flag.set()
-        time.sleep(0.1)
         self._grpc_channel.close()
 
         self._head = None
         self._r_arm = None
         self._l_arm = None
         self._mobile_base = None
-
-        for task in asyncio.all_tasks(loop=self._loop):
-            task.cancel()
 
         self._logger.info("Disconnected from Reachy.")
 
@@ -353,55 +342,18 @@ class ReachySDK(metaclass=Singleton):
         self._setup_part_head(initial_state)
         self._setup_part_mobile_base(initial_state)
 
-    async def _wait_for_stop(self) -> None:
-        while not self._stop_flag.is_set():
-            await asyncio.sleep(0.1)
-        if self._lost_connection:
-            raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
-
-    def get_update_timestamp(self) -> int:
-        return self._update_timestamp.ToNanoseconds()
-
     def _start_sync_in_bg(self) -> None:
         """Start the synchronization asyncio tasks with the robot in background."""
-        self._loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self._loop)
+        channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
+        reachy_stub = reachy_pb2_grpc.ReachyServiceStub(channel)
+        self._get_stream_update_loop(reachy_stub, freq=100)
 
-        try:
-            self._loop.run_until_complete(self._sync_loop())
-            if self._grpc_connected:
-                self.disconnect(lost_connection=True)
-        except asyncio.CancelledError:
-            self._logger.error("Sync loop cancelled.")
-
-    async def _sync_loop(self) -> None:
-        """Define the synchronization loop.
-
-        The synchronization loop is used to:
-            - stream commands to the robot
-            - update the state of the robot
-        """
-
-        async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
-        reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
-
-        try:
-            await asyncio.gather(
-                self._get_stream_update_loop(reachy_stub, freq=100),
-                self._wait_for_stop(),
-            )
-        except ConnectionError:
-            self._logger.error("Connection with Reachy lost, check the sdk server status.")
-        except asyncio.CancelledError:
-            if self._lost_connection:
-                self._logger.error("Stopped streaming commands.")
-
-    async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
+    def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         """Update the state of the robot at a given frequency."""
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         try:
-            async for state_update in reachy_stub.StreamReachyState(stream_req):
-                self._update_timestamp = state_update.timestamp
+            for state_update in reachy_stub.StreamReachyState(stream_req):
+		self._update_timestamp = state_update.timestamp
                 if self._l_arm is not None:
                     self._l_arm._update_with(state_update.l_arm_state)
                     if self._l_arm.gripper is not None:
@@ -414,8 +366,9 @@ class ReachySDK(metaclass=Singleton):
                     self._head._update_with(state_update.head_state)
                 if self._mobile_base is not None:
                     self._mobile_base._update_with(state_update.mobile_base_state)
-        except grpc.aio._call.AioRpcError:
-            raise ConnectionError("")
+        except grpc._channel._MultiThreadedRendezvous:
+            self._grpc_connected = False
+            raise ConnectionError(f"Connection with Reachy ip:{self._host} lost, check the sdk server status.")
 
     def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.
@@ -590,20 +543,3 @@ class ReachySDK(metaclass=Singleton):
             mode=mode,
         )
         return request
-
-
-_open_connection: List[ReachySDK] = []
-
-
-def flush_connection() -> None:
-    """Flush communication before leaving.
-
-    We make sure all buffered commands have been sent before actually leaving.
-    Cancel any pending asyncio task.
-    """
-    for reachy in _open_connection:
-        for task in asyncio.all_tasks(loop=reachy._loop):
-            task.cancel()
-
-
-atexit.register(flush_connection)
