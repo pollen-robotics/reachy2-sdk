@@ -41,7 +41,7 @@ from .part import Part
 
 
 class MobileBase(Part):
-    """The MobileBaseSDK class handles the connection with Reachy's mobile base.
+    """The MobileBase class handles Reachy's mobile base.
 
     It holds:
 
