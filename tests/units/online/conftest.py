@@ -26,7 +26,6 @@ def reachy_sdk() -> ReachySDK:
     assert reachy.turn_off()
 
     reachy.disconnect()
-    ReachySDK.clear()
 
 
 @pytest.fixture
