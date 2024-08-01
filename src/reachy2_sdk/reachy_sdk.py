@@ -353,7 +353,7 @@ class ReachySDK:
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         try:
             for state_update in reachy_stub.StreamReachyState(stream_req):
-		self._update_timestamp = state_update.timestamp
+                self._update_timestamp = state_update.timestamp
                 if self._l_arm is not None:
                     self._l_arm._update_with(state_update.l_arm_state)
                     if self._l_arm.gripper is not None:

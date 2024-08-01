@@ -53,7 +53,7 @@ class Camera:
         if frame.data == b"":
             self._logger.warning("No frame retrieved")
             return None
-        return frame.data, frame.timestamp.ToNanoseconds()  # type: ignore[no-any-return]
+        return frame.data, frame.timestamp.ToNanoseconds()
 
     def get_parameters(
         self, view: CameraView = CameraView.LEFT
