@@ -110,7 +110,7 @@ def _log_gripper(left: bool) -> None:
         part = reachy.l_arm
     rr.log(f"reachy/{side}_arm/wrist/gripper", rr.Scalar(part.gripper.opening))
 
-    # this is for visual rendering only
+    # this is for visual rendering only. coef are from the URDF
     scaled_opening = part.gripper.opening / 100 * 2 - 1  # from [0;100] to [-1;1]
 
     joint = _get_joints(f"{side}_hand_finger_proximal", urdf_logger.urdf)
@@ -162,11 +162,10 @@ if __name__ == "__main__":
             rpy_head = np.deg2rad(reachy.head.get_joints_positions())
             _log_head_poses(rpy_head, urdf_logger)
 
-            # todo get radian directly
-            l_arm_pos = np.deg2rad(reachy.l_arm.get_joints_positions())
+            l_arm_pos = reachy.l_arm.get_joints_positions(degrees=False)
             _log_arm_joints_poses(l_arm_pos, urdf_logger, True)
 
-            r_arm_pos = np.deg2rad(reachy.r_arm.get_joints_positions())
+            r_arm_pos = reachy.r_arm.get_joints_positions(degrees=False)
             _log_arm_joints_poses(r_arm_pos, urdf_logger, False)
 
             _log_gripper(left=True)

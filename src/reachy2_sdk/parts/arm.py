@@ -438,10 +438,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         return response
 
-    def get_joints_positions(self) -> List[float]:
+    def get_joints_positions(self, degrees: bool = True) -> List[float]:
         """Return the current joints positions of the arm in degrees"""
         response = self._stub.GetJointPosition(self._part_id)
-        positions = arm_position_to_list(response)
+        positions = arm_position_to_list(response, degrees)
         return positions
 
     # @property
