@@ -81,7 +81,7 @@ class ReachySDK:
         self._head: Optional[Head] = None
         self._cameras: Optional[CameraManager] = None
         self._mobile_base: Optional[MobileBase] = None
-        self.info: Optional[ReachyInfo] = None
+        self._info: Optional[ReachyInfo] = None
 
         self.connect()
 
@@ -103,12 +103,6 @@ class ReachySDK:
                 "check that the sdk server is running and that the IP is correct."
             )
             self._grpc_connected = False
-            attributs = [attr for attr in dir(self) if not attr.startswith("_")]
-        for attr in attributs:
-            if attr in [
-                "cancel_all_moves",
-            ]:
-                delattr(self, attr)
             return
 
         self._setup_parts()
@@ -141,7 +135,7 @@ class ReachySDK:
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
 
-        if self.info is None:
+        if not self._grpc_connected or self.info is None:
             return "Reachy is not connected"
 
         s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self.info._enabled_parts.items()])
@@ -157,6 +151,13 @@ class ReachySDK:
             battery_voltage=self.info.battery_voltage,
             parts=s,
         )
+
+    @property
+    def info(self) -> Optional[ReachyInfo]:
+        if not self._grpc_connected:
+            self._logger.error("Cannot get info, not connected to Reachy")
+            return None
+        return self._info
 
     @property
     def head(self) -> Optional[Head]:
@@ -258,7 +259,7 @@ class ReachySDK:
         """Get Reachy's cameras."""
         if not self._grpc_connected:
             self._logger.error("Cannot get cameras, not connected to Reachy")
-        return self._cameras  # type: ignore[return-value]
+        return self._cameras
 
     def _get_info(self) -> None:
         """Get main description of the robot.
@@ -274,7 +275,7 @@ class ReachySDK:
         except _InactiveRpcError:
             raise ConnectionError()
 
-        self.info = ReachyInfo(self._robot)
+        self._info = ReachyInfo(self._robot)
         self._grpc_connected = True
 
     def _setup_audio(self) -> None:
@@ -441,7 +442,7 @@ class ReachySDK:
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         if not self.info:
-            self._logger.warning("Reachy is not connected !")
+            self._logger.warning("Reachy is not connected!")
             return False
 
         for part in self.info._enabled_parts.values():
@@ -455,7 +456,7 @@ class ReachySDK:
         """Return True if all actuators of the arm are stiff"""
 
         if not self.info:
-            self._logger.warning("Reachy is not connected !")
+            self._logger.warning("Reachy is not connected!")
             return True
 
         for part in self.info._enabled_parts.values():
@@ -519,6 +520,9 @@ class ReachySDK:
 
     def cancel_all_moves(self) -> GoToAck:
         """Cancel all the goto tasks."""
+        if not self._grpc_connected:
+            self._logger.warning("Reachy is not connected!")
+            return None
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
