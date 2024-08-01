@@ -3,7 +3,6 @@ from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
 from grpc import Channel
-from reachy2_sdk_api.arm_pb2 import ArmJointOrder
 from reachy2_sdk_api.component_pb2 import ComponentId
 from reachy2_sdk_api.orbita2d_pb2 import (
     Axis,

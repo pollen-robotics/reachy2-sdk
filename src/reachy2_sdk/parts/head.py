@@ -182,8 +182,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
             joints_goal=JointsGoal(
                 custom_joint_goal=CustomJointGoal(
                     id=self._part_id,
-                    neck_joint=CustomNeckJoints(joints=[neck_joint]),
-                    joint_goal=[FloatValue(value=goal_position)],
+                    neck_joints=CustomNeckJoints(joints=[neck_joint]),
+                    joints_goals=[FloatValue(value=goal_position)],
                     duration=FloatValue(value=duration),
                 )
             ),

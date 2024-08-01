@@ -553,4 +553,4 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req7):
         time.sleep(0.1)
 
-    assert np.allclose(reachy_sdk_zeroed.head.get_joints_positions(), [-10, 0, 10], atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.head.get_joints_positions(), [15, 0, 10], atol=1e-01)
