@@ -23,6 +23,7 @@ from reachy2_sdk_api.mobile_base_mobility_pb2 import (
     GoToVector,
     TargetDirectionCommand,
 )
+from reachy2_sdk_api.mobile_base_lidar_pb2_grpc import MobileBaseLidarServiceStub
 from reachy2_sdk_api.mobile_base_mobility_pb2_grpc import MobileBaseMobilityServiceStub
 from reachy2_sdk_api.mobile_base_utility_pb2 import (
     ControlModeCommand,
@@ -64,6 +65,7 @@ class MobileBase(Part):
         super().__init__(mb_msg, grpc_channel, MobileBaseUtilityServiceStub(grpc_channel))
 
         self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
+        self._lidar_stub = MobileBaseLidarServiceStub(grpc_channel)
 
         self._drive_mode: str = ZuuuModePossiblities.keys()[initial_state.zuuu_mode.mode].lower()
         self._control_mode: str = ControlModePossiblities.keys()[initial_state.control_mode.mode].lower()
@@ -272,9 +274,21 @@ class MobileBase(Part):
             return True
         return False
 
-    def _set_safety(self, safety_on: bool) -> None:
-        req = LidarSafety(safety_on=BoolValue(value=safety_on))
-        self._stub.SetZuuuSafety(req)
+    def _set_safety(self, safety_on: bool, safety_distance: float = 0.0, critical_distance: float = 0.0) -> None:
+        if safety_distance < 0 or critical_distance < 0:
+            raise ValueError("Distances should be positive.")
+
+        if safety_distance == 0.0:
+            safety_distance = self.lidar._safety_distance
+        if critical_distance == 0.0:
+            critical_distance = self.lidar._critical_distance
+
+        req = LidarSafety(
+            safety_on=BoolValue(value=safety_on),
+            safety_distance=FloatValue(value=safety_distance),
+            critical_distance=FloatValue(value=critical_distance),
+        )
+        self._lidar_stub.SetZuuuSafety(req)
 
     def _update_with(self, new_state: MobileBaseState) -> None:
         self._battery_level = new_state.battery_level.level.value
