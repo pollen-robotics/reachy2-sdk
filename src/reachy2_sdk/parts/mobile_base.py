@@ -18,12 +18,12 @@ from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from numpy import deg2rad, rad2deg, round
 from reachy2_sdk_api.mobile_base_lidar_pb2 import LidarSafety
+from reachy2_sdk_api.mobile_base_lidar_pb2_grpc import MobileBaseLidarServiceStub
 from reachy2_sdk_api.mobile_base_mobility_pb2 import (
     DirectionVector,
     GoToVector,
     TargetDirectionCommand,
 )
-from reachy2_sdk_api.mobile_base_lidar_pb2_grpc import MobileBaseLidarServiceStub
 from reachy2_sdk_api.mobile_base_mobility_pb2_grpc import MobileBaseMobilityServiceStub
 from reachy2_sdk_api.mobile_base_utility_pb2 import (
     ControlModeCommand,
