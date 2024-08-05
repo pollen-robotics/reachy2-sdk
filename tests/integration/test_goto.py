@@ -9,7 +9,6 @@ from pyquaternion import Quaternion
 from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.arm_pb2 import ArmCartesianGoal
 from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
-from google.protobuf.wrappers_pb2 import FloatValue
 
 from reachy2_sdk.utils.utils import recompose_matrix, decompose_matrix
 
@@ -667,7 +666,7 @@ def task_space_interpolation_goto(reachy_arm, target_pose) -> None:
             id=reachy_arm._part_id,
             goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
         )
-        reachy_arm._arm_stub.SendArmCartesianGoal(request)
+        reachy_arm._stub.SendArmCartesianGoal(request)
         time.sleep(1 / freq)
 
     time.sleep(0.1)
@@ -681,7 +680,7 @@ def task_space_interpolation_goto(reachy_arm, target_pose) -> None:
                 id=reachy_arm._part_id,
                 goal_pose=Matrix4x4(data=mat2.flatten().tolist()),
             )
-            reachy_arm._arm_stub.SendArmCartesianGoal(request)
+            reachy_arm._stub.SendArmCartesianGoal(request)
             time.sleep(1 / freq)
 
         time.sleep(0.1)

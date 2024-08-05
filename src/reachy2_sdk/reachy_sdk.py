@@ -10,13 +10,11 @@ You can also send joint commands, compute forward or inverse kinematics.
 # from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 # from .dynamixel_motor import DynamixelMotor
 
-import asyncio
-import atexit
 import threading
 import time
 from collections import namedtuple
 from logging import getLogger
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
@@ -24,6 +22,7 @@ from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
+from reachy2_sdk_api.reachy_pb2 import ReachyState
 
 from .config.reachy_info import ReachyInfo
 from .media.audio import Audio
@@ -35,7 +34,6 @@ from .parts.arm import Arm
 from .parts.head import Head
 from .parts.mobile_base import MobileBase
 from .utils.custom_dict import CustomDict
-from .utils.singleton import Singleton
 from .utils.utils import (
     arm_position_to_list,
     ext_euler_angles_to_list,
@@ -49,7 +47,7 @@ GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 """Named tuple for easy access to goto request on full body"""
 
 
-class ReachySDK(metaclass=Singleton):
+class ReachySDK:
     """The ReachySDK class handles the connection with your robot.
     Only one instance of this class can be created in a session.
 
@@ -83,6 +81,7 @@ class ReachySDK(metaclass=Singleton):
         self._head: Optional[Head] = None
         self._cameras: Optional[CameraManager] = None
         self._mobile_base: Optional[MobileBase] = None
+        self.info: Optional[ReachyInfo] = None
 
         self.connect()
 
@@ -115,8 +114,6 @@ class ReachySDK(metaclass=Singleton):
         self._sync_thread.start()
 
         self._grpc_connected = True
-        self._lost_connection = False
-        _open_connection.append(self)
         self._logger.info("Connected to Reachy.")
 
     def disconnect(self, lost_connection: bool = False) -> None:
@@ -125,10 +122,7 @@ class ReachySDK(metaclass=Singleton):
             self._logger.warning("Already disconnected from Reachy.")
             return
 
-        self._lost_connection = lost_connection
         self._grpc_connected = False
-        self._stop_flag.set()
-        time.sleep(0.1)
         self._grpc_channel.close()
 
         self._head = None
@@ -136,17 +130,14 @@ class ReachySDK(metaclass=Singleton):
         self._l_arm = None
         self._mobile_base = None
 
-        for task in asyncio.all_tasks(loop=self._loop):
-            task.cancel()
-
-        if self._cameras is not None:
-            self._cameras._cleanup()
-            self._cameras = None
-
         self._logger.info("Disconnected from Reachy.")
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
+
+        if self.info is None:
+            return "Reachy is not connected"
+
         s = "\n\t".join([part_name + ": " + str(part) for part_name, part in self.info._enabled_parts.items()])
         repr_template = (
             '<Reachy host="{host}" connected={connected} on={on} \n'
@@ -196,7 +187,7 @@ class ReachySDK(metaclass=Singleton):
     @property
     def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Get all joints of the robot."""
-        if not self._grpc_connected:
+        if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot get joints, not connected to Reachy.")
             return CustomDict({})
         _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
@@ -209,7 +200,7 @@ class ReachySDK(metaclass=Singleton):
     @property
     def _actuators(self) -> Dict[str, Orbita2d | Orbita3d]:
         """Get all actuators of the robot."""
-        if not self._grpc_connected:
+        if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot get actuators, not connected to Reachy.")
             return {}
         _actuators: Dict[str, Orbita2d | Orbita3d] = {}
@@ -247,8 +238,6 @@ class ReachySDK(metaclass=Singleton):
     @property
     def cameras(self) -> CameraManager:
         """Get Reachy's cameras."""
-        self._cameras.wait_end_of_initialization()  # type: ignore[union-attr]
-
         return self._cameras  # type: ignore[return-value]
 
     def _get_info(self) -> None:
@@ -278,19 +267,15 @@ class ReachySDK(metaclass=Singleton):
     def _setup_video(self) -> Optional[CameraManager]:
         try:
             return CameraManager(self._host, self._video_port)
+
         except Exception as e:
-            self._logger.error(f"Failed to connect to video server with error {e}.\nReachySDK.video will not be available.")
+            self._logger.error(f"Failed to connect to video server with error: {e}.\nReachySDK.video will not be available.")
             return None
 
-    def _setup_parts(self) -> None:
-        """Setup all parts of the robot.
-
-        Get the state of each part of the robot, create an instance for each of them and add
-        it to the ReachySDK instance.
-        """
-        setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
-        self._goto_stub = GoToServiceStub(self._grpc_channel)
-        initial_state = setup_stub.GetReachyState(self._robot.id)
+    def _setup_part_r_arm(self, initial_state: ReachyState) -> None:
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
 
         if self._robot.HasField("r_arm"):
             if initial_state.r_arm_state.activated:
@@ -302,6 +287,11 @@ class ReachySDK(metaclass=Singleton):
             else:
                 self.info._disabled_parts.append("r_arm")
 
+    def _setup_part_l_arm(self, initial_state: ReachyState) -> None:
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
+
         if self._robot.HasField("l_arm"):
             if initial_state.l_arm_state.activated:
                 l_arm = Arm(self._robot.l_arm, initial_state.l_arm_state, self._grpc_channel, self._goto_stub)
@@ -312,6 +302,20 @@ class ReachySDK(metaclass=Singleton):
             else:
                 self.info._disabled_parts.append("l_arm")
 
+    def _setup_part_mobile_base(self, initial_state: ReachyState) -> None:
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
+
+        if self._robot.HasField("mobile_base"):
+            self._mobile_base = MobileBase(self._robot.head, initial_state.mobile_base_state, self._grpc_channel)
+            self.info._set_mobile_base(self._mobile_base)
+
+    def _setup_part_head(self, initial_state: ReachyState) -> None:
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
+
         if self._robot.HasField("head"):
             if initial_state.head_state.activated:
                 head = Head(self._robot.head, initial_state.head_state, self._grpc_channel, self._goto_stub)
@@ -320,55 +324,32 @@ class ReachySDK(metaclass=Singleton):
             else:
                 self.info._disabled_parts.append("head")
 
-        if self._robot.HasField("mobile_base"):
-            self._mobile_base = MobileBase(self._robot.head, initial_state.mobile_base_state, self._grpc_channel)
-            self.info._set_mobile_base(self._mobile_base)
+    def _setup_parts(self) -> None:
+        """Setup all parts of the robot.
 
-    async def _wait_for_stop(self) -> None:
-        while not self._stop_flag.is_set():
-            await asyncio.sleep(0.1)
-        if self._lost_connection:
-            raise ConnectionError("Connection with Reachy lost, check the sdk server status.")
+        Get the state of each part of the robot, create an instance for each of them and add
+        it to the ReachySDK instance.
+        """
+        setup_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
+        self._goto_stub = GoToServiceStub(self._grpc_channel)
+        initial_state = setup_stub.GetReachyState(self._robot.id)
+
+        self._setup_part_r_arm(initial_state)
+        self._setup_part_l_arm(initial_state)
+        self._setup_part_head(initial_state)
+        self._setup_part_mobile_base(initial_state)
 
     def _start_sync_in_bg(self) -> None:
         """Start the synchronization asyncio tasks with the robot in background."""
-        self._loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self._loop)
+        channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
+        reachy_stub = reachy_pb2_grpc.ReachyServiceStub(channel)
+        self._get_stream_update_loop(reachy_stub, freq=100)
 
-        try:
-            self._loop.run_until_complete(self._sync_loop())
-            if self._grpc_connected:
-                self.disconnect(lost_connection=True)
-        except asyncio.CancelledError:
-            self._logger.error("Sync loop cancelled.")
-
-    async def _sync_loop(self) -> None:
-        """Define the synchronization loop.
-
-        The synchronization loop is used to:
-            - stream commands to the robot
-            - update the state of the robot
-        """
-
-        async_channel = grpc.aio.insecure_channel(f"{self._host}:{self._sdk_port}")
-        reachy_stub = reachy_pb2_grpc.ReachyServiceStub(async_channel)
-
-        try:
-            await asyncio.gather(
-                self._get_stream_update_loop(reachy_stub, freq=100),
-                self._wait_for_stop(),
-            )
-        except ConnectionError:
-            self._logger.error("Connection with Reachy lost, check the sdk server status.")
-        except asyncio.CancelledError:
-            if self._lost_connection:
-                self._logger.error("Stopped streaming commands.")
-
-    async def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
+    def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
         """Update the state of the robot at a given frequency."""
         stream_req = reachy_pb2.ReachyStreamStateRequest(id=self._robot.id, publish_frequency=freq)
         try:
-            async for state_update in reachy_stub.StreamReachyState(stream_req):
+            for state_update in reachy_stub.StreamReachyState(stream_req):
                 if self._l_arm is not None:
                     self._l_arm._update_with(state_update.l_arm_state)
                     if self._l_arm.gripper is not None:
@@ -381,15 +362,16 @@ class ReachySDK(metaclass=Singleton):
                     self._head._update_with(state_update.head_state)
                 if self._mobile_base is not None:
                     self._mobile_base._update_with(state_update.mobile_base_state)
-        except grpc.aio._call.AioRpcError:
-            raise ConnectionError("")
+        except grpc._channel._MultiThreadedRendezvous:
+            self._grpc_connected = False
+            raise ConnectionError(f"Connection with Reachy ip:{self._host} lost, check the sdk server status.")
 
     def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.
 
         All enabled parts' motors will then be stiff.
         """
-        if not self._grpc_connected:
+        if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
         for part in self.info._enabled_parts.values():
@@ -404,7 +386,7 @@ class ReachySDK(metaclass=Singleton):
 
         All enabled parts' motors will then be compliant.
         """
-        if not self._grpc_connected:
+        if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         for part in self.info._enabled_parts.values():
@@ -419,7 +401,7 @@ class ReachySDK(metaclass=Singleton):
 
         All enabled parts' motors will then be compliant.
         """
-        if not self._grpc_connected:
+        if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         if hasattr(self, "_mobile_base") and self._mobile_base is not None:
@@ -438,6 +420,10 @@ class ReachySDK(metaclass=Singleton):
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
+        if not self.info:
+            self._logger.warning("Reachy is not connected !")
+            return False
+
         for part in self.info._enabled_parts.values():
             if not part.is_on():
                 return False
@@ -447,6 +433,11 @@ class ReachySDK(metaclass=Singleton):
 
     def is_off(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
+
+        if not self.info:
+            self._logger.warning("Reachy is not connected !")
+            return True
+
         for part in self.info._enabled_parts.values():
             if part.is_on():
                 return False
@@ -548,20 +539,3 @@ class ReachySDK(metaclass=Singleton):
             mode=mode,
         )
         return request
-
-
-_open_connection: List[ReachySDK] = []
-
-
-def flush_connection() -> None:
-    """Flush communication before leaving.
-
-    We make sure all buffered commands have been sent before actually leaving.
-    Cancel any pending asyncio task.
-    """
-    for reachy in _open_connection:
-        for task in asyncio.all_tasks(loop=reachy._loop):
-            task.cancel()
-
-
-atexit.register(flush_connection)

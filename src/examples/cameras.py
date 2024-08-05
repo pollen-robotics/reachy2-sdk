@@ -10,10 +10,14 @@ def display_teleop_cam() -> None:
     if reachy.cameras.teleop is None:
         exit("There is no teleop camera.")
 
+    print(f"Left camara parameters {reachy.cameras.teleop.get_parameters(CameraView.LEFT)}")
+    # print(reachy.cameras.teleop.get_parameters(CameraView.RIGHT))
+
     try:
-        while reachy.cameras.teleop.capture():
-            frame = reachy.cameras.teleop.get_frame(CameraView.LEFT)
-            frame_r = reachy.cameras.teleop.get_frame(CameraView.RIGHT)
+        while True:
+            frame, ts = reachy.cameras.teleop.get_frame(CameraView.LEFT)
+            frame_r, ts_r = reachy.cameras.teleop.get_frame(CameraView.RIGHT)
+            print(f"timestamps secs: left {ts} - right {ts_r}")
             cv2.imshow("left", frame)
             cv2.imshow("right", frame_r)
             cv2.waitKey(1)
@@ -22,6 +26,7 @@ def display_teleop_cam() -> None:
         logging.info("User Interrupt")
 
 
+"""
 def display_SR_cam() -> None:
     if reachy.cameras.SR is None:
         exit("There is no SR camera.")
@@ -36,7 +41,7 @@ def display_SR_cam() -> None:
 
     except KeyboardInterrupt:
         logging.info("User Interrupt")
-
+"""
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -44,6 +49,9 @@ if __name__ == "__main__":
 
     if not reachy.is_connected:
         exit("Reachy is not connected.")
+
+    if reachy.cameras is None:
+        exit("There is no connected camera.")
 
     display_teleop_cam()
     # display_SR_cam()

@@ -4,8 +4,9 @@ This module provides main info of the robot.
 """
 from typing import Any, Dict, List, Optional
 
-from mobile_base_sdk import MobileBaseSDK
 from reachy2_sdk_api.reachy_pb2 import Reachy
+
+from ..parts.mobile_base import MobileBase
 
 
 class ReachyInfo:
@@ -25,7 +26,7 @@ class ReachyInfo:
 
         self._enabled_parts: Dict[str, Any] = {}
         self._disabled_parts: List[str] = []
-        self._mobile_base: Optional[MobileBaseSDK] = None
+        self._mobile_base: Optional[MobileBase] = None
 
         self._set_config(reachy)
 
@@ -46,7 +47,7 @@ class ReachyInfo:
         else:
             self.config = "custom_config"
 
-    def _set_mobile_base(self, mobile_base: MobileBaseSDK) -> None:
+    def _set_mobile_base(self, mobile_base: MobileBase) -> None:
         self._mobile_base = mobile_base
 
     def __repr__(self) -> str:

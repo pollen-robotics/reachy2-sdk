@@ -4,17 +4,20 @@ from reachy2_sdk.reachy_sdk import ReachySDK
 
 
 @pytest.mark.offline
-def test_singleton() -> None:
+def test_multiple_connections() -> None:
     rsdk = ReachySDK(host="dummy")
-    with pytest.raises(ConnectionError):
-        rsdk2 = ReachySDK(host="dummy2")
+    rsdk2 = ReachySDK(host="dummy2")
+    assert not rsdk.is_connected()
+    assert not rsdk2.is_connected()
     rsdk.disconnect()
-    ReachySDK.clear()
+    rsdk2.disconnect()
 
 
 @pytest.mark.offline
 def test_unconnected() -> None:
     rsdk = ReachySDK(host="dummy")
+
+    assert str(rsdk) == "Reachy is not connected"
 
     assert rsdk._grpc_connected is False
     assert not rsdk.is_connected()
@@ -31,7 +34,6 @@ def test_unconnected() -> None:
     assert rsdk.turn_off() is False
 
     rsdk.disconnect()
-    ReachySDK.clear()
 
 
 @pytest.mark.offline
@@ -47,4 +49,3 @@ def test_getters_setters() -> None:
     assert rsdk.mobile_base is None
 
     rsdk.disconnect()
-    ReachySDK.clear()
