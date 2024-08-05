@@ -41,7 +41,15 @@ class Orbita(ABC):
     """
 
     def __init__(self, uid: int, name: str, orbita_type: str, stub: Orbita2dServiceStub | Orbita3dServiceStub, part: Part):
-        """Initialize the common attributes."""
+        """Initialize the common attributes.
+
+        Arguments:
+        - uid: id of the actuator
+        - name: name of the actuator
+        - orbita_type: discriminate the orbita type, which can be "2d" or "3d"
+        - stub: stub to call Orbitas methods
+        - part: refers to the part the Orbita belongs to, in order to retrieve the parent part of the actuator.
+        """
         self._name = name
         self._id = uid
         self._orbita_type = orbita_type
