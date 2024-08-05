@@ -1,4 +1,5 @@
 import pytest
+from reachy2_sdk_api.goto_pb2 import GoToId
 
 from reachy2_sdk.reachy_sdk import ReachySDK
 
@@ -48,4 +49,30 @@ def test_getters_setters() -> None:
 
     assert rsdk.mobile_base is None
 
+    assert rsdk.cameras is None
+
+    assert rsdk.joints == {}
+
     rsdk.disconnect()
+
+
+@pytest.mark.offline
+def test_unconnected() -> None:
+    rsdk = ReachySDK(host="dummy")
+
+    assert rsdk.is_connected() == False
+
+    assert rsdk.info is None
+
+    assert rsdk.turn_on() == False
+    assert rsdk.turn_off() == False
+    assert rsdk.turn_off_smoothly() == False
+    assert rsdk.is_on() == False
+    assert rsdk.is_off() == True
+
+    assert rsdk.cancel_all_moves() is None
+    assert rsdk.cancel_move_by_id(GoToId(id=1)) is None
+    assert rsdk.get_move_joints_request(GoToId(id=1)) is None
+
+    assert rsdk.is_move_finished(GoToId(id=1)) is False
+    assert rsdk.is_move_playing(GoToId(id=1)) is False
