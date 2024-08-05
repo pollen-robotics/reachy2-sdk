@@ -163,7 +163,7 @@ class ReachySDK:
     def head(self) -> Optional[Head]:
         """Get Reachy's head."""
         if not self._grpc_connected:
-            self._logger.error("Cannot get r_arm, not connected to Reachy")
+            self._logger.error("Cannot get head, not connected to Reachy")
             return None
         if self._head is None:
             self._logger.error("head does not exist with this configuration")
@@ -185,7 +185,7 @@ class ReachySDK:
     def l_arm(self) -> Optional[Arm]:
         """Get Reachy's left arm."""
         if not self._grpc_connected:
-            self._logger.error("Cannot get r_arm, not connected to Reachy")
+            self._logger.error("Cannot get l_arm, not connected to Reachy")
             return None
         if self._l_arm is None:
             self._logger.error("l_arm does not exist with this configuration")
@@ -196,7 +196,7 @@ class ReachySDK:
     def mobile_base(self) -> Optional[MobileBase]:
         """Get Reachy's mobile base."""
         if not self._grpc_connected:
-            self._logger.error("Cannot get r_arm, not connected to Reachy")
+            self._logger.error("Cannot get mobile_base, not connected to Reachy")
             return None
         if self._mobile_base is None:
             self._logger.error("mobile_base does not exist with this configuration")
@@ -259,6 +259,7 @@ class ReachySDK:
         """Get Reachy's cameras."""
         if not self._grpc_connected:
             self._logger.error("Cannot get cameras, not connected to Reachy")
+            return None
         return self._cameras
 
     def _get_info(self) -> None:
@@ -505,6 +506,9 @@ class ReachySDK:
 
     def is_move_finished(self, id: GoToId) -> bool:
         """Return True if goto has been played and has been cancelled, False otherwise."""
+        if not self._grpc_connected:
+            self._logger.warning("Reachy is not connected!")
+            return False
         state = self._get_move_state(id)
         result = bool(
             state.goal_status == GoalStatus.STATUS_ABORTED
@@ -515,6 +519,9 @@ class ReachySDK:
 
     def is_move_playing(self, id: GoToId) -> bool:
         """Return True if goto is currently playing, False otherwise."""
+        if not self._grpc_connected:
+            self._logger.warning("Reachy is not connected!")
+            return False
         state = self._get_move_state(id)
         return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
 
@@ -533,15 +540,21 @@ class ReachySDK:
 
     def cancel_move_by_id(self, goto_id: GoToId) -> GoToAck:
         """Ask the cancellation of a single goto on the arm, given its id"""
+        if not self._grpc_connected:
+            self._logger.warning("Reachy is not connected!")
+            return None
         response = self._goto_stub.CancelGoTo(goto_id)
         return response
 
-    def get_move_joints_request(self, goto_id: GoToId) -> SimplifiedRequest:
+    def get_move_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
         """Returns the part affected, the joints goal positions, duration and mode of the corresponding GoToId
 
         Part can be either 'r_arm', 'l_arm' or 'head'
         Goal_position is returned as a list in degrees
         """
+        if not self._grpc_connected:
+            self._logger.warning("Reachy is not connected!")
+            return None
         response = self._goto_stub.GetGoToRequest(goto_id)
         if response.joints_goal.HasField("arm_joint_goal"):
             part = response.joints_goal.arm_joint_goal.id.name
