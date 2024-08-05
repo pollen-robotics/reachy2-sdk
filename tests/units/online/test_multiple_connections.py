@@ -50,5 +50,5 @@ def test_same_robot(reachy_sdk_zeroed: ReachySDK) -> None:
     while not reachy_sdk_zeroed.is_move_finished(move1_id):
         # update loops are not synchronized, we do not expect the same values
         assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), reachy2.l_arm.get_joints_positions(), atol=1)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), move1_goal, atol=1e-01)
-    assert np.allclose(reachy2.l_arm.get_joints_positions(), move1_goal, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), move1_goal, atol=1e-03)
+    assert np.allclose(reachy2.l_arm.get_joints_positions(), move1_goal, atol=1e-03)

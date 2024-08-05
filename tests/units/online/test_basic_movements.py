@@ -127,10 +127,10 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
 def test_basic_get_positions(reachy_sdk_zeroed: ReachySDK) -> None:
     expected_pos1 = [0, 0, 0, 0, 0, 0, 0]
 
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos1, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos1, atol=1e-03)
 
     expected_pos2 = [15, 10, 20, -50, 10, 10, 20]
     id = reachy_sdk_zeroed.l_arm.goto_joints(expected_pos2, duration=3)
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos2, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos2, atol=1e-03)

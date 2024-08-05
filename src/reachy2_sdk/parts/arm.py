@@ -279,7 +279,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if not resp.success:
             raise ValueError(f"No solution found for the given target ({target})!")
 
-        return arm_position_to_list(resp.arm_position)
+        answer: List[float] = np.round(arm_position_to_list(resp.arm_position), 3).tolist()
+        return answer
 
     def goto_from_matrix(
         self,
@@ -441,7 +442,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     def get_joints_positions(self) -> List[float]:
         """Return the current joints positions of the arm in degrees"""
         response = self._stub.GetJointPosition(self._part_id)
-        positions = arm_position_to_list(response)
+        positions: List[float] = np.round(arm_position_to_list(response), 3).tolist()
         return positions
 
     # @property
