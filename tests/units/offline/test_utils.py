@@ -20,7 +20,6 @@ def test_deg_rad() -> None:
     rads_ref = [0.0, 6.28319, 3.14159, 0.174533, 0.349066]
     rads = convert_to_radians(degs_ref)
 
-    # assert np.array_equal(rads_ref, rads)
     assert np.allclose(rads_ref, rads, atol=1e-03)
 
     degs = convert_to_degrees(rads_ref)
