@@ -10,9 +10,11 @@ from reachy2_sdk.reachy_sdk import ReachySDK
 
 @pytest.mark.online
 def test_no_camera(reachy_sdk: ReachySDK) -> None:
-    assert reachy_sdk.cameras.teleop is None
+    assert reachy_sdk.cameras.teleop is not None
 
-    assert reachy_sdk.cameras.SR is None
+    res = reachy_sdk.cameras.teleop.get_frame()
+
+    assert res is None
 
 
 """
