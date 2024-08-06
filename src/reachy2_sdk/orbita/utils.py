@@ -9,7 +9,7 @@ from reachy2_sdk_api.component_pb2 import PIDGains
 
 def to_position(internal_pos: float) -> float:
     """Convert an internal angluar value in radians to a value in degrees."""
-    return float(round(np.rad2deg(internal_pos), 2))
+    return float(np.rad2deg(internal_pos))
 
 
 def to_internal_position(pos: float) -> Any:

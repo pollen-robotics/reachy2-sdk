@@ -242,19 +242,19 @@ def test_get_move_joints_request(reachy_sdk_zeroed: ReachySDK) -> None:
 
     ans1 = reachy_sdk_zeroed.get_move_joints_request(req1)
     assert ans1.part == "head"
-    assert np.allclose(ans1.goal_positions, [30, 0, 0], atol=1e-01)
+    assert np.allclose(ans1.goal_positions, [30, 0, 0], atol=1e-03)
     assert ans1.duration == 5
     assert ans1.mode == "minimum_jerk"
 
     ans2 = reachy_sdk_zeroed.get_move_joints_request(req2)
     assert ans2.part == "l_arm"
-    assert np.allclose(ans2.goal_positions, [10, 10, 15, -20, 15, -15, -10], atol=1e-01)
+    assert np.allclose(ans2.goal_positions, [10, 10, 15, -20, 15, -15, -10], atol=1e-03)
     assert ans2.duration == 7
     assert ans2.mode == "linear"
 
     ans3 = reachy_sdk_zeroed.get_move_joints_request(req3)
     assert ans3.part == "r_arm"
-    assert np.allclose(ans3.goal_positions, [0, 10, 20, -40, 10, 10, -15], atol=1e-01)
+    assert np.allclose(ans3.goal_positions, [0, 10, 20, -40, 10, 10, -15], atol=1e-03)
     assert ans3.duration == 10
     assert ans3.mode == "minimum_jerk"
 
@@ -312,7 +312,7 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     ans_r = reachy_sdk_zeroed.get_move_joints_request(req_r)
     assert ans_r.part == "r_arm"
-    assert np.allclose(ans_r.goal_positions, zero_r_arm, atol=1e-01)
+    assert np.allclose(ans_r.goal_positions, zero_r_arm, atol=1e-03)
     assert ans_r.duration == 2
     assert ans_r.mode == "minimum_jerk"
 
@@ -320,8 +320,8 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_move_state(req_r).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_move_state(req_l).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-04)
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_r_arm, atol=1e-01)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_l_arm, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_r_arm, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_l_arm, atol=1e-03)
 
     cancel = reachy_sdk_zeroed.cancel_all_moves()
     assert cancel.ack
@@ -353,10 +353,11 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     while not is_goto_finished(reachy_sdk_zeroed, req_l2):
         time.sleep(0.1)
+    time.sleep(0.05)
 
     ans_l2 = reachy_sdk_zeroed.get_move_joints_request(req_l2)
     assert ans_l2.part == "l_arm"
-    assert np.allclose(ans_l2.goal_positions, zero_l_arm, atol=1e-01)
+    assert np.allclose(ans_l2.goal_positions, zero_l_arm, atol=1e-03)
     assert ans_l2.duration == 1
     assert ans_l2.mode == "linear"
 
@@ -364,8 +365,8 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_move_state(req_r2).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_move_state(req_l2).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-04)
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_r_arm, atol=1e-01)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_l_arm, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_r_arm, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_l_arm, atol=1e-03)
 
     # Test with 'elbow_90' instead of 'default'
 
@@ -395,7 +396,7 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     ans_l3 = reachy_sdk_zeroed.get_move_joints_request(req_l3)
     assert ans_l3.part == "l_arm"
-    assert np.allclose(ans_l3.goal_positions, elbow_90_l_arm, atol=1e-01)
+    assert np.allclose(ans_l3.goal_positions, elbow_90_l_arm, atol=1e-03)
     assert ans_l3.duration == 2
     assert ans_l3.mode == "minimum_jerk"
 
@@ -403,10 +404,10 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_move_state(req_r3).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_move_state(req_l3).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert np.isclose(
-        Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-03
+        Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-04
     )  # why not 1e-04 here?
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), elbow_90_r_arm, atol=1e-01)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), elbow_90_l_arm, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), elbow_90_r_arm, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), elbow_90_l_arm, atol=1e-03)
 
     # Test with some parts off
 
