@@ -17,14 +17,14 @@ from reachy2_sdk.utils.utils import (
 @pytest.mark.offline
 def test_deg_rad() -> None:
     degs_ref = [0.0, 360.0, 180.0, 10.0, 20.0]
-    rads_ref = [0.0, 6.283, 3.142, 0.175, 0.349]
+    rads_ref = [0.0, 6.28319, 3.14159, 0.174533, 0.349066]
     rads = convert_to_radians(degs_ref)
 
-    assert np.array_equal(rads_ref, rads)
+    assert np.allclose(rads_ref, rads, atol=1e-03)
 
     degs = convert_to_degrees(rads_ref)
 
-    assert np.allclose(degs_ref, degs, atol=1e-01)
+    assert np.allclose(degs_ref, degs, atol=1e-03)
 
 
 @pytest.mark.offline
@@ -34,7 +34,7 @@ def test_arm_position_to_list() -> None:
 
     arm_position_float = arm_position_to_list(arm_position, True)
 
-    assert np.allclose(arm_position_float_ref, arm_position_float, atol=1e-01)
+    assert np.allclose(arm_position_float_ref, arm_position_float, atol=1e-03)
 
     """
     # Todo: this should be equivalent

@@ -252,6 +252,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: npt.NDArray[np.float64],
         q0: Optional[List[float]] = None,
         degrees: bool = True,
+        round: Optional[int] = None,
     ) -> List[float]:
         """Compute the inverse kinematics of the arm.
 
@@ -293,7 +294,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if not resp.success:
             raise ValueError(f"No solution found for the given target ({target})!")
 
-        return arm_position_to_list(resp.arm_position)
+        answer: List[float] = arm_position_to_list(resp.arm_position, degrees)
+        if round is not None:
+            answer = np.round(answer, round).tolist()
+        return answer
 
     def goto_from_matrix(
         self,
@@ -471,10 +475,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         return response
 
-    def get_joints_positions(self) -> List[float]:
-        """Return the current joints positions of the arm in degrees"""
+    def get_joints_positions(self, degrees: bool = True, round: Optional[int] = None) -> List[float]:
+        """Return the current joints positions of the arm, by default in degrees"""
         response = self._stub.GetJointPosition(self._part_id)
-        positions = arm_position_to_list(response)
+        positions: List[float] = arm_position_to_list(response, degrees)
+        if round is not None:
+            positions = np.round(arm_position_to_list(response, degrees), round).tolist()
         return positions
 
     # @property

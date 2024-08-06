@@ -34,8 +34,8 @@ class OrbitaJoint:
         )
         return repr_template.format(
             axis_type=self._axis_type,
-            present_position=self.present_position,
-            goal_position=self.goal_position,
+            present_position=round(self.present_position, 2),
+            goal_position=round(self.goal_position, 2),
         )
 
     @property
