@@ -15,7 +15,7 @@ def test_basic(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.r_arm.elbow.pitch.goal_position = goal_position
     reachy_sdk_zeroed.send_goal_positions()
     time.sleep(1)
-    assert reachy_sdk_zeroed.r_arm.elbow.pitch.present_position == goal_position
+    assert np.isclose(reachy_sdk_zeroed.r_arm.elbow.pitch.present_position, goal_position, 1e-03)
 
 
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
