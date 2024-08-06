@@ -16,6 +16,10 @@ def test_no_camera(reachy_sdk: ReachySDK) -> None:
 
     assert res is None
 
+    res = reachy_sdk.cameras.teleop.get_parameters()
+
+    assert res is None
+
 
 """
 @pytest.mark.sr_camera
