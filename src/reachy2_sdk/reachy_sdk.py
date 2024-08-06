@@ -14,14 +14,17 @@ import threading
 import time
 from collections import namedtuple
 from logging import getLogger
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
+from reachy2_sdk_api.arm_pb2 import ArmStatus
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
+from reachy2_sdk_api.hand_pb2 import HandStatus
+from reachy2_sdk_api.head_pb2 import HeadStatus
 from reachy2_sdk_api.reachy_pb2 import ReachyState
 
 from .config.reachy_info import ReachyInfo
@@ -270,9 +273,9 @@ class ReachySDK:
         - robot's sofware and hardware version
         - robot's serial number
         """
-        config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
+        self._stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         try:
-            self._robot = config_stub.GetReachy(Empty())
+            self._robot = self._stub.GetReachy(Empty())
         except _InactiveRpcError:
             raise ConnectionError()
 
@@ -387,6 +390,42 @@ class ReachySDK:
         except grpc._channel._MultiThreadedRendezvous:
             self._grpc_connected = False
             raise ConnectionError(f"Connection with Reachy ip:{self._host} lost, check the sdk server status.")
+
+    def _audit(self) -> Dict[str, List[Optional[str]]]:
+        audit_status = self._stub.Audit(self._robot.id)
+        robot_audit_dict: Dict[str, List[Optional[str]]] = {}
+
+        if audit_status.HasField("l_arm_status"):
+            robot_audit_dict["l_arm"] = self._read_error_status(audit_status.l_arm_status)
+        if audit_status.HasField("r_arm_status"):
+            robot_audit_dict["r_arm"] = self._read_error_status(audit_status.r_arm_status)
+        if audit_status.HasField("head_status"):
+            robot_audit_dict["head"] = self._read_error_status(audit_status.head_status)
+        if audit_status.HasField("l_hand_status"):
+            robot_audit_dict["l_hand"] = self._read_error_status(audit_status.l_hand_status)
+        if audit_status.HasField("r_hand_status"):
+            robot_audit_dict["r_hand"] = self._read_error_status(audit_status.r_hand_status)
+
+        return robot_audit_dict
+
+    def _read_error_status(self, part: ArmStatus | HeadStatus | HandStatus) -> List[Optional[str]]:
+        part_errors: List[Optional[str]] = []
+        print(part)
+        if part.DESCRIPTOR.name == "HandStatus":
+            if len(part.errors) > 0:
+                if part.errors[0].details == "Ok":
+                    part_errors.append(None)
+                else:
+                    part_errors.append(part.errors[0].details)
+        else:
+            for descriptor in part.DESCRIPTOR.fields:
+                value = getattr(part, descriptor.name)
+                if len(value.errors) > 0:
+                    if value.errors[0].details == "Ok":
+                        part_errors.append(None)
+                    else:
+                        part_errors.append(value.errors[0].details)
+        return part_errors
 
     def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.
