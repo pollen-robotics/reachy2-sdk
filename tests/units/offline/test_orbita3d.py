@@ -39,7 +39,14 @@ def test_class() -> None:
         present_speed=present_speed,
         present_load=present_load,
     )
-    orbita3d = Orbita3d(uid=0, name="unit_test", initial_state=orbita3d_state, grpc_channel=grpc_channel)
+    orbita3d = Orbita3d(
+        uid=0,
+        name="unit_test",
+        initial_state=orbita3d_state,
+        grpc_channel=grpc_channel,
+        part=None,
+        joints_position_order=[0, 1, 2],
+    )
 
     assert orbita3d.__repr__() != ""
 
