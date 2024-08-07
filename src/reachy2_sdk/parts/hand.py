@@ -12,6 +12,7 @@ from reachy2_sdk_api.hand_pb2 import (
     HandPosition,
     HandPositionRequest,
     HandState,
+    HandStatus,
     ParallelGripperPosition,
 )
 from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
@@ -97,3 +98,6 @@ class Hand(Part):
         self._goal_position = new_state.goal_position.parallel_gripper.position
         self._opening = new_state.opening.value
         self._compliant = new_state.compliant.value
+
+    def _update_audit_status(self, new_status: HandStatus) -> None:
+        pass

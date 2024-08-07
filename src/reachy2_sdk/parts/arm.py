@@ -6,7 +6,6 @@ Handles all specific method to an Arm (left and/or right) especially:
 - goto functions
 """
 
-import logging
 import time
 from typing import Dict, List, Optional
 
@@ -24,6 +23,7 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmJointGoal,
     ArmJoints,
     ArmState,
+    ArmStatus,
     CustomArmJoints,
     SpeedLimitRequest,
     TorqueLimitRequest,
@@ -75,7 +75,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         Connect to the arm's gRPC server stub and set up the arm's actuators.
         """
-        self._logger = logging.getLogger(__name__)
         JointsBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel))
         IGoToBasedPart.__init__(self, self, goto_stub)
 
@@ -534,3 +533,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self.shoulder._update_with(new_state.shoulder_state)
         self.elbow._update_with(new_state.elbow_state)
         self.wrist._update_with(new_state.wrist_state)
+
+    def _update_audit_status(self, new_status: ArmStatus) -> None:
+        self.shoulder._update_audit_status(new_status.shoulder_status)
+        self.elbow._update_audit_status(new_status.elbow_status)
+        self.wrist._update_audit_status(new_status.wrist_status)

@@ -20,11 +20,8 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
-from reachy2_sdk_api.arm_pb2 import ArmStatus
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
-from reachy2_sdk_api.hand_pb2 import HandStatus
-from reachy2_sdk_api.head_pb2 import HeadStatus
 from reachy2_sdk_api.reachy_pb2 import ReachyState
 
 from .config.reachy_info import ReachyInfo
@@ -115,6 +112,10 @@ class ReachySDK:
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
         self._sync_thread.start()
+
+        self._audit_thread = threading.Thread(target=self._audit)
+        self._audit_thread.daemon = True
+        self._audit_thread.start()
 
         self._grpc_connected = True
         self._logger.info("Connected to Reachy.")
@@ -391,41 +392,41 @@ class ReachySDK:
             self._grpc_connected = False
             raise ConnectionError(f"Connection with Reachy ip:{self._host} lost, check the sdk server status.")
 
-    def _audit(self) -> Dict[str, List[Optional[str]]]:
-        audit_status = self._stub.Audit(self._robot.id)
-        robot_audit_dict: Dict[str, List[Optional[str]]] = {}
+    def _audit(self) -> None:
+        while self._grpc_connected:
+            audit_status = self._stub.Audit(self._robot.id)
+            if self._l_arm is not None and audit_status.HasField("l_arm_status"):
+                self._l_arm._update_audit_status(audit_status.l_arm_status)
+                if self._l_arm.gripper is not None and audit_status.HasField("l_hand_status"):
+                    self._l_arm.gripper._update_audit_status(audit_status.l_hand_status)
+            if self._r_arm is not None and audit_status.HasField("r_arm_status"):
+                self._r_arm._update_audit_status(audit_status.r_arm_status)
+                if self._r_arm.gripper is not None and audit_status.HasField("r_hand_status"):
+                    self._r_arm.gripper._update_audit_status(audit_status.r_hand_status)
+            if self._head is not None and audit_status.HasField("head_status"):
+                self._head._update_audit_status(audit_status.head_status)
+            if self._mobile_base is not None and audit_status.HasField("mobile_base_status"):
+                self._mobile_base._update_audit_status(audit_status.mobile_base_status)
+            time.sleep(1)
 
-        if audit_status.HasField("l_arm_status"):
-            robot_audit_dict["l_arm"] = self._read_error_status(audit_status.l_arm_status)
-        if audit_status.HasField("r_arm_status"):
-            robot_audit_dict["r_arm"] = self._read_error_status(audit_status.r_arm_status)
-        if audit_status.HasField("head_status"):
-            robot_audit_dict["head"] = self._read_error_status(audit_status.head_status)
-        if audit_status.HasField("l_hand_status"):
-            robot_audit_dict["l_hand"] = self._read_error_status(audit_status.l_hand_status)
-        if audit_status.HasField("r_hand_status"):
-            robot_audit_dict["r_hand"] = self._read_error_status(audit_status.r_hand_status)
-
-        return robot_audit_dict
-
-    def _read_error_status(self, part: ArmStatus | HeadStatus | HandStatus) -> List[Optional[str]]:
-        part_errors: List[Optional[str]] = []
-        print(part)
-        if part.DESCRIPTOR.name == "HandStatus":
-            if len(part.errors) > 0:
-                if part.errors[0].details == "Ok":
-                    part_errors.append(None)
-                else:
-                    part_errors.append(part.errors[0].details)
-        else:
-            for descriptor in part.DESCRIPTOR.fields:
-                value = getattr(part, descriptor.name)
-                if len(value.errors) > 0:
-                    if value.errors[0].details == "Ok":
-                        part_errors.append(None)
-                    else:
-                        part_errors.append(value.errors[0].details)
-        return part_errors
+    @property
+    def audit(self) -> Dict[str, List[str]]:
+        audit_dict: Dict[str, List[str]] = {}
+        error_detected = False
+        if not self._grpc_connected or not self.info:
+            self._logger.warning("Reachy is not connected!")
+        if self.info is not None:
+            for part in self.info._enabled_parts.values():
+                error_list = []
+                for actuator in part._actuators.values():
+                    error_list.append(actuator.audit)
+                    if actuator.audit != "Ok":
+                        self._logger.warning(f'Error detected on {part._part_id.name}_{actuator._name}: "{actuator.audit}"')
+                        error_detected = True
+                audit_dict[part._part_id.name] = error_list
+        if not error_detected:
+            self._logger.info("No error detected on Reachy")
+        return audit_dict
 
     def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.

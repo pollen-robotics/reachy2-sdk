@@ -31,6 +31,7 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
 from reachy2_sdk_api.mobile_base_utility_pb2 import MobileBase as MobileBase_proto
 from reachy2_sdk_api.mobile_base_utility_pb2 import (
     MobileBaseState,
+    MobileBaseStatus,
     ZuuuModeCommand,
     ZuuuModePossiblities,
 )
@@ -281,3 +282,6 @@ class MobileBase(Part):
         self.lidar._update_with(new_state.lidar_safety)
         self._drive_mode = ZuuuModePossiblities.keys()[new_state.zuuu_mode.mode].lower()
         self._control_mode = ControlModePossiblities.keys()[new_state.control_mode.mode].lower()
+
+    def _update_audit_status(self, new_status: MobileBaseStatus) -> None:
+        pass
