@@ -1,5 +1,5 @@
 """This module defines the Orbita2d class and its registers, joints, motors and axis."""
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
 from grpc import Channel
@@ -16,6 +16,7 @@ from reachy2_sdk_api.orbita2d_pb2 import (
 )
 from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 
+from ..parts.part import Part
 from .orbita import Orbita
 from .orbita_axis import OrbitaAxis
 from .orbita_joint import OrbitaJoint
@@ -51,9 +52,11 @@ class Orbita2d(Orbita):
         axis2: Axis,
         initial_state: Orbita2dState,
         grpc_channel: Channel,
+        part: Part,
+        joints_position_order: List[int],
     ):
         """Initialize the Orbita2d with its joints, motors and its two axis (either roll, pitch or yaw for both)."""
-        super().__init__(uid, name, "2d", Orbita2dServiceStub(grpc_channel))
+        super().__init__(uid, name, "2d", Orbita2dServiceStub(grpc_channel), part)
 
         axis1_name = Axis.DESCRIPTOR.values_by_number[axis1].name.lower()
         axis2_name = Axis.DESCRIPTOR.values_by_number[axis2].name.lower()
@@ -63,12 +66,22 @@ class Orbita2d(Orbita):
         setattr(
             self,
             axis1_name,
-            OrbitaJoint(initial_state=init_state["axis_1"], axis_type=axis1_name, actuator=self),
+            OrbitaJoint(
+                initial_state=init_state["axis_1"],
+                axis_type=axis1_name,
+                actuator=self,
+                position_order_in_part=joints_position_order[0],
+            ),
         )
         setattr(
             self,
             axis2_name,
-            OrbitaJoint(initial_state=init_state["axis_2"], axis_type=axis2_name, actuator=self),
+            OrbitaJoint(
+                initial_state=init_state["axis_2"],
+                axis_type=axis2_name,
+                actuator=self,
+                position_order_in_part=joints_position_order[1],
+            ),
         )
         self._joints = {
             "axis_1": getattr(self, axis1_name),

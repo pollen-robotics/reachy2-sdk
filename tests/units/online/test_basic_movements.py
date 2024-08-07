@@ -15,7 +15,7 @@ def test_basic(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.r_arm.elbow.pitch.goal_position = goal_position
     reachy_sdk_zeroed.send_goal_positions()
     time.sleep(1)
-    assert reachy_sdk_zeroed.r_arm.elbow.pitch.present_position == goal_position
+    assert np.isclose(reachy_sdk_zeroed.r_arm.elbow.pitch.present_position, goal_position, 1e-03)
 
 
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
@@ -95,7 +95,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     q1 = reachy_sdk_zeroed.head.get_orientation()
     assert np.isclose(Quaternion.distance(q0, q1), 0, atol=1e-04)
 
-    id = reachy_sdk_zeroed.head.rotate_to(roll=0, pitch=60, yaw=0, duration=1)
+    id = reachy_sdk_zeroed.head.goto_joints([0, 60, 0], duration=1)
     q2 = Quaternion(axis=[0, 1, 0], degrees=70)  # 10 degrees between joint and cartesian spaces
 
     while not is_goto_finished(reachy_sdk_zeroed, id):
@@ -127,10 +127,10 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
 def test_basic_get_positions(reachy_sdk_zeroed: ReachySDK) -> None:
     expected_pos1 = [0, 0, 0, 0, 0, 0, 0]
 
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos1, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos1, atol=1e-03)
 
     expected_pos2 = [15, 10, 20, -50, 10, 10, 20]
     id = reachy_sdk_zeroed.l_arm.goto_joints(expected_pos2, duration=3)
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos2, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos2, atol=1e-03)

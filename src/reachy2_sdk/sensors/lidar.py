@@ -65,8 +65,6 @@ class Lidar:
         self._stub.SetZuuuSafety(
             LidarSafety(
                 safety_distance=FloatValue(value=value),
-                critical_distance=FloatValue(value=self._critical_distance),
-                safety_on=BoolValue(value=self._safety_enabled),
             )
         )
 
@@ -85,9 +83,7 @@ class Lidar:
     def safety_critical_distance(self, value: float) -> None:
         self._stub.SetZuuuSafety(
             LidarSafety(
-                safety_distance=FloatValue(value=self._safety_distance),
                 critical_distance=FloatValue(value=value),
-                safety_on=BoolValue(value=self._safety_enabled),
             )
         )
 
@@ -100,8 +96,6 @@ class Lidar:
     def safety_enabled(self, value: bool) -> None:
         self._stub.SetZuuuSafety(
             LidarSafety(
-                safety_distance=FloatValue(value=self._safety_distance),
-                critical_distance=FloatValue(value=self._critical_distance),
                 safety_on=BoolValue(value=value),
             )
         )

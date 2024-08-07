@@ -1,5 +1,5 @@
 """This module defines the Orbita3d class and its registers, joints, motors and axis."""
-from typing import Dict
+from typing import Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
 from grpc import Channel
@@ -15,6 +15,7 @@ from reachy2_sdk_api.orbita3d_pb2 import (
 )
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
+from ..parts.part import Part
 from .orbita import Orbita
 from .orbita_axis import OrbitaAxis
 from .orbita_joint import OrbitaJoint
@@ -42,14 +43,28 @@ class Orbita3d(Orbita):
     - temperatures (temperatures of all motors of the actuator)
     """
 
-    def __init__(self, uid: int, name: str, initial_state: Orbita3dState, grpc_channel: Channel):
+    def __init__(
+        self,
+        uid: int,
+        name: str,
+        initial_state: Orbita3dState,
+        grpc_channel: Channel,
+        part: Part,
+        joints_position_order: List[int],
+    ):
         """Initialize the Orbita2d with its joints, motors and axis."""
-        super().__init__(uid, name, "3d", Orbita3dServiceStub(grpc_channel))
+        super().__init__(uid, name, "3d", Orbita3dServiceStub(grpc_channel), part)
         init_state: Dict[str, Dict[str, FloatValue]] = self._create_dict_state(initial_state)
 
-        self._roll = OrbitaJoint(initial_state=init_state["roll"], axis_type="roll", actuator=self)
-        self._pitch = OrbitaJoint(initial_state=init_state["pitch"], axis_type="pitch", actuator=self)
-        self._yaw = OrbitaJoint(initial_state=init_state["yaw"], axis_type="yaw", actuator=self)
+        self._roll = OrbitaJoint(
+            initial_state=init_state["roll"], axis_type="roll", actuator=self, position_order_in_part=joints_position_order[0]
+        )
+        self._pitch = OrbitaJoint(
+            initial_state=init_state["pitch"], axis_type="pitch", actuator=self, position_order_in_part=joints_position_order[1]
+        )
+        self._yaw = OrbitaJoint(
+            initial_state=init_state["yaw"], axis_type="yaw", actuator=self, position_order_in_part=joints_position_order[2]
+        )
         self._joints = {"roll": self.roll, "pitch": self.pitch, "yaw": self.yaw}
         self._axis_name_by_joint = {v: k for k, v in self._joints.items()}
 
