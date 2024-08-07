@@ -12,7 +12,7 @@ from .test_basic_movements import is_goto_finished
 
 @pytest.mark.online
 def test_cancel_move_by_id(reachy_sdk_zeroed: ReachySDK) -> None:
-    req = reachy_sdk_zeroed.head.rotate_to(0, 40, 0, duration=10, interpolation_mode="linear")
+    req = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
     time.sleep(2)
     cancel = reachy_sdk_zeroed.cancel_move_by_id(req)
     assert cancel.ack
@@ -37,10 +37,10 @@ def test_cancel_move_by_id(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_goto_queue(reachy_sdk_zeroed: ReachySDK) -> None:
-    _ = reachy_sdk_zeroed.head.rotate_to(0, 40, 0, duration=10, interpolation_mode="linear")
-    req2 = reachy_sdk_zeroed.head.rotate_to(20, 0, 0, duration=10, interpolation_mode="linear")
+    _ = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
+    req2 = reachy_sdk_zeroed.head.goto_joints([20, 0, 0], duration=10, interpolation_mode="linear")
     _ = reachy_sdk_zeroed.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
-    req4 = reachy_sdk_zeroed.head.rotate_to(0, 40, 0, duration=10, interpolation_mode="linear")
+    req4 = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
 
     assert len(reachy_sdk_zeroed.head.get_moves_queue()) == 2
     assert reachy_sdk_zeroed.head.get_moves_queue() == [req2, req4]
@@ -58,7 +58,7 @@ def test_goto_queue(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_cancel_all_moves(reachy_sdk_zeroed: ReachySDK) -> None:
-    _ = reachy_sdk_zeroed.head.rotate_to(0, 40, 0, duration=10, interpolation_mode="linear")
+    _ = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
     _ = reachy_sdk_zeroed.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
     time.sleep(2)
     cancel = reachy_sdk_zeroed.cancel_all_moves()
@@ -79,7 +79,7 @@ def test_cancel_all_moves(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_cancel_part_all_goto(reachy_sdk_zeroed: ReachySDK) -> None:
-    _ = reachy_sdk_zeroed.head.rotate_to(0, 40, 0, duration=10, interpolation_mode="linear")
+    _ = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
     _ = reachy_sdk_zeroed.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
     time.sleep(2)
     cancel = reachy_sdk_zeroed.head.cancel_all_moves()
@@ -128,11 +128,11 @@ def test_cancel_part_all_goto(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_get_move_playing(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.rotate_to(0, 0, -10, duration=3)
+    req1 = reachy_sdk_zeroed.head.goto_joints([0, 0, -10], duration=3)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=5)
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=10)
 
-    req4 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=5)
+    req4 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=5)
     req5 = reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 5, -40, 10, -10, 0], duration=6)
     req6 = reachy_sdk_zeroed.r_arm.goto_joints([15, 15, 0, 0, 25, 20, -5], duration=5)
 
@@ -167,11 +167,11 @@ def test_get_move_playing(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test__get_move_state(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.rotate_to(0, 0, -10, duration=3)
+    req1 = reachy_sdk_zeroed.head.goto_joints([0, 0, -10], duration=3)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=5)
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=10)
 
-    req4 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=5)
+    req4 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=5)
     req5 = reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 5, -40, 10, -10, 0], duration=6)
     req6 = reachy_sdk_zeroed.r_arm.goto_joints([15, 15, 0, 0, 25, 20, -5], duration=5)
 
@@ -236,25 +236,25 @@ def test__get_move_state(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_get_move_joints_request(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=5)
+    req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=5)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=7, interpolation_mode="linear")
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=10)
 
     ans1 = reachy_sdk_zeroed.get_move_joints_request(req1)
     assert ans1.part == "head"
-    assert np.allclose(ans1.goal_positions, [30, 0, 0], atol=1e-01)
+    assert np.allclose(ans1.goal_positions, [30, 0, 0], atol=1e-03)
     assert ans1.duration == 5
     assert ans1.mode == "minimum_jerk"
 
     ans2 = reachy_sdk_zeroed.get_move_joints_request(req2)
     assert ans2.part == "l_arm"
-    assert np.allclose(ans2.goal_positions, [10, 10, 15, -20, 15, -15, -10], atol=1e-01)
+    assert np.allclose(ans2.goal_positions, [10, 10, 15, -20, 15, -15, -10], atol=1e-03)
     assert ans2.duration == 7
     assert ans2.mode == "linear"
 
     ans3 = reachy_sdk_zeroed.get_move_joints_request(req3)
     assert ans3.part == "r_arm"
-    assert np.allclose(ans3.goal_positions, [0, 10, 20, -40, 10, 10, -15], atol=1e-01)
+    assert np.allclose(ans3.goal_positions, [0, 10, 20, -40, 10, 10, -15], atol=1e-03)
     assert ans3.duration == 10
     assert ans3.mode == "minimum_jerk"
 
@@ -272,7 +272,7 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     # Test waiting for part's gotos to end
 
-    req1 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=4)
+    req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
     req2 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=5)
     req3 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=6)
 
@@ -312,7 +312,7 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     ans_r = reachy_sdk_zeroed.get_move_joints_request(req_r)
     assert ans_r.part == "r_arm"
-    assert np.allclose(ans_r.goal_positions, zero_r_arm, atol=1e-01)
+    assert np.allclose(ans_r.goal_positions, zero_r_arm, atol=1e-03)
     assert ans_r.duration == 2
     assert ans_r.mode == "minimum_jerk"
 
@@ -320,15 +320,15 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_move_state(req_r).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_move_state(req_l).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-04)
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_r_arm, atol=1e-01)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_l_arm, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_r_arm, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_l_arm, atol=1e-03)
 
     cancel = reachy_sdk_zeroed.cancel_all_moves()
     assert cancel.ack
 
     # Test without waiting for part's gotos to end
 
-    req4 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=4)
+    req4 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
     req5 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=5)
     req6 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=6)
 
@@ -353,10 +353,11 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     while not is_goto_finished(reachy_sdk_zeroed, req_l2):
         time.sleep(0.1)
+    time.sleep(0.05)
 
     ans_l2 = reachy_sdk_zeroed.get_move_joints_request(req_l2)
     assert ans_l2.part == "l_arm"
-    assert np.allclose(ans_l2.goal_positions, zero_l_arm, atol=1e-01)
+    assert np.allclose(ans_l2.goal_positions, zero_l_arm, atol=1e-03)
     assert ans_l2.duration == 1
     assert ans_l2.mode == "linear"
 
@@ -364,12 +365,12 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_move_state(req_r2).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_move_state(req_l2).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-04)
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_r_arm, atol=1e-01)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_l_arm, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_r_arm, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_l_arm, atol=1e-03)
 
     # Test with 'elbow_90' instead of 'default'
 
-    req7 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=4)
+    req7 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
     req8 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=5)
     req9 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=6)
 
@@ -395,7 +396,7 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     ans_l3 = reachy_sdk_zeroed.get_move_joints_request(req_l3)
     assert ans_l3.part == "l_arm"
-    assert np.allclose(ans_l3.goal_positions, elbow_90_l_arm, atol=1e-01)
+    assert np.allclose(ans_l3.goal_positions, elbow_90_l_arm, atol=1e-03)
     assert ans_l3.duration == 2
     assert ans_l3.mode == "minimum_jerk"
 
@@ -403,10 +404,10 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_move_state(req_r3).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_move_state(req_l3).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert np.isclose(
-        Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-03
+        Quaternion.distance(reachy_sdk_zeroed.head.get_orientation(), zero_head), 0, atol=1e-04
     )  # why not 1e-04 here?
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), elbow_90_r_arm, atol=1e-01)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), elbow_90_l_arm, atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), elbow_90_r_arm, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), elbow_90_l_arm, atol=1e-03)
 
     # Test with some parts off
 
@@ -427,7 +428,7 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_is_move_finished(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=2)
+    req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=2)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=3, interpolation_mode="linear")
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=4)
 
@@ -436,7 +437,7 @@ def test_is_move_finished(reachy_sdk_zeroed: ReachySDK) -> None:
     assert not reachy_sdk_zeroed.is_move_finished(req2)
     assert not reachy_sdk_zeroed.is_move_finished(req3)
 
-    req4 = reachy_sdk_zeroed.head.rotate_to(0, 0, 0, duration=1)
+    req4 = reachy_sdk_zeroed.head.goto_joints([0, 0, 0], duration=1)
     req5 = reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=1)
     req6 = reachy_sdk_zeroed.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=4)
 
@@ -469,7 +470,7 @@ def test_is_move_finished(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_is_move_playing(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.rotate_to(30, 0, 0, duration=2)
+    req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=2)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=3, interpolation_mode="linear")
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=4)
 
@@ -478,7 +479,7 @@ def test_is_move_playing(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed.is_move_playing(req2)
     assert reachy_sdk_zeroed.is_move_playing(req3)
 
-    req4 = reachy_sdk_zeroed.head.rotate_to(0, 0, 0, duration=1)
+    req4 = reachy_sdk_zeroed.head.goto_joints([0, 0, 0], duration=1)
     req5 = reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=1)
     req6 = reachy_sdk_zeroed.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=4)
 
@@ -507,3 +508,50 @@ def test_is_move_playing(reachy_sdk_zeroed: ReachySDK) -> None:
     assert not reachy_sdk_zeroed.is_move_playing(req4)
     assert not reachy_sdk_zeroed.is_move_playing(req5)
     assert reachy_sdk_zeroed.is_move_playing(req6)
+
+
+@pytest.mark.online
+def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
+    req1 = reachy_sdk_zeroed.r_arm.elbow.pitch.goto(-90, duration=3)
+    time.sleep(0.5)
+
+    assert reachy_sdk_zeroed.is_move_playing(req1)
+    while not is_goto_finished(reachy_sdk_zeroed, req1):
+        time.sleep(0.1)
+
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), [0, 0, 0, -90, 0, 0, 0], atol=1e-01)
+
+    req2 = reachy_sdk_zeroed.r_arm.elbow.pitch.goto(0, duration=1)
+    time.sleep(0.5)
+
+    assert reachy_sdk_zeroed.is_move_playing(req2)
+    while not is_goto_finished(reachy_sdk_zeroed, req2):
+        time.sleep(0.1)
+
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), [0, 0, 0, 0, 0, 0, 0], atol=1e-01)
+
+    req3 = reachy_sdk_zeroed.l_arm.shoulder.pitch.goto(-10, duration=1)
+    req4 = reachy_sdk_zeroed.l_arm.elbow.yaw.goto(20, duration=1)
+    req5 = reachy_sdk_zeroed.l_arm.wrist.pitch.goto(15, duration=1)
+    time.sleep(0.5)
+
+    assert reachy_sdk_zeroed.is_move_playing(req3)
+    assert not reachy_sdk_zeroed.is_move_playing(req4)
+    assert not reachy_sdk_zeroed.is_move_playing(req5)
+    assert len(reachy_sdk_zeroed.l_arm.get_moves_queue()) == 2
+    while not is_goto_finished(reachy_sdk_zeroed, req5):
+        time.sleep(0.1)
+
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), [-10, 0, 20, 0, 0, 15, 0], atol=1e-01)
+
+    req6 = reachy_sdk_zeroed.head.neck.roll.goto(15, duration=1)
+    req7 = reachy_sdk_zeroed.head.neck.yaw.goto(10, duration=1)
+    time.sleep(0.5)
+
+    assert reachy_sdk_zeroed.is_move_playing(req6)
+    assert not reachy_sdk_zeroed.is_move_playing(req7)
+    assert len(reachy_sdk_zeroed.head.get_moves_queue()) == 1
+    while not is_goto_finished(reachy_sdk_zeroed, req7):
+        time.sleep(0.1)
+
+    assert np.allclose(reachy_sdk_zeroed.head.get_joints_positions(), [15, 0, 10], atol=1e-01)
