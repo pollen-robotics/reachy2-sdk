@@ -15,9 +15,8 @@ from typing import Dict, Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
-from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
+from google.protobuf.wrappers_pb2 import FloatValue
 from numpy import deg2rad, rad2deg, round
-from reachy2_sdk_api.mobile_base_lidar_pb2 import LidarSafety
 from reachy2_sdk_api.mobile_base_mobility_pb2 import (
     DirectionVector,
     GoToVector,
@@ -272,10 +271,6 @@ class MobileBase(Part):
         if self._drive_mode == "free_wheel":
             return True
         return False
-
-    def _set_safety(self, safety_on: bool) -> None:
-        req = LidarSafety(safety_on=BoolValue(value=safety_on))
-        self._stub.SetZuuuSafety(req)
 
     def _update_with(self, new_state: MobileBaseState) -> None:
         self._battery_level = new_state.battery_level.level.value
