@@ -14,7 +14,7 @@ import threading
 import time
 from collections import namedtuple
 from logging import getLogger
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
@@ -410,22 +410,13 @@ class ReachySDK:
             time.sleep(1)
 
     @property
-    def audit(self) -> Dict[str, List[str]]:
-        audit_dict: Dict[str, List[str]] = {}
-        error_detected = False
+    def audit(self) -> Dict[str, Dict[str, str]]:
+        audit_dict: Dict[str, Dict[str, str]] = {}
         if not self._grpc_connected or not self.info:
             self._logger.warning("Reachy is not connected!")
         if self.info is not None:
             for part in self.info._enabled_parts.values():
-                error_list = []
-                for actuator in part._actuators.values():
-                    error_list.append(actuator.audit)
-                    if actuator.audit != "Ok":
-                        self._logger.warning(f'Error detected on {part._part_id.name}_{actuator._name}: "{actuator.audit}"')
-                        error_detected = True
-                audit_dict[part._part_id.name] = error_list
-        if not error_detected:
-            self._logger.info("No error detected on Reachy")
+                audit_dict[part._part_id.name] = part.audit
         return audit_dict
 
     def turn_on(self) -> bool:

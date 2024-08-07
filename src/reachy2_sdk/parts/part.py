@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import grpc
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
@@ -65,14 +65,14 @@ class Part(ABC):
         pass
 
     @property
-    def audit(self) -> List[str]:
-        error_list = []
+    def audit(self) -> Dict[str, str]:
+        error_dict: Dict[str, str] = {}
         error_detected = False
-        for actuator in self._actuators.values():
-            error_list.append(actuator.audit)
+        for act_name, actuator in self._actuators.items():
+            error_dict[act_name] = actuator.audit
             if actuator.audit != "Ok":
-                self._logger.warning(f'Error detected on {self._part_id.name}_{actuator._name}: "{actuator.audit}"')
+                self._logger.warning(f'Error detected on {self._part_id.name}_{act_name}: "{actuator.audit}"')
                 error_detected = True
         if not error_detected:
-            self._logger.info("No error detected on Reachy")
-        return error_list
+            self._logger.info(f"No error detected on {self._part_id.name}")
+        return error_dict
