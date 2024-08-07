@@ -12,6 +12,7 @@ from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
 from reachy2_sdk_api.orbita3d_pb2 import Orbita3dState
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
+from ..parts.part import Part
 from .orbita_axis import OrbitaAxis
 from .orbita_motor import OrbitaMotor
 
@@ -39,18 +40,21 @@ class Orbita(ABC):
     This class is meant to be derived by Orbita2d and Orbita3d
     """
 
-    def __init__(
-        self,
-        uid: int,
-        name: str,
-        orbita_type: str,
-        stub: Orbita2dServiceStub | Orbita3dServiceStub,
-    ):
-        """Initialize the common attributes."""
+    def __init__(self, uid: int, name: str, orbita_type: str, stub: Orbita2dServiceStub | Orbita3dServiceStub, part: Part):
+        """Initialize the common attributes.
+
+        Arguments:
+        - uid: id of the actuator
+        - name: name of the actuator
+        - orbita_type: discriminate the orbita type, which can be "2d" or "3d"
+        - stub: stub to call Orbitas methods
+        - part: refers to the part the Orbita belongs to, in order to retrieve the parent part of the actuator.
+        """
         self._name = name
         self._id = uid
         self._orbita_type = orbita_type
         self._stub = stub
+        self._part = part
 
         self._compliant: bool
 

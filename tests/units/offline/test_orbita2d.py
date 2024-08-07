@@ -42,7 +42,14 @@ def test_orbita2d() -> None:
         torque_limit=torque_limit,
     )
     orbita2d = Orbita2d(
-        uid=0, name="unit_test", axis1=Axis.PITCH, axis2=Axis.ROLL, initial_state=orbita2d_state, grpc_channel=grpc_channel
+        uid=0,
+        name="unit_test",
+        axis1=Axis.PITCH,
+        axis2=Axis.ROLL,
+        initial_state=orbita2d_state,
+        grpc_channel=grpc_channel,
+        part=None,
+        joints_position_order=[0, 1],
     )
 
     assert orbita2d.__repr__() != ""

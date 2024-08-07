@@ -78,7 +78,7 @@ def test_class() -> None:
     # Head is off
     assert head.look_at(0, 0, 0).id == -1
 
-    assert head.rotate_to(0, 0, 0).id == -1
+    assert head.goto_joints([0, 0, 0]).id == -1
 
     assert head.orient(None).id == -1
 
@@ -164,4 +164,4 @@ def test_class() -> None:
         head.orient(quat, duration=0)
 
     with pytest.raises(ValueError):
-        head.rotate_to(20, 30, 10, duration=0)
+        head.goto_joints([20, 30, 10], duration=0)

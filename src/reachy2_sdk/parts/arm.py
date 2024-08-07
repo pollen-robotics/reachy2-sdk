@@ -22,12 +22,20 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmFKRequest,
     ArmIKRequest,
     ArmJointGoal,
+    ArmJoints,
     ArmState,
+    CustomArmJoints,
     SpeedLimitRequest,
     TorqueLimitRequest,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
-from reachy2_sdk_api.goto_pb2 import CartesianGoal, GoToId, GoToRequest, JointsGoal
+from reachy2_sdk_api.goto_pb2 import (
+    CartesianGoal,
+    CustomJointGoal,
+    GoToId,
+    GoToRequest,
+    JointsGoal,
+)
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
@@ -92,6 +100,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             axis2=description.shoulder.axis_2,
             initial_state=initial_state.shoulder_state,
             grpc_channel=self._grpc_channel,
+            part=self,
+            joints_position_order=[ArmJoints.SHOULDER_PITCH, ArmJoints.SHOULDER_ROLL],
         )
         self._elbow = Orbita2d(
             uid=description.elbow.id.id,
@@ -100,12 +110,16 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             axis2=description.elbow.axis_2,
             initial_state=initial_state.elbow_state,
             grpc_channel=self._grpc_channel,
+            part=self,
+            joints_position_order=[ArmJoints.ELBOW_YAW, ArmJoints.ELBOW_PITCH],
         )
         self._wrist = Orbita3d(
             uid=description.wrist.id.id,
             name=description.wrist.id.name,
             initial_state=initial_state.wrist_state,
             grpc_channel=self._grpc_channel,
+            part=self,
+            joints_position_order=[ArmJoints.WRIST_ROLL, ArmJoints.WRIST_PITCH, ArmJoints.WRIST_YAW],
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
@@ -238,6 +252,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: npt.NDArray[np.float64],
         q0: Optional[List[float]] = None,
         degrees: bool = True,
+        round: Optional[int] = None,
     ) -> List[float]:
         """Compute the inverse kinematics of the arm.
 
@@ -279,7 +294,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if not resp.success:
             raise ValueError(f"No solution found for the given target ({target})!")
 
-        return arm_position_to_list(resp.arm_position)
+        answer: List[float] = arm_position_to_list(resp.arm_position, degrees)
+        if round is not None:
+            answer = np.round(answer, round).tolist()
+        return answer
 
     def goto_from_matrix(
         self,
@@ -438,10 +456,31 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         return response
 
-    def get_joints_positions(self) -> List[float]:
-        """Return the current joints positions of the arm in degrees"""
+    def _goto_single_joint(
+        self, arm_joint: int, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
+    ) -> GoToId:
+        if degrees:
+            goal_position = np.deg2rad(goal_position)
+        request = GoToRequest(
+            joints_goal=JointsGoal(
+                custom_joint_goal=CustomJointGoal(
+                    id=self._part_id,
+                    arm_joints=CustomArmJoints(joints=[arm_joint]),
+                    joints_goals=[FloatValue(value=goal_position)],
+                    duration=FloatValue(value=duration),
+                )
+            ),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+        )
+        response = self._goto_stub.GoToJoints(request)
+        return response
+
+    def get_joints_positions(self, degrees: bool = True, round: Optional[int] = None) -> List[float]:
+        """Return the current joints positions of the arm, by default in degrees"""
         response = self._stub.GetJointPosition(self._part_id)
-        positions = arm_position_to_list(response)
+        positions: List[float] = arm_position_to_list(response, degrees)
+        if round is not None:
+            positions = np.round(arm_position_to_list(response, degrees), round).tolist()
         return positions
 
     # @property
