@@ -19,6 +19,8 @@ from reachy2_sdk_api.part_pb2 import PartId
 
 from .part import Part
 
+from ..orbita.utils import to_position
+
 
 class Hand(Part):
     def __init__(
@@ -70,6 +72,14 @@ class Hand(Part):
                 position=HandPosition(parallel_gripper=ParallelGripperPosition(position=percentage / 100.0)),
             )
         )
+
+    @property
+    def goal_position(self) -> float:
+        return to_position(self._goal_position)
+
+    @property
+    def present_position(self) -> float:
+        return to_position(self._present_position)
 
     def open(self) -> None:
         """Open the hand."""
