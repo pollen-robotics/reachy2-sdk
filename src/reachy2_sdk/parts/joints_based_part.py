@@ -43,16 +43,24 @@ class JointsBasedPart(Part):
     def get_joints_positions(self) -> List[float]:
         pass
 
-    def set_torque_limit(self, value: int) -> None:
-        """Choose percentage of torque max value applied as limit to the arms."""
+    def set_torque_limits(self, value: int) -> None:
+        """Choose percentage of torque max value applied as limit of all part's motors."""
+        if not isinstance(value, float | int):
+            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(value).__name__}")
+        if not (0 <= value <= 100):
+            raise ValueError(f"torque_limit must be in [0, 100], got {value}.")
         req = TorqueLimitRequest(
             id=self._part_id,
             limit=value,
         )
         self._stub.SetTorqueLimit(req)
 
-    def set_speed_limit(self, value: int) -> None:
-        """Choose percentage of speed max value applied as limit to the arms."""
+    def set_speed_limits(self, value: int) -> None:
+        """Choose percentage of speed max value applied as limit of all part's motors."""
+        if not isinstance(value, float | int):
+            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(value).__name__}")
+        if not (0 <= value <= 100):
+            raise ValueError(f"speed_limit must be in [0, 100], got {value}.")
         req = SpeedLimitRequest(
             id=self._part_id,
             limit=value,
