@@ -151,7 +151,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             return GoToId(id=-1)
 
         if degrees:
-            deg_pos = np.deg2rad(positions)
+            positions = np.deg2rad(positions).tolist()
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
@@ -159,9 +159,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
                     joints_goal=NeckOrientation(
                         rotation=Rotation3d(
                             rpy=ExtEulerAngles(
-                                roll=FloatValue(value=deg_pos[0]),
-                                pitch=FloatValue(value=deg_pos[1]),
-                                yaw=FloatValue(value=deg_pos[2]),
+                                roll=FloatValue(value=positions[0]),
+                                pitch=FloatValue(value=positions[1]),
+                                yaw=FloatValue(value=positions[2]),
                             )
                         )
                     ),
