@@ -14,7 +14,6 @@ from queue import Queue
 from typing import Dict, Optional
 
 import grpc
-from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import FloatValue
 from numpy import deg2rad, rad2deg, round
 from reachy2_sdk_api.mobile_base_mobility_pb2 import (
@@ -71,7 +70,7 @@ class MobileBase(Part):
         self._max_rot_vel = 180.0
         self._max_xy_goto = 1.0
 
-        self.lidar = Lidar(initial_state.lidar_safety, grpc_channel)
+        self.lidar = Lidar(initial_state.lidar_safety, grpc_channel, self)
 
         self._update_with(initial_state)
 
@@ -97,7 +96,7 @@ class MobileBase(Part):
     @property
     def odometry(self) -> Dict[str, float]:
         """Return the odometry of the base. x, y are in meters and theta in degree."""
-        response = self._stub.GetOdometry(Empty())
+        response = self._stub.GetOdometry(self._part_id)
         odom = {
             "x": round(response.x.value, 3),
             "y": round(response.y.value, 3),
@@ -128,7 +127,7 @@ class MobileBase(Part):
 
     def reset_odometry(self) -> None:
         """Reset the odometry."""
-        self._stub.ResetOdometry(Empty())
+        self._stub.ResetOdometry(self._part_id)
         time.sleep(0.03)
 
     def set_speed(self, x_vel: float, y_vel: float, rot_vel: float) -> None:
@@ -244,7 +243,7 @@ class MobileBase(Part):
         return arrived
 
     def _distance_to_goto_goal(self) -> Dict[str, float]:
-        response = self._mobility_stub.DistanceToGoal(Empty())
+        response = self._mobility_stub.DistanceToGoal(self._part_id)
         distance = {
             "delta_x": round(response.delta_x.value, 3),
             "delta_y": round(response.delta_y.value, 3),
@@ -252,14 +251,6 @@ class MobileBase(Part):
             "distance": round(response.distance.value, 3),
         }
         return distance
-
-    def turn_on(self) -> None:
-        """Stop the mobile base immediately by changing its drive mode to 'brake'."""
-        self._set_drive_mode("brake")
-
-    def turn_off(self) -> None:
-        """Set the mobile base in free wheel mode."""
-        self._set_drive_mode("free_wheel")
 
     def is_on(self) -> bool:
         """Return True if the mobile base is not compliant."""

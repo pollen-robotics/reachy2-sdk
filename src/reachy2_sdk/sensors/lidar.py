@@ -13,7 +13,6 @@ import cv2
 import grpc
 import numpy as np
 import numpy.typing as npt
-from google.protobuf.empty_pb2 import Empty
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.mobile_base_lidar_pb2 import (
     LidarObstacleDetectionEnum,
@@ -22,14 +21,17 @@ from reachy2_sdk_api.mobile_base_lidar_pb2 import (
 )
 from reachy2_sdk_api.mobile_base_lidar_pb2_grpc import MobileBaseLidarServiceStub
 
+from ..parts.part import Part
+
 
 class Lidar:
     """LIDAR class for mobile base SDK."""
 
-    def __init__(self, initial_state: LidarSafety, grpc_channel: grpc.Channel) -> None:
+    def __init__(self, initial_state: LidarSafety, grpc_channel: grpc.Channel, part: Part) -> None:
         """Initialize the LIDAR class."""
         self._logger = logging.getLogger(__name__)
         self._stub = MobileBaseLidarServiceStub(grpc_channel)
+        self._part = part
 
         self._safety_enabled: bool = initial_state.safety_on.value
         self._safety_distance: float = initial_state.safety_distance.value
@@ -43,7 +45,7 @@ class Lidar:
 
     def get_map(self) -> Optional[npt.NDArray[np.uint8]]:
         """Get the current map of the environment."""
-        compressed_map = self._stub.GetLidarMap(Empty())
+        compressed_map = self._stub.GetLidarMap(self._part._part_id)
         if compressed_map.data == b"":
             self._logger.error("No lidar map retrieved")
             return None
