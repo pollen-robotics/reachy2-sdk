@@ -821,6 +821,7 @@ def head_test() -> None:
     print("Turning on...")
 
     reachy.turn_on()
+    time.sleep(0.5)
     print("Init pose...")
 
     init_pose(reachy)
@@ -835,7 +836,6 @@ def head_test() -> None:
     time.sleep(0.5)
 
     reachy.disconnect()
-    ReachySDK.clear()
 
 
 def deco_test() -> None:
@@ -846,7 +846,6 @@ def deco_test() -> None:
     time.sleep(1.0)
 
     reachy.disconnect()
-    ReachySDK.clear()
 
     print("Trying AGAIN to connect on localhost Reachy...")
     time.sleep(1.0)
@@ -855,7 +854,6 @@ def deco_test() -> None:
     time.sleep(1.0)
 
     reachy.disconnect()
-    ReachySDK.clear()
 
 
 def multi_test():
@@ -871,6 +869,7 @@ def multi_test():
     print("Turning on...")
 
     reachy.turn_on()
+    time.sleep(0.5)
     for joint in reachy.joints.values():
         joint.goal_position = 0
 
@@ -884,7 +883,6 @@ def multi_test():
     reachy.head.goto_joints([0, 40, 0])
 
     reachy.disconnect()
-    ReachySDK.clear()
 
 
 if __name__ == "__main__":
