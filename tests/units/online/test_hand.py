@@ -54,5 +54,5 @@ def test_gripper_goal_position(reachy_sdk_zeroed: ReachySDK) -> None:
 
     time.sleep(1.0)
 
-    assert np.isclose(reachy_sdk_zeroed.r_arm.gripper.goal_position, 40, 5)
-    assert np.isclose(reachy_sdk_zeroed.l_arm.gripper.goal_position, 70, 5)
+    assert np.isclose(reachy_sdk_zeroed.r_arm.gripper.goal_position, 40, 1e-01)
+    assert np.isclose(reachy_sdk_zeroed.l_arm.gripper.goal_position, 70, 1e-01)
