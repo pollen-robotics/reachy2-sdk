@@ -38,6 +38,7 @@ def test_gripper(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed.r_arm.gripper.opening == 100
     assert reachy_sdk_zeroed.l_arm.gripper.opening == 100
 
+
 @pytest.mark.online
 def test_gripper_goal_position(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.r_arm.gripper.close()
