@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
+import time
 
 import grpc
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
@@ -38,9 +39,11 @@ class Part(ABC):
 
     def turn_on(self) -> None:
         self._stub.TurnOn(self._part_id)
+        time.sleep(0.5)
 
     def turn_off(self) -> None:
         self._stub.TurnOff(self._part_id)
+        time.sleep(0.5)
 
     def is_on(self) -> bool:
         for actuator in self._actuators.values():

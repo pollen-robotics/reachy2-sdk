@@ -756,7 +756,6 @@ def main_test() -> None:
         time.sleep(0.2)
     print(reachy.info)
     reachy.turn_on()
-    time.sleep(1.0)
 
     reachy.l_arm.goto_joints([0, 20, 0, 0, 0, 0, 0], duration=2)
     id = reachy.r_arm.goto_joints([0, -20, 0, 0, 0, 0, 0], duration=2)
@@ -821,7 +820,6 @@ def head_test() -> None:
     print("Turning on...")
 
     reachy.turn_on()
-    time.sleep(0.5)
     print("Init pose...")
 
     init_pose(reachy)
@@ -869,7 +867,6 @@ def multi_test():
     print("Turning on...")
 
     reachy.turn_on()
-    time.sleep(0.5)
     for joint in reachy.joints.values():
         joint.goal_position = 0
 
