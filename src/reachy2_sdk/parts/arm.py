@@ -498,6 +498,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     def send_goal_positions(self) -> None:
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
+        if self._gripper is not None:
+            self._gripper.send_goal_positions()
 
     def set_pose(
         self,

@@ -37,3 +37,22 @@ def test_gripper(reachy_sdk_zeroed: ReachySDK) -> None:
 
     assert reachy_sdk_zeroed.r_arm.gripper.opening == 100
     assert reachy_sdk_zeroed.l_arm.gripper.opening == 100
+
+@pytest.mark.online
+def test_gripper_goal_position(reachy_sdk_zeroed: ReachySDK) -> None:
+    reachy_sdk_zeroed.r_arm.gripper.close()
+    reachy_sdk_zeroed.l_arm.gripper.close()
+
+    time.sleep(1.0)
+
+    assert reachy_sdk_zeroed.r_arm.gripper.opening == 0
+    assert reachy_sdk_zeroed.l_arm.gripper.opening == 0
+
+    reachy_sdk_zeroed.r_arm.gripper.goal_position = 40
+    reachy_sdk_zeroed.l_arm.gripper.goal_position = 70
+    reachy_sdk_zeroed.send_goal_positions()
+
+    time.sleep(1.0)
+
+    assert np.isclose(reachy_sdk_zeroed.r_arm.gripper.goal_position, 40, 5)
+    assert np.isclose(reachy_sdk_zeroed.l_arm.gripper.goal_position, 70, 5)

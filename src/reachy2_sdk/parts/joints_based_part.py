@@ -43,6 +43,10 @@ class JointsBasedPart(Part):
     def get_joints_positions(self) -> List[float]:
         pass
 
+    @abstractmethod
+    def send_goal_positions(self) -> None:
+        pass
+
     def set_torque_limit(self, value: int) -> None:
         """Choose percentage of torque max value applied as limit to the arms."""
         req = TorqueLimitRequest(
