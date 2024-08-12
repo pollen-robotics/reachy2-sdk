@@ -117,8 +117,7 @@ class Lidar:
         - safety_critical_distance
         - safety_slowdown_distance.
         """
-        self.safety_critical_distance = 0.55
-        self.safety_slowdown_distance = 0.7
+        self._stub.ResetDefaultValues(self._part._part_id)
 
     def _update_with(self, new_lidar_state: LidarSafety) -> None:
         """Update the lidar info with a new state received from the gRPC server."""
