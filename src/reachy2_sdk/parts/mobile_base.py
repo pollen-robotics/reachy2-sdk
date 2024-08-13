@@ -178,6 +178,7 @@ class MobileBase(Part):
         """
         if self.is_off():
             self._logger.warning("Mobile base is off. Goto not sent.")
+            return
 
         exc_queue: Queue[Exception] = Queue()
 
