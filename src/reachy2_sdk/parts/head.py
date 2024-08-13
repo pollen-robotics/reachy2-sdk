@@ -28,8 +28,6 @@ from reachy2_sdk_api.head_pb2 import (
     NeckJointGoal,
     NeckJoints,
     NeckOrientation,
-    SpeedLimitRequest,
-    TorqueLimitRequest,
 )
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
@@ -151,7 +149,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             return GoToId(id=-1)
 
         if degrees:
-            deg_pos = np.deg2rad(positions)
+            positions = np.deg2rad(positions).tolist()
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
@@ -159,9 +157,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
                     joints_goal=NeckOrientation(
                         rotation=Rotation3d(
                             rpy=ExtEulerAngles(
-                                roll=FloatValue(value=deg_pos[0]),
-                                pitch=FloatValue(value=deg_pos[1]),
-                                yaw=FloatValue(value=deg_pos[2]),
+                                roll=FloatValue(value=positions[0]),
+                                pitch=FloatValue(value=positions[1]),
+                                yaw=FloatValue(value=positions[2]),
                             )
                         )
                     ),
@@ -212,30 +210,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
         )
         response = self._goto_stub.GoToJoints(request)
         return response
-
-    def set_torque_limits(self, value: int) -> None:
-        """Choose percentage of torque max value applied as limit of all head's motors."""
-        if not isinstance(value, float | int):
-            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(value).__name__}")
-        if not (0 <= value <= 100):
-            raise ValueError(f"torque_limit must be in [0, 100], got {value}.")
-        req = TorqueLimitRequest(
-            id=self._part_id,
-            limit=value,
-        )
-        self._stub.SetTorqueLimit(req)
-
-    def set_speed_limits(self, value: int) -> None:
-        """Choose percentage of speed max value applied as limit of all head's motors."""
-        if not isinstance(value, float | int):
-            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(value).__name__}")
-        if not (0 <= value <= 100):
-            raise ValueError(f"speed_limit must be in [0, 100], got {value}.")
-        req = SpeedLimitRequest(
-            id=self._part_id,
-            limit=value,
-        )
-        self._stub.SetSpeedLimit(req)
 
     def send_goal_positions(self) -> None:
         for actuator in self._actuators.values():
