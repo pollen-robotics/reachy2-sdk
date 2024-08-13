@@ -15,12 +15,11 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
 )
 from reachy2_sdk_api.mobile_base_utility_pb2 import MobileBase as MobileBase_proto
 from reachy2_sdk_api.mobile_base_utility_pb2 import (
-    MobileBaseInfo,
     MobileBaseState,
     ZuuuModeCommand,
     ZuuuModePossiblities,
 )
-from reachy2_sdk_api.part_pb2 import PartId
+from reachy2_sdk_api.part_pb2 import PartId, PartInfo
 
 from reachy2_sdk.parts.mobile_base import MobileBase
 
@@ -29,7 +28,7 @@ from reachy2_sdk.parts.mobile_base import MobileBase
 def test_class() -> None:
     grpc_channel = grpc.insecure_channel("dummy:5050")
 
-    mb_info = MobileBaseInfo(
+    mb_info = PartInfo(
         serial_number="MB-000",
         version_hard="1.2",
         version_soft="1.2",

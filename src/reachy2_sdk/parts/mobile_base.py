@@ -136,6 +136,9 @@ class MobileBase(Part):
         The 200ms duration is predifined at the ROS level of the mobile base's code.
         This mode is prefered if the user wants to send speed instructions frequently.
         """
+        if self.is_off():
+            self._logger.warning(f"{self._part_id.name} is off. set_speed not sent.")
+            return
         for vel, value in {"x_vel": x_vel, "y_vel": y_vel}.items():
             if abs(value) > self._max_xy_vel:
                 raise ValueError(f"The asbolute value of {vel} should not be more than {self._max_xy_vel}!")
@@ -175,6 +178,7 @@ class MobileBase(Part):
         """
         if self.is_off():
             self._logger.warning("Mobile base is off. Goto not sent.")
+            return
 
         exc_queue: Queue[Exception] = Queue()
 
