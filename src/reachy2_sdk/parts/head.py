@@ -5,7 +5,6 @@ Handles all specific method to an Head:
 - look_at function
 """
 
-import logging
 from typing import List
 
 import grpc
@@ -24,6 +23,7 @@ from reachy2_sdk_api.head_pb2 import CustomNeckJoints
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
     HeadState,
+    HeadStatus,
     NeckCartesianGoal,
     NeckJointGoal,
     NeckJoints,
@@ -54,7 +54,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
         goto_stub: GoToServiceStub,
     ) -> None:
         """Initialize the head with its actuators."""
-        self._logger = logging.getLogger(__name__)
         JointsBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel))
         IGoToBasedPart.__init__(self, self, goto_stub)
 
@@ -237,3 +236,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state received from the gRPC server."""
         self.neck._update_with(new_state.neck_state)
+
+    def _update_audit_status(self, new_status: HeadStatus) -> None:
+        self.neck._update_audit_status(new_status.neck_status)
