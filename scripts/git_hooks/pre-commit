@@ -16,6 +16,9 @@ echo "-------> Black passed!"
 isort . -c
 echo "-------> Isort passed!"
 
+# Run nbstrip to check that notebooks are clean
+find . -name '*.ipynb' -exec nbstripout {} +
+
 # Run flake8 against all code in the `source_code` directory
 flake8 .
 echo "-------> Flake8 passed!"
