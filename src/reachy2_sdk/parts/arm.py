@@ -25,8 +25,6 @@ from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmState,
     ArmStatus,
     CustomArmJoints,
-    SpeedLimitRequest,
-    TorqueLimitRequest,
 )
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import (
@@ -145,18 +143,36 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         All arm's motors will then be stiff.
         """
-        super().turn_on()
         if self._gripper is not None:
-            self._gripper.turn_on()
+            self._gripper._turn_on()
+        super().turn_on()
 
     def turn_off(self) -> None:
         """Turn all motors of the part off.
 
         All arm's motors will then be compliant.
         """
-        super().turn_off()
         if self._gripper is not None:
-            self._gripper.turn_off()
+            self._gripper._turn_off()
+        super().turn_off()
+
+    def _turn_on(self) -> None:
+        """Turn all motors of the part on.
+
+        All arm's motors will then be stiff.
+        """
+        if self._gripper is not None:
+            self._gripper._turn_on()
+        super()._turn_on()
+
+    def _turn_off(self) -> None:
+        """Turn all motors of the part off.
+
+        All arm's motors will then be compliant.
+        """
+        if self._gripper is not None:
+            self._gripper._turn_off()
+        super()._turn_off()
 
     def turn_off_smoothly(self, duration: float = 2) -> None:
         """Turn all motors of the part off.
@@ -170,30 +186,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._gripper.turn_off()
         time.sleep(0.2)
         self.set_torque_limits(100)
-
-    def set_torque_limits(self, value: int) -> None:
-        """Choose percentage of torque max value applied as limit of all arm's motors."""
-        if not isinstance(value, float | int):
-            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(value).__name__}")
-        if not (0 <= value <= 100):
-            raise ValueError(f"torque_limit must be in [0, 100], got {value}.")
-        req = TorqueLimitRequest(
-            id=self._part_id,
-            limit=value,
-        )
-        self._stub.SetTorqueLimit(req)
-
-    def set_speed_limits(self, value: int) -> None:
-        """Choose percentage of speed max value applied as limit of all arm's motors."""
-        if not isinstance(value, float | int):
-            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(value).__name__}")
-        if not (0 <= value <= 100):
-            raise ValueError(f"speed_limit must be in [0, 100], got {value}.")
-        req = SpeedLimitRequest(
-            id=self._part_id,
-            limit=value,
-        )
-        self._stub.SetSpeedLimit(req)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
@@ -497,6 +489,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     def send_goal_positions(self) -> None:
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
+        if self._gripper is not None:
+            self._gripper.send_goal_positions()
 
     def set_pose(
         self,

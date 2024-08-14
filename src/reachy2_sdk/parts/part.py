@@ -1,4 +1,5 @@
 import logging
+import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
@@ -39,9 +40,17 @@ class Part(ABC):
         self._actuators: Dict[str, Any] = {}
 
     def turn_on(self) -> None:
-        self._stub.TurnOn(self._part_id)
+        self._turn_on()
+        time.sleep(0.5)
 
     def turn_off(self) -> None:
+        self._turn_off()
+        time.sleep(0.5)
+
+    def _turn_on(self) -> None:
+        self._stub.TurnOn(self._part_id)
+
+    def _turn_off(self) -> None:
         self._stub.TurnOff(self._part_id)
 
     def is_on(self) -> bool:
