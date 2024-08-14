@@ -144,18 +144,36 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         All arm's motors will then be stiff.
         """
-        super().turn_on()
         if self._gripper is not None:
-            self._gripper.turn_on()
+            self._gripper._turn_on()
+        super().turn_on()
 
     def turn_off(self) -> None:
         """Turn all motors of the part off.
 
         All arm's motors will then be compliant.
         """
-        super().turn_off()
         if self._gripper is not None:
-            self._gripper.turn_off()
+            self._gripper._turn_off()
+        super().turn_off()
+
+    def _turn_on(self) -> None:
+        """Turn all motors of the part on.
+
+        All arm's motors will then be stiff.
+        """
+        if self._gripper is not None:
+            self._gripper._turn_on()
+        super()._turn_on()
+
+    def _turn_off(self) -> None:
+        """Turn all motors of the part off.
+
+        All arm's motors will then be compliant.
+        """
+        if self._gripper is not None:
+            self._gripper._turn_off()
+        super()._turn_off()
 
     def turn_off_smoothly(self, duration: float = 2) -> None:
         """Turn all motors of the part off.
