@@ -70,6 +70,15 @@ def test_class() -> None:
 
     assert mobile_base.__repr__() != ""
 
+    with pytest.raises(ValueError):
+        mobile_base.set_speed(0.5, 0.5, 200)
+
+    with pytest.raises(ValueError):
+        mobile_base.set_speed(1.5, 1.5, 100)
+
+    with pytest.raises(ValueError):
+        asyncio.run(mobile_base._goto_async(x=1.5, y=1.5, theta=10, timeout=4))
+
     new_battery = BatteryLevel(level=FloatValue(value=20))
 
     new_drive_mode = ZuuuModeCommand(mode=ZuuuModePossiblities.FREE_WHEEL)
@@ -96,12 +105,3 @@ def test_class() -> None:
 
     with pytest.raises(ValueError):
         mobile_base._set_drive_mode("wrong")
-
-    with pytest.raises(ValueError):
-        mobile_base.set_speed(0.5, 0.5, 200)
-
-    with pytest.raises(ValueError):
-        mobile_base.set_speed(1.5, 1.5, 100)
-
-    with pytest.raises(ValueError):
-        asyncio.run(mobile_base._goto_async(x=1.5, y=1.5, theta=10, timeout=4))
