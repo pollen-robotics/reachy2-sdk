@@ -46,7 +46,6 @@ class Hand(Part):
 
         It will create the hand and set its initial state.
         """
-        print(initial_state)
         self._part_id = PartId(id=hand_msg.part_id.id)
         self._present_position: float = initial_state.present_position.parallel_gripper.position.value
         self._goal_position: float = initial_state.goal_position.parallel_gripper.position.value
