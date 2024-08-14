@@ -43,6 +43,10 @@ class JointsBasedPart(Part):
     def get_joints_positions(self) -> List[float]:
         pass
 
+    @abstractmethod
+    def send_goal_positions(self) -> None:
+        pass
+
     def set_torque_limits(self, value: int) -> None:
         """Choose percentage of torque max value applied as limit of all part's motors."""
         if not isinstance(value, float | int):

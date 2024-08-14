@@ -32,6 +32,7 @@ from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
 from .parts.head import Head
+from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
 from .utils.custom_dict import CustomDict
 from .utils.utils import (
@@ -471,8 +472,13 @@ class ReachySDK:
         return True
 
     def send_goal_positions(self) -> None:
-        for actuator in self._actuators.values():
-            actuator.send_goal_positions()
+        if not self.info:
+            self._logger.warning("Reachy is not connected!")
+            return
+
+        for part in self.info._enabled_parts.values():
+            if issubclass(type(part), JointsBasedPart):
+                part.send_goal_positions()
 
     def set_pose(
         self,
