@@ -15,12 +15,11 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
 )
 from reachy2_sdk_api.mobile_base_utility_pb2 import MobileBase as MobileBase_proto
 from reachy2_sdk_api.mobile_base_utility_pb2 import (
-    MobileBaseInfo,
     MobileBaseState,
     ZuuuModeCommand,
     ZuuuModePossiblities,
 )
-from reachy2_sdk_api.part_pb2 import PartId
+from reachy2_sdk_api.part_pb2 import PartId, PartInfo
 
 from reachy2_sdk.parts.mobile_base import MobileBase
 
@@ -29,7 +28,7 @@ from reachy2_sdk.parts.mobile_base import MobileBase
 def test_class() -> None:
     grpc_channel = grpc.insecure_channel("dummy:5050")
 
-    mb_info = MobileBaseInfo(
+    mb_info = PartInfo(
         serial_number="MB-000",
         version_hard="1.2",
         version_soft="1.2",
@@ -71,6 +70,15 @@ def test_class() -> None:
 
     assert mobile_base.__repr__() != ""
 
+    with pytest.raises(ValueError):
+        mobile_base.set_speed(0.5, 0.5, 200)
+
+    with pytest.raises(ValueError):
+        mobile_base.set_speed(1.5, 1.5, 100)
+
+    with pytest.raises(ValueError):
+        asyncio.run(mobile_base._goto_async(x=1.5, y=1.5, theta=10, timeout=4))
+
     new_battery = BatteryLevel(level=FloatValue(value=20))
 
     new_drive_mode = ZuuuModeCommand(mode=ZuuuModePossiblities.FREE_WHEEL)
@@ -97,12 +105,3 @@ def test_class() -> None:
 
     with pytest.raises(ValueError):
         mobile_base._set_drive_mode("wrong")
-
-    with pytest.raises(ValueError):
-        mobile_base.set_speed(0.5, 0.5, 200)
-
-    with pytest.raises(ValueError):
-        mobile_base.set_speed(1.5, 1.5, 100)
-
-    with pytest.raises(ValueError):
-        asyncio.run(mobile_base._goto_async(x=1.5, y=1.5, theta=10, timeout=4))

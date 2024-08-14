@@ -398,9 +398,10 @@ class ReachySDK:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
         for part in self.info._enabled_parts.values():
-            part.turn_on()
+            part._turn_on()
         if self._mobile_base is not None:
-            self._mobile_base.turn_on()
+            self._mobile_base._turn_on()
+        time.sleep(0.5)
 
         return True
 
@@ -413,9 +414,10 @@ class ReachySDK:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         for part in self.info._enabled_parts.values():
-            part.turn_off()
+            part._turn_off()
         if self._mobile_base is not None:
-            self._mobile_base.turn_off()
+            self._mobile_base._turn_off()
+        time.sleep(0.5)
 
         return True
 
@@ -428,17 +430,18 @@ class ReachySDK:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         if hasattr(self, "_mobile_base") and self._mobile_base is not None:
-            self._mobile_base.turn_off()
+            self._mobile_base._turn_off()
         for part in self.info._enabled_parts.values():
             if "arm" in part._part_id.name:
                 part.set_torque_limits(20)
             else:
-                part.turn_off()
+                part._turn_off()
         time.sleep(duration)
         for part in self.info._enabled_parts.values():
             if "arm" in part._part_id.name:
-                part.turn_off()
+                part._turn_off()
                 part.set_torque_limits(100)
+        time.sleep(0.5)
         return True
 
     def is_on(self) -> bool:
