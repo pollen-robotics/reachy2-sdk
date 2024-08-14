@@ -18,6 +18,7 @@ echo "-------> Isort passed!"
 
 # Run nbstrip to check that notebooks are clean
 find . -name '*.ipynb' -exec nbstripout {} +
+echo "-------> nbstripout passed!"
 
 # Run flake8 against all code in the `source_code` directory
 flake8 .
