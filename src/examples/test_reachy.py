@@ -1211,7 +1211,6 @@ if __name__ == "__main__":
     word = input("Enter word to write: ")
 
     while True:
-
         print("Set to Elbow 90 pose ...")
         r_arm_120 = reachy.r_arm.goto_joints([35, -15, -15, -120, 0, 0, 0])
         while not reachy.is_move_finished(r_arm_120):

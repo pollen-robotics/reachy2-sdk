@@ -147,7 +147,8 @@ def write_C(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1, s
     reachy.head.look_at(x, y, z, duration=1)
 
     reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x - 0.02, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size), starting_duration
+        build_pose_matrix(x - 0.02, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size),
+        starting_duration,
     )
     first_pos = reachy.r_arm.goto_from_matrix(
         build_pose_matrix(x, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size), 0.5
@@ -324,7 +325,8 @@ def write_G(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1, s
     reachy.head.look_at(x, y, z, duration=1)
 
     reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x - 0.02, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size), starting_duration
+        build_pose_matrix(x - 0.02, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size),
+        starting_duration,
     )
     first_pos = reachy.r_arm.goto_from_matrix(
         build_pose_matrix(x, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size), duration=0.5
@@ -658,7 +660,9 @@ def write_O(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1, s
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - points[0][0] - half_size, z + points[0][1] + half_size), starting_duration)
+    reachy.r_arm.goto_from_matrix(
+        build_pose_matrix(x - 0.02, y - points[0][0] - half_size, z + points[0][1] + half_size), starting_duration
+    )
     first_pos = reachy.r_arm.goto_from_matrix(
         build_pose_matrix(x, y - points[0][0] - half_size, z + points[0][1] + half_size), duration=0.5
     )
@@ -737,7 +741,9 @@ def write_Q(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1, s
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - points[0][0] - half_size, z + points[0][1] + half_size), starting_duration)
+    reachy.r_arm.goto_from_matrix(
+        build_pose_matrix(x - 0.02, y - points[0][0] - half_size, z + points[0][1] + half_size), starting_duration
+    )
     first_pos = reachy.r_arm.goto_from_matrix(
         build_pose_matrix(x, y - points[0][0] - half_size, z + points[0][1] + half_size), duration=0.5
     )
@@ -831,7 +837,8 @@ def write_S(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1, s
     points_bottom = ellipsePoints(half_size, quarter_size, nb_points)
 
     reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x - 0.02, y - points_top[0][0] - half_size, z + points_top[0][1] + 3 * quarter_size), starting_duration
+        build_pose_matrix(x - 0.02, y - points_top[0][0] - half_size, z + points_top[0][1] + 3 * quarter_size),
+        starting_duration,
     )
     first_pos = reachy.r_arm.goto_from_matrix(
         build_pose_matrix(x, y - points_top[0][0] - half_size, z + points_top[0][1] + 3 * quarter_size), duration=0.5
@@ -1138,7 +1145,9 @@ def write_Z(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1, s
     print("Z finished")
 
 
-def write_letter(reachy: ReachySDK, letter: str, x: float, y: float, z: float, scale: float = 1, starting_duration: float = 0.5) -> None:
+def write_letter(
+    reachy: ReachySDK, letter: str, x: float, y: float, z: float, scale: float = 1, starting_duration: float = 0.5
+) -> None:
     match letter:
         case "a":
             write_A(reachy, x, y, z, scale, starting_duration)
@@ -1230,7 +1239,7 @@ if __name__ == "__main__":
             char = char.lower()
             if first_letter:
                 write_letter(reachy, char, x, y, z, scale, starting_duration=1.5)
-                first_letter=False
+                first_letter = False
             else:
                 write_letter(reachy, char, x, y, z, scale)
             y -= SIZE * scale * 1.5
