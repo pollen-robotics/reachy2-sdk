@@ -1205,12 +1205,13 @@ if __name__ == "__main__":
 
     print("Turning on Reachy")
     reachy.turn_on()
+    reachy.set_pose()
 
     time.sleep(0.2)
 
     print("Set to Elbow 90 pose ...")
-    r_arm_90 = reachy.r_arm.set_pose("elbow_90")
-    while not reachy.is_move_finished(r_arm_90):
+    r_arm_120 = reachy.r_arm.goto_joints([35, -15, -15, -120, 0, 0, 0])
+    while not reachy.is_move_finished(r_arm_120):
         time.sleep(0.1)
 
     letters_space = SIZE + SIZE / 2
@@ -1218,7 +1219,7 @@ if __name__ == "__main__":
     starting_y = -0.35
     x = 0.45
     z = 0
-    scale = 1
+    scale = 2
 
     word = input("Enter word to write: ")
 
@@ -1232,7 +1233,7 @@ if __name__ == "__main__":
             y -= SIZE * scale * 0.5
 
     print("Set back to Elbow 90 pose ...")
-    r_arm_90 = reachy.head.set_pose("default")
-    r_arm_90 = reachy.r_arm.set_pose("elbow_90")
-    while not reachy.is_move_finished(r_arm_90):
+    head_move = reachy.head.set_pose("default")
+    r_arm_120 = reachy.r_arm.goto_joints([35, -15, -15, -120, 0, 0, 0])
+    while not reachy.is_move_finished(r_arm_120):
         time.sleep(0.1)
