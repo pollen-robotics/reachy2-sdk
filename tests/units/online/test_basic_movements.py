@@ -1,4 +1,5 @@
 import time
+from typing import List
 
 import numpy as np
 import numpy.typing as npt
@@ -134,3 +135,50 @@ def test_basic_get_positions(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), expected_pos2, atol=1e-03)
+
+
+@pytest.mark.online
+def test_send_goal_positions(reachy_sdk_zeroed: ReachySDK) -> None:
+    def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> List[float]:
+        ik: List[float] = []
+        if arm == "r_arm":
+            ik = reachy.r_arm.inverse_kinematics(pose)
+            for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+                joint.goal_position = goal_pos
+        elif arm == "l_arm":
+            ik = reachy.l_arm.inverse_kinematics(pose)
+            for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
+                joint.goal_position = goal_pos
+        reachy.send_goal_positions()
+        return ik
+
+    def make_circle(
+        reachy: ReachySDK,
+        center: npt.NDArray[np.float64],
+        radius: float,
+        nbr_points: int = 100,
+    ) -> None:
+        Y_r = center[1] + radius * np.cos(np.linspace(0, 2 * np.pi, nbr_points))
+        Z = center[2] + radius * np.sin(np.linspace(0, 2 * np.pi, nbr_points))
+        X = center[0] * np.ones(nbr_points)
+        Y_l = -center[1] + radius * np.cos(np.linspace(0, 2 * np.pi, nbr_points))
+
+        prev_goal = None
+        prev_l_goal = None
+
+        for i in range(nbr_points):
+            if prev_goal is not None:
+                assert np.allclose(reachy.r_arm.get_joints_positions(), prev_goal, atol=1e-03)
+            if prev_l_goal is not None:
+                assert np.allclose(reachy.l_arm.get_joints_positions(), prev_l_goal, atol=1e-03)
+            pose = build_pose_matrix(X[i], Y_r[i], Z[i])
+            prev_goal = go_to_pose(reachy, pose, "r_arm")
+
+            l_pose = build_pose_matrix(X[i], Y_l[i], Z[i])
+            prev_l_goal = go_to_pose(reachy, l_pose, "l_arm")
+
+            time.sleep(0.05)
+
+    center = np.array([0.4, -0.4, -0.2])
+    radius = 0.15
+    make_circle(reachy_sdk_zeroed, center, radius)
