@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import ComponentId
@@ -7,9 +7,10 @@ from reachy2_sdk_api.orbita2d_pb2 import (
     Orbita2dCommand,
     Orbita2dsCommand,
     Orbita2dState,
+    Orbita2dStatus,
 )
 from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
-from reachy2_sdk_api.orbita3d_pb2 import Orbita3dState
+from reachy2_sdk_api.orbita3d_pb2 import Orbita3dState, Orbita3dStatus
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
 from ..parts.part import Part
@@ -63,6 +64,8 @@ class Orbita(ABC):
         self._motors: Dict[str, OrbitaMotor] = {}
         self._outgoing_goal_positions: Dict[str, float] = {}
         self._axis: Dict[str, OrbitaAxis] = {}
+
+        self._error_status: Optional[str] = None
 
     @abstractmethod
     def _create_dict_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
@@ -162,3 +165,10 @@ class Orbita(ABC):
 
         for name, joints in self._joints.items():
             joints._update_with(state[name])
+
+    @property
+    def audit(self) -> Optional[str]:
+        return self._error_status
+
+    def _update_audit_status(self, new_status: Orbita2dStatus | Orbita3dStatus) -> None:
+        self._error_status = new_status.errors[0].details

@@ -5,18 +5,22 @@ Handles all specific method to a Hand:
     - turn_on / turn_off
     - open / close
 """
+from typing import Optional
+
 import grpc
-import numpy as np
+from google.protobuf.wrappers_pb2 import FloatValue
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
 from reachy2_sdk_api.hand_pb2 import (
     HandPosition,
     HandPositionRequest,
     HandState,
+    HandStatus,
     ParallelGripperPosition,
 )
 from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
 from reachy2_sdk_api.part_pb2 import PartId
 
+from ..orbita.utils import to_internal_position, to_position
 from .part import Part
 
 
@@ -43,10 +47,12 @@ class Hand(Part):
         It will create the hand and set its initial state.
         """
         self._part_id = PartId(id=hand_msg.part_id.id)
-        self._present_position: float = round(np.rad2deg(initial_state.present_position.parallel_gripper.position), 1)
-        self._goal_position: float = round(np.rad2deg(initial_state.goal_position.parallel_gripper.position), 1)
+        self._present_position: float = initial_state.present_position.parallel_gripper.position.value
+        self._goal_position: float = initial_state.goal_position.parallel_gripper.position.value
         self._opening: float = initial_state.opening.value
         self._compliant: bool = initial_state.compliant.value
+
+        self._outgoing_goal_positions: Optional[float] = None
 
     @property
     def opening(self) -> float:
@@ -67,9 +73,38 @@ class Hand(Part):
         self._hand_stub.SetHandPosition(
             HandPositionRequest(
                 id=self._part_id,
-                position=HandPosition(parallel_gripper=ParallelGripperPosition(position=percentage / 100.0)),
+                position=HandPosition(
+                    parallel_gripper=ParallelGripperPosition(opening_percentage=FloatValue(value=percentage / 100.0))
+                ),
             )
         )
+
+    @property
+    def present_position(self) -> float:
+        return to_position(self._present_position)
+
+    @property
+    def goal_position(self) -> float:
+        return to_position(self._goal_position)
+
+    @goal_position.setter
+    def goal_position(self, value: float | int) -> None:
+        if isinstance(value, float) | isinstance(value, int):
+            self._outgoing_goal_positions = to_internal_position(value)
+        else:
+            raise TypeError("goal_position must be a float or int")
+
+    def send_goal_positions(self) -> None:
+        if self._outgoing_goal_positions is not None:
+            self._hand_stub.SetHandPosition(
+                HandPositionRequest(
+                    id=self._part_id,
+                    position=HandPosition(
+                        parallel_gripper=ParallelGripperPosition(position=FloatValue(value=self._outgoing_goal_positions))
+                    ),
+                )
+            )
+            self._outgoing_goal_positions = None
 
     def open(self) -> None:
         """Open the hand."""
@@ -93,7 +128,10 @@ class Hand(Part):
 
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state received from the gRPC server."""
-        self._present_position = new_state.present_position.parallel_gripper.position
-        self._goal_position = new_state.goal_position.parallel_gripper.position
+        self._present_position = new_state.present_position.parallel_gripper.position.value
+        self._goal_position = new_state.goal_position.parallel_gripper.position.value
         self._opening = new_state.opening.value
         self._compliant = new_state.compliant.value
+
+    def _update_audit_status(self, new_status: HandStatus) -> None:
+        pass

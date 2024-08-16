@@ -32,6 +32,7 @@ from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
 from .parts.head import Head
+from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
 from .utils.custom_dict import CustomDict
 from .utils.utils import (
@@ -112,6 +113,10 @@ class ReachySDK:
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
         self._sync_thread.start()
+
+        self._audit_thread = threading.Thread(target=self._audit)
+        self._audit_thread.daemon = True
+        self._audit_thread.start()
 
         self._grpc_connected = True
         self._logger.info("Connected to Reachy.")
@@ -270,9 +275,9 @@ class ReachySDK:
         - robot's sofware and hardware version
         - robot's serial number
         """
-        config_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
+        self._stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         try:
-            self._robot = config_stub.GetReachy(Empty())
+            self._robot = self._stub.GetReachy(Empty())
         except _InactiveRpcError:
             raise ConnectionError()
 
@@ -388,6 +393,33 @@ class ReachySDK:
             self._grpc_connected = False
             raise ConnectionError(f"Connection with Reachy ip:{self._host} lost, check the sdk server status.")
 
+    def _audit(self) -> None:
+        while self._grpc_connected:
+            audit_status = self._stub.Audit(self._robot.id)
+            if self._l_arm is not None and audit_status.HasField("l_arm_status"):
+                self._l_arm._update_audit_status(audit_status.l_arm_status)
+                if self._l_arm.gripper is not None and audit_status.HasField("l_hand_status"):
+                    self._l_arm.gripper._update_audit_status(audit_status.l_hand_status)
+            if self._r_arm is not None and audit_status.HasField("r_arm_status"):
+                self._r_arm._update_audit_status(audit_status.r_arm_status)
+                if self._r_arm.gripper is not None and audit_status.HasField("r_hand_status"):
+                    self._r_arm.gripper._update_audit_status(audit_status.r_hand_status)
+            if self._head is not None and audit_status.HasField("head_status"):
+                self._head._update_audit_status(audit_status.head_status)
+            if self._mobile_base is not None and audit_status.HasField("mobile_base_status"):
+                self._mobile_base._update_audit_status(audit_status.mobile_base_status)
+            time.sleep(1)
+
+    @property
+    def audit(self) -> Dict[str, Dict[str, str]]:
+        audit_dict: Dict[str, Dict[str, str]] = {}
+        if not self._grpc_connected or not self.info:
+            self._logger.warning("Reachy is not connected!")
+        if self.info is not None:
+            for part in self.info._enabled_parts.values():
+                audit_dict[part._part_id.name] = part.audit
+        return audit_dict
+
     def turn_on(self) -> bool:
         """Turn all motors of enabled parts on.
 
@@ -397,9 +429,10 @@ class ReachySDK:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
         for part in self.info._enabled_parts.values():
-            part.turn_on()
+            part._turn_on()
         if self._mobile_base is not None:
-            self._mobile_base.turn_on()
+            self._mobile_base._turn_on()
+        time.sleep(0.5)
 
         return True
 
@@ -412,9 +445,10 @@ class ReachySDK:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         for part in self.info._enabled_parts.values():
-            part.turn_off()
+            part._turn_off()
         if self._mobile_base is not None:
-            self._mobile_base.turn_off()
+            self._mobile_base._turn_off()
+        time.sleep(0.5)
 
         return True
 
@@ -427,17 +461,18 @@ class ReachySDK:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         if hasattr(self, "_mobile_base") and self._mobile_base is not None:
-            self._mobile_base.turn_off()
+            self._mobile_base._turn_off()
         for part in self.info._enabled_parts.values():
             if "arm" in part._part_id.name:
                 part.set_torque_limits(20)
             else:
-                part.turn_off()
+                part._turn_off()
         time.sleep(duration)
         for part in self.info._enabled_parts.values():
             if "arm" in part._part_id.name:
-                part.turn_off()
+                part._turn_off()
                 part.set_torque_limits(100)
+        time.sleep(0.5)
         return True
 
     def is_on(self) -> bool:
@@ -468,8 +503,13 @@ class ReachySDK:
         return True
 
     def send_goal_positions(self) -> None:
-        for actuator in self._actuators.values():
-            actuator.send_goal_positions()
+        if not self.info:
+            self._logger.warning("Reachy is not connected!")
+            return
+
+        for part in self.info._enabled_parts.values():
+            if issubclass(type(part), JointsBasedPart):
+                part.send_goal_positions()
 
     def set_pose(
         self,
