@@ -130,22 +130,23 @@ class Orbita2d(Orbita):
         super().__setattr__(__name, __value)
 
     def send_goal_positions(self) -> None:
-        req_pos = {}
-        for joint_axis in self._joints.keys():
-            if joint_axis in self._outgoing_goal_positions:
-                req_pos[joint_axis] = FloatValue(value=self._outgoing_goal_positions[joint_axis])
-        pose = Pose2d(**req_pos)
+        if self._outgoing_goal_positions:
+            req_pos = {}
+            for joint_axis in self._joints.keys():
+                if joint_axis in self._outgoing_goal_positions:
+                    req_pos[joint_axis] = FloatValue(value=self._outgoing_goal_positions[joint_axis])
+            pose = Pose2d(**req_pos)
 
-        command = Orbita2dsCommand(
-            cmd=[
-                Orbita2dCommand(
-                    id=ComponentId(id=self._id),
-                    goal_position=pose,
-                )
-            ]
-        )
-        self._outgoing_goal_positions = {}
-        self._stub.SendCommand(command)
+            command = Orbita2dsCommand(
+                cmd=[
+                    Orbita2dCommand(
+                        id=ComponentId(id=self._id),
+                        goal_position=pose,
+                    )
+                ]
+            )
+            self._outgoing_goal_positions = {}
+            self._stub.SendCommand(command)
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
         """Set a speed_limit as a percentage of the max speed on all motors of the actuator"""
