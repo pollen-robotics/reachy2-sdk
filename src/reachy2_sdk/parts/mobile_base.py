@@ -102,6 +102,9 @@ class MobileBase(Part):
             "x": round(response.x.value, 3),
             "y": round(response.y.value, 3),
             "theta": round(rad2deg(response.theta.value), 3),
+            "vx": round(response.vx.value, 3),
+            "vy": round(response.vy.value, 3),
+            "vtheta": round(rad2deg(response.vtheta.value), 3),
         }
         return odom
 
