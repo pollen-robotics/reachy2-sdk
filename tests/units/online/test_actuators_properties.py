@@ -138,15 +138,15 @@ def test_reset_default_limits(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.head.neck.set_speed_limits(40)
     time.sleep(0.2)
 
-    assert reachy_sdk_zeroed.l_arm.shoulder.get_speed_limits()['motor_1'] == 70
-    assert reachy_sdk_zeroed.l_arm.elbow.get_torque_limits()['motor_2'] == 70
-    assert reachy_sdk_zeroed.r_arm.elbow.get_speed_limits()['motor_1'] == 50
-    assert reachy_sdk_zeroed.r_arm.wrist.get_torque_limits()['motor_3'] == 50
+    assert reachy_sdk_zeroed.l_arm.shoulder.get_speed_limits()["motor_1"] == 70
+    assert reachy_sdk_zeroed.l_arm.elbow.get_torque_limits()["motor_2"] == 70
+    assert reachy_sdk_zeroed.r_arm.elbow.get_speed_limits()["motor_1"] == 50
+    assert reachy_sdk_zeroed.r_arm.wrist.get_torque_limits()["motor_3"] == 50
     print(reachy_sdk_zeroed.head.neck.get_torque_limits())
     print(reachy_sdk_zeroed.r_arm.wrist.get_torque_limits())
 
-    assert reachy_sdk_zeroed.head.neck.get_torque_limits()['motor_2'] == 40
-    assert reachy_sdk_zeroed.head.neck.get_speed_limits()['motor_3'] == 40
+    assert reachy_sdk_zeroed.head.neck.get_torque_limits()["motor_2"] == 40
+    assert reachy_sdk_zeroed.head.neck.get_speed_limits()["motor_3"] == 40
 
     reachy_sdk_zeroed.reset_default_limits()
 
