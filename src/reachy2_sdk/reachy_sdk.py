@@ -544,6 +544,17 @@ class ReachySDK:
         )
         return ids
 
+    def reset_default_limits(self) -> None:
+        if not self.info:
+            self._logger.warning("Reachy is not connected!")
+            return
+
+        for part in self.info._enabled_parts.values():
+            if issubclass(type(part), JointsBasedPart):
+                part.set_speed_limits(100)
+                part.set_torque_limits(100)
+        time.sleep(0.5)
+
     def is_move_finished(self, id: GoToId) -> bool:
         """Return True if goto has been played and has been cancelled, False otherwise."""
         if not self._grpc_connected:
