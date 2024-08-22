@@ -545,6 +545,7 @@ class ReachySDK:
         return ids
 
     def reset_default_limits(self) -> None:
+        """Set back speed and torque limits of all parts to maximum value (100)."""
         if not self.info:
             self._logger.warning("Reachy is not connected!")
             return
