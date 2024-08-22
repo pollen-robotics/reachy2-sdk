@@ -36,13 +36,11 @@ from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
 from .utils.custom_dict import CustomDict
 from .utils.utils import (
+    SimplifiedRequest,
     arm_position_to_list,
     ext_euler_angles_to_list,
     get_interpolation_mode,
 )
-
-SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
-"""Named tuple for easy access to request variables"""
 
 GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 """Named tuple for easy access to goto request on full body"""

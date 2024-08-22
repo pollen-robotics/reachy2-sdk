@@ -447,6 +447,35 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         return response
 
+    def translate_by(self, x: float, y: float, z: float, frame: str = "robot") -> GoToId:
+        """Translate the arm end effector in Reachy's coordinate system from the last move sent on the part.
+
+        If no move has been sent, use the current position.
+        """
+        if frame not in ["robot", "gripper"]:
+            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
+
+        try:
+            move = self.get_moves_queue()[-1]
+        except IndexError:
+            move = self.get_move_playing()
+
+        if move.id != -1:
+            joints_request = self._get_move_joints_request(move)
+        else:
+            joints_request = None
+
+        if joints_request is not None:
+            pose = self.forward_kinematics(joints_request.goal_positions)
+        else:
+            pose = self.forward_kinematics()
+
+        if frame == "robot":
+            pose[0, 3] += x
+            pose[1, 3] += y
+            pose[2, 3] += z
+        return self.goto_from_matrix(pose)
+
     def _goto_single_joint(
         self, arm_joint: int, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
     ) -> GoToId:

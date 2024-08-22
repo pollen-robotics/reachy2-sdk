@@ -1,9 +1,15 @@
 from abc import ABC
-from typing import List
+from typing import List, Optional
 
 from reachy2_sdk_api.goto_pb2 import GoToAck, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 
+from ..utils.utils import (
+    SimplifiedRequest,
+    arm_position_to_list,
+    ext_euler_angles_to_list,
+    get_interpolation_mode,
+)
 from .part import Part
 
 
@@ -36,3 +42,31 @@ class IGoToBasedPart(ABC):
         """Ask the cancellation of all waiting goto on the part"""
         response = self._goto_stub.CancelPartAllGoTo(self.part._part_id)
         return response
+
+    def _get_move_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
+        """Returns the part affected, the joints goal positions, duration and mode of the corresponding GoToId
+
+        Part can be either 'r_arm', 'l_arm' or 'head'
+        Goal_position is returned as a list in degrees
+        """
+        response = self._goto_stub.GetGoToRequest(goto_id)
+        if response.joints_goal.HasField("arm_joint_goal"):
+            part = response.joints_goal.arm_joint_goal.id.name
+            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+            goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
+            duration = response.joints_goal.arm_joint_goal.duration.value
+        elif response.joints_goal.HasField("neck_joint_goal"):
+            part = response.joints_goal.neck_joint_goal.id.name
+            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+            goal_positions = ext_euler_angles_to_list(
+                response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
+            )
+            duration = response.joints_goal.neck_joint_goal.duration.value
+
+        request = SimplifiedRequest(
+            part=part,
+            goal_positions=goal_positions,
+            duration=duration,
+            mode=mode,
+        )
+        return request

@@ -5,6 +5,7 @@ This module contains various useful functions especially:
 - enum conversion to string
 """
 
+from collections import namedtuple
 from typing import Any, List, Tuple
 
 import numpy as np
@@ -15,6 +16,9 @@ from reachy2_sdk_api.arm_pb2 import ArmPosition
 from reachy2_sdk_api.goto_pb2 import GoToInterpolation, InterpolationMode
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
+
+SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
+"""Named tuple for easy access to request variables"""
 
 
 def convert_to_radians(my_list: List[float]) -> Any:
