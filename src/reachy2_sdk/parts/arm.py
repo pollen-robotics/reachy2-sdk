@@ -448,9 +448,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return response
 
     def translate_by(self, x: float, y: float, z: float, frame: str = "robot") -> GoToId:
-        """Translate the arm end effector in Reachy's coordinate system from the last move sent on the part.
-
+        """Translate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
+
+        Two frames can be used:
+        - robot frame : translation is done in Reachy's coordinate system
+        - gripper frame : translation is done in the gripper's coordinate system
         """
         if frame not in ["robot", "gripper"]:
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
