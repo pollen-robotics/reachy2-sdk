@@ -474,6 +474,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose[0, 3] += x
             pose[1, 3] += y
             pose[2, 3] += z
+        elif frame == "gripper":
+            translation_matrix = np.eye(4)
+            translation_matrix[0, 3] += x
+            translation_matrix[1, 3] += y
+            translation_matrix[2, 3] += z
+            pose = np.dot(pose, translation_matrix)
         return self.goto_from_matrix(pose)
 
     def _goto_single_joint(
