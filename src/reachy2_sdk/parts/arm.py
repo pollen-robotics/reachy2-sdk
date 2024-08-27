@@ -456,7 +456,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         initial_pose: Optional[npt.NDArray[np.float64]] = None,
         frame: str = "robot",
     ) -> npt.NDArray[np.float64]:
-        """Get a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system, translated by x, y, z (in meters) from the initial pose.
+        """Get a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system, translated by x, y, z (in meters)
+        from the initial pose.
 
         Two frames can be used:
         - robot frame : translation is done in Reachy's coordinate system
@@ -517,7 +518,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         degrees: bool = True,
         frame: str = "robot",
     ) -> npt.NDArray[np.float64]:
-        """Get a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system, rotated by roll, pitch, yaw from the initial pose.
+        """Get a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system, rotated by roll, pitch, yaw
+        from the initial pose.
 
         Two frames can be used:
         - robot frame : translation is done in Reachy's coordinate system
