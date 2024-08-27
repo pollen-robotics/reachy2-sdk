@@ -447,6 +447,32 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         return response
 
+    def get_translation_by(
+        self, initial_pose: npt.NDArray[np.float64], x: float, y: float, z: float, frame: str = "robot"
+    ) -> npt.NDArray[np.float64]:
+        """Get a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system, translated by x, y, z (in meters) from the initial pose.
+
+        Two frames can be used:
+        - robot frame : translation is done in Reachy's coordinate system
+        - gripper frame : translation is done in the gripper's coordinate system
+        """
+        if frame not in ["robot", "gripper"]:
+            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
+
+        pose = initial_pose.copy()
+
+        if frame == "robot":
+            pose[0, 3] += x
+            pose[1, 3] += y
+            pose[2, 3] += z
+        elif frame == "gripper":
+            translation_matrix = np.eye(4)
+            translation_matrix[0, 3] += x
+            translation_matrix[1, 3] += y
+            translation_matrix[2, 3] += z
+            pose = np.dot(pose, translation_matrix)
+        return pose
+
     def translate_by(self, x: float, y: float, z: float, frame: str = "robot") -> GoToId:
         """Translate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
