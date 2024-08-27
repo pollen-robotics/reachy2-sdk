@@ -46,6 +46,7 @@ from ..utils.utils import (
     decompose_matrix,
     get_grpc_interpolation_mode,
     list_to_arm_position,
+    matrix_from_euler_angles,
     recompose_matrix,
 )
 from .goto_based_part import IGoToBasedPart
@@ -448,7 +449,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return response
 
     def get_translation_by(
-        self, initial_pose: npt.NDArray[np.float64], x: float, y: float, z: float, frame: str = "robot"
+        self,
+        x: float,
+        y: float,
+        z: float,
+        initial_pose: Optional[npt.NDArray[np.float64]] = None,
+        frame: str = "robot",
     ) -> npt.NDArray[np.float64]:
         """Get a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system, translated by x, y, z (in meters) from the initial pose.
 
@@ -458,6 +464,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """
         if frame not in ["robot", "gripper"]:
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
+
+        if initial_pose is None:
+            initial_pose = self.forward_kinematics()
 
         pose = initial_pose.copy()
 
@@ -475,6 +484,68 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     def translate_by(self, x: float, y: float, z: float, frame: str = "robot") -> GoToId:
         """Translate the arm's end effector from the last move sent on the part.
+        If no move has been sent, use the current position.
+
+        Two frames can be used:
+        - robot frame : translation is done in Reachy's coordinate system
+        - gripper frame : translation is done in the gripper's coordinate system
+        """
+        try:
+            move = self.get_moves_queue()[-1]
+        except IndexError:
+            move = self.get_move_playing()
+
+        if move.id != -1:
+            joints_request = self._get_move_joints_request(move)
+        else:
+            joints_request = None
+
+        if joints_request is not None:
+            pose = self.forward_kinematics(joints_request.goal_positions)
+        else:
+            pose = self.forward_kinematics()
+
+        pose = self.get_translation_by(x, y, z, initial_pose=pose, frame=frame)
+        return self.goto_from_matrix(pose)
+
+    def get_rotation_by(
+        self,
+        roll: float,
+        pitch: float,
+        yaw: float,
+        initial_pose: Optional[npt.NDArray[np.float64]] = None,
+        degrees: bool = True,
+        frame: str = "robot",
+    ) -> npt.NDArray[np.float64]:
+        """Get a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system, rotated by roll, pitch, yaw from the initial pose.
+
+        Two frames can be used:
+        - robot frame : translation is done in Reachy's coordinate system
+        - gripper frame : translation is done in the gripper's coordinate system
+        """
+        if frame not in ["robot", "gripper"]:
+            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
+
+        if initial_pose is None:
+            initial_pose = self.forward_kinematics()
+
+        pose = initial_pose.copy()
+        pose_rotation = np.eye(4)
+        pose_rotation[:3, :3] = pose.copy()[:3, :3]
+        pose_translation = pose.copy()[:3, 3]
+
+        rotation = matrix_from_euler_angles(roll, pitch, yaw, degrees=degrees)
+
+        if frame == "robot":
+            pose_rotation = rotation @ pose_rotation
+        elif frame == "gripper":
+            pose_rotation = pose_rotation @ rotation
+
+        pose = recompose_matrix(pose_rotation[:3, :3], pose_translation)
+        return pose
+
+    def rotate_by(self, roll: float, pitch: float, yaw: float, degrees: bool = True, frame: str = "robot") -> GoToId:
+        """Rotate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
 
         Two frames can be used:
@@ -499,16 +570,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         else:
             pose = self.forward_kinematics()
 
-        if frame == "robot":
-            pose[0, 3] += x
-            pose[1, 3] += y
-            pose[2, 3] += z
-        elif frame == "gripper":
-            translation_matrix = np.eye(4)
-            translation_matrix[0, 3] += x
-            translation_matrix[1, 3] += y
-            translation_matrix[2, 3] += z
-            pose = np.dot(pose, translation_matrix)
+        pose = self.get_rotation_by(roll, pitch, yaw, initial_pose=pose, degrees=degrees, frame=frame)
         return self.goto_from_matrix(pose)
 
     def _goto_single_joint(
