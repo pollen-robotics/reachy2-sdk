@@ -530,18 +530,18 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             initial_pose = self.forward_kinematics()
 
         pose = initial_pose.copy()
-        pose_rotation = np.eye(4)
-        pose_rotation[:3, :3] = pose.copy()[:3, :3]
-        pose_translation = pose.copy()[:3, 3]
-
         rotation = matrix_from_euler_angles(roll, pitch, yaw, degrees=degrees)
 
         if frame == "robot":
+            # Probably wrong
+            pose_rotation = np.eye(4)
+            pose_rotation[:3, :3] = pose.copy()[:3, :3]
+            pose_translation = pose.copy()[:3, 3]
             pose_rotation = rotation @ pose_rotation
+            pose = recompose_matrix(pose_rotation[:3, :3], pose_translation)
         elif frame == "gripper":
-            pose_rotation = pose_rotation @ rotation
+            pose = pose @ rotation
 
-        pose = recompose_matrix(pose_rotation[:3, :3], pose_translation)
         return pose
 
     def rotate_by(self, roll: float, pitch: float, yaw: float, degrees: bool = True, frame: str = "robot") -> GoToId:
