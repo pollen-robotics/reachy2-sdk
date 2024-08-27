@@ -535,7 +535,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         rotation = matrix_from_euler_angles(roll, pitch, yaw, degrees=degrees)
 
         if frame == "robot":
-            # Probably wrong
+            # TODO: fix
             pose_rotation = np.eye(4)
             pose_rotation[:3, :3] = pose.copy()[:3, :3]
             pose_translation = pose.copy()[:3, 3]
