@@ -5,6 +5,7 @@ This module contains various useful functions especially:
 - enum conversion to string
 """
 
+from collections import namedtuple
 from typing import Any, List, Tuple
 
 import numpy as np
@@ -15,6 +16,9 @@ from reachy2_sdk_api.arm_pb2 import ArmPosition
 from reachy2_sdk_api.goto_pb2 import GoToInterpolation, InterpolationMode
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
+
+SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
+"""Named tuple for easy access to request variables"""
 
 
 def convert_to_radians(my_list: List[float]) -> Any:
@@ -137,3 +141,27 @@ def recompose_matrix(rotation: npt.NDArray[np.float64], translation: npt.NDArray
     matrix[:3, :3] = rotation  # .as_matrix()
     matrix[:3, 3] = translation
     return matrix
+
+
+def matrix_from_euler_angles(roll: float, pitch: float, yaw: float, degrees: bool = True) -> npt.NDArray[np.float64]:
+    """Create a homogeneous rotation matrix 4x4 from roll, pitch, yaw angles."""
+    if degrees:
+        roll = np.deg2rad(roll)
+        pitch = np.deg2rad(pitch)
+        yaw = np.deg2rad(yaw)
+
+    R_x = np.array(
+        [[1, 0, 0, 0], [0, np.cos(roll), -np.sin(roll), 0], [0, np.sin(roll), np.cos(roll), 0], [0, 0, 0, 1]], dtype=np.float64
+    )
+
+    R_y = np.array(
+        [[np.cos(pitch), 0, np.sin(pitch), 0], [0, 1, 0, 0], [-np.sin(pitch), 0, np.cos(pitch), 0], [0, 0, 0, 1]],
+        dtype=np.float64,
+    )
+
+    R_z = np.array(
+        [[np.cos(yaw), -np.sin(yaw), 0, 0], [np.sin(yaw), np.cos(yaw), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.float64
+    )
+
+    rotation_matrix = R_z @ R_y @ R_x
+    return rotation_matrix
