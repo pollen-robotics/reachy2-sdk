@@ -8,6 +8,9 @@ from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 from reachy2_sdk.reachy_sdk import ReachySDK
 
 from .test_basic_movements import is_goto_finished
+from reachy2_sdk.utils.utils import (
+    matrix_from_euler_angles,
+)
 
 
 @pytest.mark.online
@@ -587,6 +590,37 @@ def test_get_translation_by(reachy_sdk_zeroed: ReachySDK) -> None:
     translation6[1, 3] = -0.2
     translation6[2, 3] = -0.2
     assert np.allclose(pose3 @ translation6, pose6, atol=1e-03)
+
+
+@pytest.mark.online
+def test_get_rotation_by(reachy_sdk_zeroed: ReachySDK) -> None:
+    pose1 = reachy_sdk_zeroed.r_arm.forward_kinematics([0, -15, -15, -90, 0, 0, 0])
+    pose2 = reachy_sdk_zeroed.r_arm.get_rotation_by(10, 0, 0, initial_pose=pose1, frame="gripper")
+
+    rotation2 = matrix_from_euler_angles(10, 0, 0)
+    assert np.allclose(pose1 @ rotation2, pose2, atol=1e-03)
+
+    pose3 = reachy_sdk_zeroed.r_arm.forward_kinematics([-10, -15, -15, -100, 0, 0, 0])
+    pose4 = reachy_sdk_zeroed.r_arm.get_rotation_by(15, 10, -15, initial_pose=pose3, frame="gripper")
+
+    rotation4 = matrix_from_euler_angles(15, 10, -15)
+    assert np.allclose(pose3 @ rotation4, pose4, atol=1e-03)
+
+    pose5 = reachy_sdk_zeroed.r_arm.get_rotation_by(-15, -10, 15, initial_pose=pose3, frame="robot")
+    rotation5 = matrix_from_euler_angles(-15, -10, 15)
+    expected_pose5_rot = rotation5[:3, :3] @ pose3[:3, :3]
+    expected_pose5 = np.eye(4)
+    expected_pose5[:3, :3] = expected_pose5_rot
+    expected_pose5[:3, 3] = pose3[:3, 3]
+    assert np.allclose(expected_pose5, pose5, atol=1e-03)
+
+    pose6 = reachy_sdk_zeroed.r_arm.get_rotation_by(5, 0, -10, initial_pose=pose3, frame="robot")
+    rotation6 = matrix_from_euler_angles(5, 0, -10)
+    expected_pose6_rot = rotation6[:3, :3] @ pose3[:3, :3]
+    expected_pose6 = np.eye(4)
+    expected_pose6[:3, :3] = expected_pose6_rot
+    expected_pose6[:3, 3] = pose3[:3, 3]
+    assert np.allclose(expected_pose6, pose6, atol=1e-03)
 
 
 @pytest.mark.online
