@@ -555,3 +555,126 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         time.sleep(0.1)
 
     assert np.allclose(reachy_sdk_zeroed.head.get_joints_positions(), [15, 0, 10], atol=1e-01)
+
+
+@pytest.mark.online
+def test_get_translation_by(reachy_sdk_zeroed: ReachySDK) -> None:
+    pose1 = reachy_sdk_zeroed.r_arm.forward_kinematics([0, -15, -15, -90, 0, 0, 0])
+    pose2 = reachy_sdk_zeroed.r_arm.get_translation_by(0.1, 0, 0, initial_pose=pose1, frame="robot")
+
+    assert np.allclose(pose1[:3, :3], pose2[:3, :3], atol=1e-03)
+    assert np.isclose(pose1[0, 3] + 0.1, pose2[0, 3], atol=1e-03)
+    assert np.isclose(pose1[1, 3], pose2[1, 3], atol=1e-03)
+    assert np.isclose(pose1[2, 3], pose2[2, 3], atol=1e-03)
+
+    pose3 = reachy_sdk_zeroed.r_arm.forward_kinematics([-10, -15, -15, -100, 0, 0, 0])
+    pose4 = reachy_sdk_zeroed.r_arm.get_translation_by(-0.1, -0.1, 0.1, initial_pose=pose3, frame="robot")
+    assert np.allclose(pose3[:3, :3], pose4[:3, :3], atol=1e-03)
+    assert np.isclose(pose3[0, 3] - 0.1, pose4[0, 3], atol=1e-03)
+    assert np.isclose(pose3[1, 3] - 0.1, pose4[1, 3], atol=1e-03)
+    assert np.isclose(pose3[2, 3] + 0.1, pose4[2, 3], atol=1e-03)
+
+    pose5 = reachy_sdk_zeroed.r_arm.get_translation_by(0.1, 0.1, -0.1, initial_pose=pose3, frame="gripper")
+    translation5 = np.eye(4)
+    translation5[0, 3] = 0.1
+    translation5[1, 3] = 0.1
+    translation5[2, 3] = -0.1
+    assert np.allclose(pose3 @ translation5, pose5, atol=1e-03)
+
+    pose6 = reachy_sdk_zeroed.r_arm.get_translation_by(0, -0.2, -0.2, initial_pose=pose3, frame="gripper")
+    translation6 = np.eye(4)
+    translation6[0, 3] = 0
+    translation6[1, 3] = -0.2
+    translation6[2, 3] = -0.2
+    assert np.allclose(pose3 @ translation6, pose6, atol=1e-03)
+
+
+@pytest.mark.online
+def test_translate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
+    req1 = reachy_sdk_zeroed.r_arm.set_pose("elbow_90")
+    while not is_goto_finished(reachy_sdk_zeroed, req1):
+        time.sleep(0.1)
+
+    pose1 = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    req2 = reachy_sdk_zeroed.r_arm.translate_by(0.1, 0, 0, frame="robot")
+    while not is_goto_finished(reachy_sdk_zeroed, req2):
+        time.sleep(0.1)
+
+    pose2 = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    assert np.allclose(pose1[:3, :3], pose2[:3, :3], atol=1e-03)
+    assert np.isclose(pose1[0, 3] + 0.1, pose2[0, 3], atol=1e-03)
+    assert np.isclose(pose1[1, 3], pose2[1, 3], atol=1e-03)
+    assert np.isclose(pose1[2, 3], pose2[2, 3], atol=1e-03)
+
+    req3 = reachy_sdk_zeroed.r_arm.goto_joints([-10, -15, -15, -100, 0, 0, 0])
+    req4 = reachy_sdk_zeroed.r_arm.goto_joints([-10, -15, 20, -110, 0, 0, 0])
+    req5 = reachy_sdk_zeroed.r_arm.translate_by(0.1, -0.1, -0.1)
+
+    pose4 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_move_joints_request(req4).goal_positions)
+    pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_move_joints_request(req5).goal_positions)
+    assert np.allclose(pose4[:3, :3], pose5[:3, :3], atol=1e-03)
+    assert np.isclose(pose4[0, 3] + 0.1, pose5[0, 3], atol=1e-03)
+    assert np.isclose(pose4[1, 3] - 0.1, pose5[1, 3], atol=1e-03)
+    assert np.isclose(pose4[2, 3] - 0.1, pose5[2, 3], atol=1e-03)
+
+    req6 = reachy_sdk_zeroed.r_arm.translate_by(0, 0, -0.1)
+
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_move_joints_request(req6).goal_positions)
+
+
+@pytest.mark.online
+def test_translate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
+    req1 = reachy_sdk_zeroed.r_arm.set_pose("elbow_90")
+    while not is_goto_finished(reachy_sdk_zeroed, req1):
+        time.sleep(0.1)
+
+    pose1 = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    req2 = reachy_sdk_zeroed.r_arm.translate_by(0.1, 0, 0, frame="gripper")
+    while not is_goto_finished(reachy_sdk_zeroed, req2):
+        time.sleep(0.1)
+
+    pose2 = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    translation2 = np.eye(4)
+    translation2[0, 3] = 0.1
+    assert np.allclose(pose1 @ translation2, pose2, atol=1e-03)
+
+    req3 = reachy_sdk_zeroed.r_arm.goto_joints([-10, -15, -15, -100, 0, 0, 0])
+    req4 = reachy_sdk_zeroed.r_arm.goto_joints([-10, -15, 20, -110, 0, 0, 0])
+    req5 = reachy_sdk_zeroed.r_arm.translate_by(0.1, -0.1, -0.1, frame="gripper")
+
+    pose4 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_move_joints_request(req4).goal_positions)
+    pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_move_joints_request(req5).goal_positions)
+    translation5 = np.eye(4)
+    translation5[0, 3] = 0.1
+    translation5[1, 3] = -0.1
+    translation5[2, 3] = -0.1
+    assert np.allclose(pose4 @ translation5, pose5, atol=1e-03)
+
+    while not is_goto_finished(reachy_sdk_zeroed, req5):
+        time.sleep(0.1)
+
+    req6 = reachy_sdk_zeroed.r_arm.goto_joints([-10, -15, 30, -70, 0, 10, 0])
+    req7 = reachy_sdk_zeroed.r_arm.translate_by(0.15, 0, 0.05, frame="gripper")
+
+    pose6 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_move_joints_request(req6).goal_positions)
+    pose7 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_move_joints_request(req7).goal_positions)
+    translation7 = np.eye(4)
+    translation7[0, 3] = 0.15
+    translation7[2, 3] = 0.05
+    assert np.allclose(pose6 @ translation7, pose7, atol=1e-03)
+
+    req8 = reachy_sdk_zeroed.r_arm.translate_by(0, -0.3, -0.3, frame="gripper")
+
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_move_joints_request(req8).goal_positions)
+
+
+@pytest.mark.online
+def test_rotate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
+    pass
+
+
+@pytest.mark.online
+def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
+    pass
