@@ -593,6 +593,9 @@ class ReachySDK:
         if not self._grpc_connected:
             self._logger.warning("Reachy is not connected!")
             return None
+        if goto_id.id == -1:
+            raise ValueError("No answer was found for given move, goto_id is -1")
+
         response = self._goto_stub.GetGoToRequest(goto_id)
         if response.joints_goal.HasField("arm_joint_goal"):
             part = response.joints_goal.arm_joint_goal.id.name
