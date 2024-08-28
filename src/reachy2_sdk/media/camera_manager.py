@@ -36,6 +36,8 @@ class CameraManager:
     def _setup_cameras(self) -> None:
         """Thread initializing cameras"""
         cams = self._video_stub.GetAvailableCameras(Empty())
+        self._teleop = None
+        self._depth = None
         if len(cams.camera_feat) == 0:
             self._logger.warning("There is no available camera.")
         else:
@@ -49,6 +51,10 @@ class CameraManager:
                     self._depth = DepthCamera(c, self._video_stub)
                 else:
                     self._logger.error(f"Camera {c.name} not defined")
+
+    def initialize_cameras(self) -> None:
+        """Manually initialize cameras"""
+        self._setup_cameras()
 
     @property
     def teleop(self) -> Optional[Camera]:
