@@ -458,6 +458,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     ) -> npt.NDArray[np.float64]:
         """Get a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system, translated by x, y, z (in meters)
         from the initial pose.
+        If no initial_pose has been sent, use the current pose.
 
         Two frames can be used:
         - robot frame : translation is done in Reachy's coordinate system
@@ -484,7 +485,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return pose
 
     def translate_by(self, x: float, y: float, z: float, frame: str = "robot") -> GoToId:
-        """Translate the arm's end effector from the last move sent on the part.
+        """Create a goto to translate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
 
         Two frames can be used:
@@ -522,8 +523,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         from the initial pose.
 
         Two frames can be used:
-        - robot frame : translation is done in Reachy's coordinate system
-        - gripper frame : translation is done in the gripper's coordinate system
+        - robot frame : rotation is done around Reachy's coordinate system axis
+        - gripper frame : rotation is done in the gripper's coordinate system
         """
         if frame not in ["robot", "gripper"]:
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
@@ -546,12 +547,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return pose
 
     def rotate_by(self, roll: float, pitch: float, yaw: float, degrees: bool = True, frame: str = "robot") -> GoToId:
-        """Rotate the arm's end effector from the last move sent on the part.
+        """Create a goto to rotate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
 
         Two frames can be used:
-        - robot frame : translation is done in Reachy's coordinate system
-        - gripper frame : translation is done in the gripper's coordinate system
+        - robot frame : rotation is done around Reachy's coordinate system axis
+        - gripper frame : rotation is done in the gripper's coordinate system
         """
         if frame not in ["robot", "gripper"]:
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")

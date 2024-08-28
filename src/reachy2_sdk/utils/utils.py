@@ -144,7 +144,7 @@ def recompose_matrix(rotation: npt.NDArray[np.float64], translation: npt.NDArray
 
 
 def matrix_from_euler_angles(roll: float, pitch: float, yaw: float, degrees: bool = True) -> npt.NDArray[np.float64]:
-    """Create a rotation matrix 3x3 from roll, pitch, yaw angles."""
+    """Create a homogeneous rotation matrix 4x4 from roll, pitch, yaw angles."""
     if degrees:
         roll = np.deg2rad(roll)
         pitch = np.deg2rad(pitch)
