@@ -10,8 +10,8 @@ class OrbitaAxis:
     """The OrbitaAxis class represents any Orbita3d or Orbita2d axis.
 
     The OrbitaAxis class is used to store the up-to-date state of the axis, especially:
-        - its present speed (RO)
-        - its present load (RO)
+    - its present speed (RO)
+    - its present load (RO)
     """
 
     def __init__(self, initial_state: Dict[str, FloatValue]) -> None:

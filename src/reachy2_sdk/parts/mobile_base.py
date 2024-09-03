@@ -137,7 +137,7 @@ class MobileBase(Part):
     def set_speed(self, x_vel: float, y_vel: float, rot_vel: float) -> None:
         """Send target speed. x_vel, y_vel are in m/s and rot_vel in deg/s for 200ms.
 
-        The 200ms duration is predifined at the ROS level of the mobile base's code.
+        The 200ms duration is predefined at the ROS level of the mobile base's code.
         This mode is prefered if the user wants to send speed instructions frequently.
         """
         if self.is_off():
@@ -145,10 +145,10 @@ class MobileBase(Part):
             return
         for vel, value in {"x_vel": x_vel, "y_vel": y_vel}.items():
             if abs(value) > self._max_xy_vel:
-                raise ValueError(f"The asbolute value of {vel} should not be more than {self._max_xy_vel}!")
+                raise ValueError(f"The absolute value of {vel} should not be more than {self._max_xy_vel}!")
 
         if abs(rot_vel) > self._max_rot_vel:
-            raise ValueError(f"The asbolute value of rot_vel should not be more than {self._max_rot_vel}!")
+            raise ValueError(f"The absolute value of rot_vel should not be more than {self._max_rot_vel}!")
 
         if self._drive_mode != "cmd_vel":
             self._set_drive_mode("cmd_vel")
@@ -174,7 +174,7 @@ class MobileBase(Part):
 
         (x, y) will define the position of the mobile base in cartesian space
         and theta its orientation. The zero position is set when the mobile base is
-        started or if the  reset_odometry method is called.
+        started or if the reset_odometry method is called.
         A timeout in seconds is defined so that the mobile base does get stuck in a go
         to call.
         The tolerance represents the margin along x, y and theta for which we consider

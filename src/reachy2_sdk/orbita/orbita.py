@@ -22,10 +22,10 @@ class Orbita(ABC):
     """The Orbita class is an abstract class to represent any Orbita actuator and its registers, joints, motors and axis.
 
     The Orbita class is used to store the up-to-date state of the actuator, especially:
-        - its compliancy
-        - its joints state
-        - its motors state
-        - its axis state
+    - its compliancy
+    - its joints state
+    - its motors state
+    - its axis state
 
     The only register available at the actuator is the compliancy RW register.
     You can set the compliance on/off (boolean).

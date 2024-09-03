@@ -2,8 +2,8 @@
 
 
 Handles all specific method to a Hand:
-    - turn_on / turn_off
-    - open / close
+- turn_on / turn_off
+- open / close
 """
 from typing import Optional
 
@@ -119,7 +119,7 @@ class Hand(Part):
         self._hand_stub.CloseHand(self._part_id)
 
     def is_on(self) -> bool:
-        """Get compliancy of the hand"""
+        """Get stiffness of the hand"""
         return not self._compliant
 
     def is_off(self) -> bool:

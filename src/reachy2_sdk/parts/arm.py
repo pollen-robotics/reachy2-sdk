@@ -59,6 +59,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     It exposes the kinematics functions for the arm:
     - you can compute the forward and inverse kinematics
+    
     It also exposes movements functions.
     Arm can be turned on and off.
     """
@@ -197,7 +198,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return True
 
     def is_off(self) -> bool:
-        """Return True if all actuators of the arm are stiff"""
+        """Return True if all actuators of the arm are compliant"""
         if not super().is_off():
             return False
         if self._gripper is not None and self._gripper.is_on():
@@ -429,6 +430,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         Given a list of joint positions (exactly 7 joint positions),
         it will move the arm to that position.
+
+        The duration of the movement can be set, as well as the interpolation mode (minimum_jerk or linear).
         """
         if len(positions) != 7:
             raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")

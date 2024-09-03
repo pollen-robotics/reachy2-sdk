@@ -27,10 +27,10 @@ class Orbita2d(Orbita):
     """The Orbita2d class represents any Orbita2d actuator and its registers, joints, motors and axis.
 
     The Orbita2d class is used to store the up-to-date state of the actuator, especially:
-        - its compliancy
-        - its joints state
-        - its motors state
-        - its axis state
+    - its compliancy
+    - its joints state
+    - its motors state
+    - its axis state
 
     The only register available at the actuator is the compliancy RW register.
     You can set the compliance on/off (boolean).
@@ -40,7 +40,8 @@ class Orbita2d(Orbita):
     - speed limit (in degree per second, for all motors of the actuator)
     - torque limit (in %, for all motors of the actuator)
     - pid (for all motors of the actuator)
-    Lower registers that are read-only but acessible at actuator level:
+    
+    Lower registers that are read-only but accessible at actuator level:
     - temperatures (temperatures of all motors of the actuator)
     """
 

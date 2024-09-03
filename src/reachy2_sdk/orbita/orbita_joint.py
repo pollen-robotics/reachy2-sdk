@@ -8,11 +8,11 @@ from .utils import to_internal_position, to_position
 
 
 class OrbitaJoint:
-    """The OrbitaJoint class represents any Orbita2d or Orbita 3d joint.
+    """The OrbitaJoint class represents any Orbita2d or Orbita3d joint.
 
     The OrbitaJoint class is used to store the up-to-date state of the joint, especially:
-        - its present_position (RO)
-        - its goal_position (RW)
+    - its present_position (RO)
+    - its goal_position (RW)
     """
 
     def __init__(

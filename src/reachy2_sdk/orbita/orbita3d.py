@@ -26,10 +26,10 @@ class Orbita3d(Orbita):
     """The Orbita3d class represents any Orbita2d actuator and its registers, joints, motors and axis.
 
     The Orbita3d class is used to store the up-to-date state of the actuator, especially:
-        - its compliancy
-        - its joints state
-        - its motors state
-        - its axis state
+    - its compliancy
+    - its joints state
+    - its motors state
+    - its axis state
 
     The only register available at the actuator is the compliancy RW register.
     You can set the compliance on/off (boolean).
@@ -39,7 +39,8 @@ class Orbita3d(Orbita):
     - speed limit (in degree per second, for all motors of the actuator)
     - torque limit (in %, for all motors of the actuator)
     - pid (for all motors of the actuator)
-    Lower registers that are read-only but acessible at actuator level:
+
+    Lower registers that are read-only but accessible at actuator level:
     - temperatures (temperatures of all motors of the actuator)
     """
 
@@ -52,7 +53,7 @@ class Orbita3d(Orbita):
         part: Part,
         joints_position_order: List[int],
     ):
-        """Initialize the Orbita2d with its joints, motors and axis."""
+        """Initialize the Orbita3d with its joints, motors and axis."""
         super().__init__(uid, name, "3d", Orbita3dServiceStub(grpc_channel), part)
         init_state: Dict[str, Dict[str, FloatValue]] = self._create_dict_state(initial_state)
 

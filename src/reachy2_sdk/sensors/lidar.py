@@ -1,10 +1,10 @@
 """LIDAR module for mobile base SDK.
 
 Handles the LIDAR features:
-    - get the map of the environment
-    - set the safety distance
-    - set the critical distance
-    - enable/disable the safety feature
+- get the map of the environment
+- set the safety distance
+- set the critical distance
+- enable/disable the safety feature
 """
 import logging
 from typing import Optional
