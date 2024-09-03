@@ -58,9 +58,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     """Arm class used for both left/right arms.
 
     It exposes the kinematics functions for the arm:
-    - you can compute the forward and inverse kinematics
-    
-    It also exposes movements functions.
+    - you can compute the forward and inverse kinematics \n
+    It also exposes movements functions.\n
     Arm can be turned on and off.
     """
 

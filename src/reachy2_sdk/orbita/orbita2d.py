@@ -39,8 +39,7 @@ class Orbita2d(Orbita):
     Lower registers which can be read/write at actuator level:
     - speed limit (in degree per second, for all motors of the actuator)
     - torque limit (in %, for all motors of the actuator)
-    - pid (for all motors of the actuator)
-    
+    - pid (for all motors of the actuator)\n  
     Lower registers that are read-only but accessible at actuator level:
     - temperatures (temperatures of all motors of the actuator)
     """
