@@ -10,47 +10,9 @@ from reachy2_sdk.reachy_sdk import ReachySDK
 
 @pytest.mark.online
 def test_no_camera(reachy_sdk: ReachySDK) -> None:
-    assert reachy_sdk.cameras.teleop is not None
+    assert reachy_sdk.cameras.teleop is None
 
-    res = reachy_sdk.cameras.teleop.get_frame()
-
-    assert res is None
-
-    res = reachy_sdk.cameras.teleop.get_parameters()
-
-    assert res is None
-
-
-"""
-@pytest.mark.sr_camera
-def test_sr_camera(reachy_sdk: ReachySDK) -> None:
-    assert reachy_sdk._cameras.SR is not None
-
-    assert reachy_sdk._cameras.SR.capture()
-
-    frame = reachy_sdk._cameras.SR.get_frame()
-    assert frame is not None
-    assert frame.dtype == np.uint8
-
-    frame = reachy_sdk._cameras.SR.get_depth_frame(CameraView.LEFT)
-    assert frame is not None
-    assert frame.dtype == np.uint8
-
-    frame_right = reachy_sdk._cameras.SR.get_depth_frame(CameraView.RIGHT)
-    assert frame_right is not None
-    assert frame_right.dtype == np.uint8
-
-    # check that we don't return the same view
-    assert not np.array_equal(frame, frame_right)
-
-    frame = reachy_sdk._cameras.SR.get_depthmap()
-    assert frame is not None
-    assert frame.dtype == np.uint16
-
-    frame = reachy_sdk._cameras.SR.get_disparity()
-    assert frame is not None
-    assert frame.dtype == np.uint16
-"""
+    assert reachy_sdk.cameras.depth is None
 
 
 @pytest.mark.cameras
