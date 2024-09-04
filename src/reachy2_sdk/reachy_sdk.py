@@ -67,6 +67,11 @@ class ReachySDK:
     ) -> None:
         """Set up the connection with the robot."""
         self._logger = getLogger(__name__)
+        
+        if type(host) != str: 
+            self._logger.warning("The IP address needs to be in string format.")
+            return
+        
         self._host = host
         self._sdk_port = sdk_port
         self._audio_port = audio_port
@@ -523,7 +528,12 @@ class ReachySDK:
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
         if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
+            raise ValueError(f"common_pose {common_pose} not supported! Should be 'default' or 'elbow_90'")
+        if interpolation_mode not in ["minimum_jerk", "linear"]:
+            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
+        if not isinstance(wait_for_moves_end, bool):
+            raise ValueError("wait_for_moves_end should be a boolean")
+        
         head_id = None
         r_arm_id = None
         l_arm_id = None

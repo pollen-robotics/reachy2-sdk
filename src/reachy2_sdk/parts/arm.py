@@ -634,11 +634,17 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
         if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
+            raise ValueError(f"common_pose {common_pose} not supported! Should be 'default' or 'elbow_90'")
+        if interpolation_mode not in ["minimum_jerk", "linear"]:
+            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
+        if not isinstance(wait_for_moves_end, bool):
+            raise ValueError("wait_for_moves_end should be a boolean")
+        
         if common_pose == "elbow_90":
             elbow_pitch = -90
         else:
             elbow_pitch = 0
+            self.gripper.open()
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.is_on():

@@ -1,7 +1,9 @@
 import pytest
+from logging import getLogger
 from reachy2_sdk_api.goto_pb2 import GoToId
 
 from reachy2_sdk.reachy_sdk import ReachySDK
+import logging
 
 
 @pytest.mark.offline
@@ -36,6 +38,13 @@ def test_unconnected() -> None:
 
     rsdk.disconnect()
 
+@pytest.mark.offline
+def test_hostname(caplog) -> None:
+    with caplog.at_level(logging.WARNING):
+        rsdk = ReachySDK(host=10)
+    assert "The IP address needs to be in string format." in caplog.text
+    assert any(record.message == "The IP address needs to be in string format." for record in caplog.records)
+        
 
 @pytest.mark.offline
 def test_getters_setters() -> None:

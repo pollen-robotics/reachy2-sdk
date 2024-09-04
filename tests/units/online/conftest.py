@@ -16,7 +16,7 @@ def reachy_sdk() -> ReachySDK:
     Same connection for all online tests
     """
 
-    reachy = ReachySDK(host="localhost")
+    reachy = ReachySDK(host="10.0.0.248")
     assert reachy.is_connected()
 
     assert reachy.turn_on()
