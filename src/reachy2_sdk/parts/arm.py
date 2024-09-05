@@ -256,7 +256,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         You can also specify a basic joint configuration as a prior for the solution.
         """
         if target.shape != (4, 4):
-            raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
+            raise ValueError(f"target shape should be (4, 4) (got {target.shape} instead)!")
 
         if q0 is not None and (len(q0) != 7):
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
@@ -310,11 +310,13 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         and send cartesian commands at the interpolation frequency (default value is 10hz).
         """
         if target.shape != (4, 4):
-            raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
+            raise ValueError(f"target shape should be (4, 4) (got {target.shape} instead)!")
         if q0 is not None and (len(q0) != 7):
             raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
+        if interpolation_mode not in ["minimum_jerk", "linear"]:
+            raise ValueError(f"interpolation_mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
@@ -434,6 +436,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
+        if interpolation_mode not in ["minimum_jerk", "linear"]:
+            raise ValueError(f"interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
@@ -636,15 +640,17 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if common_pose not in ["default", "elbow_90"]:
             raise ValueError(f"common_pose {common_pose} not supported! Should be 'default' or 'elbow_90'")
         if interpolation_mode not in ["minimum_jerk", "linear"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
+            raise ValueError(f"interpolation_mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
         if not isinstance(wait_for_moves_end, bool):
             raise ValueError("wait_for_moves_end should be a boolean")
-        
+
         if common_pose == "elbow_90":
             elbow_pitch = -90
         else:
             elbow_pitch = 0
-            self.gripper.open()
+            # if self._gripper is not None:
+            #     self._gripper.open()
+
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.is_on():

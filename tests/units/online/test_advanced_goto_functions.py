@@ -12,6 +12,15 @@ from .test_basic_movements import is_goto_finished
 
 
 @pytest.mark.online
+def test_goto_function(reachy_sdk_zeroed: ReachySDK) -> None:
+    # Test of ValueError raising
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=0)
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], interpolation_mode="random_mode")
+
+
+@pytest.mark.online
 def test_cancel_move_by_id(reachy_sdk_zeroed: ReachySDK) -> None:
     req = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
     time.sleep(2)
@@ -265,6 +274,14 @@ def test_get_move_joints_request(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
+    # Test of ValueError raising
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.set_pose("random_pose")
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.set_pose(interpolation_mode="random_mode")
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.set_pose(wait_for_moves_end="no")
+
     zero_r_arm = [0, -15, -15, 0, 0, 0, 0]
     zero_l_arm = [0, 15, 15, 0, 0, 0, 0]
     elbow_90_r_arm = [0, -15, -15, -90, 0, 0, 0]
@@ -272,7 +289,6 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     zero_head = Quaternion(axis=[1, 0, 0], angle=0.0)
 
     # Test waiting for part's gotos to end
-
     req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
     req2 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=5)
     req3 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=6)
