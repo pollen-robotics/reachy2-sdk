@@ -265,6 +265,25 @@ def test_get_move_joints_request(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
+    # Test the default pose
+    reachy_sdk_zeroed.l_arm.gripper.close()
+    reachy_sdk_zeroed.r_arm.gripper.close()
+    reachy_sdk_zeroed.set_pose("default")
+    time.sleep(2)
+    assert reachy_sdk_zeroed.l_arm.gripper.opening == 100.0
+    assert reachy_sdk_zeroed.r_arm.gripper.opening == 100.0
+    reachy_sdk_zeroed.l_arm.gripper.set_opening(30)
+    reachy_sdk_zeroed.r_arm.gripper.close()
+    reachy_sdk_zeroed.set_pose("elbow_90")
+    time.sleep(2)
+    reachy_sdk_zeroed.l_arm.turn_off()
+    reachy_sdk_zeroed.set_pose("default")
+    time.sleep(2)
+    assert np.isclose(reachy_sdk_zeroed.l_arm.gripper.opening, 30, atol=5)
+    assert reachy_sdk_zeroed.r_arm.gripper.opening == 100.0
+
+    reachy_sdk_zeroed.turn_on()
+
     zero_r_arm = [0, -15, -15, 0, 0, 0, 0]
     zero_l_arm = [0, 15, 15, 0, 0, 0, 0]
     elbow_90_r_arm = [0, -15, -15, -90, 0, 0, 0]
