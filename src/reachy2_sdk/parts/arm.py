@@ -192,15 +192,11 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """Return True if all actuators of the arm are stiff"""
         if not super().is_on():
             return False
-        if self._gripper is not None and not self._gripper.is_on():
-            return False
         return True
 
     def is_off(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
         if not super().is_off():
-            return False
-        if self._gripper is not None and self._gripper.is_on():
             return False
         return True
 
@@ -639,6 +635,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             elbow_pitch = -90
         else:
             elbow_pitch = 0
+            if self._gripper is not None and self._gripper.is_on():
+                self._gripper.open()
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.is_on():
