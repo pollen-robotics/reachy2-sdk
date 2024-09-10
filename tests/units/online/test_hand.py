@@ -67,5 +67,3 @@ def test_gripper_off(reachy_sdk_zeroed: ReachySDK) -> None:
     time.sleep(3.0)
     assert reachy_sdk_zeroed.l_arm.is_on() == True
     assert np.isclose(reachy_sdk_zeroed.l_arm.elbow.pitch.present_position, -60, 10)
-    reachy_sdk_zeroed.turn_on()
-    reachy_sdk_zeroed.set_pose("default")
