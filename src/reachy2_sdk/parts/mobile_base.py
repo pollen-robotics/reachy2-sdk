@@ -109,7 +109,7 @@ class MobileBase(Part):
         return odom
 
     @property
-    def last_cmd_vel(self):
+    def last_cmd_vel(self) -> Dict[str, float]:
         """Return the last command velocity sent to the base."""
         response = self._mobility_stub.GetLastDirection(self._part_id)
         cmd_vel = {
