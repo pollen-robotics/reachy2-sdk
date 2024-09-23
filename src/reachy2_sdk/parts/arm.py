@@ -415,9 +415,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             angle2 = np.arctan2(vector2[1], vector2[0])
 
             if arc_direction == 'above':
-            # Passer par le dessus : Assurer que l'angle2 est après l'angle1 dans le sens anti-horaire
-            if angle2 <= angle1:
-                angle2 += 2 * np.pi
+                # Passer par le dessus : Assurer que l'angle2 est après l'angle1 dans le sens anti-horaire
+                if angle2 <= angle1:
+                    angle2 += 2 * np.pi
             elif arc_direction == 'below':
                 # Passer par le dessous : Assurer que l'angle2 est avant l'angle1 dans le sens anti-horaire
                 if angle2 >= angle1:
