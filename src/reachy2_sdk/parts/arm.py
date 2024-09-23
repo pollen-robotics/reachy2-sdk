@@ -384,6 +384,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         q2, trans2 = decompose_matrix(target)
 
         if not circular_interpolation:
+            print("linear")
             for t in np.linspace(0, 1, nb_steps):
                 # Linear interpolation for translation
                 trans_interpolated = (1 - t) * trans1 + t * trans2
@@ -403,6 +404,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 time.sleep(time_step)
         
         else:
+            print("circular")
             center = (trans1 + trans2) / 2
             radius = np.linalg.norm(trans2 - trans1) / 2
 
