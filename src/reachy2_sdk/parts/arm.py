@@ -293,10 +293,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         duration: float = 2,
         interpolation_mode: str = "minimum_jerk",
         q0: Optional[List[float]] = None,
-        with_cartesian_interpolation: bool = False,
-        circular_interpolation: bool = False,
-        arc_direction: str = 'above',
-        interpolation_frequency: float = 120,
     ) -> GoToId:
         """Move the arm to a matrix target (or get close).
 
@@ -316,9 +312,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
-
-        if with_cartesian_interpolation:
-            return self._goto_cartesian_interpolation(target=target, duration=duration, interpolation_frequency=interpolation_frequency, circular_interpolation=circular_interpolation, arc_direction=arc_direction)
 
         if q0 is not None:
             q0 = list_to_arm_position(q0)
@@ -347,7 +340,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToCartesian(request)
         return response
 
-    def _goto_cartesian_interpolation(
+    def send_cartesian_interpolation(
         self,
         target: npt.NDArray[np.float64],
         duration: float = 2,
@@ -355,7 +348,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         precision_distance_xyz: float = 0.003,
         circular_interpolation: bool = False,
         arc_direction: str = 'above',
-    ) -> GoToId:
+    ) -> None:
         """Move the arm to a matrix target (or get close).
 
         Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
@@ -368,13 +361,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
         if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
-            return GoToId(id=-1)
+            self._logger.warning(f"{self._part_id.name} is off. Commands not sent.")
+            return
         try:
             self.inverse_kinematics(target)
         except ValueError:
-            print("Goal pose is not reachable!")
-            return GoToId(id=-1)
+            raise ValueError("Target pose is not reachable!")
 
         origin_matrix = self.forward_kinematics()
         nb_steps = int(duration * interpolation_frequency)
@@ -402,7 +394,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 )
                 self._stub.SendArmCartesianGoal(request)
                 time.sleep(time_step)
-        
+
         else:
             print("circular")
             center = (trans1 + trans2) / 2
@@ -411,7 +403,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             # Vecteurs de position relative au centre
             vector1 = trans1 - center
             vector2 = trans2 - center
-            
+
             # Calcul des angles initiaux et finaux dans le plan xy
             angle1 = np.arctan2(vector1[1], vector1[0])
             angle2 = np.arctan2(vector2[1], vector2[0])
@@ -442,15 +434,15 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                         angle2 += 2 * np.pi
                 if angle1 < angle2:
                     angle1, angle2 = angle2, angle1
-        
+
             # Interpolation linéaire sur l'arc du cercle et SLERP pour la rotation
             for t in np.linspace(0, 1, nb_steps):
                 # Calcul de l'angle interpolé
                 angle_interpolated = (1 - t) * angle1 + t * angle2
-                
+
                 # Position interpolée sur le cercle
                 trans_interpolated = center + radius * np.array([np.cos(angle_interpolated), np.sin(angle_interpolated), 0])
-                
+
                 # SLERP pour la rotation
                 q_interpolated = Quaternion.slerp(q1, q2, t)
                 rot_interpolated = q_interpolated.rotation_matrix
@@ -468,7 +460,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         current_pose = self.forward_kinematics()
         current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
         if current_precision_distance_xyz > precision_distance_xyz:
-            print("Precision is not good enough, spamming the goal position!")
             for t in np.linspace(0, 1, nb_steps):
                 # Spamming the goal position to make sure its reached
                 request = ArmCartesianGoal(
@@ -482,9 +473,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             time.sleep(0.1)
             current_pose = self.forward_kinematics()
             current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
-            print(f"l2 xyz distance to goal: {current_precision_distance_xyz}")
-
-        return GoToId(id=0)
+        self._logger.info(f"l2 xyz distance to goal: {current_precision_distance_xyz}")
 
     def goto_joints(
         self, positions: List[float], duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
