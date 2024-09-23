@@ -318,7 +318,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             return GoToId(id=-1)
 
         if with_cartesian_interpolation:
-            return self._goto_cartesian_interpolation(target, duration, interpolation_frequency, circular_interpolation, arc_direction)
+            return self._goto_cartesian_interpolation(target=target, duration=duration, interpolation_frequency=interpolation_frequency, circular_interpolation=circular_interpolation, arc_direction=arc_direction)
 
         if q0 is not None:
             q0 = list_to_arm_position(q0)
