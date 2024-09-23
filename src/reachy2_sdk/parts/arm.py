@@ -440,8 +440,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                         angle2 += 2 * np.pi
                 if angle1 < angle2:
                     angle1, angle2 = angle2, angle1
-            
-            interpolated_matrices = []
         
             # Interpolation linéaire sur l'arc du cercle et SLERP pour la rotation
             for t in np.linspace(0, 1, nb_steps):
