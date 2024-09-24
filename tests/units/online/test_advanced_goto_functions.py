@@ -690,9 +690,12 @@ def test_translate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
         time.sleep(0.1)
 
     pose1 = reachy_sdk_zeroed.r_arm.forward_kinematics()
-    req2 = reachy_sdk_zeroed.r_arm.translate_by(0.1, 0, 0, frame="gripper")
+    req2 = reachy_sdk_zeroed.r_arm.translate_by(0.1, 0, 0, frame="gripper", duration=3.0)
+    tic = time.time()
     while not is_goto_finished(reachy_sdk_zeroed, req2):
         time.sleep(0.1)
+    elapsed_time = time.time() - tic
+    assert np.isclose(elapsed_time, 3.0, 1e-01)
 
     pose2 = reachy_sdk_zeroed.r_arm.forward_kinematics()
     translation2 = np.eye(4)
