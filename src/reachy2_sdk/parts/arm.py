@@ -347,7 +347,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_frequency: float = 120,
         precision_distance_xyz: float = 0.003,
         circular_interpolation: bool = False,
-        arc_direction: str = 'above',
+        arc_direction: str = "above",
     ) -> None:
         """Move the arm to a matrix target (or get close).
 
@@ -403,45 +403,65 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             # Vecteurs de position relative au centre
             vector1 = trans1 - center
             vector2 = trans2 - center
+            vector = trans2 - trans1
 
-            # Calcul des angles initiaux et finaux dans le plan xy
-            angle1 = np.arctan2(vector1[1], vector1[0])
-            angle2 = np.arctan2(vector2[1], vector2[0])
+            if radius == 0:
+                return
 
-            if arc_direction == 'above':
-                # Passer par le dessus : Assurer que l'angle2 est après l'angle1 dans le sens anti-horaire
-                if angle2 <= angle1:
-                    angle2 += 2 * np.pi
-            elif arc_direction == 'below':
-                # Passer par le dessous : Assurer que l'angle2 est avant l'angle1 dans le sens anti-horaire
-                if angle2 >= angle1:
-                    angle2 -= 2 * np.pi
-            elif arc_direction == 'left':
-                # Passer par la gauche (vers l'axe -y dans le plan xy)
-                if np.abs(angle2 - angle1) > np.pi:
-                    if angle2 > angle1:
-                        angle2 -= 2 * np.pi
-                    else:
-                        angle2 += 2 * np.pi
-                if angle2 < angle1:
-                    angle1, angle2 = angle2, angle1
-            elif arc_direction == 'right':
-                # Passer par la droite (vers l'axe +y dans le plan xy)
-                if np.abs(angle2 - angle1) > np.pi:
-                    if angle2 > angle1:
-                        angle2 -= 2 * np.pi
-                    else:
-                        angle2 += 2 * np.pi
-                if angle1 < angle2:
-                    angle1, angle2 = angle2, angle1
+            # Trouver un vecteur normal au plan de l'arc de cercle
+            if arc_direction == "above":
+                normal = np.cross(vector, [0, 0, -1])
+                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe z
+                    normal = np.cross(vector, [1, 0, 0])
+            elif arc_direction == "below":
+                normal = np.cross(vector, [0, 0, 1])
+                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe z
+                    normal = np.cross(vector, [-1, 0, 0])
+            elif arc_direction == "left":
+                normal = np.cross(vector, [0, -1, 0])
+                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe z
+                    normal = np.cross(vector, [1, 0, 0])
+            elif arc_direction == "right":
+                normal = np.cross(vector, [0, 1, 0])
+                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe z
+                    normal = np.cross(vector, [-1, 0, 0])
 
-            # Interpolation linéaire sur l'arc du cercle et SLERP pour la rotation
+            normal = normal / np.linalg.norm(normal)
+
+            angle = np.arccos(np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2)))
+            # # Choisir l'arc : 'short' pour l'arc le plus court, 'long' pour l'arc le plus long
+            # if arc == 'long':
+            #     angle = 2 * np.pi - angle
+
+            # Calcul des points interpolés
             for t in np.linspace(0, 1, nb_steps):
-                # Calcul de l'angle interpolé
-                angle_interpolated = (1 - t) * angle1 + t * angle2
+                # Angle interpolé
+                theta = t * angle
 
-                # Position interpolée sur le cercle
-                trans_interpolated = center + radius * np.array([np.cos(angle_interpolated), np.sin(angle_interpolated), 0])
+                # Rotation du point1 autour du centre du cercle dans le plan défini par 'normal'
+                # Utilisation de la formule de rotation dans un plan défini
+                rotation_matrix = np.array(
+                    [
+                        [
+                            np.cos(theta) + normal[0] ** 2 * (1 - np.cos(theta)),
+                            normal[0] * normal[1] * (1 - np.cos(theta)) - normal[2] * np.sin(theta),
+                            normal[0] * normal[2] * (1 - np.cos(theta)) + normal[1] * np.sin(theta),
+                        ],
+                        [
+                            normal[1] * normal[0] * (1 - np.cos(theta)) + normal[2] * np.sin(theta),
+                            np.cos(theta) + normal[1] ** 2 * (1 - np.cos(theta)),
+                            normal[1] * normal[2] * (1 - np.cos(theta)) - normal[0] * np.sin(theta),
+                        ],
+                        [
+                            normal[2] * normal[0] * (1 - np.cos(theta)) - normal[1] * np.sin(theta),
+                            normal[2] * normal[1] * (1 - np.cos(theta)) + normal[0] * np.sin(theta),
+                            np.cos(theta) + normal[2] ** 2 * (1 - np.cos(theta)),
+                        ],
+                    ]
+                )
+
+                # Point interpolé dans le plan
+                trans_interpolated = np.dot(rotation_matrix, vector1) + center
 
                 # SLERP pour la rotation
                 q_interpolated = Quaternion.slerp(q1, q2, t)
@@ -456,6 +476,107 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 )
                 self._stub.SendArmCartesianGoal(request)
                 time.sleep(time_step)
+
+            # if arc_direction == 'above':
+            #     print("above")
+            #     # Calcul des angles initiaux et finaux dans le plan xz
+            #     angle1 = np.arctan2(vector1[2], vector1[0])
+            #     angle2 = np.arctan2(vector2[2], vector2[0])
+
+            #     # if angle2 >= angle1:
+            #     #     angle2 -= 2 * np.pi
+
+            #     print(f"angle1 : {angle1}")
+            #     print(f"angle2 : {angle2}")
+
+            # elif arc_direction == 'below':
+            #     print("below")
+            #     # Calcul des angles initiaux et finaux dans le plan xz
+            #     angle1 = np.arctan2(vector1[2], vector1[0])
+            #     angle2 = np.arctan2(vector2[2], vector2[0])
+
+            #     # if angle2 <= angle1:
+            #     #     angle2 += 2 * np.pi
+
+            #     print(f"angle1 : {angle1}")
+            #     print(f"angle2 : {angle2}")
+
+            # elif arc_direction == 'left':
+            #     print("left")
+            #     # Calcul des angles initiaux et finaux dans le plan xy
+            #     angle1 = np.arctan2(vector1[1], vector1[0])
+            #     angle2 = np.arctan2(vector2[1], vector2[0])
+
+            #     # Passer par la droite (vers l'axe +y dans le plan xy)
+            #     # if np.abs(angle2 - angle1) > np.pi:
+            #     #     if angle2 > angle1:
+            #     #         angle2 -= 2 * np.pi
+            #     #     else:
+            #     #         angle2 += 2 * np.pi
+            #     # if angle1 < angle2:
+            #     #     angle1, angle2 = angle2, angle1
+
+            # elif arc_direction == 'right':
+            #     print("right")
+            #     # Calcul des angles initiaux et finaux dans le plan xy
+            #     angle1 = np.arctan2(vector1[1], vector1[0])
+            #     angle2 = np.arctan2(vector2[1], vector2[0])
+
+            #     # Passer par la gauche (vers l'axe -y dans le plan xy)
+            #     # if np.abs(angle2 - angle1) > np.pi:
+            #     #     if angle2 > angle1:
+            #     #         angle2 -= 2 * np.pi
+            #     #     else:
+            #     #         angle2 += 2 * np.pi
+            #     # if angle2 < angle1:
+            #     #     print("coucou")
+            #     #     angle1 = angle2 + np.pi
+            #     #     angle2 = angle1 + np.pi
+
+            # if arc_direction == 'above' or arc_direction == 'below':
+            #     # Interpolation linéaire sur l'arc du cercle et SLERP pour la rotation
+            #     for t in np.linspace(0, 1, nb_steps):
+            #         # Calcul de l'angle interpolé
+            #         angle_interpolated = (1 - t) * angle1 + t * angle2
+
+            #         # Position interpolée sur le cercle
+            #         trans_interpolated = center + radius * np.array([np.cos(angle_interpolated), 0, np.sin(angle_interpolated)])
+
+            #         # SLERP pour la rotation
+            #         q_interpolated = Quaternion.slerp(q1, q2, t)
+            #         rot_interpolated = q_interpolated.rotation_matrix
+
+            #         # Recompose the interpolated matrix
+            #         interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
+
+            #         request = ArmCartesianGoal(
+            #             id=self._part_id,
+            #             goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+            #         )
+            #         self._stub.SendArmCartesianGoal(request)
+            #         time.sleep(time_step)
+            # elif arc_direction == 'left' or arc_direction == 'right':
+            #     # Interpolation linéaire sur l'arc du cercle et SLERP pour la rotation
+            #     for t in np.linspace(0, 1, nb_steps):
+            #         # Calcul de l'angle interpolé
+            #         angle_interpolated = (1 - t) * angle1 + t * angle2
+
+            #         # Position interpolée sur le cercle
+            #         trans_interpolated = center + radius * np.array([np.cos(angle_interpolated), np.sin(angle_interpolated), 0])
+
+            #         # SLERP pour la rotation
+            #         q_interpolated = Quaternion.slerp(q1, q2, t)
+            #         rot_interpolated = q_interpolated.rotation_matrix
+
+            #         # Recompose the interpolated matrix
+            #         interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
+
+            #         request = ArmCartesianGoal(
+            #             id=self._part_id,
+            #             goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+            #         )
+            #         self._stub.SendArmCartesianGoal(request)
+            #         time.sleep(time_step)
 
         current_pose = self.forward_kinematics()
         current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
