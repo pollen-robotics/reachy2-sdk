@@ -348,6 +348,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         precision_distance_xyz: float = 0.003,
         circular_interpolation: bool = False,
         arc_direction: str = "above",
+        secondary_radius: Optional[float] = None,
     ) -> None:
         """Move the arm to a matrix target (or get close).
 
@@ -356,6 +357,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         It will interpolate the movement in cartesian space in a number of intermediate points defined
         by the interpolation frequency and the duration.
         """
+
+        self.cancel_all_moves()
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
         if duration == 0:
@@ -376,7 +379,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         q2, trans2 = decompose_matrix(target)
 
         if not circular_interpolation:
-            print("linear")
             for t in np.linspace(0, 1, nb_steps):
                 # Linear interpolation for translation
                 trans_interpolated = (1 - t) * trans1 + t * trans2
@@ -396,7 +398,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 time.sleep(time_step)
 
         else:
-            print("circular")
             center = (trans1 + trans2) / 2
             radius = np.linalg.norm(trans2 - trans1) / 2
 
@@ -412,23 +413,33 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             if arc_direction == "above":
                 normal = np.cross(vector, [0, 0, -1])
                 if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe z
-                    normal = np.cross(vector, [1, 0, 0])
+                    normal = np.cross(vector, [0, 1, 0])
             elif arc_direction == "below":
                 normal = np.cross(vector, [0, 0, 1])
                 if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe z
-                    normal = np.cross(vector, [-1, 0, 0])
+                    normal = np.cross(vector, [0, -1, 0])
             elif arc_direction == "left":
                 normal = np.cross(vector, [0, -1, 0])
-                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe z
-                    normal = np.cross(vector, [1, 0, 0])
+                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe y
+                    normal = np.cross(vector, [0, 0, -1])
             elif arc_direction == "right":
                 normal = np.cross(vector, [0, 1, 0])
-                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe z
-                    normal = np.cross(vector, [-1, 0, 0])
+                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe y
+                    normal = np.cross(vector, [0, 0, 1])
+            elif arc_direction == "front":
+                normal = np.cross(vector, [1, 0, 0])
+                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe y
+                    normal = np.cross(vector, [0, 0, -1])
+            elif arc_direction == "back":
+                normal = np.cross(vector, [-1, 0, 0])
+                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe y
+                    normal = np.cross(vector, [0, 0, -1])
 
             normal = normal / np.linalg.norm(normal)
 
-            angle = np.arccos(np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2)))
+            dot_product = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
+            angle = np.arccos(np.clip(dot_product, -1, 1))
+
             # # Choisir l'arc : 'short' pour l'arc le plus court, 'long' pour l'arc le plus long
             # if arc == 'long':
             #     angle = 2 * np.pi - angle
@@ -461,7 +472,19 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 )
 
                 # Point interpolé dans le plan
-                trans_interpolated = np.dot(rotation_matrix, vector1) + center
+                if secondary_radius is None:
+                    trans_interpolated = np.dot(rotation_matrix, vector1) + center
+
+                else:
+                    # Point interpolé dans le plan
+                    trans_interpolated = np.dot(rotation_matrix, vector1)
+
+                    # Ajustement pour une ellipse (étirement dans la direction normale)
+                    # On ajuste en multipliant le vecteur par le ratio des rayons (primaire / secondaire)
+                    ellipse_interpolated = trans_interpolated * np.array([1, 1, secondary_radius / radius])
+
+                    # Position finale en ajoutant le centre
+                    trans_interpolated = ellipse_interpolated + center
 
                 # SLERP pour la rotation
                 q_interpolated = Quaternion.slerp(q1, q2, t)
@@ -476,107 +499,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 )
                 self._stub.SendArmCartesianGoal(request)
                 time.sleep(time_step)
-
-            # if arc_direction == 'above':
-            #     print("above")
-            #     # Calcul des angles initiaux et finaux dans le plan xz
-            #     angle1 = np.arctan2(vector1[2], vector1[0])
-            #     angle2 = np.arctan2(vector2[2], vector2[0])
-
-            #     # if angle2 >= angle1:
-            #     #     angle2 -= 2 * np.pi
-
-            #     print(f"angle1 : {angle1}")
-            #     print(f"angle2 : {angle2}")
-
-            # elif arc_direction == 'below':
-            #     print("below")
-            #     # Calcul des angles initiaux et finaux dans le plan xz
-            #     angle1 = np.arctan2(vector1[2], vector1[0])
-            #     angle2 = np.arctan2(vector2[2], vector2[0])
-
-            #     # if angle2 <= angle1:
-            #     #     angle2 += 2 * np.pi
-
-            #     print(f"angle1 : {angle1}")
-            #     print(f"angle2 : {angle2}")
-
-            # elif arc_direction == 'left':
-            #     print("left")
-            #     # Calcul des angles initiaux et finaux dans le plan xy
-            #     angle1 = np.arctan2(vector1[1], vector1[0])
-            #     angle2 = np.arctan2(vector2[1], vector2[0])
-
-            #     # Passer par la droite (vers l'axe +y dans le plan xy)
-            #     # if np.abs(angle2 - angle1) > np.pi:
-            #     #     if angle2 > angle1:
-            #     #         angle2 -= 2 * np.pi
-            #     #     else:
-            #     #         angle2 += 2 * np.pi
-            #     # if angle1 < angle2:
-            #     #     angle1, angle2 = angle2, angle1
-
-            # elif arc_direction == 'right':
-            #     print("right")
-            #     # Calcul des angles initiaux et finaux dans le plan xy
-            #     angle1 = np.arctan2(vector1[1], vector1[0])
-            #     angle2 = np.arctan2(vector2[1], vector2[0])
-
-            #     # Passer par la gauche (vers l'axe -y dans le plan xy)
-            #     # if np.abs(angle2 - angle1) > np.pi:
-            #     #     if angle2 > angle1:
-            #     #         angle2 -= 2 * np.pi
-            #     #     else:
-            #     #         angle2 += 2 * np.pi
-            #     # if angle2 < angle1:
-            #     #     print("coucou")
-            #     #     angle1 = angle2 + np.pi
-            #     #     angle2 = angle1 + np.pi
-
-            # if arc_direction == 'above' or arc_direction == 'below':
-            #     # Interpolation linéaire sur l'arc du cercle et SLERP pour la rotation
-            #     for t in np.linspace(0, 1, nb_steps):
-            #         # Calcul de l'angle interpolé
-            #         angle_interpolated = (1 - t) * angle1 + t * angle2
-
-            #         # Position interpolée sur le cercle
-            #         trans_interpolated = center + radius * np.array([np.cos(angle_interpolated), 0, np.sin(angle_interpolated)])
-
-            #         # SLERP pour la rotation
-            #         q_interpolated = Quaternion.slerp(q1, q2, t)
-            #         rot_interpolated = q_interpolated.rotation_matrix
-
-            #         # Recompose the interpolated matrix
-            #         interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
-
-            #         request = ArmCartesianGoal(
-            #             id=self._part_id,
-            #             goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
-            #         )
-            #         self._stub.SendArmCartesianGoal(request)
-            #         time.sleep(time_step)
-            # elif arc_direction == 'left' or arc_direction == 'right':
-            #     # Interpolation linéaire sur l'arc du cercle et SLERP pour la rotation
-            #     for t in np.linspace(0, 1, nb_steps):
-            #         # Calcul de l'angle interpolé
-            #         angle_interpolated = (1 - t) * angle1 + t * angle2
-
-            #         # Position interpolée sur le cercle
-            #         trans_interpolated = center + radius * np.array([np.cos(angle_interpolated), np.sin(angle_interpolated), 0])
-
-            #         # SLERP pour la rotation
-            #         q_interpolated = Quaternion.slerp(q1, q2, t)
-            #         rot_interpolated = q_interpolated.rotation_matrix
-
-            #         # Recompose the interpolated matrix
-            #         interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
-
-            #         request = ArmCartesianGoal(
-            #             id=self._part_id,
-            #             goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
-            #         )
-            #         self._stub.SendArmCartesianGoal(request)
-            #         time.sleep(time_step)
 
         current_pose = self.forward_kinematics()
         current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
