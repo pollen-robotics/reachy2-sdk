@@ -471,7 +471,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = np.dot(pose, translation_matrix)
         return pose
 
-    def translate_by(self, x: float, y: float, z: float, frame: str = "robot") -> GoToId:
+    def translate_by(self, x: float, y: float, z: float, frame: str = "robot", duration: float = 2) -> GoToId:
         """Create a goto to translate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
 
@@ -495,7 +495,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = self.forward_kinematics()
 
         pose = self.get_translation_by(x, y, z, initial_pose=pose, frame=frame)
-        return self.goto_from_matrix(pose)
+        return self.goto_from_matrix(pose, duration=duration)
 
     def get_rotation_by(
         self,
