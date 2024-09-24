@@ -379,23 +379,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         q2, trans2 = decompose_matrix(target)
 
         if not circular_interpolation:
-            for t in np.linspace(0, 1, nb_steps):
-                # Linear interpolation for translation
-                trans_interpolated = (1 - t) * trans1 + t * trans2
-
-                # SLERP for rotation interpolation
-                q_interpolated = Quaternion.slerp(q1, q2, t)
-                rot_interpolated = q_interpolated.rotation_matrix
-
-                # Recompose the interpolated matrix
-                interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
-
-                request = ArmCartesianGoal(
-                    id=self._part_id,
-                    goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
-                )
-                self._stub.SendArmCartesianGoal(request)
-                time.sleep(time_step)
+            self._send_linear_interpolation(trans1, trans2, q1, q2, nb_steps, time_step)
 
         else:
             center = (trans1 + trans2) / 2
@@ -517,6 +501,44 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             current_pose = self.forward_kinematics()
             current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
         self._logger.info(f"l2 xyz distance to goal: {current_precision_distance_xyz}")
+
+    def _send_linear_interpolation(
+        self,
+        origin_trans: npt.NDArray[np.float64],
+        target_trans: npt.NDArray[np.float64],
+        origin_rot: Quaternion,
+        target_rot: Quaternion,
+        nb_steps: int,
+        time_step: float,
+    ) -> None:
+        for t in np.linspace(0, 1, nb_steps):
+            # Linear interpolation for translation
+            trans_interpolated = (1 - t) * origin_trans + t * target_trans
+
+            # SLERP for rotation interpolation
+            q_interpolated = Quaternion.slerp(origin_rot, target_rot, t)
+            rot_interpolated = q_interpolated.rotation_matrix
+
+            # Recompose the interpolated matrix
+            interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
+
+            request = ArmCartesianGoal(
+                id=self._part_id,
+                goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+            )
+            self._stub.SendArmCartesianGoal(request)
+            time.sleep(time_step)
+
+    def _send_elliptical_interpolation(
+        self,
+        origin_trans: npt.NDArray[np.float64],
+        target_trans: npt.NDArray[np.float64],
+        origin_rot: Quaternion,
+        target_rot: Quaternion,
+        nb_steps: int,
+        time_step: float,
+    ) -> None:
+        pass
 
     def goto_joints(
         self, positions: List[float], duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
