@@ -8,6 +8,7 @@ Handles all specific method to an Head:
 from typing import List
 
 import grpc
+import time
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
@@ -106,7 +107,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         yaw = self.neck._joints["yaw"].present_position
         return [roll, pitch, yaw]
 
-    def look_at(self, x: float, y: float, z: float, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
+    def look_at(self, x: float, y: float, z: float, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk") -> GoToId:
         """Compute and send neck rpy position to look at the (x, y, z) point in Reachy cartesian space (torso frame).
 
         X is forward, Y is left and Z is upward. They all expressed in meters.
@@ -128,12 +129,16 @@ class Head(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToCartesian(request)
+        if wait:
+            while not self._is_move_finished(response):
+                time.sleep(0.1)
         return response
 
     def goto_joints(
         self,
         positions: List[float],
         duration: float = 2.0,
+        wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
     ) -> GoToId:
@@ -168,6 +173,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
+        if wait:
+            while not self._is_move_finished(response):
+                time.sleep(0.1)
         return response
 
     def _goto_single_joint(
@@ -189,7 +197,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         return response
 
-    def orient(self, q: pyQuat, duration: float = 2.0, interpolation_mode: str = "minimum_jerk") -> GoToId:
+    def orient(self, q: pyQuat, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk") -> GoToId:
         """Send neck to the orientation given as a quaternion."""
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
@@ -208,6 +216,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
+        if wait:
+            while not self._is_move_finished(response):
+                time.sleep(0.1)
         return response
 
     def send_goal_positions(self) -> None:
@@ -216,6 +227,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
     def set_pose(
         self,
+        wait: bool = False,
         wait_for_moves_end: bool = True,
         duration: float = 2,
         interpolation_mode: str = "minimum_jerk",
@@ -228,7 +240,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.neck.is_on():
-            return self.goto_joints([0, -10, 0], duration, interpolation_mode)
+            return self.goto_joints([0, -10, 0], duration, wait, interpolation_mode)
         else:
             self._logger.warning("head.neck is off. No command sent.")
         return GoToId(id=-1)

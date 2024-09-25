@@ -512,6 +512,7 @@ class ReachySDK:
     def set_pose(
         self,
         common_pose: str = "default",
+        wait: bool = False,
         wait_for_moves_end: bool = True,
         duration: float = 2,
         interpolation_mode: str = "minimum_jerk",

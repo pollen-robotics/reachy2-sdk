@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import List, Optional
 
-from reachy2_sdk_api.goto_pb2 import GoToAck, GoToId
+from reachy2_sdk_api.goto_pb2 import GoToAck, GoToId, GoalStatus
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 
 from ..utils.utils import (
@@ -70,3 +70,13 @@ class IGoToBasedPart(ABC):
             mode=mode,
         )
         return request
+
+    def _is_move_finished(self, id: GoToId) -> bool:
+        """Return True if goto has been played and has been cancelled, False otherwise."""
+        state = self._goto_stub.GetGoToState(id)
+        result = bool(
+            state.goal_status == GoalStatus.STATUS_ABORTED
+            or state.goal_status == GoalStatus.STATUS_CANCELED
+            or state.goal_status == GoalStatus.STATUS_SUCCEEDED
+        )
+        return result
