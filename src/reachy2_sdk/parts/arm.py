@@ -343,6 +343,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
             )
         response = self._goto_stub.GoToCartesian(request)
+        if response.id == -1:
+            self._logger.error("Pose was not reachable. No command sent.")
         return response
 
     def _goto_cartesian_interpolation(
@@ -442,6 +444,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
+        if response.id == -1:
+            self._logger.error("Pose was not reachable. No command sent.")
         return response
 
     def get_translation_by(
