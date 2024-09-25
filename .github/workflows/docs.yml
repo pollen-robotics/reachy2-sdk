@@ -12,7 +12,6 @@ jobs:
         ssh-private-key: |
             ${{ secrets.SSH_PRIVATE_KEY_REACHY2_SDK_API }}
 
-
     - name: Checkout Repository
       uses: actions/checkout@v3
 
