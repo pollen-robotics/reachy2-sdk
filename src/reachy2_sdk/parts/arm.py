@@ -606,7 +606,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self,
         arm_joint: int,
         goal_position: float,
-        duration: float,
+        duration: float = 2,
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,

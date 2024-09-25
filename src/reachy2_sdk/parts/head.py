@@ -181,7 +181,13 @@ class Head(JointsBasedPart, IGoToBasedPart):
         return response
 
     def _goto_single_joint(
-        self, neck_joint: int, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
+        self,
+        neck_joint: int,
+        goal_position: float,
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
     ) -> GoToId:
         if degrees:
             goal_position = np.deg2rad(goal_position)
@@ -197,6 +203,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
+        if wait:
+            while not self._is_move_finished(response):
+                time.sleep(0.1)
         return response
 
     def orient(self, q: pyQuat, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk") -> GoToId:
