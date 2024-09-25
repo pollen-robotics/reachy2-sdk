@@ -531,11 +531,15 @@ class ReachySDK:
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.head is not None:
-            head_id = self.head.set_pose(wait_for_moves_end, duration, interpolation_mode)
+            head_id = self.head.set_pose(wait_for_moves_end, duration=duration, interpolation_mode=interpolation_mode)
         if self.r_arm is not None:
-            r_arm_id = self.r_arm.set_pose(common_pose, wait_for_moves_end, duration, interpolation_mode)
+            r_arm_id = self.r_arm.set_pose(
+                common_pose, wait_for_moves_end, duration=duration, interpolation_mode=interpolation_mode
+            )
         if self.l_arm is not None:
-            l_arm_id = self.l_arm.set_pose(common_pose, wait_for_moves_end, duration, interpolation_mode)
+            l_arm_id = self.l_arm.set_pose(
+                common_pose, wait_for_moves_end, duration=duration, interpolation_mode=interpolation_mode
+            )
         ids = GoToHomeId(
             head=head_id,
             r_arm=r_arm_id,

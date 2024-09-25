@@ -493,7 +493,14 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return pose
 
     def translate_by(
-        self, x: float, y: float, z: float, duration: float = 2, wait: bool = False, frame: str = "robot"
+        self,
+        x: float,
+        y: float,
+        z: float,
+        duration: float = 2,
+        wait: bool = False,
+        frame: str = "robot",
+        interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Create a goto to translate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
@@ -518,7 +525,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = self.forward_kinematics()
 
         pose = self.get_translation_by(x, y, z, initial_pose=pose, frame=frame)
-        return self.goto_from_matrix(pose, duration=duration, wait=wait)
+        return self.goto_from_matrix(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
 
     def get_rotation_by(
         self,
@@ -565,6 +572,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         degrees: bool = True,
         frame: str = "robot",
+        interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Create a goto to rotate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
@@ -592,7 +600,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = self.forward_kinematics()
 
         pose = self.get_rotation_by(roll, pitch, yaw, initial_pose=pose, degrees=degrees, frame=frame)
-        return self.goto_from_matrix(pose, duration=duration, wait=wait)
+        return self.goto_from_matrix(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
 
     def _goto_single_joint(
         self,
