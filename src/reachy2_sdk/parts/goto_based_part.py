@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import List, Optional
 
-from reachy2_sdk_api.goto_pb2 import GoToAck, GoToId, GoalStatus
+from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 
 from ..utils.utils import (

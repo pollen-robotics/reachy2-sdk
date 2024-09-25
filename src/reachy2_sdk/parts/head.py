@@ -5,10 +5,10 @@ Handles all specific method to an Head:
 - look_at function
 """
 
+import time
 from typing import List
 
 import grpc
-import time
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
@@ -107,7 +107,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
         yaw = self.neck._joints["yaw"].present_position
         return [roll, pitch, yaw]
 
-    def look_at(self, x: float, y: float, z: float, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk") -> GoToId:
+    def look_at(
+        self, x: float, y: float, z: float, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk"
+    ) -> GoToId:
         """Compute and send neck rpy position to look at the (x, y, z) point in Reachy cartesian space (torso frame).
 
         X is forward, Y is left and Z is upward. They all expressed in meters.
