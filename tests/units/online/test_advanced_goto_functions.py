@@ -797,9 +797,12 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req1):
         time.sleep(0.1)
 
-    req2 = reachy_sdk_zeroed.r_arm.rotate_by(10, 0, 0, frame="gripper")
+    req2 = reachy_sdk_zeroed.r_arm.rotate_by(10, 0, 0, frame="gripper", duration=3.0)
+    tic = time.time()
     while not is_goto_finished(reachy_sdk_zeroed, req2):
-        time.sleep(0.1)
+        time.sleep(0.05)
+    elapsed_time = time.time() - tic
+    assert np.isclose(elapsed_time, 3.0, 1e-01)
     pose2_expected = np.array(
         [
             [-0.02255924, -0.17266596, -0.98472207, 0.38621924],

@@ -291,7 +291,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self,
         target: npt.NDArray[np.float64],
         duration: float = 2,
-        wait: bool = False, 
+        wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         q0: Optional[List[float]] = None,
         with_cartesian_interpolation: bool = False,
@@ -423,7 +423,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return GoToId(id=0)
 
     def goto_joints(
-        self, positions: List[float], duration: float = 2, wait: bool = False, interpolation_mode: str = "minimum_jerk", degrees: bool = True
+        self,
+        positions: List[float],
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
     ) -> GoToId:
         """Move the arm's joints to reach the given position.
 
@@ -487,7 +492,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = np.dot(pose, translation_matrix)
         return pose
 
-    def translate_by(self, x: float, y: float, z: float, duration: float = 2, wait: bool = False, frame: str = "robot") -> GoToId:
+    def translate_by(
+        self, x: float, y: float, z: float, duration: float = 2, wait: bool = False, frame: str = "robot"
+    ) -> GoToId:
         """Create a goto to translate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
 
@@ -549,7 +556,16 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         return pose
 
-    def rotate_by(self, roll: float, pitch: float, yaw: float, wait: bool = False, degrees: bool = True, frame: str = "robot") -> GoToId:
+    def rotate_by(
+        self,
+        roll: float,
+        pitch: float,
+        yaw: float,
+        duration: float = 2,
+        wait: bool = False,
+        degrees: bool = True,
+        frame: str = "robot",
+    ) -> GoToId:
         """Create a goto to rotate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
 
@@ -576,10 +592,16 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = self.forward_kinematics()
 
         pose = self.get_rotation_by(roll, pitch, yaw, initial_pose=pose, degrees=degrees, frame=frame)
-        return self.goto_from_matrix(pose, wait=wait)
+        return self.goto_from_matrix(pose, duration=duration, wait=wait)
 
     def _goto_single_joint(
-        self, arm_joint: int, goal_position: float, duration: float, wait: bool = False, interpolation_mode: str = "minimum_jerk", degrees: bool = True
+        self,
+        arm_joint: int,
+        goal_position: float,
+        duration: float,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
     ) -> GoToId:
         if degrees:
             goal_position = np.deg2rad(goal_position)
