@@ -659,9 +659,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     def set_pose(
         self,
         common_pose: str = "default",
+        duration: float = 2,
         wait: bool = False,
         wait_for_moves_end: bool = True,
-        duration: float = 2,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Send all joints to standard positions in specified duration.
