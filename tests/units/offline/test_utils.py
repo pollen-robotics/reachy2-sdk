@@ -11,6 +11,7 @@ from reachy2_sdk.utils.utils import (
     get_grpc_interpolation_mode,
     get_interpolation_mode,
     list_to_arm_position,
+    matrix_from_euler_angles,
 )
 
 
@@ -79,3 +80,30 @@ def test_interpolation_modes() -> None:
 
     with pytest.raises(ValueError):
         get_interpolation_mode("dummy")
+
+
+@pytest.mark.offline
+def test_matrix_from_euler_angles() -> None:
+    A = matrix_from_euler_angles(20, 45, 30)
+    scipy_result_A = np.array(
+        [[0.61237244, -0.2604026, 0.74645193], [0.35355339, 0.93472006, 0.03603338], [-0.70710678, 0.24184476, 0.66446302]]
+    )
+    expected_A = np.eye(4)
+    expected_A[:3, :3] = scipy_result_A
+    np.array_equal(expected_A, A)
+
+    B = matrix_from_euler_angles(40, -50, -15)
+    scipy_result_B = np.array(
+        [[0.62088515, -0.27735873, -0.73319422], [-0.16636568, 0.86738561, -0.4690039], [0.76604444, 0.41317591, 0.49240388]]
+    )
+    expected_B = np.eye(4)
+    expected_B[:3, :3] = scipy_result_B
+    np.array_equal(expected_B, B)
+
+    C = matrix_from_euler_angles(-100, 40, -7)
+    scipy_result_C = np.array(
+        [[0.76033446, -0.64946616, 0.00923097], [-0.09335733, -0.09520783, 0.99107007], [-0.64278761, -0.75440651, -0.13302222]]
+    )
+    expected_C = np.eye(4)
+    expected_C[:3, :3] = scipy_result_C
+    np.array_equal(expected_C, C)

@@ -37,10 +37,10 @@ Note that only **offline tests** are executed by the Continuous Integration/Cont
 
 ### Camera tests
 
-Camera tests have their own marks because it requires the camera to be plugged to the sdk server (*sr_camera* and/or *teleop_camera*). 
+Camera tests have their own marks because it requires the cameras to be plugged to the sdk server 
 
 ```console
-$ pytest -m [sr_camera | teleop_camera]
+$ pytest -m cameras
 ```
 
 ## Logs

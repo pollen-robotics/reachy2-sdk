@@ -18,6 +18,7 @@ from reachy2_sdk_api.video_pb2_grpc import VideoServiceStub
 class CameraView(Enum):
     LEFT = View.LEFT
     RIGHT = View.RIGHT
+    DEPTH = View.DEPTH
 
 
 class CameraType(Enum):
@@ -71,37 +72,19 @@ class Camera:
 
 class DepthCamera(Camera):
     """
-    RGBD Camera. Meant to control a Luxonis SR
+    RGBD Camera
     """
 
-    '''
-    def get_depth_frame(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.uint8]]:
-        """Get 8bit depth view (OpenCV format)"""
-        frame = self._video_stub.GetDepthFrame(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
+    def get_depth_frame(self, view: CameraView = CameraView.DEPTH) -> Optional[Tuple[npt.NDArray[np.uint16], int]]:
+        """Get 16bit depth view (OpenCV format)"""
+        frame = self._video_stub.GetDepth(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if frame.data == b"":
             self._logger.error("No frame retrieved")
             return None
-        np_data = np.frombuffer(frame.data, np.uint8)
-        img = cv2.imdecode(np_data, cv2.IMREAD_GRAYSCALE)
-        return img  # type: ignore[no-any-return]
 
-    def get_depthmap(self) -> Optional[npt.NDArray[np.uint16]]:
-        """Get 16bit depthmap (OpenCV format)"""
-        frame = self._video_stub.GetDepthMap(request=self._cam_info)
-        if frame.data == b"":
-            self._logger.error("No frame retrieved")
-            return None
-        np_data = np.frombuffer(frame.data, np.uint8)
-        img = cv2.imdecode(np_data, cv2.IMREAD_UNCHANGED)
-        return img  # type: ignore[no-any-return]
+        if frame.encoding != "16UC1":
+            self._logger.error("Depth is not encoded in 16bit")
+        np_data = np.frombuffer(frame.data, np.uint16)
+        np_data = np_data.reshape((frame.height, frame.width))
 
-    def get_disparity(self) -> Optional[npt.NDArray[np.uint16]]:
-        """Get 16bit disparity (OpenCV format)"""
-        frame = self._video_stub.GetDisparity(request=self._cam_info)
-        if frame.data == b"":
-            self._logger.error("No frame retrieved")
-            return None
-        np_data = np.frombuffer(frame.data, np.uint8)
-        img = cv2.imdecode(np_data, cv2.IMREAD_UNCHANGED)
-        return img  # type: ignore[no-any-return]
-    '''
+        return np_data, frame.timestamp.ToNanoseconds()

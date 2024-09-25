@@ -36,13 +36,11 @@ from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
 from .utils.custom_dict import CustomDict
 from .utils.utils import (
+    SimplifiedRequest,
     arm_position_to_list,
     ext_euler_angles_to_list,
     get_interpolation_mode,
 )
-
-SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
-"""Named tuple for easy access to request variables"""
 
 GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 """Named tuple for easy access to goto request on full body"""
@@ -607,6 +605,9 @@ class ReachySDK:
         if not self._grpc_connected:
             self._logger.warning("Reachy is not connected!")
             return None
+        if goto_id.id == -1:
+            raise ValueError("No answer was found for given move, goto_id is -1")
+
         response = self._goto_stub.GetGoToRequest(goto_id)
         if response.joints_goal.HasField("arm_joint_goal"):
             part = response.joints_goal.arm_joint_goal.id.name
