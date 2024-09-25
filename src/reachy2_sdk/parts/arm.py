@@ -542,7 +542,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         return pose
 
-    def rotate_by(self, roll: float, pitch: float, yaw: float, degrees: bool = True, frame: str = "robot") -> GoToId:
+    def rotate_by(
+        self, roll: float, pitch: float, yaw: float, degrees: bool = True, frame: str = "robot", duration: float = 2
+    ) -> GoToId:
         """Create a goto to rotate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
 
@@ -569,7 +571,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = self.forward_kinematics()
 
         pose = self.get_rotation_by(roll, pitch, yaw, initial_pose=pose, degrees=degrees, frame=frame)
-        return self.goto_from_matrix(pose)
+        return self.goto_from_matrix(pose, duration=duration)
 
     def _goto_single_joint(
         self, arm_joint: int, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
