@@ -108,6 +108,17 @@ class MobileBase(Part):
         }
         return odom
 
+    @property
+    def last_cmd_vel(self) -> Dict[str, float]:
+        """Return the last command velocity sent to the base."""
+        response = self._mobility_stub.GetLastDirection(self._part_id)
+        cmd_vel = {
+            "x": round(response.x.value, 3),
+            "y": round(response.y.value, 3),
+            "theta": round(rad2deg(response.theta.value), 3),
+        }
+        return cmd_vel
+
     def _set_drive_mode(self, mode: str) -> None:
         """Set the base's drive mode."""
         all_drive_modes = [mode.lower() for mode in ZuuuModePossiblities.keys()][1:]
