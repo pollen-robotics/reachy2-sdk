@@ -20,7 +20,6 @@ from reachy2_sdk_api.hand_pb2 import (
     ParallelGripperPosition,
 )
 from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
-from reachy2_sdk_api.part_pb2 import PartId
 
 from ..orbita.utils import to_internal_position, to_position
 from .part import Part
@@ -52,7 +51,6 @@ class Hand(Part):
 
         It will create the hand and set its initial state.
         """
-        self._part_id = PartId(id=hand_msg.part_id.id)
         self._present_position: float = initial_state.present_position.parallel_gripper.position.value
         self._goal_position: float = initial_state.goal_position.parallel_gripper.position.value
         self._opening: float = initial_state.opening.value
