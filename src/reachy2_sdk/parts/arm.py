@@ -350,11 +350,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self,
         target: npt.NDArray[np.float64],
         duration: float = 2,
-        interpolation_frequency: float = 120,
-        precision_distance_xyz: float = 0.003,
         circular_interpolation: bool = False,
         arc_direction: str = "above",
         secondary_radius: Optional[float] = None,
+        interpolation_frequency: float = 120,
+        precision_first: bool = False,
+        precision_distance_xyz: float = 0.003,
     ) -> None:
         """Move the arm to a matrix target (or get close).
 
@@ -385,114 +386,23 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         q2, trans2 = decompose_matrix(target)
 
         if not circular_interpolation:
-            self._send_linear_interpolation(trans1, trans2, q1, q2, nb_steps, time_step)
+            self._send_linear_interpolation(trans1, trans2, q1, q2, nb_steps=nb_steps, time_step=time_step)
 
         else:
-            center = (trans1 + trans2) / 2
-            radius = np.linalg.norm(trans2 - trans1) / 2
-
-            # Vecteurs de position relative au centre
-            vector1 = trans1 - center
-            vector2 = trans2 - center
-            vector = trans2 - trans1
-
-            if radius == 0:
-                return
-
-            # Trouver un vecteur normal au plan de l'arc de cercle
-            if arc_direction == "above":
-                normal = np.cross(vector, [0, 0, -1])
-                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe z
-                    normal = np.cross(vector, [0, 1, 0])
-            elif arc_direction == "below":
-                normal = np.cross(vector, [0, 0, 1])
-                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe z
-                    normal = np.cross(vector, [0, -1, 0])
-            elif arc_direction == "left":
-                normal = np.cross(vector, [0, -1, 0])
-                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe y
-                    normal = np.cross(vector, [0, 0, -1])
-            elif arc_direction == "right":
-                normal = np.cross(vector, [0, 1, 0])
-                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe y
-                    normal = np.cross(vector, [0, 0, 1])
-            elif arc_direction == "front":
-                normal = np.cross(vector, [1, 0, 0])
-                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe y
-                    normal = np.cross(vector, [0, 0, -1])
-            elif arc_direction == "back":
-                normal = np.cross(vector, [-1, 0, 0])
-                if np.linalg.norm(normal) == 0:  # Si les points sont alignés avec l'axe y
-                    normal = np.cross(vector, [0, 0, -1])
-
-            normal = normal / np.linalg.norm(normal)
-
-            dot_product = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
-            angle = np.arccos(np.clip(dot_product, -1, 1))
-
-            # # Choisir l'arc : 'short' pour l'arc le plus court, 'long' pour l'arc le plus long
-            # if arc == 'long':
-            #     angle = 2 * np.pi - angle
-
-            # Calcul des points interpolés
-            for t in np.linspace(0, 1, nb_steps):
-                # Angle interpolé
-                theta = t * angle
-
-                # Rotation du point1 autour du centre du cercle dans le plan défini par 'normal'
-                # Utilisation de la formule de rotation dans un plan défini
-                rotation_matrix = np.array(
-                    [
-                        [
-                            np.cos(theta) + normal[0] ** 2 * (1 - np.cos(theta)),
-                            normal[0] * normal[1] * (1 - np.cos(theta)) - normal[2] * np.sin(theta),
-                            normal[0] * normal[2] * (1 - np.cos(theta)) + normal[1] * np.sin(theta),
-                        ],
-                        [
-                            normal[1] * normal[0] * (1 - np.cos(theta)) + normal[2] * np.sin(theta),
-                            np.cos(theta) + normal[1] ** 2 * (1 - np.cos(theta)),
-                            normal[1] * normal[2] * (1 - np.cos(theta)) - normal[0] * np.sin(theta),
-                        ],
-                        [
-                            normal[2] * normal[0] * (1 - np.cos(theta)) - normal[1] * np.sin(theta),
-                            normal[2] * normal[1] * (1 - np.cos(theta)) + normal[0] * np.sin(theta),
-                            np.cos(theta) + normal[2] ** 2 * (1 - np.cos(theta)),
-                        ],
-                    ]
-                )
-
-                # Point interpolé dans le plan
-                if secondary_radius is None:
-                    trans_interpolated = np.dot(rotation_matrix, vector1) + center
-
-                else:
-                    # Point interpolé dans le plan
-                    trans_interpolated = np.dot(rotation_matrix, vector1)
-
-                    # Ajustement pour une ellipse (étirement dans la direction normale)
-                    # On ajuste en multipliant le vecteur par le ratio des rayons (primaire / secondaire)
-                    ellipse_interpolated = trans_interpolated * np.array([1, 1, secondary_radius / radius])
-
-                    # Position finale en ajoutant le centre
-                    trans_interpolated = ellipse_interpolated + center
-
-                # SLERP pour la rotation
-                q_interpolated = Quaternion.slerp(q1, q2, t)
-                rot_interpolated = q_interpolated.rotation_matrix
-
-                # Recompose the interpolated matrix
-                interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
-
-                request = ArmCartesianGoal(
-                    id=self._part_id,
-                    goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
-                )
-                self._stub.SendArmCartesianGoal(request)
-                time.sleep(time_step)
+            self._send_elliptical_interpolation(
+                trans1,
+                trans2,
+                q1,
+                q2,
+                arc_direction=arc_direction,
+                secondary_radius=secondary_radius,
+                nb_steps=nb_steps,
+                time_step=time_step,
+            )
 
         current_pose = self.forward_kinematics()
         current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
-        if current_precision_distance_xyz > precision_distance_xyz:
+        if precision_first and current_precision_distance_xyz > precision_distance_xyz:
             for t in np.linspace(0, 1, nb_steps):
                 # Spamming the goal position to make sure its reached
                 request = ArmCartesianGoal(
@@ -517,6 +427,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         nb_steps: int,
         time_step: float,
     ) -> None:
+        """Generate linear interpolation."""
         for t in np.linspace(0, 1, nb_steps):
             # Linear interpolation for translation
             trans_interpolated = (1 - t) * origin_trans + t * target_trans
@@ -541,10 +452,116 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target_trans: npt.NDArray[np.float64],
         origin_rot: Quaternion,
         target_rot: Quaternion,
+        arc_direction: str,
+        secondary_radius: Optional[float],
         nb_steps: int,
         time_step: float,
     ) -> None:
-        pass
+        """Generate elliptical interpolation."""
+        center = (origin_trans + target_trans) / 2
+        radius = np.linalg.norm(target_trans - origin_trans) / 2
+
+        # Vectors relative to center
+        vector1 = origin_trans - center
+        vector2 = target_trans - center
+
+        vector = target_trans - origin_trans
+
+        if radius == 0:
+            return
+        if secondary_radius is not None and secondary_radius > 0.2:
+            self._logger.warning("interpolation secondary_radius was too large, reduced to 0.2")
+            secondary_radius = 0.2
+
+        normal = self._get_normal_vector(vector=vector, arc_direction=arc_direction)
+
+        if normal is None:
+            self._logger.warning("arc_direction has no solution. Executing linear interpolation instead.")
+            self._send_linear_interpolation(
+                origin_trans=origin_trans,
+                target_trans=target_trans,
+                origin_rot=origin_rot,
+                target_rot=target_rot,
+                nb_steps=nb_steps,
+                time_step=time_step,
+            )
+            return
+
+        dot_product = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
+        angle = np.arccos(np.clip(dot_product, -1, 1))
+
+        for t in np.linspace(0, 1, nb_steps):
+            # Interpolated angles
+            theta = t * angle
+
+            # Rotation of origin_vector around the circle center in the plan defined by 'normal'
+            rotation_matrix = np.array(
+                [
+                    [
+                        np.cos(theta) + normal[0] ** 2 * (1 - np.cos(theta)),
+                        normal[0] * normal[1] * (1 - np.cos(theta)) - normal[2] * np.sin(theta),
+                        normal[0] * normal[2] * (1 - np.cos(theta)) + normal[1] * np.sin(theta),
+                    ],
+                    [
+                        normal[1] * normal[0] * (1 - np.cos(theta)) + normal[2] * np.sin(theta),
+                        np.cos(theta) + normal[1] ** 2 * (1 - np.cos(theta)),
+                        normal[1] * normal[2] * (1 - np.cos(theta)) - normal[0] * np.sin(theta),
+                    ],
+                    [
+                        normal[2] * normal[0] * (1 - np.cos(theta)) - normal[1] * np.sin(theta),
+                        normal[2] * normal[1] * (1 - np.cos(theta)) + normal[0] * np.sin(theta),
+                        np.cos(theta) + normal[2] ** 2 * (1 - np.cos(theta)),
+                    ],
+                ]
+            )
+
+            # Interpolated point in plan
+            if secondary_radius is None:
+                trans_interpolated = np.dot(rotation_matrix, vector1) + center
+
+            else:
+                trans_interpolated = np.dot(rotation_matrix, vector1)
+
+                # Adjusting the ellipse
+                ellipse_interpolated = trans_interpolated * np.array([1, 1, secondary_radius / radius])
+                trans_interpolated = ellipse_interpolated + center
+
+            # SLERP pour la rotation
+            q_interpolated = Quaternion.slerp(origin_rot, target_rot, t)
+            rot_interpolated = q_interpolated.rotation_matrix
+
+            # Recompose the interpolated matrix
+            interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
+
+            request = ArmCartesianGoal(
+                id=self._part_id,
+                goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+            )
+            self._stub.SendArmCartesianGoal(request)
+            time.sleep(time_step)
+
+    def _get_normal_vector(self, vector: npt.NDArray[np.float64], arc_direction: str) -> Optional[npt.NDArray[np.float64]]:
+        """Get a normal vector to the given vector in the desired direction."""
+        match arc_direction:
+            case "above":
+                normal = np.cross(vector, [0, 0, -1])
+            case "below":
+                normal = np.cross(vector, [0, 0, 1])
+            case "left":
+                normal = np.cross(vector, [0, -1, 0])
+            case "right":
+                normal = np.cross(vector, [0, 1, 0])
+            case "front":
+                normal = np.cross(vector, [-1, 0, 0])
+            case "back":
+                normal = np.cross(vector, [1, 0, 0])
+
+        if np.linalg.norm(normal) == 0:
+            # Return None if the vector is in the requested arc_direction
+            return None
+
+        normal = normal / np.linalg.norm(normal)
+        return normal
 
     def goto_joints(
         self,
