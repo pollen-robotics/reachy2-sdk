@@ -460,9 +460,8 @@ def test_wait_move(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed.l_arm.get_move_playing().id == -1
     assert reachy_sdk_zeroed.r_arm.get_move_playing().id != -1
 
-    time.sleep(4)
     tic = time.time()
-    reachy_sdk_zeroed.set_pose("default", duration=2, wait=True)
+    reachy_sdk_zeroed.set_pose("default", duration=2, wait=True, wait_for_moves_end=False)
     elapsed_time = time.time() - tic
     assert np.isclose(elapsed_time, 2.0, 1e-01)
 

@@ -345,8 +345,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             )
         response = self._goto_stub.GoToCartesian(request)
         if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_move_finished(response):
                 time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
         return response
 
     def _goto_cartesian_interpolation(
@@ -452,8 +454,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         )
         response = self._goto_stub.GoToJoints(request)
         if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_move_finished(response):
                 time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
         return response
 
     def get_translation_by(
@@ -626,8 +630,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         )
         response = self._goto_stub.GoToJoints(request)
         if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_move_finished(response):
                 time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
         return response
 
     def get_joints_positions(self, degrees: bool = True, round: Optional[int] = None) -> List[float]:

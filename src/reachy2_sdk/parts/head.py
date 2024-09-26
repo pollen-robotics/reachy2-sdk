@@ -132,8 +132,10 @@ class Head(JointsBasedPart, IGoToBasedPart):
         )
         response = self._goto_stub.GoToCartesian(request)
         if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_move_finished(response):
                 time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
         return response
 
     def goto_joints(
@@ -176,8 +178,10 @@ class Head(JointsBasedPart, IGoToBasedPart):
         )
         response = self._goto_stub.GoToJoints(request)
         if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_move_finished(response):
                 time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
         return response
 
     def _goto_single_joint(
@@ -204,8 +208,10 @@ class Head(JointsBasedPart, IGoToBasedPart):
         )
         response = self._goto_stub.GoToJoints(request)
         if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_move_finished(response):
                 time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
         return response
 
     def orient(self, q: pyQuat, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk") -> GoToId:
@@ -228,8 +234,10 @@ class Head(JointsBasedPart, IGoToBasedPart):
         )
         response = self._goto_stub.GoToJoints(request)
         if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_move_finished(response):
                 time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
         return response
 
     def send_goal_positions(self) -> None:
