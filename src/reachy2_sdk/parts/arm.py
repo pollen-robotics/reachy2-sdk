@@ -544,16 +544,28 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """Get a normal vector to the given vector in the desired direction."""
         match arc_direction:
             case "above":
+                if vector[0] < 0.001 and vector[1] < 0.001:
+                    return None
                 normal = np.cross(vector, [0, 0, -1])
             case "below":
+                if vector[0] < 0.001 and vector[1] < 0.001:
+                    return None
                 normal = np.cross(vector, [0, 0, 1])
             case "left":
+                if vector[0] < 0.001 and vector[2] < 0.001:
+                    return None
                 normal = np.cross(vector, [0, -1, 0])
             case "right":
+                if vector[0] < 0.001 and vector[2] < 0.001:
+                    return None
                 normal = np.cross(vector, [0, 1, 0])
             case "front":
+                if vector[1] < 0.001 and vector[2] < 0.001:
+                    return None
                 normal = np.cross(vector, [-1, 0, 0])
             case "back":
+                if vector[1] < 0.001 and vector[2] < 0.001:
+                    return None
                 normal = np.cross(vector, [1, 0, 0])
 
         if np.linalg.norm(normal) == 0:
