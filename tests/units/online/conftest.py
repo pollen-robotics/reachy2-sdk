@@ -34,6 +34,8 @@ def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
     for joint in reachy_sdk.joints.values():
         joint.goal_position = 0
     reachy_sdk.send_goal_positions()
+    reachy_sdk.r_arm.gripper.set_opening(100)
+    reachy_sdk.l_arm.gripper.set_opening(100)
 
     time.sleep(1)
 

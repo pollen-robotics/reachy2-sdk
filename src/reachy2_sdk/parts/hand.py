@@ -37,8 +37,7 @@ class Hand(Part):
         super().__init__(hand_msg, grpc_channel, HandServiceStub(grpc_channel))
         self._hand_stub = HandServiceStub(grpc_channel)
 
-        self._request_sent = False
-        self._request_reached = True
+        self._is_moving = False
         self._last_present_positions_queue_size = 10
         self._last_present_positions: Deque[float] = deque(maxlen=self._last_present_positions_queue_size)
 
@@ -86,8 +85,7 @@ class Hand(Part):
                 ),
             )
         )
-        self._request_sent = True
-        self._request_reached = False
+        self._is_moving = True
 
     @property
     def present_position(self) -> float:
@@ -121,16 +119,14 @@ class Hand(Part):
         if self._compliant:
             raise RuntimeError("Gripper is off. Open request not sent.")
         self._hand_stub.OpenHand(self._part_id)
-        self._request_sent = True
-        self._request_reached = False
+        self._is_moving = True
 
     def close(self) -> None:
         """Close the hand."""
         if self._compliant:
             raise RuntimeError("Gripper is off. Close request not sent.")
         self._hand_stub.CloseHand(self._part_id)
-        self._request_sent = True
-        self._request_reached = False
+        self._is_moving = True
 
     def is_on(self) -> bool:
         """Get compliancy of the hand"""
@@ -140,12 +136,9 @@ class Hand(Part):
         """Get compliancy of the hand"""
         return self._compliant
 
-    def is_motion_complete(self) -> bool:
+    def is_moving(self) -> bool:
         """Get state of gripper movement"""
-        if not self._request_sent:
-            return True
-        else:
-            return self._request_reached
+        return self._is_moving
 
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state received from the gRPC server."""
@@ -153,14 +146,13 @@ class Hand(Part):
         self._goal_position = new_state.goal_position.parallel_gripper.position.value
         self._opening = new_state.opening.value
         self._compliant = new_state.compliant.value
-        if self._request_sent:
+        if self._is_moving:
             if len(self._last_present_positions) < self._last_present_positions_queue_size:
                 pass
             elif np.isclose(self._present_position, self._last_present_positions[-1], np.deg2rad(0.1)) and np.isclose(
                 self._present_position, self._last_present_positions[-2], np.deg2rad(0.1)
             ):
-                self._request_reached = True
-                self._request_sent = False
+                self._is_moving = False
                 self._last_present_positions.clear()
             self._last_present_positions.append(self._present_position)
 
