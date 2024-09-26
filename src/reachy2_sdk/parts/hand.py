@@ -113,6 +113,7 @@ class Hand(Part):
                 )
             )
             self._outgoing_goal_positions = None
+            self._is_moving = True
 
     def open(self) -> None:
         """Open the hand."""
