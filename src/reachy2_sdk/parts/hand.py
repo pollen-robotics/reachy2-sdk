@@ -140,6 +140,16 @@ class Hand(Part):
         """Get state of gripper movement"""
         return self._is_moving
 
+    def _check_hand_movement(self, present_position: float) -> None:
+        if (
+            len(self._last_present_positions) >= self._last_present_positions_queue_size
+            and np.isclose(present_position, self._last_present_positions[-1], np.deg2rad(0.1))
+            and np.isclose(present_position, self._last_present_positions[-2], np.deg2rad(0.1))
+        ):
+            self._is_moving = False
+            self._last_present_positions.clear()
+        self._last_present_positions.append(present_position)
+
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state received from the gRPC server."""
         self._present_position = new_state.present_position.parallel_gripper.position.value
@@ -147,14 +157,7 @@ class Hand(Part):
         self._opening = new_state.opening.value
         self._compliant = new_state.compliant.value
         if self._is_moving:
-            if len(self._last_present_positions) < self._last_present_positions_queue_size:
-                pass
-            elif np.isclose(self._present_position, self._last_present_positions[-1], np.deg2rad(0.1)) and np.isclose(
-                self._present_position, self._last_present_positions[-2], np.deg2rad(0.1)
-            ):
-                self._is_moving = False
-                self._last_present_positions.clear()
-            self._last_present_positions.append(self._present_position)
+            self._check_hand_movement(present_position=self._present_position)
 
     def _update_audit_status(self, new_status: HandStatus) -> None:
         pass
