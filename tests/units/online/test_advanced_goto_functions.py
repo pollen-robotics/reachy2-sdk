@@ -8,7 +8,7 @@ from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 from reachy2_sdk.reachy_sdk import ReachySDK
 from reachy2_sdk.utils.utils import matrix_from_euler_angles
 
-from .test_basic_movements import is_goto_finished
+from .test_basic_movements import build_pose_matrix, is_goto_finished
 
 
 @pytest.mark.online
@@ -444,6 +444,37 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     assert req_r4 != -1
 
     reachy_sdk_zeroed.turn_on()
+
+
+@pytest.mark.online
+def test_wait_move(reachy_sdk_zeroed: ReachySDK) -> None:
+    tic = time.time()
+    reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
+    reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=3, wait=True, interpolation_mode="linear")
+    elapsed_time = time.time() - tic
+    assert np.isclose(elapsed_time, 3.0, 1e-01)
+
+    reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=4)
+
+    assert reachy_sdk_zeroed.head.get_move_playing().id != -1
+    assert reachy_sdk_zeroed.l_arm.get_move_playing().id == -1
+    assert reachy_sdk_zeroed.r_arm.get_move_playing().id != -1
+
+    tic = time.time()
+    reachy_sdk_zeroed.set_pose("default", duration=2, wait=True, wait_for_moves_end=False)
+    elapsed_time = time.time() - tic
+    assert np.isclose(elapsed_time, 2.0, 1e-01)
+
+    A = build_pose_matrix(0.3, -0.4, -0.3)
+    tic = time.time()
+    reachy_sdk_zeroed.r_arm.goto_from_matrix(A, duration=2.0, wait=True)
+    elapsed_time = time.time() - tic
+    assert np.isclose(elapsed_time, 2.0, 1e-01)
+    B = build_pose_matrix(0.3, 0.4, 0)
+    tic = time.time()
+    reachy_sdk_zeroed.l_arm.goto_from_matrix(B, duration=2.0)
+    elapsed_time = time.time() - tic
+    assert elapsed_time < 0.1
 
 
 @pytest.mark.online

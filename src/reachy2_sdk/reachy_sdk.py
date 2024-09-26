@@ -512,6 +512,7 @@ class ReachySDK:
     def set_pose(
         self,
         common_pose: str = "default",
+        wait: bool = False,
         wait_for_moves_end: bool = True,
         duration: float = 2,
         interpolation_mode: str = "minimum_jerk",
@@ -530,11 +531,29 @@ class ReachySDK:
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.head is not None:
-            head_id = self.head.set_pose(wait_for_moves_end, duration, interpolation_mode)
+            is_last_commmand = self.r_arm is None and self.l_arm is None
+            wait_head = wait and is_last_commmand
+            head_id = self.head.set_pose(
+                duration=duration, wait=wait_head, wait_for_moves_end=wait_for_moves_end, interpolation_mode=interpolation_mode
+            )
         if self.r_arm is not None:
-            r_arm_id = self.r_arm.set_pose(common_pose, wait_for_moves_end, duration, interpolation_mode)
+            is_last_commmand = self.l_arm is None
+            wait_r_arm = wait and is_last_commmand
+            r_arm_id = self.r_arm.set_pose(
+                common_pose,
+                duration=duration,
+                wait=wait_r_arm,
+                wait_for_moves_end=wait_for_moves_end,
+                interpolation_mode=interpolation_mode,
+            )
         if self.l_arm is not None:
-            l_arm_id = self.l_arm.set_pose(common_pose, wait_for_moves_end, duration, interpolation_mode)
+            l_arm_id = self.l_arm.set_pose(
+                common_pose,
+                duration=duration,
+                wait=wait,
+                wait_for_moves_end=wait_for_moves_end,
+                interpolation_mode=interpolation_mode,
+            )
         ids = GoToHomeId(
             head=head_id,
             r_arm=r_arm_id,
