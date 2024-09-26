@@ -101,6 +101,9 @@ class Hand(Part):
             raise TypeError("goal_position must be a float or int")
 
     def send_goal_positions(self) -> None:
+        if self.is_off():
+            self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
+            return
         if self._outgoing_goal_positions is not None:
             self._hand_stub.SetHandPosition(
                 HandPositionRequest(
