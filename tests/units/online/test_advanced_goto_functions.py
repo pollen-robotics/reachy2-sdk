@@ -8,7 +8,7 @@ from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 from reachy2_sdk.reachy_sdk import ReachySDK
 from reachy2_sdk.utils.utils import matrix_from_euler_angles
 
-from .test_basic_movements import is_goto_finished
+from .test_basic_movements import build_pose_matrix, is_goto_finished
 
 
 @pytest.mark.online
@@ -447,6 +447,37 @@ def test_reachy_set_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 @pytest.mark.online
+def test_wait_move(reachy_sdk_zeroed: ReachySDK) -> None:
+    tic = time.time()
+    reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
+    reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=3, wait=True, interpolation_mode="linear")
+    elapsed_time = time.time() - tic
+    assert np.isclose(elapsed_time, 3.0, 1e-01)
+
+    reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=4)
+
+    assert reachy_sdk_zeroed.head.get_move_playing().id != -1
+    assert reachy_sdk_zeroed.l_arm.get_move_playing().id == -1
+    assert reachy_sdk_zeroed.r_arm.get_move_playing().id != -1
+
+    tic = time.time()
+    reachy_sdk_zeroed.set_pose("default", duration=2, wait=True, wait_for_moves_end=False)
+    elapsed_time = time.time() - tic
+    assert np.isclose(elapsed_time, 2.0, 1e-01)
+
+    A = build_pose_matrix(0.3, -0.4, -0.3)
+    tic = time.time()
+    reachy_sdk_zeroed.r_arm.goto_from_matrix(A, duration=2.0, wait=True)
+    elapsed_time = time.time() - tic
+    assert np.isclose(elapsed_time, 2.0, 1e-01)
+    B = build_pose_matrix(0.3, 0.4, 0)
+    tic = time.time()
+    reachy_sdk_zeroed.l_arm.goto_from_matrix(B, duration=2.0)
+    elapsed_time = time.time() - tic
+    assert elapsed_time < 0.1
+
+
+@pytest.mark.online
 def test_is_move_finished(reachy_sdk_zeroed: ReachySDK) -> None:
     req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=2)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=3, interpolation_mode="linear")
@@ -690,9 +721,12 @@ def test_translate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
         time.sleep(0.1)
 
     pose1 = reachy_sdk_zeroed.r_arm.forward_kinematics()
-    req2 = reachy_sdk_zeroed.r_arm.translate_by(0.1, 0, 0, frame="gripper")
+    req2 = reachy_sdk_zeroed.r_arm.translate_by(0.1, 0, 0, frame="gripper", duration=3.0)
+    tic = time.time()
     while not is_goto_finished(reachy_sdk_zeroed, req2):
         time.sleep(0.1)
+    elapsed_time = time.time() - tic
+    assert np.isclose(elapsed_time, 3.0, 1e-01)
 
     pose2 = reachy_sdk_zeroed.r_arm.forward_kinematics()
     translation2 = np.eye(4)
@@ -794,9 +828,12 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req1):
         time.sleep(0.1)
 
-    req2 = reachy_sdk_zeroed.r_arm.rotate_by(10, 0, 0, frame="gripper")
+    req2 = reachy_sdk_zeroed.r_arm.rotate_by(10, 0, 0, frame="gripper", duration=3.0)
+    tic = time.time()
     while not is_goto_finished(reachy_sdk_zeroed, req2):
-        time.sleep(0.1)
+        time.sleep(0.05)
+    elapsed_time = time.time() - tic
+    assert np.isclose(elapsed_time, 3.0, 1e-01)
     pose2_expected = np.array(
         [
             [-0.02255924, -0.17266596, -0.98472207, 0.38621924],

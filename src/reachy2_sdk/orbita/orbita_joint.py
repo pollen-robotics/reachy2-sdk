@@ -54,14 +54,24 @@ class OrbitaJoint:
             raise TypeError("goal_position must be a float or int")
 
     def goto(
-        self, goal_position: float, duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
+        self,
+        goal_position: float,
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
     ) -> GoToId:
         """Send the joint to the goal position in duration.
 
         Acts like a goto movements on the part, goto on joints are stacked on the part they belong to.
         """
         return self._actuator._part._goto_single_joint(
-            self._position_order_in_part, goal_position, duration, interpolation_mode, degrees
+            self._position_order_in_part,
+            goal_position=goal_position,
+            duration=duration,
+            wait=wait,
+            interpolation_mode=interpolation_mode,
+            degrees=degrees,
         )
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
