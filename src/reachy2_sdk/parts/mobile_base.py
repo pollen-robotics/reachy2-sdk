@@ -173,6 +173,14 @@ class MobileBase(Part):
         )
         self._mobility_stub.SendDirection(req)
 
+    def rotate_by(self, theta: float, timeout: Optional[float] = None) -> None:
+        """Send a target rotation relative to the current rotation of the mobile base.
+
+        theta defines the rotation wanted in the mobile base in cartesian space."""
+        odometry = self.odometry
+        theta = odometry["theta"] + theta
+        self.goto(0, 0, theta, timeout=timeout)
+
     def goto(
         self,
         x: float,
