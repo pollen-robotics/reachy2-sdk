@@ -291,6 +291,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self,
         target: npt.NDArray[np.float64],
         duration: float = 2,
+        wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         q0: Optional[List[float]] = None,
     ) -> GoToId:
@@ -338,6 +339,11 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
             )
         response = self._goto_stub.GoToCartesian(request)
+        if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
+            while not self._is_move_finished(response):
+                time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
         return response
 
     def send_cartesian_interpolation(
@@ -410,7 +416,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self._logger.info(f"l2 xyz distance to goal: {current_precision_distance_xyz}")
 
     def goto_joints(
-        self, positions: List[float], duration: float = 2, interpolation_mode: str = "minimum_jerk", degrees: bool = True
+        self,
+        positions: List[float],
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
     ) -> GoToId:
         """Move the arm's joints to reach the given position.
 
@@ -433,6 +444,11 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
+        if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
+            while not self._is_move_finished(response):
+                time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
         return response
 
     def get_translation_by(
@@ -471,7 +487,16 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = np.dot(pose, translation_matrix)
         return pose
 
-    def translate_by(self, x: float, y: float, z: float, frame: str = "robot", duration: float = 2) -> GoToId:
+    def translate_by(
+        self,
+        x: float,
+        y: float,
+        z: float,
+        duration: float = 2,
+        wait: bool = False,
+        frame: str = "robot",
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
         """Create a goto to translate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
 
@@ -495,7 +520,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = self.forward_kinematics()
 
         pose = self.get_translation_by(x, y, z, initial_pose=pose, frame=frame)
-        return self.goto_from_matrix(pose, duration=duration)
+        return self.goto_from_matrix(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
 
     def get_rotation_by(
         self,
@@ -533,7 +558,17 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         return pose
 
-    def rotate_by(self, roll: float, pitch: float, yaw: float, degrees: bool = True, frame: str = "robot") -> GoToId:
+    def rotate_by(
+        self,
+        roll: float,
+        pitch: float,
+        yaw: float,
+        duration: float = 2,
+        wait: bool = False,
+        degrees: bool = True,
+        frame: str = "robot",
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
         """Create a goto to rotate the arm's end effector from the last move sent on the part.
         If no move has been sent, use the current position.
 
@@ -560,10 +595,16 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = self.forward_kinematics()
 
         pose = self.get_rotation_by(roll, pitch, yaw, initial_pose=pose, degrees=degrees, frame=frame)
-        return self.goto_from_matrix(pose)
+        return self.goto_from_matrix(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
 
     def _goto_single_joint(
-        self, arm_joint: int, goal_position: float, duration: float, interpolation_mode: str, degrees: bool = True
+        self,
+        arm_joint: int,
+        goal_position: float,
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
     ) -> GoToId:
         if degrees:
             goal_position = np.deg2rad(goal_position)
@@ -579,6 +620,11 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
+        if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
+            while not self._is_move_finished(response):
+                time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
         return response
 
     def get_joints_positions(self, degrees: bool = True, round: Optional[int] = None) -> List[float]:
@@ -610,8 +656,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     def set_pose(
         self,
         common_pose: str = "default",
-        wait_for_moves_end: bool = True,
         duration: float = 2,
+        wait: bool = False,
+        wait_for_moves_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Send all joints to standard positions in specified duration.
@@ -632,9 +679,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self.cancel_all_moves()
         if self.is_on():
             if self._part_id.name == "r_arm":
-                return self.goto_joints([0, -15, -15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+                return self.goto_joints([0, -15, -15, elbow_pitch, 0, 0, 0], duration, wait, interpolation_mode)
             else:
-                return self.goto_joints([0, 15, 15, elbow_pitch, 0, 0, 0], duration, interpolation_mode)
+                return self.goto_joints([0, 15, 15, elbow_pitch, 0, 0, 0], duration, wait, interpolation_mode)
         else:
             self._logger.warning(f"{self._part_id.name} is off. No command sent.")
         return GoToId(id=-1)
