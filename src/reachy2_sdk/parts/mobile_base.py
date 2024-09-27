@@ -173,6 +173,15 @@ class MobileBase(Part):
         )
         self._mobility_stub.SendDirection(req)
 
+    def translate_by(self, x: float, y: float, timeout: Optional[float] = None) -> None:
+        """Send a target position relative to the current position of the mobile base.
+
+        (x, y) define the translation wanted in the mobile base in cartesian space."""
+        odometry = self.odometry
+        x = odometry["x"] + x
+        y = odometry["y"] + y
+        self.goto(x, y, 0, timeout=timeout)
+
     def rotate_by(self, theta: float, timeout: Optional[float] = None) -> None:
         """Send a target rotation relative to the current rotation of the mobile base.
 
