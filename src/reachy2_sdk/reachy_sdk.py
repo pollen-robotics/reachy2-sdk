@@ -542,17 +542,17 @@ class ReachySDK:
         )
         return ids
 
-    def is_move_finished(self, id: GoToId) -> bool:
+    def is_move_finished(self, goto_id: GoToId) -> bool:
         """Return True if goto has been played or has been cancelled, False otherwise."""
         if not self._grpc_connected:
             self._logger.warning("Reachy is not connected!")
             return False
-        if not isinstance(id, GoToId):
-            raise TypeError(f"id must be a GoToId, got {type(id).__name__}")
-        if id.id == -1:
+        if not isinstance(goto_id, GoToId):
+            raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
+        if goto_id.id == -1:
             self._logger.error("is_move_finished() asked for unvalid movement. Move not played.")
             return True
-        state = self._get_move_state(id)
+        state = self._get_move_state(goto_id)
         result = bool(
             state.goal_status == GoalStatus.STATUS_ABORTED
             or state.goal_status == GoalStatus.STATUS_CANCELED
@@ -560,17 +560,17 @@ class ReachySDK:
         )
         return result
 
-    def is_move_playing(self, id: GoToId) -> bool:
+    def is_move_playing(self, goto_id: GoToId) -> bool:
         """Return True if goto is currently playing, False otherwise."""
         if not self._grpc_connected:
             self._logger.warning("Reachy is not connected!")
             return False
-        if not isinstance(id, GoToId):
-            raise TypeError(f"id must be a GoToId, got {type(id).__name__}")
-        if id.id == -1:
+        if not isinstance(goto_id, GoToId):
+            raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
+        if goto_id.id == -1:
             self._logger.error("is_move_playing() asked for unvalid movement. Move not played.")
             return False
-        state = self._get_move_state(id)
+        state = self._get_move_state(goto_id)
         return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
 
     def cancel_all_moves(self) -> GoToAck:
@@ -591,8 +591,8 @@ class ReachySDK:
         if not self._grpc_connected:
             self._logger.warning("Reachy is not connected!")
             return None
-        if not isinstance(id, GoToId):
-            raise TypeError(f"id must be a GoToId, got {type(id).__name__}")
+        if not isinstance(goto_id, GoToId):
+            raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
         if goto_id.id == -1:
             self._logger.error("cancel_move_by_id() asked for unvalid movement. Move not played.")
             return GoToAck(ack=True)
@@ -608,8 +608,8 @@ class ReachySDK:
         if not self._grpc_connected:
             self._logger.warning("Reachy is not connected!")
             return None
-        if not isinstance(id, GoToId):
-            raise TypeError(f"id must be a GoToId, got {type(id).__name__}")
+        if not isinstance(goto_id, GoToId):
+            raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
         if goto_id.id == -1:
             raise ValueError("No answer was found for given move, goto_id is -1")
 
