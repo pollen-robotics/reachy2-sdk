@@ -182,3 +182,50 @@ def test_send_goal_positions(reachy_sdk_zeroed: ReachySDK) -> None:
     center = np.array([0.4, -0.4, -0.2])
     radius = 0.15
     make_circle(reachy_sdk_zeroed, center, radius)
+
+
+@pytest.mark.online
+def test_get_matrix(reachy_sdk_zeroed: ReachySDK) -> None:
+    reachy_sdk_zeroed.set_pose(wait=True)
+    r_matrix = reachy_sdk_zeroed.r_arm.get_default_pose_matrix()
+    l_matrix = reachy_sdk_zeroed.l_arm.get_default_pose_matrix()
+    r_kin = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    l_kin = reachy_sdk_zeroed.l_arm.forward_kinematics()
+
+    assert np.allclose(r_matrix, r_kin, atol=1e-03)
+    assert np.allclose(l_matrix, l_kin, atol=1e-03)
+
+    reachy_sdk_zeroed.set_pose(common_pose="elbow_90", wait=True)
+    r_matrix = reachy_sdk_zeroed.r_arm.get_default_pose_matrix(common_pose="elbow_90")
+    l_matrix = reachy_sdk_zeroed.l_arm.get_default_pose_matrix(common_pose="elbow_90")
+    r_kin = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    l_kin = reachy_sdk_zeroed.l_arm.forward_kinematics()
+
+    assert np.allclose(r_matrix, r_kin, atol=1e-03)
+    assert np.allclose(l_matrix, l_kin, atol=1e-03)
+
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.r_arm.get_default_pose_matrix("coucou")
+
+    A = np.array([[0.0, 0.0, -1.0, 0.5], [0.0, 1.0, 0.0, 0.1], [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
+    pose_A = reachy_sdk_zeroed.r_arm.get_pose_matrix([0.5, 0.1, 0], [0, -90, 0])
+    assert np.allclose(A, pose_A, atol=1e-03)
+
+    B = np.array([[0.0, 1.0, -0.0, 0.2], [0.0, 0.0, 1.0, 0.4], [1.0, -0.0, 0.0, -0.2], [0.0, 0.0, 0.0, 1.0]])
+    pose_B = reachy_sdk_zeroed.r_arm.get_pose_matrix([0.2, 0.4, -0.2], [-90, -90, 0])
+    assert np.allclose(B, pose_B, atol=1e-03)
+
+    C = np.array([[0.262, -0.808, -0.528, 0.5], [0.72, 0.528, -0.451, -0.8], [0.643, -0.262, 0.72, 0.0], [0.0, 0.0, 0.0, 1.0]])
+    pose_C = reachy_sdk_zeroed.r_arm.get_pose_matrix([0.5, -0.8, 0], [-20, -40, 70])
+    assert np.allclose(C, pose_C, atol=1e-03)
+
+    with pytest.raises(TypeError):
+        reachy_sdk_zeroed.r_arm.get_pose_matrix([1, 2, "coucou"], [1, 2, 3])
+    with pytest.raises(TypeError):
+        reachy_sdk_zeroed.r_arm.get_pose_matrix([1, 2, 3], [1, 2, "coucou"])
+    with pytest.raises(TypeError):
+        reachy_sdk_zeroed.r_arm.get_pose_matrix([0.1, 0.2, 0.3], -90)
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.r_arm.get_pose_matrix([0.1, 0.2, 0.1, 0.1], [0, -90, 0])
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.r_arm.get_pose_matrix([0.1, 0.2, 0.1], [-20, -90, -50, 10])
