@@ -12,7 +12,6 @@ jobs:
         ssh-private-key: |
             ${{ secrets.SSH_PRIVATE_KEY_REACHY2_SDK_API }}
 
-
     - name: Checkout Repository
       uses: actions/checkout@v3
 
@@ -30,7 +29,7 @@ jobs:
       run: pdoc reachy2_sdk --output-dir docs --logo "https://www.pollen-robotics.com/img/company/logo/pollen_logo_square_black.svg"
 
     - name: Archive Documentation
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: documentation
         path: docs/
