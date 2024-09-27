@@ -569,7 +569,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 normal = np.cross(vector, [1, 0, 0])
             case _:
                 raise ValueError(
-                    "arc_direction {arc_direction} not supported ! Should be one of: 'above', 'below', 'front', 'back', 'right' or 'left'"
+                    f"arc_direction '{arc_direction}' not supported! Should be one of: "
+                    "'above', 'below', 'front', 'back', 'right' or 'left'"
                 )
 
         if np.linalg.norm(normal) == 0:
