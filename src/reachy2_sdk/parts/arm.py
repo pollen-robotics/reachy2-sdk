@@ -376,7 +376,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         try:
             self.inverse_kinematics(target)
         except ValueError:
-            raise ValueError("Target pose is not reachable!")
+            raise ValueError(f"Target pose: \n{target}\n is not reachable!")
 
         origin_matrix = self.forward_kinematics()
         nb_steps = int(duration * interpolation_frequency)
@@ -544,29 +544,33 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """Get a normal vector to the given vector in the desired direction."""
         match arc_direction:
             case "above":
-                if vector[0] < 0.001 and vector[1] < 0.001:
+                if abs(vector[0]) < 0.001 and abs(vector[1]) < 0.001:
                     return None
                 normal = np.cross(vector, [0, 0, -1])
             case "below":
-                if vector[0] < 0.001 and vector[1] < 0.001:
+                if abs(vector[0]) < 0.001 and abs(vector[1]) < 0.001:
                     return None
                 normal = np.cross(vector, [0, 0, 1])
             case "left":
-                if vector[0] < 0.001 and vector[2] < 0.001:
+                if abs(vector[0]) < 0.001 and abs(vector[2]) < 0.001:
                     return None
                 normal = np.cross(vector, [0, -1, 0])
             case "right":
-                if vector[0] < 0.001 and vector[2] < 0.001:
+                if abs(vector[0]) < 0.001 and abs(vector[2]) < 0.001:
                     return None
                 normal = np.cross(vector, [0, 1, 0])
             case "front":
-                if vector[1] < 0.001 and vector[2] < 0.001:
+                if abs(vector[1]) < 0.001 and abs(vector[2]) < 0.001:
                     return None
                 normal = np.cross(vector, [-1, 0, 0])
             case "back":
-                if vector[1] < 0.001 and vector[2] < 0.001:
+                if abs(vector[1]) < 0.001 and abs(vector[2]) < 0.001:
                     return None
                 normal = np.cross(vector, [1, 0, 0])
+            case _:
+                raise ValueError(
+                    "arc_direction {arc_direction} not supported ! Should be one of: 'above', 'below', 'front', 'back', 'right' or 'left'"
+                )
 
         if np.linalg.norm(normal) == 0:
             # Return None if the vector is in the requested arc_direction
