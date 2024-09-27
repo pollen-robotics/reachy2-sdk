@@ -1,7 +1,9 @@
 import time
 from threading import Thread
+from typing import List
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from reachy2_sdk.reachy_sdk import ReachySDK
@@ -33,7 +35,7 @@ class LoopThread:
 
     def loop_forward_function(self, reachy: ReachySDK, arm: str):
         while self.running:
-            if arm == "right":
+            if arm == "r_arm":
                 self.forward_list.append(reachy.r_arm.forward_kinematics())
             else:
                 self.forward_list.append(reachy.l_arm.forward_kinematics())
@@ -41,23 +43,159 @@ class LoopThread:
 
 
 @pytest.mark.online
-def test_send_cartesian_interpolation(reachy_sdk_zeroed: ReachySDK) -> None:
-    A = build_pose_matrix(0.3, -0.2, -0.3)
-    reachy_sdk_zeroed.r_arm.goto_from_matrix(A, wait=True)
-    B = build_pose_matrix(0.3, -0.4, -0.3)
-    t = LoopThread(reachy_sdk_zeroed, "r_arm")
-    t.start()
-    tic = time.time()
-    reachy_sdk_zeroed.r_arm.send_cartesian_interpolation(B, duration=3.0)
-    elapsed_time = time.time() - tic
-    t.stop()
-    assert np.isclose(elapsed_time, 3.0, 1)
+def test_send_cartesian_interpolation_linear(reachy_sdk_zeroed: ReachySDK) -> None:
+    def test_pose_trajectory(
+        A: npt.NDArray[np.float64], B: npt.NDArray[np.float64], duration: float
+    ) -> List[npt.NDArray[np.float64]]:
+        reachy_sdk_zeroed.r_arm.goto_from_matrix(A, wait=True)
+        t = LoopThread(reachy_sdk_zeroed, "r_arm")
+        t.start()
+        tic = time.time()
+        reachy_sdk_zeroed.r_arm.send_cartesian_interpolation(B, duration=duration)
+        elapsed_time = time.time() - tic
+        t.stop()
+        assert np.isclose(elapsed_time, duration, 1)
+        return t.forward_list
 
+    xA = 0.3
+    yA = -0.2
+    zA = -0.3
+    xB = xA
+    yB = -0.4
+    zB = zA
+    A = build_pose_matrix(xA, yA, zA)
+    B = build_pose_matrix(xB, yB, zB)
+    inter_poses = test_pose_trajectory(A, B, 3.0)
     B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
-    print(t.forward_list)
     assert np.allclose(B_forward, B, atol=1e-03)
+    for pose in inter_poses:
+        assert np.isclose(pose[0, 3], xB, 1e-03)
+        assert (pose[1, 3] <= max(yA, yB) or np.isclose(pose[1, 3], max(yA, yB), 1e-03)) and (
+            pose[1, 3] >= min(yA, yB) or np.isclose(pose[1, 3], min(yA, yB), 1e-03)
+        )
+        assert np.isclose(pose[2, 3], zB, 1e-03)
+        assert np.allclose(pose[:3, :3], B_forward[:3, :3], atol=1e-03)
 
-    for pose in t.forward_list:
-        assert np.isclose(pose[0, 3], 0.3, 1e-03)
-        assert np.isclose(pose[2, 3], -0.3, 1e-03)
-        assert pose[1, 3] <= -0.2 and pose[1, 3] >= -0.4
+    xA = 0.3
+    yA = -0.3
+    zA = -0.3
+    xB = 0.4
+    yB = yA
+    zB = -0.1
+    A = build_pose_matrix(xA, yA, zA)
+    B = build_pose_matrix(xB, yB, zB)
+    inter_poses = test_pose_trajectory(A, B, 2.0)
+    B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    assert np.allclose(B_forward, B, atol=1e-03)
+    for pose in inter_poses:
+        assert (pose[0, 3] <= max(xA, xB) or np.isclose(pose[0, 3], max(xA, xB), 1e-03)) and (
+            pose[0, 3] >= min(xA, xB) or np.isclose(pose[0, 3], min(xA, xB), 1e-03)
+        )
+        assert np.isclose(pose[1, 3], yB, 1e-03)
+        assert (pose[2, 3] <= max(zA, zB) or np.isclose(pose[2, 3], max(zA, zB), 1e-03)) and (
+            pose[2, 3] >= min(zA, zB) or np.isclose(pose[2, 3], max(zA, zB), 1e-03)
+        )
+        assert np.allclose(pose[:3, :3], B_forward[:3, :3], atol=1e-03)
+
+
+@pytest.mark.online
+def test_send_cartesian_interpolation_circular(reachy_sdk_zeroed: ReachySDK) -> None:
+    def test_pose_trajectory(
+        A: npt.NDArray[np.float64], B: npt.NDArray[np.float64], duration: float, arc_direction: str
+    ) -> List[npt.NDArray[np.float64]]:
+        reachy_sdk_zeroed.r_arm.goto_from_matrix(A, wait=True)
+        t = LoopThread(reachy_sdk_zeroed, "r_arm")
+        t.start()
+        tic = time.time()
+        reachy_sdk_zeroed.r_arm.send_cartesian_interpolation(
+            B, duration=duration, circular_interpolation=True, arc_direction=arc_direction
+        )
+        elapsed_time = time.time() - tic
+        t.stop()
+        assert np.isclose(elapsed_time, duration, 1)
+        return t.forward_list
+
+    xA = 0.3
+    yA = -0.2
+    zA = -0.3
+    xB = xA
+    yB = -0.4
+    zB = zA
+    A = build_pose_matrix(xA, yA, zA)
+    B = build_pose_matrix(xB, yB, zB)
+
+    # Test below
+    inter_poses = test_pose_trajectory(A, B, 3.0, arc_direction="below")
+    B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    assert np.allclose(B_forward, B, atol=1e-03)
+    went_down = False
+    for pose in inter_poses:
+        assert np.isclose(pose[0, 3], xB, 1e-03)
+        assert (pose[1, 3] <= max(yA, yB) or np.isclose(pose[1, 3], max(yA, yB), 1e-03)) and (
+            pose[1, 3] >= min(yA, yB) or np.isclose(pose[1, 3], min(yA, yB), 1e-03)
+        )
+        z_limit = zB - abs(yA - yB) / 2
+        assert (pose[2, 3] <= zB or np.isclose(pose[2, 3], zB, 1e-03)) and (
+            pose[2, 3] >= z_limit or np.isclose(pose[2, 3], z_limit, 1e-03)
+        )
+        assert np.allclose(pose[:3, :3], B_forward[:3, :3], atol=1e-03)
+        if pose[2, 3] < z_limit + 0.05:
+            went_down = True
+    assert went_down
+
+    # Test above
+    inter_poses = test_pose_trajectory(A, B, 3.0, arc_direction="above")
+    B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    assert np.allclose(B_forward, B, atol=1e-03)
+    went_up = False
+    for pose in inter_poses:
+        assert np.isclose(pose[0, 3], xB, 1e-03)
+        assert (pose[1, 3] <= max(yA, yB) or np.isclose(pose[1, 3], max(yA, yB), 1e-03)) and (
+            pose[1, 3] >= min(yA, yB) or np.isclose(pose[1, 3], min(yA, yB), 1e-03)
+        )
+        z_limit = zB + abs(yA - yB) / 2
+        assert (pose[2, 3] >= zB or np.isclose(pose[2, 3], zB, 1e-03)) and (
+            pose[2, 3] <= z_limit or np.isclose(pose[2, 3], z_limit, 1e-03)
+        )
+        assert np.allclose(pose[:3, :3], B_forward[:3, :3], atol=1e-03)
+        if pose[2, 3] > z_limit - 0.05:
+            went_up = True
+    assert went_up
+
+    # Test front
+    inter_poses = test_pose_trajectory(A, B, 3.0, arc_direction="front")
+    B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    assert np.allclose(B_forward, B, atol=1e-03)
+    went_front = False
+    for pose in inter_poses:
+        x_limit = xB + abs(yA - yB) / 2
+        assert (pose[0, 3] >= xB or np.isclose(pose[0, 3], xB, 1e-03)) and (
+            pose[0, 3] <= x_limit or np.isclose(pose[0, 3], x_limit, 1e-03)
+        )
+        if pose[0, 3] > x_limit - 0.05:
+            went_front = True
+        assert (pose[1, 3] <= max(yA, yB) or np.isclose(pose[1, 3], max(yA, yB), 1e-03)) and (
+            pose[1, 3] >= min(yA, yB) or np.isclose(pose[1, 3], min(yA, yB), 1e-03)
+        )
+        assert np.isclose(pose[2, 3], zB, 1e-03)
+        assert np.allclose(pose[:3, :3], B_forward[:3, :3], atol=1e-03)
+    assert went_front
+
+    # Test back
+    inter_poses = test_pose_trajectory(A, B, 3.0, arc_direction="back")
+    B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    assert np.allclose(B_forward, B, atol=1e-03)
+    went_back = False
+    for pose in inter_poses:
+        x_limit = xB - abs(yA - yB) / 2
+        assert (pose[0, 3] <= xB or np.isclose(pose[0, 3], xB, 1e-03)) and (
+            pose[0, 3] >= x_limit or np.isclose(pose[0, 3], x_limit, 1e-03)
+        )
+        if pose[0, 3] < x_limit + 0.05:
+            went_back = True
+        assert (pose[1, 3] <= max(yA, yB) or np.isclose(pose[1, 3], max(yA, yB), 1e-03)) and (
+            pose[1, 3] >= min(yA, yB) or np.isclose(pose[1, 3], min(yA, yB), 1e-03)
+        )
+        assert np.isclose(pose[2, 3], zB, 1e-03)
+        assert np.allclose(pose[:3, :3], B_forward[:3, :3], atol=1e-03)
+    assert went_back
