@@ -492,7 +492,7 @@ class ReachySDK:
         for arm_part in arms_list:
             arm_part._turn_off()
             arm_part.set_torque_limits(torque_limit_high)
-        
+
         elapsed_time = time.time() - tic
         print(f"3 : {elapsed_time}")
 
