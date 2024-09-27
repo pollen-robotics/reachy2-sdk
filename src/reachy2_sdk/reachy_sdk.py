@@ -450,26 +450,52 @@ class ReachySDK:
 
         return True
 
-    def turn_off_smoothly(self, duration: float = 2) -> bool:
+    def turn_off_smoothly(self) -> bool:
         """Turn all motors of enabled parts off.
 
-        All enabled parts' motors will then be compliant.
+        Arm torques are reduced during 3 seconds, then all enabled parts' motors will be compliant.
         """
         if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
+
+        torque_limit_low = 35
+        torque_limit_high = 100
+        duration = 3
+        arms_list = []
+
+        tic = time.time()
+
         if hasattr(self, "_mobile_base") and self._mobile_base is not None:
             self._mobile_base._turn_off()
         for part in self.info._enabled_parts.values():
             if "arm" in part._part_id.name:
-                part.set_torque_limits(20)
+                part.set_torque_limits(torque_limit_low)
+                part.set_pose(duration=duration, wait_for_moves_end=False)
+                arms_list.append(part)
             else:
                 part._turn_off()
-        time.sleep(duration)
-        for part in self.info._enabled_parts.values():
-            if "arm" in part._part_id.name:
-                part._turn_off()
-                part.set_torque_limits(100)
+        elapsed_time = time.time() - tic
+        print(f"1 : {elapsed_time}")
+
+        countingTime = 0
+        while countingTime < duration:
+            time.sleep(1)
+            torque_limit_low -= 10
+            for arm_part in arms_list:
+                arm_part.set_torque_limits(torque_limit_low)
+            countingTime += 1
+
+        elapsed_time = time.time() - tic
+        print(f"2 : {elapsed_time}")
+
+        for arm_part in arms_list:
+            arm_part._turn_off()
+            arm_part.set_torque_limits(torque_limit_high)
+        
+        elapsed_time = time.time() - tic
+        print(f"3 : {elapsed_time}")
+
         time.sleep(0.5)
         return True
 

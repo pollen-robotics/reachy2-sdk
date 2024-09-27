@@ -175,18 +175,27 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._gripper._turn_off()
         super()._turn_off()
 
-    def turn_off_smoothly(self, duration: float = 2) -> None:
+    def turn_off_smoothly(self) -> None:
         """Turn all motors of the part off.
 
-        All arm's motors will see their torque limit reduces from a determined duration, then will be fully compliant.
+        All arm's motors will see their torque limit reduces for 3 seconds, then will be fully compliant.
         """
-        self.set_torque_limits(20)
-        time.sleep(duration)
+        torque_limit_low = 35
+        torque_limit_high = 100
+        duration = 3
+
+        self.set_torque_limits(torque_limit_low)
+        self.set_pose(duration=duration, wait_for_moves_end=False)
+
+        countingTime = 0
+        while countingTime < duration:
+            time.sleep(1)
+            torque_limit_low -= 10
+            self.set_torque_limits(torque_limit_low)
+            countingTime += 1
+
         super().turn_off()
-        if self._gripper is not None:
-            self._gripper.turn_off()
-        time.sleep(0.2)
-        self.set_torque_limits(100)
+        self.set_torque_limits(torque_limit_high)
 
     def is_on(self) -> bool:
         """Return True if all actuators of the arm are stiff"""
