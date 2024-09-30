@@ -51,13 +51,26 @@ class Camera:
     def get_parameters(
         self, view: CameraView = CameraView.LEFT
     ) -> Optional[
-        Tuple[int, int, str, npt.NDArray[np.uint8], npt.NDArray[np.uint8], npt.NDArray[np.uint8], npt.NDArray[np.uint8]]
+        Tuple[int, int, str, npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]
     ]:
         params = self._video_stub.GetParameters(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if params.K == []:
             self._logger.warning("No parameter retrieved")
             return None
-        return params.height, params.width, params.distortion_model, params.D, params.K, params.R, params.P
+
+        D = np.array(params.D)
+        K = np.array(params.K).reshape((3, 3))
+        R = np.array(params.R).reshape((3, 3))
+        P = np.array(params.P).reshape((3, 4))
+
+        return params.height, params.width, params.distortion_model, D, K, R, P
+
+    def get_extrinsics(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.float64]]:
+        res = self._video_stub.GetExtrinsics(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
+        if res.extrinsics is None:
+            self._logger.warning("No extrinsic matrix retrieved")
+            return None
+        return np.array(res.extrinsics.data).reshape((4, 4))
 
     def __repr__(self) -> str:
         """Clean representation of a RGB camera"""
