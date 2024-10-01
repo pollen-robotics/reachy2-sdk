@@ -300,9 +300,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
         it will try to compute a joint solution to reach this target (or get close),
         and move to this position in the defined duration.
-
-        If with_cartesian_interpolation is set to True, it will interpolate the movement in cartesian space
-        and send cartesian commands at the interpolation frequency (default value is 10hz).
         """
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
