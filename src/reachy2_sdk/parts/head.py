@@ -241,6 +241,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
         return response
 
     def send_goal_positions(self) -> None:
+        if self.is_off():
+            self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
+            return
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
 
