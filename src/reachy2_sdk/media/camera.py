@@ -53,6 +53,8 @@ class Camera:
     ) -> Optional[
         Tuple[int, int, str, npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]
     ]:
+        """Returns the height, width, distortion model, distortion coefficients, instrinsic matrix,"""
+        """ rotation matrix and projection matrix"""
         params = self._video_stub.GetParameters(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if params.K == []:
             self._logger.warning("No parameter retrieved")
@@ -66,6 +68,7 @@ class Camera:
         return params.height, params.width, params.distortion_model, D, K, R, P
 
     def get_extrinsics(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.float64]]:
+        """Returns the 4x4 extrinsic matrix"""
         res = self._video_stub.GetExtrinsics(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if res.extrinsics is None:
             self._logger.warning("No extrinsic matrix retrieved")
