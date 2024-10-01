@@ -427,10 +427,16 @@ class ReachySDK:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
         for part in self.info._enabled_parts.values():
+            part.set_speed_limits(1)
+        time.sleep(0.05)
+        for part in self.info._enabled_parts.values():
             part._turn_on()
         if self._mobile_base is not None:
             self._mobile_base._turn_on()
-        time.sleep(0.5)
+        time.sleep(0.05)
+        for part in self.info._enabled_parts.values():
+            part.set_speed_limits(100)
+        time.sleep(0.4)
 
         return True
 

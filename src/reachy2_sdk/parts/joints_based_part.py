@@ -70,3 +70,6 @@ class JointsBasedPart(Part):
             limit=value,
         )
         self._stub.SetSpeedLimit(req)
+
+    def _set_speed_limits(self, value: int) -> None:
+        return self.set_speed_limits(value)
