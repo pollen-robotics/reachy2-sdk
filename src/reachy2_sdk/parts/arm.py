@@ -353,6 +353,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
             )
         response = self._goto_stub.GoToCartesian(request)
+        if response.id == -1:
+            self._logger.error(f"Target pose:\n {target} \nwas not reachable. No command sent.")
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_move_finished(response):
@@ -462,6 +464,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
+        if response.id == -1:
+            self._logger.error(f"Position {positions} was not reachable. No command sent.")
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_move_finished(response):

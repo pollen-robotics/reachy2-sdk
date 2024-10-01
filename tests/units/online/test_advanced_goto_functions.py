@@ -35,6 +35,9 @@ def test_cancel_move_by_id(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.isclose(reachy_sdk_zeroed.l_arm.wrist.pitch.present_position, 2.0, atol=1)
     assert np.isclose(reachy_sdk_zeroed.l_arm.wrist.yaw.present_position, 4.0, atol=1)
 
+    with pytest.raises(TypeError):
+        reachy_sdk_zeroed.cancel_move_by_id(3)
+
 
 @pytest.mark.online
 def test_goto_queue(reachy_sdk_zeroed: ReachySDK) -> None:
@@ -167,7 +170,7 @@ def test_get_move_playing(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 @pytest.mark.online
-def test__get_move_state(reachy_sdk_zeroed: ReachySDK) -> None:
+def test_get_move_state(reachy_sdk_zeroed: ReachySDK) -> None:
     req1 = reachy_sdk_zeroed.head.goto_joints([0, 0, -10], duration=3)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=5)
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=10)
@@ -261,6 +264,9 @@ def test_get_move_joints_request(reachy_sdk_zeroed: ReachySDK) -> None:
 
     cancel = reachy_sdk_zeroed.cancel_all_moves()
     assert cancel.ack
+
+    with pytest.raises(TypeError):
+        reachy_sdk_zeroed.get_move_joints_request(3)
 
 
 @pytest.mark.online
@@ -518,6 +524,9 @@ def test_is_move_finished(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed.is_move_finished(req5)
     assert not reachy_sdk_zeroed.is_move_finished(req6)
 
+    with pytest.raises(TypeError):
+        reachy_sdk_zeroed.is_move_finished(3)
+
 
 @pytest.mark.online
 def test_is_move_playing(reachy_sdk_zeroed: ReachySDK) -> None:
@@ -559,6 +568,9 @@ def test_is_move_playing(reachy_sdk_zeroed: ReachySDK) -> None:
     assert not reachy_sdk_zeroed.is_move_playing(req4)
     assert not reachy_sdk_zeroed.is_move_playing(req5)
     assert reachy_sdk_zeroed.is_move_playing(req6)
+
+    with pytest.raises(TypeError):
+        reachy_sdk_zeroed.is_move_finished(3)
 
 
 @pytest.mark.online
