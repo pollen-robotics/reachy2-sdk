@@ -206,26 +206,3 @@ def test_get_matrix(reachy_sdk_zeroed: ReachySDK) -> None:
 
     with pytest.raises(ValueError):
         reachy_sdk_zeroed.r_arm.get_default_pose_matrix("coucou")
-
-    A = np.array([[0.0, 0.0, -1.0, 0.5], [0.0, 1.0, 0.0, 0.1], [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
-    pose_A = reachy_sdk_zeroed.r_arm.get_pose_matrix([0.5, 0.1, 0], [0, -90, 0])
-    assert np.allclose(A, pose_A, atol=1e-03)
-
-    B = np.array([[0.0, 1.0, -0.0, 0.2], [0.0, 0.0, 1.0, 0.4], [1.0, -0.0, 0.0, -0.2], [0.0, 0.0, 0.0, 1.0]])
-    pose_B = reachy_sdk_zeroed.r_arm.get_pose_matrix([0.2, 0.4, -0.2], [-90, -90, 0])
-    assert np.allclose(B, pose_B, atol=1e-03)
-
-    C = np.array([[0.262, -0.808, -0.528, 0.5], [0.72, 0.528, -0.451, -0.8], [0.643, -0.262, 0.72, 0.0], [0.0, 0.0, 0.0, 1.0]])
-    pose_C = reachy_sdk_zeroed.r_arm.get_pose_matrix([0.5, -0.8, 0], [-20, -40, 70])
-    assert np.allclose(C, pose_C, atol=1e-03)
-
-    with pytest.raises(TypeError):
-        reachy_sdk_zeroed.r_arm.get_pose_matrix([1, 2, "coucou"], [1, 2, 3])
-    with pytest.raises(TypeError):
-        reachy_sdk_zeroed.r_arm.get_pose_matrix([1, 2, 3], [1, 2, "coucou"])
-    with pytest.raises(TypeError):
-        reachy_sdk_zeroed.r_arm.get_pose_matrix([0.1, 0.2, 0.3], -90)
-    with pytest.raises(ValueError):
-        reachy_sdk_zeroed.r_arm.get_pose_matrix([0.1, 0.2, 0.1, 0.1], [0, -90, 0])
-    with pytest.raises(ValueError):
-        reachy_sdk_zeroed.r_arm.get_pose_matrix([0.1, 0.2, 0.1], [-20, -90, -50, 10])

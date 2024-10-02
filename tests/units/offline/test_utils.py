@@ -10,6 +10,7 @@ from reachy2_sdk.utils.utils import (
     ext_euler_angles_to_list,
     get_grpc_interpolation_mode,
     get_interpolation_mode,
+    get_pose_matrix,
     list_to_arm_position,
     matrix_from_euler_angles,
 )
@@ -107,3 +108,29 @@ def test_matrix_from_euler_angles() -> None:
     expected_C = np.eye(4)
     expected_C[:3, :3] = scipy_result_C
     np.array_equal(expected_C, C)
+
+
+@pytest.mark.offline
+def test_get_pose_matrix() -> None:
+    A = np.array([[0.0, 0.0, -1.0, 0.5], [0.0, 1.0, 0.0, 0.1], [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
+    pose_A = get_pose_matrix([0.5, 0.1, 0], [0, -90, 0])
+    assert np.allclose(A, pose_A, atol=1e-03)
+
+    B = np.array([[0.0, 1.0, -0.0, 0.2], [0.0, 0.0, 1.0, 0.4], [1.0, -0.0, 0.0, -0.2], [0.0, 0.0, 0.0, 1.0]])
+    pose_B = get_pose_matrix([0.2, 0.4, -0.2], [-90, -90, 0])
+    assert np.allclose(B, pose_B, atol=1e-03)
+
+    C = np.array([[0.262, -0.808, -0.528, 0.5], [0.72, 0.528, -0.451, -0.8], [0.643, -0.262, 0.72, 0.0], [0.0, 0.0, 0.0, 1.0]])
+    pose_C = get_pose_matrix([0.5, -0.8, 0], [-20, -40, 70])
+    assert np.allclose(C, pose_C, atol=1e-03)
+
+    with pytest.raises(TypeError):
+        get_pose_matrix([1, 2, "coucou"], [1, 2, 3])
+    with pytest.raises(TypeError):
+        get_pose_matrix([1, 2, 3], [1, 2, "coucou"])
+    with pytest.raises(TypeError):
+        get_pose_matrix([0.1, 0.2, 0.3], -90)
+    with pytest.raises(ValueError):
+        get_pose_matrix([0.1, 0.2, 0.1, 0.1], [0, -90, 0])
+    with pytest.raises(ValueError):
+        get_pose_matrix([0.1, 0.2, 0.1], [-20, -90, -50, 10])
