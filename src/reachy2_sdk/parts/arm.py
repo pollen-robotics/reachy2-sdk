@@ -287,22 +287,23 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             answer = np.round(answer, round).tolist()
         return answer
 
-    def get_default_pose_matrix(self, common_pose: str = "default") -> npt.NDArray[np.float64]:
-        """Return the 4x4 pose matrix of default robot poses."""
+    def get_default_pose_joints(self, common_pose: str = "default") -> List[float]:
+        """Return the list of the joints positions for the default poses."""
         if common_pose not in ["default", "elbow_90"]:
             raise ValueError(f"common_pose {common_pose} not supported! Should be 'default' or 'elbow_90'")
-
         if common_pose == "elbow_90":
             elbow_pitch = -90
         else:
             elbow_pitch = 0
-
         if self._part_id.name == "r_arm":
-            pose = self.forward_kinematics([0, -15, -15, elbow_pitch, 0, 0, 0])
+            return [0, -15, -15, elbow_pitch, 0, 0, 0]
         else:
-            pose = self.forward_kinematics([0, 15, 15, elbow_pitch, 0, 0, 0])
+            return [0, 15, 15, elbow_pitch, 0, 0, 0]
 
-        return pose
+    def get_default_pose_matrix(self, common_pose: str = "default") -> npt.NDArray[np.float64]:
+        """Return the 4x4 pose matrix of default robot poses."""
+        joints = self.get_default_pose_joints(common_pose)
+        return self.forward_kinematics(joints)
 
     def goto_from_matrix(
         self,
@@ -693,21 +694,14 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
-        if common_pose == "elbow_90":
-            elbow_pitch = -90
-        else:
-            elbow_pitch = 0
+        joints = self.get_default_pose_joints(common_pose=common_pose)
+        if common_pose == "default":
             if self._gripper is not None and self._gripper.is_on():
                 self._gripper.open()
         if not wait_for_moves_end:
             self.cancel_all_moves()
         if self.is_on():
-            if self._part_id.name == "r_arm":
-                return self.goto_joints([0, -15, -15, elbow_pitch, 0, 0, 0], duration, wait, interpolation_mode)
-            else:
-                return self.goto_joints([0, 15, 15, elbow_pitch, 0, 0, 0], duration, wait, interpolation_mode)
+            return self.goto_joints(joints, duration, wait, interpolation_mode)
         else:
             self._logger.warning(f"{self._part_id.name} is off. No command sent.")
         return GoToId(id=-1)

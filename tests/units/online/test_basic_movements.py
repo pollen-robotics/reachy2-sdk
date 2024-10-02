@@ -185,7 +185,7 @@ def test_send_goal_positions(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 @pytest.mark.online
-def test_get_matrix(reachy_sdk_zeroed: ReachySDK) -> None:
+def test_get_default_pose_matrix(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.set_pose(wait=True)
     r_matrix = reachy_sdk_zeroed.r_arm.get_default_pose_matrix()
     l_matrix = reachy_sdk_zeroed.l_arm.get_default_pose_matrix()
@@ -206,3 +206,20 @@ def test_get_matrix(reachy_sdk_zeroed: ReachySDK) -> None:
 
     with pytest.raises(ValueError):
         reachy_sdk_zeroed.r_arm.get_default_pose_matrix("coucou")
+
+
+@pytest.mark.online
+def test_get_default_pose_joints(reachy_sdk_zeroed: ReachySDK) -> None:
+    r_default_joints_expected = [0, -15, -15, 0, 0, 0, 0]
+    l_default_joints_expected = [0, 15, 15, 0, 0, 0, 0]
+    r_default_joints = reachy_sdk_zeroed.r_arm.get_default_pose_joints(common_pose="default")
+    l_default_joints = reachy_sdk_zeroed.l_arm.get_default_pose_joints(common_pose="default")
+    assert np.allclose(r_default_joints, r_default_joints_expected, atol=1e-03)
+    assert np.allclose(l_default_joints, l_default_joints_expected, atol=1e-03)
+
+    r_elbow_90_joints_expected = [0, -15, -15, -90, 0, 0, 0]
+    l_elbow_90_joints_expected = [0, 15, 15, -90, 0, 0, 0]
+    r_elbow_90_joints = reachy_sdk_zeroed.r_arm.get_default_pose_joints(common_pose="elbow_90")
+    l_elbow_90_joints = reachy_sdk_zeroed.l_arm.get_default_pose_joints(common_pose="elbow_90")
+    assert np.allclose(r_elbow_90_joints, r_elbow_90_joints_expected, atol=1e-03)
+    assert np.allclose(l_elbow_90_joints, l_elbow_90_joints_expected, atol=1e-03)
