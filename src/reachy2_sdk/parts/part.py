@@ -40,8 +40,12 @@ class Part(ABC):
         self._actuators: Dict[str, Any] = {}
 
     def turn_on(self) -> None:
+        self._set_speed_limits(1)
+        time.sleep(0.05)
         self._turn_on()
-        time.sleep(0.5)
+        time.sleep(0.05)
+        self._set_speed_limits(100)
+        time.sleep(0.4)
 
     def turn_off(self) -> None:
         self._turn_off()
@@ -71,6 +75,10 @@ class Part(ABC):
 
     @abstractmethod
     def _update_audit_status(self, state: ArmStatus | HeadStatus | HandStatus | MobileBaseStatus) -> None:
+        pass
+
+    @abstractmethod
+    def _set_speed_limits(self, value: int) -> None:
         pass
 
     @property

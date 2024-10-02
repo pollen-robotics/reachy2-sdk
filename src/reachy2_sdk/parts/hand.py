@@ -59,6 +59,9 @@ class Hand(Part):
 
         self._outgoing_goal_positions: Optional[float] = None
 
+    def _set_speed_limits(self, value: int) -> None:
+        return super()._set_speed_limits(value)
+
     @property
     def opening(self) -> float:
         """Return the opening of the hand in percentage."""
