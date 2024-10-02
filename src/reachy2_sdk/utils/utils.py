@@ -165,3 +165,33 @@ def matrix_from_euler_angles(roll: float, pitch: float, yaw: float, degrees: boo
 
     rotation_matrix = R_z @ R_y @ R_x
     return rotation_matrix
+
+
+def get_pose_matrix(
+    position: npt.NDArray[np.float64], rotation: npt.NDArray[np.float64], degrees: bool = True
+) -> npt.NDArray[np.float64]:
+    """Creates the 4x4 pose matrix from a position vector and \"roll pitch yaw\" angles (rotation).
+    Arguments :
+        position : a list of size 3. It is the requested position of the end effector in the robot coordinate system
+        rotation : a list of size 3. It it the requested orientation of the end effector in the robot coordinate system.
+                   Rotation is given as intrinsic angles, that are executed in roll, pitch, yaw order.
+        degrees  : True if angles are provided in degrees, False if they are in radians.
+    Returns :
+        pose : the constructed pose matrix. This is a 4x4 numpy array
+    """
+    if not (isinstance(position, np.ndarray) or isinstance(position, list)) or not all(
+        isinstance(pos, float | int) for pos in position
+    ):
+        raise TypeError(f"position should be a list of float, got {position}")
+    if not (isinstance(rotation, np.ndarray) or isinstance(rotation, list)) or not all(
+        isinstance(rot, float | int) for rot in rotation
+    ):
+        raise TypeError(f"rotation should be a list of float, got {rotation}")
+    if len(position) != 3:
+        raise ValueError("position should be a list of len 3")
+    if len(rotation) != 3:
+        raise ValueError("rotation should be a list of len 3")
+
+    pose = matrix_from_euler_angles(rotation[0], rotation[1], rotation[2], degrees=degrees)
+    pose[:3, 3] = np.array(position)
+    return pose
