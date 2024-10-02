@@ -180,15 +180,18 @@ class MobileBase(Part):
         odometry = self.odometry
         x = odometry["x"] + x
         y = odometry["y"] + y
-        self.goto(x, y, 0, timeout=timeout)
+        theta = odometry["theta"]
+        self.goto(x, y, theta, timeout=timeout)
 
     def rotate_by(self, theta: float, timeout: Optional[float] = None) -> None:
         """Send a target rotation relative to the current rotation of the mobile base.
 
         theta defines the rotation wanted in the mobile base in cartesian space."""
         odometry = self.odometry
+        x = odometry["x"]
+        y = odometry["y"]
         theta = odometry["theta"] + theta
-        self.goto(0, 0, theta, timeout=timeout)
+        self.goto(x, y, theta, timeout=timeout)
 
     def goto(
         self,
