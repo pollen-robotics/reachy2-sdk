@@ -350,11 +350,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self,
         target: npt.NDArray[np.float64],
         duration: float = 2,
-        circular_interpolation: bool = False,
-        arc_direction: str = "above",
-        secondary_radius: Optional[float] = None,
+        arc_direction: Optional[str] = None,
+        elliptic_radius: Optional[float] = None,
         interpolation_frequency: float = 120,
-        precision_first: bool = False,
         precision_distance_xyz: float = 0.003,
     ) -> None:
         """Move the arm to a matrix target (or get close).
@@ -363,6 +361,17 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         it will try to compute a joint solution to reach this target (or get close).
         It will interpolate the movement in cartesian space in a number of intermediate points defined
         by the interpolation frequency and the duration.
+
+        Arguments :
+            target          : the 4x4 goal pose matrix in the robot coordinate system, reached at the end of the interpolation
+            duration        : the target duration of the movement
+            arc_direction   : if None, leads to a linear interpolation. If set, direction of the elliptic interpolation.
+                            Can be set to 'above', 'below', 'right', 'left', 'front' or 'back'
+            elliptic_radius : the second radius of the computed ellipse, first radius being the present to target pose distance.
+                            If None, leads to a circular interpolation.
+            interpolation_frequency : the frequency of the interpolation
+            precision_distance_xyz  : the maximum distance between the target pose and the reached pose after the interpolation.
+                                      Precision is prioritized over duration.
         """
 
         self.cancel_all_moves()
@@ -385,7 +394,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         q1, trans1 = decompose_matrix(origin_matrix)
         q2, trans2 = decompose_matrix(target)
 
-        if not circular_interpolation:
+        if arc_direction is None:
             self._send_linear_interpolation(trans1, trans2, q1, q2, nb_steps=nb_steps, time_step=time_step)
 
         else:
@@ -395,14 +404,14 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 q1,
                 q2,
                 arc_direction=arc_direction,
-                secondary_radius=secondary_radius,
+                secondary_radius=elliptic_radius,
                 nb_steps=nb_steps,
                 time_step=time_step,
             )
 
         current_pose = self.forward_kinematics()
         current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
-        if precision_first and current_precision_distance_xyz > precision_distance_xyz:
+        if current_precision_distance_xyz > precision_distance_xyz:
             for t in np.linspace(0, 1, nb_steps):
                 # Spamming the goal position to make sure its reached
                 request = ArmCartesianGoal(
@@ -458,22 +467,23 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         time_step: float,
     ) -> None:
         """Generate elliptical interpolation."""
+        vector_target_origin = target_trans - origin_trans
+
         center = (origin_trans + target_trans) / 2
-        radius = np.linalg.norm(target_trans - origin_trans) / 2
+        radius = float(np.linalg.norm(vector_target_origin) / 2)
 
-        # Vectors relative to center
-        vector1 = origin_trans - center
-        vector2 = target_trans - center
-
-        vector = target_trans - origin_trans
+        vector_origin_center = origin_trans - center
+        vector_target_center = target_trans - center
 
         if radius == 0:
             return
-        if secondary_radius is not None and secondary_radius > 0.2:
-            self._logger.warning("interpolation secondary_radius was too large, reduced to 0.2")
-            secondary_radius = 0.2
+        if secondary_radius is None:
+            secondary_radius = radius
+        if secondary_radius is not None and secondary_radius > 0.3:
+            self._logger.warning("interpolation elliptic_radius was too large, reduced to 0.3")
+            secondary_radius = 0.3
 
-        normal = self._get_normal_vector(vector=vector, arc_direction=arc_direction)
+        normal = self._get_normal_vector(vector=vector_target_origin, arc_direction=arc_direction)
 
         if normal is None:
             self._logger.warning("arc_direction has no solution. Executing linear interpolation instead.")
@@ -487,8 +497,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             )
             return
 
-        dot_product = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
-        angle = np.arccos(np.clip(dot_product, -1, 1))
+        cos_angle = np.dot(vector_origin_center, vector_target_center) / (
+            np.linalg.norm(vector_origin_center) * np.linalg.norm(vector_target_center)
+        )
+        angle = np.arccos(np.clip(cos_angle, -1, 1))
 
         for t in np.linspace(0, 1, nb_steps):
             # Interpolated angles
@@ -516,15 +528,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             )
 
             # Interpolated point in plan
-            if secondary_radius is None:
-                trans_interpolated = np.dot(rotation_matrix, vector1) + center
-
-            else:
-                trans_interpolated = np.dot(rotation_matrix, vector1)
-
-                # Adjusting the ellipse
-                ellipse_interpolated = trans_interpolated * np.array([1, 1, secondary_radius / radius])
-                trans_interpolated = ellipse_interpolated + center
+            trans_interpolated = np.dot(rotation_matrix, vector_origin_center)
+            # Adjusting the ellipse
+            ellipse_interpolated = trans_interpolated * np.array([1, 1, secondary_radius / radius])
+            trans_interpolated = ellipse_interpolated + center
 
             # SLERP pour la rotation
             q_interpolated = Quaternion.slerp(origin_rot, target_rot, t)
