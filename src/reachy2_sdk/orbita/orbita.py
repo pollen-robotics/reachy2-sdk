@@ -73,6 +73,7 @@ class Orbita(ABC):
         self._error_status: Optional[str] = None
 
         self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
+        self._cancel_check = False
 
     @abstractmethod
     def _create_dict_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
@@ -161,9 +162,23 @@ class Orbita(ABC):
     def send_goal_positions(self) -> None:
         pass
 
+    def _post_send_goal_positions(self) -> None:
+        if not self._thread_check_position.is_alive():
+            self._cancel_check = True
+            self._thread_check_position.join()
+            self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
+            self._thread_check_position.start()
+
     def _check_goal_positions(self) -> None:
         """Send command does not return a status. Manual check of the present position vs the goal position"""
-        time.sleep(1)
+        self._cancel_check = False
+        t1 = time.time()
+        while time.time() - t1 < 1:
+            time.sleep(0.05)
+            if self._cancel_check:
+                # in case of multiple send_goal_positions we'll check the next call
+                return
+
         for joint, orbitajoint in self._joints.items():
             # precision is low we are looking for unreachable positions
             if not np.isclose(orbitajoint.present_position, orbitajoint.goal_position, atol=1):
