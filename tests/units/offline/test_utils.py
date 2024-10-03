@@ -11,6 +11,7 @@ from reachy2_sdk.utils.utils import (
     get_grpc_interpolation_mode,
     get_interpolation_mode,
     get_pose_matrix,
+    invert_affine_transformation_matrix,
     list_to_arm_position,
     matrix_from_euler_angles,
     rotate_in_self,
@@ -196,3 +197,67 @@ def test_translate_in_self() -> None:
         ]
     )
     assert np.allclose(B_trans, expected_B_trans, atol=1e-03)
+
+
+@pytest.mark.offline
+def test_invert_affine_transformation_matrix() -> None:
+    M = np.eye(2)
+
+    with pytest.raises(ValueError):
+        invert_affine_transformation_matrix(M)
+
+    # pure translation
+    M = np.eye(4)
+    M[0][3] = 5
+    M[2][3] = -8
+    M_inv_ref = np.eye(4)
+    M_inv_ref[0][3] = -5
+    M_inv_ref[2][3] = 8
+
+    M_computed = invert_affine_transformation_matrix(M)
+    assert np.array_equal(M_inv_ref, M_computed)
+
+    # pure rotation
+    # from pyquaternion: Quaternion(axis=[1, 0, 0], angle=3.14159265)
+    M = np.array(
+        [
+            [0.79389263, -0.5720614, 0.20610737, 0.0],
+            [0.5720614, 0.58778525, -0.5720614, 0.0],
+            [0.20610737, 0.5720614, 0.79389263, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+
+    M_inv_ref = np.array(
+        [
+            [0.79389263, 0.5720614, 0.20610737, 0.0],
+            [-0.5720614, 0.58778525, 0.5720614, 0.0],
+            [0.20610737, -0.5720614, 0.79389263, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+
+    M_computed = invert_affine_transformation_matrix(M)
+    assert np.array_equal(M_inv_ref, M_computed)
+
+    # both
+    M = np.array(
+        [
+            [0.79389263, -0.5720614, 0.20610737, 5.0],
+            [0.5720614, 0.58778525, -0.5720614, 0.0],
+            [0.20610737, 0.5720614, 0.79389263, -8.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+
+    M_inv_ref = np.array(
+        [
+            [0.79389263, 0.5720614, 0.20610737, -2.32060419],
+            [-0.5720614, 0.58778525, 0.5720614, 7.4367982],
+            [0.20610737, -0.5720614, 0.79389263, 5.32060419],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+
+    M_computed = invert_affine_transformation_matrix(M)
+    assert np.array_equal(M_inv_ref, M_computed)

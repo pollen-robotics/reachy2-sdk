@@ -11,7 +11,8 @@ def display_teleop_cam() -> None:
     if reachy.cameras.teleop is None:
         exit("There is no teleop camera.")
 
-    print(f"Left camara parameters {reachy.cameras.teleop.get_parameters(CameraView.LEFT)}")
+    print(f"Left camera parameters {reachy.cameras.teleop.get_parameters(CameraView.LEFT)}")
+    print(f"Left camera extrinsic parameters {reachy.cameras.teleop.get_extrinsics(CameraView.LEFT)}")
     # print(reachy.cameras.teleop.get_parameters(CameraView.RIGHT))
 
     try:
@@ -30,6 +31,9 @@ def display_teleop_cam() -> None:
 def display_depth_cam() -> None:
     if reachy.cameras.depth is None:
         exit("There is no depth camera.")
+
+    print(f"Depth camera parameters {reachy.cameras.depth.get_parameters()}")
+    print(f"Depth camera extrinsic parameters {reachy.cameras.depth.get_extrinsics()}")
 
     try:
         while True:

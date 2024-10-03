@@ -691,16 +691,16 @@ def task_space_interpolation_goto(reachy_arm, target_pose) -> None:
 
 def test_goto_cartesian_with_interpolation(reachy: ReachySDK) -> None:
     pose = build_pose_matrix(0.3, -0.4, -0.3)
-    reachy.r_arm.goto_from_matrix(pose, 2.0, interpolation_mode="minimum_jerk", with_cartesian_interpolation=True)
+    reachy.r_arm.send_cartesian_interpolation(pose, 2.0)
 
     pose = build_pose_matrix(0.3, -0.4, 0.0)
-    reachy.r_arm.goto_from_matrix(pose, 2.0, interpolation_mode="minimum_jerk", with_cartesian_interpolation=True)
+    reachy.r_arm.send_cartesian_interpolation(pose, 2.0)
 
     pose = build_pose_matrix(0.3, -0.1, 0.0)
-    reachy.r_arm.goto_from_matrix(pose, 2.0, interpolation_mode="minimum_jerk", with_cartesian_interpolation=True)
+    reachy.r_arm.send_cartesian_interpolation(pose, 2.0)
 
     pose = build_pose_matrix(0.3, -0.1, -0.3)
-    reachy.r_arm.goto_from_matrix(pose, 2.0, interpolation_mode="minimum_jerk", with_cartesian_interpolation=True)
+    reachy.r_arm.send_cartesian_interpolation(pose, 2.0)
 
 
 def test_goto_rejection(reachy: ReachySDK) -> None:

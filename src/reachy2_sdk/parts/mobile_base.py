@@ -289,3 +289,6 @@ class MobileBase(Part):
 
     def _update_audit_status(self, new_status: MobileBaseStatus) -> None:
         pass
+
+    def _set_speed_limits(self, value: int) -> None:
+        return super()._set_speed_limits(value)

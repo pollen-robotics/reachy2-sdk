@@ -237,3 +237,16 @@ def translate_in_self(_frame: npt.NDArray[np.float64], translation: List[float])
     frame = np.linalg.inv(toOrigin) @ frame
 
     return frame
+
+
+def invert_affine_transformation_matrix(matrix: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Invert an homegeneous transformation matrix"""
+    """with matrix M = [R t] , returns M^-1 = [R.T -R.T * t]"""
+    """                [0 1]                  [0          1]"""
+    if matrix.shape != (4, 4):
+        raise ValueError("matrix should be 4x4")
+
+    inv_matrix = np.eye(4)
+    inv_matrix[:3, :3] = matrix[:3, :3].T
+    inv_matrix[:3, 3] = -matrix[:3, :3].T @ matrix[:3, 3]
+    return inv_matrix
