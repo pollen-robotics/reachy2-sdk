@@ -199,3 +199,31 @@ def test_send_cartesian_interpolation_circular(reachy_sdk_zeroed: ReachySDK) -> 
         assert np.isclose(pose[2, 3], zB, 1e-03)
         assert np.allclose(pose[:3, :3], B_forward[:3, :3], atol=1e-03)
     assert went_back
+
+    # Test right
+    inter_poses = test_pose_trajectory(A, B, 3.0, arc_direction="right")
+    B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    assert np.allclose(B_forward, B, atol=1e-03)
+    for pose in inter_poses:
+        assert np.isclose(pose[0, 3], xB, 1e-03)
+        assert (pose[1, 3] <= max(yA, yB) or np.isclose(pose[1, 3], max(yA, yB), 1e-03)) and (
+            pose[1, 3] >= min(yA, yB) or np.isclose(pose[1, 3], min(yA, yB), 1e-03)
+        )
+        assert (pose[2, 3] <= max(zA, zB) or np.isclose(pose[2, 3], max(zA, zB), 1e-03)) and (
+            pose[2, 3] >= min(zA, zB) or np.isclose(pose[2, 3], max(zA, zB), 1e-03)
+        )
+        assert np.allclose(pose[:3, :3], B_forward[:3, :3], atol=1e-03)
+
+    # Test left
+    inter_poses = test_pose_trajectory(A, B, 3.0, arc_direction="left")
+    B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
+    assert np.allclose(B_forward, B, atol=1e-03)
+    for pose in inter_poses:
+        assert np.isclose(pose[0, 3], xB, 1e-03)
+        assert (pose[1, 3] <= max(yA, yB) or np.isclose(pose[1, 3], max(yA, yB), 1e-03)) and (
+            pose[1, 3] >= min(yA, yB) or np.isclose(pose[1, 3], min(yA, yB), 1e-03)
+        )
+        assert (pose[2, 3] <= max(zA, zB) or np.isclose(pose[2, 3], max(zA, zB), 1e-03)) and (
+            pose[2, 3] >= min(zA, zB) or np.isclose(pose[2, 3], max(zA, zB), 1e-03)
+        )
+        assert np.allclose(pose[:3, :3], B_forward[:3, :3], atol=1e-03)
