@@ -107,7 +107,9 @@ def test_send_cartesian_interpolation_circular(reachy_sdk_zeroed: ReachySDK) -> 
         t = LoopThread(reachy_sdk_zeroed, "r_arm")
         t.start()
         tic = time.time()
-        reachy_sdk_zeroed.r_arm.send_cartesian_interpolation(B, duration=duration, arc_direction=arc_direction)
+        reachy_sdk_zeroed.r_arm.send_cartesian_interpolation(
+            B, duration=duration, arc_direction=arc_direction, precision_distance_xyz=0.005
+        )
         elapsed_time = time.time() - tic
         t.stop()
         assert np.isclose(elapsed_time, duration, 1)
