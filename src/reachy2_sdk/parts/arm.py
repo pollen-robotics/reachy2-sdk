@@ -515,25 +515,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             theta = t * angle
 
             # Rotation of origin_vector around the circle center in the plan defined by 'normal'
-            rotation_matrix = np.array(
-                [
-                    [
-                        np.cos(theta) + normal[0] ** 2 * (1 - np.cos(theta)),
-                        normal[0] * normal[1] * (1 - np.cos(theta)) - normal[2] * np.sin(theta),
-                        normal[0] * normal[2] * (1 - np.cos(theta)) + normal[1] * np.sin(theta),
-                    ],
-                    [
-                        normal[1] * normal[0] * (1 - np.cos(theta)) + normal[2] * np.sin(theta),
-                        np.cos(theta) + normal[1] ** 2 * (1 - np.cos(theta)),
-                        normal[1] * normal[2] * (1 - np.cos(theta)) - normal[0] * np.sin(theta),
-                    ],
-                    [
-                        normal[2] * normal[0] * (1 - np.cos(theta)) - normal[1] * np.sin(theta),
-                        normal[2] * normal[1] * (1 - np.cos(theta)) + normal[0] * np.sin(theta),
-                        np.cos(theta) + normal[2] ** 2 * (1 - np.cos(theta)),
-                    ],
-                ]
-            )
+            q1 = Quaternion(axis=normal, angle=theta)
+            rotation_matrix = q1.rotation_matrix
 
             # Interpolated point in plan
             trans_interpolated = np.dot(rotation_matrix, vector_origin_center)
