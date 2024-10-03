@@ -1,6 +1,7 @@
 """Reachy Camera module.
 
-Define a RGB Camera (Teleop) and a RGBD Camera (SR). Provide access to the frames (color, depth, disparity)
+Define the RGB Camera of Reachy's head (Teleop) and the RGBD Camera of its torso (Depth). 
+Provide access to the frames (color, depth, disparity) and the camera parameters. 
 
 """
 
@@ -30,7 +31,8 @@ class CameraType(Enum):
 
 class Camera:
     """
-    RGB Camera. Mainly for Reachy Teleop Camera.
+    RGB Camera. Mainly for the teleoperation camera, but also for the RGB part of the RGBD torso camera.
+    Allows access to the frame and to the camera parameters.
     """
 
     def __init__(self, cam_info: CameraFeatures, video_stub: VideoServiceStub) -> None:
@@ -53,6 +55,15 @@ class Camera:
     ) -> Optional[
         Tuple[int, int, str, npt.NDArray[np.uint8], npt.NDArray[np.uint8], npt.NDArray[np.uint8], npt.NDArray[np.uint8]]
     ]:
+        """Get camera parameters:
+        - frame height
+        - frame width
+        - distortion model
+        - distortion parameters D
+        - intrinsic camera matrix K
+        - rectification matrix R
+        - projection matrix P
+        """
         params = self._video_stub.GetParameters(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if params.K == []:
             self._logger.warning("No parameter retrieved")
@@ -72,11 +83,12 @@ class Camera:
 
 class DepthCamera(Camera):
     """
-    RGBD Camera
+    Depth part of the RGBD torso camera.
+    Allows access to the depth frame.
     """
 
     def get_depth_frame(self, view: CameraView = CameraView.DEPTH) -> Optional[Tuple[npt.NDArray[np.uint16], int]]:
-        """Get 16bit depth view (OpenCV format)"""
+        """Get 16bit depth view (OpenCV format) and timestamp in nanosecs"""
         frame = self._video_stub.GetDepth(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if frame.data == b"":
             self._logger.error("No frame retrieved")

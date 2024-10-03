@@ -148,7 +148,7 @@ class MobileBase(Part):
     def set_speed(self, x_vel: float, y_vel: float, rot_vel: float) -> None:
         """Send target speed. x_vel, y_vel are in m/s and rot_vel in deg/s for 200ms.
 
-        The 200ms duration is predifined at the ROS level of the mobile base's code.
+        The 200ms duration is predefined at the ROS level of the mobile base's code.
         This mode is prefered if the user wants to send speed instructions frequently.
         """
         if self.is_off():
@@ -156,10 +156,10 @@ class MobileBase(Part):
             return
         for vel, value in {"x_vel": x_vel, "y_vel": y_vel}.items():
             if abs(value) > self._max_xy_vel:
-                raise ValueError(f"The asbolute value of {vel} should not be more than {self._max_xy_vel}!")
+                raise ValueError(f"The absolute value of {vel} should not be more than {self._max_xy_vel}!")
 
         if abs(rot_vel) > self._max_rot_vel:
-            raise ValueError(f"The asbolute value of rot_vel should not be more than {self._max_rot_vel}!")
+            raise ValueError(f"The absolute value of rot_vel should not be more than {self._max_rot_vel}!")
 
         if self._drive_mode != "cmd_vel":
             self._set_drive_mode("cmd_vel")

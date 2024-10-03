@@ -23,8 +23,9 @@ class Audio:
     """Audio class used for microphone and speakers.
 
     It exposes functions to:
-    - play / stop sounds with defined speakers,
     - test the speakers,
+    - get the list of available sounds,
+    - play / stop sounds with defined speakers,
     - record tracks with the stereo microphones,
     - synthezise audio from text (text-to-speech)
     """

@@ -1,6 +1,6 @@
 """ReachyInfo module.
 
-This module provides main info of the robot.
+This module provides main informations about the robot.
 """
 from typing import Any, Dict, List, Optional
 
@@ -31,7 +31,10 @@ class ReachyInfo:
         self._set_config(reachy)
 
     def _set_config(self, msg: Reachy) -> None:
-        """Return the current configuration of the robot."""
+        """Returns the current configuration of the robot :
+        - full kit or starter kit (left or right arm) or custom configuration
+        - with ou without mobile base
+        """
         self.config: str = ""
 
         mobile_base_presence = ""
@@ -51,7 +54,7 @@ class ReachyInfo:
         self._mobile_base = mobile_base
 
     def __repr__(self) -> str:
-        """Clean representation of an Reachy info."""
+        """Clean representation of a ReachyInfo."""
         repr_template = (
             '<ReachyInfo robot_serial_number="{serial_number}" \n'
             ' hardware_version="{hardware_version}" \n'
@@ -67,7 +70,7 @@ class ReachyInfo:
 
     @property
     def battery_voltage(self) -> float:
-        """Returns mobile base battery voltage.
+        """Returns the mobile base battery voltage.
 
         If there is no mobile base, returns full battery value.
         """
@@ -79,12 +82,15 @@ class ReachyInfo:
 
     @property
     def robot_serial_number(self) -> str:
+        """Returns the robot's serial number."""
         return self._robot_serial_number
 
     @property
     def hardware_version(self) -> str:
+        """ "Returns the robot's hardware version."""
         return self._hardware_version
 
     @property
     def core_software_version(self) -> str:
+        """Returns the robot's core software version."""
         return self._core_software_version

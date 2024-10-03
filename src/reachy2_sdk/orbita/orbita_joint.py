@@ -8,7 +8,7 @@ from .utils import to_internal_position, to_position
 
 
 class OrbitaJoint:
-    """The OrbitaJoint class represents any Orbita2d or Orbita 3d joint.
+    """The OrbitaJoint class represents any Orbita2d or Orbita3d joint.
 
     The OrbitaJoint class is used to store the up-to-date state of the joint, especially:
         - its present_position (RO)
@@ -22,6 +22,7 @@ class OrbitaJoint:
         actuator: Any,
         position_order_in_part: int,
     ) -> None:
+        """Initialize the joint with its initial state."""
         self._actuator = actuator
         self._axis_type = axis_type
         self._position_order_in_part = position_order_in_part

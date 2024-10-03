@@ -1,6 +1,6 @@
 """Reachy Camera Manager module.
 
-Initialize the two teleop and SR cameras if they are available.
+Initialize the head and torso cameras if they are available.
 
 """
 import logging
@@ -14,7 +14,7 @@ from .camera import Camera, CameraType, DepthCamera
 
 
 class CameraManager:
-    """CameraManager class provide the available cameras."""
+    """CameraManager class provides the available cameras."""
 
     def __init__(self, host: str, port: int) -> None:
         """Set up camera manager module"""

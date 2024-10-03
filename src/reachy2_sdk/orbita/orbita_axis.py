@@ -21,10 +21,16 @@ class OrbitaAxis:
 
     @property
     def present_speed(self) -> float:
+        """
+        Get the present speed of the axis in rad/s.
+        """
         return to_position(self._present_speed)
 
     @property
     def present_load(self) -> float:
+        """
+        Get the present load of the axis in N.
+        """
         return float(self._present_load)
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
