@@ -133,7 +133,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToCartesian(request)
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -179,7 +179,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -209,7 +209,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -235,7 +235,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -260,7 +260,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
         if not wait_for_moves_end:
-            self.cancel_all_moves()
+            self.cancel_all_goto()
         if self.neck.is_on():
             return self.goto_joints([0, -10, 0], duration, wait, interpolation_mode)
         else:

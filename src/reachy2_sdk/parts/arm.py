@@ -349,7 +349,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.error(f"Target pose:\n {target} \nwas not reachable. No command sent.")
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -456,7 +456,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.error(f"Position {positions} was not reachable. No command sent.")
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -515,12 +515,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         - gripper frame : translation is done in the gripper's coordinate system
         """
         try:
-            move = self.get_moves_queue()[-1]
+            move = self.get_goto_queue()[-1]
         except IndexError:
-            move = self.get_move_playing()
+            move = self.get_goto_playing()
 
         if move.id != -1:
-            joints_request = self._get_move_joints_request(move)
+            joints_request = self._get_goto_joints_request(move)
         else:
             joints_request = None
 
@@ -590,12 +590,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
 
         try:
-            move = self.get_moves_queue()[-1]
+            move = self.get_goto_queue()[-1]
         except IndexError:
-            move = self.get_move_playing()
+            move = self.get_goto_playing()
 
         if move.id != -1:
-            joints_request = self._get_move_joints_request(move)
+            joints_request = self._get_goto_joints_request(move)
         else:
             joints_request = None
 
@@ -632,7 +632,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -689,7 +689,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             if self._gripper is not None and self._gripper.is_on():
                 self._gripper.open()
         if not wait_for_moves_end:
-            self.cancel_all_moves()
+            self.cancel_all_goto()
         if self.is_on():
             if self._part_id.name == "r_arm":
                 return self.goto_joints([0, -15, -15, elbow_pitch, 0, 0, 0], duration, wait, interpolation_mode)

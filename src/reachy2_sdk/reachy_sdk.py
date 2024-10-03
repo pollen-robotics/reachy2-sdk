@@ -561,7 +561,7 @@ class ReachySDK:
         r_arm_id = None
         l_arm_id = None
         if not wait_for_moves_end:
-            self.cancel_all_moves()
+            self.cancel_all_goto()
         if self.head is not None:
             is_last_commmand = self.r_arm is None and self.l_arm is None
             wait_head = wait and is_last_commmand
@@ -636,7 +636,7 @@ class ReachySDK:
         state = self._get_move_state(goto_id)
         return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
 
-    def cancel_all_moves(self) -> GoToAck:
+    def cancel_all_goto(self) -> GoToAck:
         """Cancel all the goto tasks."""
         if not self._grpc_connected:
             self._logger.warning("Reachy is not connected!")
