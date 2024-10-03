@@ -48,6 +48,8 @@ from ..utils.utils import (
     list_to_arm_position,
     matrix_from_euler_angles,
     recompose_matrix,
+    rotate_in_self,
+    translate_in_self,
 )
 from .goto_based_part import IGoToBasedPart
 from .hand import Hand
@@ -507,11 +509,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose[1, 3] += y
             pose[2, 3] += z
         elif frame == "gripper":
-            translation_matrix = np.eye(4)
-            translation_matrix[0, 3] += x
-            translation_matrix[1, 3] += y
-            translation_matrix[2, 3] += z
-            pose = np.dot(pose, translation_matrix)
+            pose = translate_in_self(initial_pose, [x, y, z])
         return pose
 
     def translate_by(
@@ -581,7 +579,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose_rotation = rotation @ pose_rotation
             pose = recompose_matrix(pose_rotation[:3, :3], pose_translation)
         elif frame == "gripper":
-            pose = pose @ rotation
+            pose = rotate_in_self(initial_pose, [roll, pitch, yaw], degrees=degrees)
 
         return pose
 

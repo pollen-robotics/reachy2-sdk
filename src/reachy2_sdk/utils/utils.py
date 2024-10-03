@@ -167,9 +167,7 @@ def matrix_from_euler_angles(roll: float, pitch: float, yaw: float, degrees: boo
     return rotation_matrix
 
 
-def get_pose_matrix(
-    position: npt.NDArray[np.float64], rotation: npt.NDArray[np.float64], degrees: bool = True
-) -> npt.NDArray[np.float64]:
+def get_pose_matrix(position: List[float], rotation: List[float], degrees: bool = True) -> npt.NDArray[np.float64]:
     """Creates the 4x4 pose matrix from a position vector and \"roll pitch yaw\" angles (rotation).
     Arguments :
         position : a list of size 3. It is the requested position of the end effector in the robot coordinate system
@@ -195,3 +193,47 @@ def get_pose_matrix(
     pose = matrix_from_euler_angles(rotation[0], rotation[1], rotation[2], degrees=degrees)
     pose[:3, 3] = np.array(position)
     return pose
+
+
+def rotate_in_self(_frame: npt.NDArray[np.float64], rotation: List[float], degrees: bool = True) -> npt.NDArray[np.float64]:
+    """
+    Returns a new frame that is the input frame rotated in itself.
+    Arguments :
+        _frame   : the input frame
+        rotation : the rotation to be applied [x, y, z]
+        degrees  : are the angles of the rotation in degrees or radians ?
+
+    """
+    frame = _frame.copy()
+
+    toOrigin = np.eye(4)
+    toOrigin[:3, :3] = frame[:3, :3]
+    toOrigin[:3, 3] = frame[:3, 3]
+    toOrigin = np.linalg.inv(toOrigin)
+
+    frame = toOrigin @ frame
+    frame = get_pose_matrix([0.0, 0.0, 0.0], rotation, degrees=degrees) @ frame
+    frame = np.linalg.inv(toOrigin) @ frame
+
+    return frame
+
+
+def translate_in_self(_frame: npt.NDArray[np.float64], translation: List[float]) -> npt.NDArray[np.float64]:
+    """
+    Returns a new frame that is the input frame translated along its own axes
+    Arguments :
+        _frame      : the input frame
+        translation : the translation to be applied
+    """
+    frame = _frame.copy()
+
+    toOrigin = np.eye(4)
+    toOrigin[:3, :3] = frame[:3, :3]
+    toOrigin[:3, 3] = frame[:3, 3]
+    toOrigin = np.linalg.inv(toOrigin)
+
+    frame = toOrigin @ frame
+    frame = get_pose_matrix(translation, [0, 0, 0]) @ frame
+    frame = np.linalg.inv(toOrigin) @ frame
+
+    return frame
