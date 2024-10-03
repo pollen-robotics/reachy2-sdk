@@ -1,6 +1,10 @@
+import logging
+import time
 from abc import ABC, abstractmethod
+from threading import Thread
 from typing import Any, Dict, Optional, Tuple
 
+import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import ComponentId
 from reachy2_sdk_api.orbita2d_pb2 import (
@@ -51,6 +55,7 @@ class Orbita(ABC):
         - stub: stub to call Orbitas methods
         - part: refers to the part the Orbita belongs to, in order to retrieve the parent part of the actuator.
         """
+        self._logger = logging.getLogger(__name__)
         self._name = name
         self._id = uid
         self._orbita_type = orbita_type
@@ -66,6 +71,8 @@ class Orbita(ABC):
         self._axis: Dict[str, OrbitaAxis] = {}
 
         self._error_status: Optional[str] = None
+
+        self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
 
     @abstractmethod
     def _create_dict_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
@@ -153,6 +160,17 @@ class Orbita(ABC):
     @abstractmethod
     def send_goal_positions(self) -> None:
         pass
+
+    def _check_goal_positions(self) -> None:
+        """Send command does not return a status. Manual check of the present position vs the goal position"""
+        time.sleep(1)
+        for joint, orbitajoint in self._joints.items():
+            # precision is low we are looking for unreachable positions
+            if not np.isclose(orbitajoint.present_position, orbitajoint.goal_position, atol=1):
+                self._logger.warning(
+                    f"{self._name}.{joint} has not reached the goal position ({orbitajoint.present_position} instead"
+                    f" of {orbitajoint.goal_position})."
+                )
 
     def _update_with(self, new_state: Orbita2dState | Orbita3dState) -> None:
         state: Dict[str, Dict[str, FloatValue]] = self._create_dict_state(new_state)
