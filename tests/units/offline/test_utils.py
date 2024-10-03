@@ -13,6 +13,8 @@ from reachy2_sdk.utils.utils import (
     get_pose_matrix,
     list_to_arm_position,
     matrix_from_euler_angles,
+    rotate_in_self,
+    translate_in_self,
 )
 
 
@@ -134,3 +136,63 @@ def test_get_pose_matrix() -> None:
         get_pose_matrix([0.1, 0.2, 0.1, 0.1], [0, -90, 0])
     with pytest.raises(ValueError):
         get_pose_matrix([0.1, 0.2, 0.1], [-20, -90, -50, 10])
+
+
+@pytest.mark.offline
+def test_rotate_in_self() -> None:
+    A = get_pose_matrix([0.2, -0.2, -0.1], [0, -90, 0])
+    A_rot = rotate_in_self(A, [0, 20, 0], degrees=True)
+
+    expected_A_rot = np.array(
+        [[0.34202014, 0.0, -0.93969262, 0.2], [0.0, 1.0, 0.0, -0.2], [0.93969262, 0.0, 0.34202014, -0.1], [0.0, 0.0, 0.0, 1.0]]
+    )
+
+    assert np.allclose(A_rot, expected_A_rot, atol=1e-03)
+
+    A2_rot = rotate_in_self(A, [10, 30, -10])
+    expected_A2_rot = np.array(
+        [
+            [0.5, -0.15038373, -0.85286853, 0.2],
+            [-0.15038373, 0.95476947, -0.25651511, -0.2],
+            [0.85286853, 0.25651511, 0.45476947, -0.1],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+    assert np.allclose(A2_rot, expected_A2_rot, atol=1e-03)
+
+    B = get_pose_matrix([0.3, 0.2, -0.1], [0, -60, 30])
+    B_rot = rotate_in_self(B, [10, 20, 40], degrees=True)
+    expected_B_rot = np.array(
+        [
+            [0.26620632, -0.77307934, -0.5757452, 0.3],
+            [0.85115971, 0.46885778, -0.23600748, 0.2],
+            [0.45239512, -0.42722444, 0.78282689, -0.1],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+    assert np.allclose(B_rot, expected_B_rot, atol=1e-03)
+
+
+@pytest.mark.offline
+def test_translate_in_self() -> None:
+    A = get_pose_matrix([0.2, -0.2, -0.1], [0, -90, 0])
+    A_trans = translate_in_self(A, [0, 0.2, 0])
+
+    expected_A_trans = np.array([[0.0, 0.0, -1.0, 0.2], [0.0, 1.0, 0.0, 0.0], [1.0, 0.0, 0.0, -0.1], [0.0, 0.0, 0.0, 1.0]])
+    assert np.allclose(A_trans, expected_A_trans, atol=1e-03)
+
+    A2_trans = translate_in_self(A, [0.1, 0.3, -0.1])
+    expected_A2_trans = np.array([[0.0, 0.0, -1.0, 0.3], [0.0, 1.0, 0.0, 0.1], [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
+    assert np.allclose(A2_trans, expected_A2_trans, atol=1e-03)
+
+    B = get_pose_matrix([0.3, 0.2, -0.1], [0, -60, 30])
+    B_trans = translate_in_self(B, [0.1, -0.2, 0.4])
+    expected_B_trans = np.array(
+        [
+            [0.433012, -0.5, -0.75, 0.1433012],
+            [0.25, 0.866025, -0.433012, -0.12141],
+            [0.866025, 0.0, 0.5, 0.1866025],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+    assert np.allclose(B_trans, expected_B_trans, atol=1e-03)
