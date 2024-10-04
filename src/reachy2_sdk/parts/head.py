@@ -6,7 +6,7 @@ Handles all specific method to an Head:
 """
 
 import time
-from typing import List
+from typing import List, Optional, Union
 
 import grpc
 import numpy as np
@@ -106,6 +106,42 @@ class Head(JointsBasedPart, IGoToBasedPart):
         pitch = self.neck._joints["pitch"].present_position
         yaw = self.neck._joints["yaw"].present_position
         return [roll, pitch, yaw]
+
+    def get_current_state(
+        self, degrees: bool = True, round_int: Optional[int] = None, as_quat: bool = False
+    ) -> Union[List[float], pyQuat]:
+        """Return the current state of the head.
+
+        It will return the List[roll, pitch, yaw] in degrees or in radians, or the quaternion (x,y,z,w) if as_quat is True.
+        """
+        if as_quat:
+            quat = self._stub.GetOrientation(self._part_id).q
+            if round_int is not None:
+                return pyQuat(
+                    w=np.round(quat.w, round_int),
+                    x=np.round(quat.x, round_int),
+                    y=np.round(quat.y, round_int),
+                    z=np.round(quat.z, round_int),
+                )
+            return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
+
+        else:
+            roll = self.neck._joints["roll"].present_position
+            pitch = self.neck._joints["pitch"].present_position
+            yaw = self.neck._joints["yaw"].present_position
+            if round_int is not None:
+                roll, pitch, yaw = np.round(
+                    [
+                        self.neck._joints["roll"].present_position,
+                        self.neck._joints["pitch"].present_position,
+                        self.neck._joints["yaw"].present_position,
+                    ],
+                    round_int,
+                )
+
+            if degrees:
+                return [roll, pitch, yaw]
+            return [np.deg2rad(roll), np.deg2rad(pitch), np.deg2rad(yaw)]
 
     def look_at(
         self, x: float, y: float, z: float, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk"
@@ -250,6 +286,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def set_pose(
         self,
         duration: float = 2,
+        common_pose: str = "default",
         wait: bool = False,
         wait_for_moves_end: bool = True,
         interpolation_mode: str = "minimum_jerk",

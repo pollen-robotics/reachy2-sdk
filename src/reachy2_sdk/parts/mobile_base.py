@@ -99,12 +99,12 @@ class MobileBase(Part):
         """Return the odometry of the base. x, y are in meters and theta in degree."""
         response = self._stub.GetOdometry(self._part_id)
         odom = {
-            "x": round(response.x.value, 3),
-            "y": round(response.y.value, 3),
-            "theta": round(rad2deg(response.theta.value), 3),
-            "vx": round(response.vx.value, 3),
-            "vy": round(response.vy.value, 3),
-            "vtheta": round(rad2deg(response.vtheta.value), 3),
+            "x": response.x.value,
+            "y": response.y.value,
+            "theta": rad2deg(response.theta.value),
+            "vx": response.vx.value,
+            "vy": response.vy.value,
+            "vtheta": rad2deg(response.vtheta.value),
         }
         return odom
 
@@ -145,30 +145,44 @@ class MobileBase(Part):
         self._stub.ResetOdometry(self._part_id)
         time.sleep(0.03)
 
-    def set_speed(self, x_vel: float, y_vel: float, rot_vel: float) -> None:
-        """Send target speed. x_vel, y_vel are in m/s and rot_vel in deg/s for 200ms.
+    def set_goal_speed(self, x: float | int = 0, y: float | int = 0, theta: float | int = 0) -> None:
+        """
+        Set the goal speed for the mobile base. x_vel and y_vel are in m/s and rot_vel in deg/s.
+        This method is used before sending the command with the send_speed_command method,
+        which will make the mobile base move for 0.2s.
+        """
+        for vel in [x, y, theta]:
+            if not isinstance(vel, float) | isinstance(vel, int):
+                raise TypeError("goal_speed must be a float or int")
 
-        The 200ms duration is predifined at the ROS level of the mobile base's code.
+        self._x_vel_goal = x
+        self._y_vel_goal = y
+        self._rot_vel_goal = theta
+
+    def send_speed_command(self) -> None:
+        """Send goal speed, after setting them with set_goal_speed method.
+
+        The 200ms duration is predefined at the ROS level of the mobile base's code.
         This mode is prefered if the user wants to send speed instructions frequently.
         """
         if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. set_speed not sent.")
+            self._logger.warning(f"{self._part_id.name} is off. speed_command not sent.")
             return
-        for vel, value in {"x_vel": x_vel, "y_vel": y_vel}.items():
+        for vel, value in {"x_vel": self._x_vel_goal, "y_vel": self._y_vel_goal}.items():
             if abs(value) > self._max_xy_vel:
-                raise ValueError(f"The asbolute value of {vel} should not be more than {self._max_xy_vel}!")
+                raise ValueError(f"The absolute value of {vel} should not be more than {self._max_xy_vel}!")
 
-        if abs(rot_vel) > self._max_rot_vel:
-            raise ValueError(f"The asbolute value of rot_vel should not be more than {self._max_rot_vel}!")
+        if abs(self._rot_vel_goal) > self._max_rot_vel:
+            raise ValueError(f"The absolute value of rot_vel should not be more than {self._max_rot_vel}!")
 
         if self._drive_mode != "cmd_vel":
             self._set_drive_mode("cmd_vel")
 
         req = TargetDirectionCommand(
             direction=DirectionVector(
-                x=FloatValue(value=x_vel),
-                y=FloatValue(value=y_vel),
-                theta=FloatValue(value=deg2rad(rot_vel)),
+                x=FloatValue(value=self._x_vel_goal),
+                y=FloatValue(value=self._y_vel_goal),
+                theta=FloatValue(value=deg2rad(self._rot_vel_goal)),
             )
         )
         self._mobility_stub.SendDirection(req)
@@ -260,6 +274,26 @@ class MobileBase(Part):
             if arrived:
                 break
         return arrived
+
+    def get_current_state(self, degrees: bool = True, round_int: Optional[int] = None) -> Dict[str, float]:
+        """
+        Get the current odometry of the mobile base in its reference frame:
+        - position in x
+        - position in y
+        - orientation in degrees or radians
+        - linear velocity in x axis
+        - linear velocity in y axis
+        - angular velocity
+        """
+        current_state = self.odometry.copy()
+        if not degrees:
+            current_state["theta"] = deg2rad(current_state["theta"])
+            current_state["vtheta"] = deg2rad(current_state["vtheta"])
+
+        if round_int is not None:
+            current_state = {key: round(value, round_int) for key, value in current_state.items()}
+
+        return current_state
 
     def _distance_to_goto_goal(self) -> Dict[str, float]:
         response = self._mobility_stub.DistanceToGoal(self._part_id)

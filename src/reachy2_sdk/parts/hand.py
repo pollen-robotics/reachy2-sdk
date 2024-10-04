@@ -67,6 +67,9 @@ class Hand(Part):
         """Return the opening of the hand in percentage."""
         return round(self._opening * 100, 2)
 
+    def get_current_state(self) -> float:
+        return self.opening
+
     def set_opening(self, percentage: float) -> None:
         """Set an opening value for the hand
 

@@ -11,6 +11,7 @@ from typing import Dict, List, Optional
 
 import grpc
 import numpy as np
+from numpy import round
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion
@@ -636,6 +637,14 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
+
+    def get_current_state(self, degrees: bool = True, round_int: Optional[int] = None) -> List[float]:
+        """Return the current joints positions of the arm, by default in degrees"""
+        response = self._stub.GetJointPosition(self._part_id)
+        positions: List[float] = arm_position_to_list(response, degrees)
+        if round_int is not None:
+            positions = round(arm_position_to_list(response, degrees), round_int).tolist()
+        return positions
 
     def get_joints_positions(self, degrees: bool = True, round: Optional[int] = None) -> List[float]:
         """Return the current joints positions of the arm, by default in degrees"""
