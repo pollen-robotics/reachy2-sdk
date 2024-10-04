@@ -11,9 +11,9 @@ from typing import Dict, List, Optional
 
 import grpc
 import numpy as np
-from numpy import round
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
+from numpy import round
 from pyquaternion import Quaternion
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
