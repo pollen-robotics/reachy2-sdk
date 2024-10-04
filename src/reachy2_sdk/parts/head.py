@@ -214,7 +214,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._logger.info(f"Movement with {response} finished.")
         return response
 
-    def orient(self, q: pyQuat, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk") -> GoToId:
+    def goto_quat(
+        self, q: pyQuat, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk"
+    ) -> GoToId:
         """Send neck to the orientation given as a quaternion."""
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
@@ -247,11 +249,11 @@ class Head(JointsBasedPart, IGoToBasedPart):
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
 
-    def set_pose(
+    def goto_default_pose(
         self,
         duration: float = 2,
         wait: bool = False,
-        wait_for_moves_end: bool = True,
+        wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Send all joints to standard positions in specified duration.
@@ -259,7 +261,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        if not wait_for_moves_end:
+        if not wait_for_goto_end:
             self.cancel_all_goto()
         if self.neck.is_on():
             return self.goto_joints([0, -10, 0], duration, wait, interpolation_mode)

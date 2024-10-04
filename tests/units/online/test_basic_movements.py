@@ -75,7 +75,7 @@ def test_triangle(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
-    state = reachy._get_move_state(id)
+    state = reachy._get_goto_state(id)
     result = bool(
         state.goal_status == GoalStatus.STATUS_ABORTED
         or state.goal_status == GoalStatus.STATUS_CANCELED
@@ -88,7 +88,7 @@ def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
 def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.head.turn_on()
     q0 = Quaternion(axis=[1, 0, 0], degrees=30)
-    id = reachy_sdk_zeroed.head.orient(q0, duration=1)
+    id = reachy_sdk_zeroed.head.goto_quat(q0, duration=1)
 
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)

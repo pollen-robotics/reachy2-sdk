@@ -477,7 +477,7 @@ class ReachySDK:
         for part in self.info._enabled_parts.values():
             if "arm" in part._part_id.name:
                 part.set_torque_limits(torque_limit_low)
-                part.set_pose(duration=duration, wait_for_moves_end=False)
+                part.goto_default_pose(duration=duration, wait_for_goto_end=False)
                 arms_list.append(part)
             else:
                 part._turn_off()
@@ -541,49 +541,49 @@ class ReachySDK:
             if issubclass(type(part), JointsBasedPart):
                 part.send_goal_positions()
 
-    def set_pose(
+    def goto_default_pose(
         self,
-        common_pose: str = "default",
+        common_pose: str = "straight_arms",
         wait: bool = False,
-        wait_for_moves_end: bool = True,
+        wait_for_goto_end: bool = True,
         duration: float = 2,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToHomeId:
         """Send all joints to standard positions in specified duration.
 
-        common_pose can be 'default', arms being straight, or 'elbow_90'.
+        common_pose can be 'straight_arms' or 'elbow_90'.
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
+        if common_pose not in ["straight_arms", "elbow_90"]:
+            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'straight_arms' or 'elbow_90'")
         head_id = None
         r_arm_id = None
         l_arm_id = None
-        if not wait_for_moves_end:
+        if not wait_for_goto_end:
             self.cancel_all_goto()
         if self.head is not None:
             is_last_commmand = self.r_arm is None and self.l_arm is None
             wait_head = wait and is_last_commmand
-            head_id = self.head.set_pose(
-                duration=duration, wait=wait_head, wait_for_moves_end=wait_for_moves_end, interpolation_mode=interpolation_mode
+            head_id = self.head.goto_default_pose(
+                duration=duration, wait=wait_head, wait_for_goto_end=wait_for_goto_end, interpolation_mode=interpolation_mode
             )
         if self.r_arm is not None:
             is_last_commmand = self.l_arm is None
             wait_r_arm = wait and is_last_commmand
-            r_arm_id = self.r_arm.set_pose(
+            r_arm_id = self.r_arm.goto_default_pose(
                 common_pose,
                 duration=duration,
                 wait=wait_r_arm,
-                wait_for_moves_end=wait_for_moves_end,
+                wait_for_goto_end=wait_for_goto_end,
                 interpolation_mode=interpolation_mode,
             )
         if self.l_arm is not None:
-            l_arm_id = self.l_arm.set_pose(
+            l_arm_id = self.l_arm.goto_default_pose(
                 common_pose,
                 duration=duration,
                 wait=wait,
-                wait_for_moves_end=wait_for_moves_end,
+                wait_for_goto_end=wait_for_goto_end,
                 interpolation_mode=interpolation_mode,
             )
         ids = GoToHomeId(
@@ -605,7 +605,7 @@ class ReachySDK:
                 part.set_torque_limits(100)
         time.sleep(0.5)
 
-    def is_move_finished(self, goto_id: GoToId) -> bool:
+    def is_goto_finished(self, goto_id: GoToId) -> bool:
         """Return True if goto has been played and has been cancelled, False otherwise."""
         if not self._grpc_connected:
             self._logger.warning("Reachy is not connected!")
@@ -613,9 +613,9 @@ class ReachySDK:
         if not isinstance(goto_id, GoToId):
             raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
         if goto_id.id == -1:
-            self._logger.error("is_move_finished() asked for unvalid movement. Move not played.")
+            self._logger.error("is_goto_finished() asked for unvalid movement. Goto not played.")
             return True
-        state = self._get_move_state(goto_id)
+        state = self._get_goto_state(goto_id)
         result = bool(
             state.goal_status == GoalStatus.STATUS_ABORTED
             or state.goal_status == GoalStatus.STATUS_CANCELED
@@ -623,7 +623,7 @@ class ReachySDK:
         )
         return result
 
-    def is_move_playing(self, goto_id: GoToId) -> bool:
+    def is_goto_playing(self, goto_id: GoToId) -> bool:
         """Return True if goto is currently playing, False otherwise."""
         if not self._grpc_connected:
             self._logger.warning("Reachy is not connected!")
@@ -631,9 +631,9 @@ class ReachySDK:
         if not isinstance(goto_id, GoToId):
             raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
         if goto_id.id == -1:
-            self._logger.error("is_move_playing() asked for unvalid movement. Move not played.")
+            self._logger.error("is_goto_playing() asked for unvalid movement. Goto not played.")
             return False
-        state = self._get_move_state(goto_id)
+        state = self._get_goto_state(goto_id)
         return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
 
     def cancel_all_goto(self) -> GoToAck:
@@ -644,12 +644,12 @@ class ReachySDK:
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
-    def _get_move_state(self, goto_id: GoToId) -> GoToGoalStatus:
+    def _get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
         """Return the current state of a goto, given its id."""
         response = self._goto_stub.GetGoToState(goto_id)
         return response
 
-    def cancel_move_by_id(self, goto_id: GoToId) -> GoToAck:
+    def cancel_goto_by_id(self, goto_id: GoToId) -> GoToAck:
         """Ask the cancellation of a single goto on the arm, given its id"""
         if not self._grpc_connected:
             self._logger.warning("Reachy is not connected!")
@@ -657,12 +657,12 @@ class ReachySDK:
         if not isinstance(goto_id, GoToId):
             raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
         if goto_id.id == -1:
-            self._logger.error("cancel_move_by_id() asked for unvalid movement. Move not played.")
+            self._logger.error("cancel_goto_by_id() asked for unvalid movement. Goto not played.")
             return GoToAck(ack=True)
         response = self._goto_stub.CancelGoTo(goto_id)
         return response
 
-    def get_move_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
+    def get_goto_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
         """Returns the part affected, the joints goal positions, duration and mode of the corresponding GoToId
 
         Part can be either 'r_arm', 'l_arm' or 'head'

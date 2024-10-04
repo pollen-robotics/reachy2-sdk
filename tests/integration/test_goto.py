@@ -14,7 +14,7 @@ from reachy2_sdk.utils.utils import recompose_matrix, decompose_matrix
 
 
 def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
-    state = reachy._get_move_state(id)
+    state = reachy._get_goto_state(id)
     result = bool(
         state.goal_status == GoalStatus.STATUS_ABORTED
         or state.goal_status == GoalStatus.STATUS_CANCELED
@@ -245,7 +245,7 @@ def test_goto_cartesian(reachy: ReachySDK) -> None:
             print("The goto was rejected! Unreachable pose.")
             time.sleep(1.0)
         else:
-            while not reachy.is_move_finished(id):
+            while not reachy.is_goto_finished(id):
                 time.sleep(0.1)
 
 
@@ -326,7 +326,7 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
             goal_pose = reachy.l_arm.forward_kinematics(l_ik_sol)
             precision_distance_xyz_to_sol = np.linalg.norm(goal_pose[:3, 3] - mat[:3, 3])
             print(f"l2 xyz distance Ik SOL vs goal pose: {precision_distance_xyz_to_sol} with joints: {l_ik_sol}")
-            while not reachy.is_move_finished(id):
+            while not reachy.is_goto_finished(id):
                 time.sleep(0.1)
 
     list_of_mats = []
@@ -362,7 +362,7 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
             goal_pose = reachy.r_arm.forward_kinematics(r_ik_sol)
             precision_distance_xyz_to_sol = np.linalg.norm(goal_pose[:3, 3] - mat[:3, 3])
             print(f"l2 xyz distance Ik SOL vs goal pose: {precision_distance_xyz_to_sol} with joints: {r_ik_sol}")
-            while not reachy.is_move_finished(id):
+            while not reachy.is_goto_finished(id):
                 time.sleep(0.1)
 
 
@@ -759,7 +759,7 @@ def main_test() -> None:
 
     reachy.l_arm.goto_joints([0, 20, 0, 0, 0, 0, 0], duration=2)
     id = reachy.r_arm.goto_joints([0, -20, 0, 0, 0, 0, 0], duration=2)
-    while not reachy.is_move_finished(id):
+    while not reachy.is_goto_finished(id):
         time.sleep(0.1)
 
     # test_multiturn_fix(reachy)

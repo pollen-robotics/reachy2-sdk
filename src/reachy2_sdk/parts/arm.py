@@ -185,7 +185,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         duration = 3
 
         self.set_torque_limits(torque_limit_low)
-        self.set_pose(duration=duration, wait_for_moves_end=False)
+        self.goto_default_pose(duration=duration, wait_for_goto_end=False)
 
         countingTime = 0
         while countingTime < duration:
@@ -507,20 +507,20 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         frame: str = "robot",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Create a goto to translate the arm's end effector from the last move sent on the part.
-        If no move has been sent, use the current position.
+        """Create a goto to translate the arm's end effector from the last goto sent on the part.
+        If no goto has been sent, use the current position.
 
         Two frames can be used:
         - robot frame : translation is done in Reachy's coordinate system
         - gripper frame : translation is done in the gripper's coordinate system
         """
         try:
-            move = self.get_goto_queue()[-1]
+            goto = self.get_goto_queue()[-1]
         except IndexError:
-            move = self.get_goto_playing()
+            goto = self.get_goto_playing()
 
-        if move.id != -1:
-            joints_request = self._get_goto_joints_request(move)
+        if goto.id != -1:
+            joints_request = self._get_goto_joints_request(goto)
         else:
             joints_request = None
 
@@ -579,8 +579,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         frame: str = "robot",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Create a goto to rotate the arm's end effector from the last move sent on the part.
-        If no move has been sent, use the current position.
+        """Create a goto to rotate the arm's end effector from the last goto sent on the part.
+        If no goto has been sent, use the current position.
 
         Two frames can be used:
         - robot frame : rotation is done around Reachy's coordinate system axis
@@ -590,12 +590,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
 
         try:
-            move = self.get_goto_queue()[-1]
+            goto = self.get_goto_queue()[-1]
         except IndexError:
-            move = self.get_goto_playing()
+            goto = self.get_goto_playing()
 
-        if move.id != -1:
-            joints_request = self._get_goto_joints_request(move)
+        if goto.id != -1:
+            joints_request = self._get_goto_joints_request(goto)
         else:
             joints_request = None
 
@@ -666,29 +666,29 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
 
-    def set_pose(
+    def goto_default_pose(
         self,
-        common_pose: str = "default",
+        common_pose: str = "straight_arms",
         duration: float = 2,
         wait: bool = False,
-        wait_for_moves_end: bool = True,
+        wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Send all joints to standard positions in specified duration.
 
-        common_pose can be 'default', arms being straight, or 'elbow_90'.
+        common_pose can be 'straight_arms' or 'elbow_90'.
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
+        if common_pose not in ["straight_arms", "elbow_90"]:
+            raise ValueError(f"common_pose {common_pose} not supported! Should be 'straight_arms' or 'elbow_90'")
         if common_pose == "elbow_90":
             elbow_pitch = -90
         else:
             elbow_pitch = 0
             if self._gripper is not None and self._gripper.is_on():
                 self._gripper.open()
-        if not wait_for_moves_end:
+        if not wait_for_goto_end:
             self.cancel_all_goto()
         if self.is_on():
             if self._part_id.name == "r_arm":

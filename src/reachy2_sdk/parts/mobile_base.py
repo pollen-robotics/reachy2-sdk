@@ -156,10 +156,10 @@ class MobileBase(Part):
             return
         for vel, value in {"x_vel": x_vel, "y_vel": y_vel}.items():
             if abs(value) > self._max_xy_vel:
-                raise ValueError(f"The asbolute value of {vel} should not be more than {self._max_xy_vel}!")
+                raise ValueError(f"The absolute value of {vel} should not be more than {self._max_xy_vel}!")
 
         if abs(rot_vel) > self._max_rot_vel:
-            raise ValueError(f"The asbolute value of rot_vel should not be more than {self._max_rot_vel}!")
+            raise ValueError(f"The absolute value of rot_vel should not be more than {self._max_rot_vel}!")
 
         if self._drive_mode != "cmd_vel":
             self._set_drive_mode("cmd_vel")
