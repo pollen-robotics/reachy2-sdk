@@ -189,7 +189,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         duration = 3
 
         self.set_torque_limits(torque_limit_low)
-        self.set_pose(duration=duration, wait_for_moves_end=False)
+        self.goto_posture(duration=duration, wait_for_goto_end=False)
 
         countingTime = 0
         while countingTime < duration:
@@ -300,11 +300,11 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             answer = np.round(answer, round).tolist()
         return answer
 
-    def get_default_pose_joints(self, common_pose: str = "default") -> List[float]:
+    def get_default_posture_joints(self, common_posture: str = "default") -> List[float]:
         """Return the list of the joints positions for the default poses."""
-        if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {common_pose} not supported! Should be 'default' or 'elbow_90'")
-        if common_pose == "elbow_90":
+        if common_posture not in ["default", "elbow_90"]:
+            raise ValueError(f"common_posture {common_posture} not supported! Should be 'default' or 'elbow_90'")
+        if common_posture == "elbow_90":
             elbow_pitch = -90
         else:
             elbow_pitch = 0
@@ -313,9 +313,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         else:
             return [0, 15, 15, elbow_pitch, 0, 0, 0]
 
-    def get_default_pose_matrix(self, common_pose: str = "default") -> npt.NDArray[np.float64]:
+    def get_default_posture_matrix(self, common_posture: str = "default") -> npt.NDArray[np.float64]:
         """Return the 4x4 pose matrix of default robot poses."""
-        joints = self.get_default_pose_joints(common_pose)
+        joints = self.get_default_posture_joints(common_posture)
         return self.forward_kinematics(joints)
 
     def goto_from_matrix(
@@ -371,7 +371,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.error(f"Target pose:\n {target} \nwas not reachable. No command sent.")
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -404,7 +404,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                                       Precision is prioritized over duration.
         """
 
-        self.cancel_all_moves()
+        self.cancel_all_goto()
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
         if duration == 0:
@@ -594,7 +594,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.error(f"Position {positions} was not reachable. No command sent.")
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -641,20 +641,20 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         frame: str = "robot",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Create a goto to translate the arm's end effector from the last move sent on the part.
-        If no move has been sent, use the current position.
+        """Create a goto to translate the arm's end effector from the last goto sent on the part.
+        If no goto has been sent, use the current position.
 
         Two frames can be used:
         - robot frame : translation is done in Reachy's coordinate system
         - gripper frame : translation is done in the gripper's coordinate system
         """
         try:
-            move = self.get_moves_queue()[-1]
+            goto = self.get_goto_queue()[-1]
         except IndexError:
-            move = self.get_move_playing()
+            goto = self.get_goto_playing()
 
-        if move.id != -1:
-            joints_request = self._get_move_joints_request(move)
+        if goto.id != -1:
+            joints_request = self._get_goto_joints_request(goto)
         else:
             joints_request = None
 
@@ -713,8 +713,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         frame: str = "robot",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Create a goto to rotate the arm's end effector from the last move sent on the part.
-        If no move has been sent, use the current position.
+        """Create a goto to rotate the arm's end effector from the last goto sent on the part.
+        If no goto has been sent, use the current position.
 
         Two frames can be used:
         - robot frame : rotation is done around Reachy's coordinate system axis
@@ -724,12 +724,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
 
         try:
-            move = self.get_moves_queue()[-1]
+            goto = self.get_goto_queue()[-1]
         except IndexError:
-            move = self.get_move_playing()
+            goto = self.get_goto_playing()
 
-        if move.id != -1:
-            joints_request = self._get_move_joints_request(move)
+        if goto.id != -1:
+            joints_request = self._get_goto_joints_request(goto)
         else:
             joints_request = None
 
@@ -766,7 +766,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -808,26 +808,26 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
 
-    def set_pose(
+    def goto_posture(
         self,
-        common_pose: str = "default",
+        common_posture: str = "default",
         duration: float = 2,
         wait: bool = False,
-        wait_for_moves_end: bool = True,
+        wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Send all joints to standard positions in specified duration.
 
-        common_pose can be 'default', arms being straight, or 'elbow_90'.
+        common_posture can be 'default' or 'elbow_90'.
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        joints = self.get_default_pose_joints(common_pose=common_pose)
-        if common_pose == "default":
+        joints = self.get_default_posture_joints(common_posture=common_posture)
+        if common_posture == "default":
             if self._gripper is not None and self._gripper.is_on():
                 self._gripper.open()
-        if not wait_for_moves_end:
-            self.cancel_all_moves()
+        if not wait_for_goto_end:
+            self.cancel_all_goto()
         if self.is_on():
             return self.goto_joints(joints, duration, wait, interpolation_mode)
         else:
