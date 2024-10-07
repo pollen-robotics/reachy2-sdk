@@ -6,7 +6,7 @@ This module contains various useful functions especially:
 """
 
 from collections import namedtuple
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -250,3 +250,47 @@ def invert_affine_transformation_matrix(matrix: npt.NDArray[np.float64]) -> npt.
     inv_matrix[:3, :3] = matrix[:3, :3].T
     inv_matrix[:3, 3] = -matrix[:3, :3].T @ matrix[:3, 3]
     return inv_matrix
+
+
+def get_normal_vector(vector: npt.NDArray[np.float64], arc_direction: str) -> Optional[npt.NDArray[np.float64]]:
+    """Get a normal vector to the given vector in the desired direction.
+
+    direction can be: 'above', 'below', 'front', 'back', 'right' or 'left'.
+    """
+    match arc_direction:
+        case "above":
+            if abs(vector[0]) < 0.001 and abs(vector[1]) < 0.001:
+                return None
+            normal = np.cross(vector, [0, 0, -1])
+        case "below":
+            if abs(vector[0]) < 0.001 and abs(vector[1]) < 0.001:
+                return None
+            normal = np.cross(vector, [0, 0, 1])
+        case "left":
+            if abs(vector[0]) < 0.001 and abs(vector[2]) < 0.001:
+                return None
+            normal = np.cross(vector, [0, -1, 0])
+        case "right":
+            if abs(vector[0]) < 0.001 and abs(vector[2]) < 0.001:
+                return None
+            normal = np.cross(vector, [0, 1, 0])
+        case "front":
+            if abs(vector[1]) < 0.001 and abs(vector[2]) < 0.001:
+                return None
+            normal = np.cross(vector, [-1, 0, 0])
+        case "back":
+            if abs(vector[1]) < 0.001 and abs(vector[2]) < 0.001:
+                return None
+            normal = np.cross(vector, [1, 0, 0])
+        case _:
+            raise ValueError(
+                f"arc_direction '{arc_direction}' not supported! Should be one of: "
+                "'above', 'below', 'front', 'back', 'right' or 'left'"
+            )
+
+    if np.linalg.norm(normal) == 0:
+        # Return None if the vector is in the requested arc_direction
+        return None
+
+    normal = normal / np.linalg.norm(normal)
+    return normal

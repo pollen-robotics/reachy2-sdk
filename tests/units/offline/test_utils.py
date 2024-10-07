@@ -10,6 +10,7 @@ from reachy2_sdk.utils.utils import (
     ext_euler_angles_to_list,
     get_grpc_interpolation_mode,
     get_interpolation_mode,
+    get_normal_vector,
     get_pose_matrix,
     invert_affine_transformation_matrix,
     list_to_arm_position,
@@ -261,3 +262,53 @@ def test_invert_affine_transformation_matrix() -> None:
 
     M_computed = invert_affine_transformation_matrix(M)
     assert np.array_equal(M_inv_ref, M_computed)
+
+
+@pytest.mark.offline
+def test_get_normal_vector() -> None:
+    initial_vector = [0, 0.7071, 0.7071]
+    normal_above = get_normal_vector(vector=initial_vector, arc_direction="above")
+    normal_below = get_normal_vector(vector=initial_vector, arc_direction="below")
+    normal_front = get_normal_vector(vector=initial_vector, arc_direction="front")
+    normal_back = get_normal_vector(vector=initial_vector, arc_direction="back")
+    normal_right = get_normal_vector(vector=initial_vector, arc_direction="right")
+    normal_left = get_normal_vector(vector=initial_vector, arc_direction="left")
+
+    expected_normal_above = [-1, 0, 0]
+    expected_normal_below = [1, 0, 0]
+    expected_normal_front = [0, -0.7071, 0.7071]
+    expected_normal_back = [0, 0.7071, -0.7071]
+    expected_normal_right = [-1, 0, 0]
+    expected_normal_left = [1, 0, 0]
+
+    assert np.allclose(normal_above, expected_normal_above, atol=1e-03)
+    assert np.allclose(normal_below, expected_normal_below, atol=1e-03)
+    assert np.allclose(normal_front, expected_normal_front, atol=1e-03)
+    assert np.allclose(normal_back, expected_normal_back, atol=1e-03)
+    assert np.allclose(normal_right, expected_normal_right, atol=1e-03)
+    assert np.allclose(normal_left, expected_normal_left, atol=1e-03)
+
+    initial_vector = [1, 0, 0]
+    normal_above = get_normal_vector(vector=initial_vector, arc_direction="above")
+    normal_below = get_normal_vector(vector=initial_vector, arc_direction="below")
+    normal_front = get_normal_vector(vector=initial_vector, arc_direction="front")
+    normal_back = get_normal_vector(vector=initial_vector, arc_direction="back")
+    normal_right = get_normal_vector(vector=initial_vector, arc_direction="right")
+    normal_left = get_normal_vector(vector=initial_vector, arc_direction="left")
+
+    expected_normal_above = [0, 1, 0]
+    expected_normal_below = [0, -1, 0]
+    expected_normal_front = None
+    expected_normal_back = None
+    expected_normal_right = [0, 0, 1]
+    expected_normal_left = [0, 0, -1]
+
+    assert np.allclose(normal_above, expected_normal_above, atol=1e-03)
+    assert np.allclose(normal_below, expected_normal_below, atol=1e-03)
+    assert np.allclose(normal_right, expected_normal_right, atol=1e-03)
+    assert np.allclose(normal_left, expected_normal_left, atol=1e-03)
+    assert normal_front is expected_normal_front
+    assert normal_back is expected_normal_back
+
+    with pytest.raises(ValueError):
+        get_normal_vector([0.1, 0.2, 0.3], arc_direction="coucou")
