@@ -455,6 +455,7 @@ def test_wait_move(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.isclose(elapsed_time, 3.0, 1e-01)
 
     reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=4)
+    time.sleep(0.1)
 
     assert reachy_sdk_zeroed.head.get_move_playing().id != -1
     assert reachy_sdk_zeroed.l_arm.get_move_playing().id == -1
