@@ -314,7 +314,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     def get_default_posture_matrix(self, common_posture: str = "default") -> npt.NDArray[np.float64]:
         """Return the 4x4 pose matrix of default robot poses."""
-        joints = self.get_default_pose_joints(common_posture)
+        joints = self.get_default_posture_joints(common_posture)
         return self.forward_kinematics(joints)
 
     def goto_from_matrix(
@@ -403,7 +403,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                                       Precision is prioritized over duration.
         """
 
-        self.cancel_all_moves()
+        self.cancel_all_goto()
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
         if duration == 0:
