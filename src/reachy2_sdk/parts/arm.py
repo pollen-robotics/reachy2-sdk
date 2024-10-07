@@ -86,9 +86,18 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self._actuators["wrist"] = self.wrist
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
-        """Set up the arm.
+        """
+        The function `_setup_arm` initializes the arm's actuators (shoulder, elbow, and wrist) based on
+        the arm's description and initial state.
 
-        Set up the arm's actuators (shoulder, elbow and wrist) with the arm's description and initial state.
+        Args:
+          arm (Arm_proto): The `_setup_arm` method is setting up the actuators (shoulder, elbow, and
+        wrist) of an arm based on the provided arm description and initial state. The method creates
+        instances of `Orbita2d` for the shoulder and elbow actuators, and an instance of `Or
+          initial_state (ArmState): The `initial_state` parameter in the `_setup_arm` method represents
+        the initial state of the arm's actuators (shoulder, elbow, and wrist). It contains the initial
+        positions or states of these actuators when the arm is set up. This information is used to
+        initialize the Orbita2 and Orbita3d instances for the shoulder, elbow, and wrist actuators.
         """
         description = arm.description
         self._shoulder = Orbita2d(
@@ -125,33 +134,60 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     @property
     def shoulder(self) -> Orbita2d:
+        """
+        This function returns the Orbita2d object stored in the `_shoulder` attribute of the class
+        instance.
+
+        Returns:
+          An instance of the `Orbita2d` class representing the shoulder.
+        """
         return self._shoulder
 
     @property
     def elbow(self) -> Orbita2d:
+        """
+        This function returns the Orbita2d object stored in the `_elbow` attribute of the class
+        instance.
+
+        Returns:
+          An instance of the `Orbita2d` class stored in the `_elbow` attribute of the object.
+        """
         return self._elbow
 
     @property
     def wrist(self) -> Orbita3d:
+        """
+        This function returns the Orbita3d object stored in the `_wrist` attribute of the class
+        instance.
+
+        Returns:
+          An instance of the `Orbita3d` class representing the wrist.
+        """
         return self._wrist
 
     @property
     def gripper(self) -> Optional[Hand]:
+        """
+        The function `gripper` returns the gripper attribute of an object, which is an instance of the
+        `Hand` class or `None`.
+
+        Returns:
+          The `gripper` method is returning an optional `Hand` object or `None` if `_gripper` is not
+        set.
+        """
         return self._gripper
 
     def turn_on(self) -> None:
-        """Turn all motors of the part on.
-
-        All arm's motors will then be stiff.
+        """
+        The function `turn_on` turns on all motors of the part, making all arm's motors stiff.
         """
         if self._gripper is not None:
             self._gripper._turn_on()
         super().turn_on()
 
     def turn_off(self) -> None:
-        """Turn all motors of the part off.
-
-        All arm's motors will then be compliant.
+        """
+        The function `turn_off` turns off all motors of the part, making all arm motors compliant.
         """
         if self._gripper is not None:
             self._gripper._turn_off()
@@ -176,9 +212,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         super()._turn_off()
 
     def turn_off_smoothly(self) -> None:
-        """Turn all motors of the part off.
-
-        All arm's motors will see their torque limit reduces for 3 seconds, then will be fully compliant.
+        """
+        This function gradually reduces the torque limit of all motors for 3 seconds before turning them off.
         """
         torque_limit_low = 35
         torque_limit_high = 100
@@ -198,13 +233,25 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self.set_torque_limits(torque_limit_high)
 
     def is_on(self) -> bool:
-        """Return True if all actuators of the arm are stiff"""
+        """
+        The function `is_on` returns True if all actuators of the arm are stiff.
+
+        Returns:
+          The `is_on` method is returning a boolean value. It will return `True` if all actuators of the
+        arm are stiff, and `False` otherwise.
+        """
         if not super().is_on():
             return False
         return True
 
     def is_off(self) -> bool:
-        """Return True if all actuators of the arm are stiff"""
+        """
+        The function `is_off` returns True if all actuators of the arm are stiff.
+
+        Returns:
+          The method is returning a boolean value. It will return True if all actuators of the arm are
+        stiff, otherwise it will return False.
+        """
         if not super().is_off():
             return False
         return True
@@ -219,10 +266,23 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     def forward_kinematics(
         self, joints_positions: Optional[List[float]] = None, degrees: bool = True
     ) -> npt.NDArray[np.float64]:
-        """Compute the forward kinematics of the arm.
+        """
+        The function `forward_kinematics` computes the forward kinematics of an arm and returns a 4x4 pose matrix
+        expressed in Reachy coordinate system.
 
-        It will return the pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate systems.
-        You can either specify a given joints position, otherwise it will use the current robot position.
+        Args:
+          joints_positions (Optional[List[float]]): The `joints_positions` parameter in the
+        `forward_kinematics` method is a list of float values representing the positions of the joints
+        in the arm. It is an optional parameter, meaning you can either provide a list of joint
+        positions or leave it as `None` to use the current robot position. Defaults to None
+          degrees (bool): The `degrees` parameter in the `forward_kinematics` method is a boolean flag
+        that specifies whether the joint positions should be interpreted as degrees or radians. If
+        `degrees` is set to `True`, the joint positions are expected to be in degrees; if set to
+        `False`, the joint. Defaults to True
+
+        Returns:
+          The function `forward_kinematics` returns the pose 4x4 matrix (as a numpy array) expressed in
+        Reachy coordinate systems.
         """
         req_params = {
             "id": self._part_id,
@@ -251,14 +311,28 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         degrees: bool = True,
         round: Optional[int] = None,
     ) -> List[float]:
-        """Compute the inverse kinematics of the arm.
+        """
+        The `inverse_kinematics` function computes a joint solution for a given target pose in a
+        robotic arm, with the option to provide an initial joint configuration.
 
-        Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
-        it will try to compute a joint solution to reach this target (or get close).
+        Args:
+          target (npt.NDArray[np.float64]): The `target` parameter is a 4x4 homogeneous pose matrix expressed in Reachy
+        coordinate systems. It is represented as a numpy array. The function computes a joint solution to reach the specified
+        target.
+          q0 (Optional[List[float]]): The `q0` parameter in the `inverse_kinematics` function is used to
+        specify a basic joint configuration as a prior for the solution. It is a list of floats
+        representing the initial joint angles of the arm. If provided, the function will try to compute
+        a joint solution from this initial configuration. Defaults to None
+          degrees (bool): The `degrees` parameter is a boolean flag that specifies whether the joint angles should be returned
+        in degrees or radians. If `degrees` is set to `True`, the function will return the joint angles in degrees.s
+        Defaults to True
+          round (Optional[int]): The `round` parameter in the `inverse_kinematics` function is an
+        optional parameter that specifies the number of decimal places to round the computed joint
+        angles to before returning them. If the `round` parameter is provided with an integer value.
 
-        It will raise a ValueError if no solution is found.
-
-        You can also specify a basic joint configuration as a prior for the solution.
+        Returns:
+          A list of joint angles representing the solution to reach the target pose.
+          It will raise a ValueError if no solution is found.
         """
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
@@ -304,11 +378,28 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         q0: Optional[List[float]] = None,
     ) -> GoToId:
-        """Move the arm to a matrix target (or get close).
+        """
+        The `goto_from_matrix` function moves the arm to a specified matrix target position with
+        optional parameters for duration, interpolation mode, and initial joint configuration.
 
-        Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
-        it will try to compute a joint solution to reach this target (or get close),
-        and move to this position in the defined duration.
+        Args:
+          target (npt.NDArray[np.float64]): The `target` parameter is an homogeneous 4x4 pose matrix
+        expressed in Reachy coordinate system, represented as a numpy array. This matrix defines the
+        desired position and orientation that the arm should move to.
+          duration (float): The `duration` parameter represents the time duration in seconds in which the arm should
+        reach the target pose. Defaults to 2
+          wait (bool): The `wait` parameter is a boolean flag that determines whether the function should wait for
+        the movement to finish before returning. If `wait` is set to `True`, the function will wait for the movement
+        to complete before returning. Defaults to False
+        interpolation_mode (str): The `interpolation_mode` parameter function specifies the type of interpolation
+        to be used when computing the joint solution to reach the target pose. The interpolation mode can be set to
+        "minimum_jerk" or "linear". Defaults to "minimum_jerk"
+          q0 (Optional[List[float]]): The `q0` parameter is an optional input that represents the initial joint configuration
+        of the arm. It is a list of 7 float values corresponding to the joint angles of the arm. If provided, it will be used
+        as the starting point for computing the inverse kinematics solution to reach the target pose. Defaults to None
+
+        Returns:
+          The function `goto_from_matrix` returns a `GoToId` object.
         """
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
@@ -361,6 +452,28 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_frequency: float = 120,
         precision_distance_xyz: float = 0.003,
     ) -> None:
+        """
+        This function performs Cartesian interpolation to move the arm towards a target pose or
+        get close to it, using linear or circular interpolation for translation.
+
+        Args:
+          target (npt.NDArray[np.float64]): The `target` parameter is a 4x4 pose matrix (as a numpy array)
+        expressed in Reachy coordinate systems. It represents the desired end position and orientation that the
+        arm should move towards.
+          duration (float): The `duration` parameter represents the expected time in seconds to reach the target
+        position from its current position. Defaults to 2
+          interpolation_frequency (float): The `interpolation_frequency` parameter specifies how many intermediate
+        points will be used to interpolate the movement in cartesian space between the initial and target poses. Defaults to 120
+          precision_distance_xyz (float): The `precision_distance_xyz` parameter in the
+        `send_cartesian_interpolation` method represents the maximum allowed distance in the XYZ space
+        between the current end-effector position and the target position. If the current end-effector
+        position is within this distance of the target position after the interpolation movement, the
+        movement
+
+        Returns:
+          The `send_cartesian_interpolation` method returns `None`.
+        """
+
         """Move the arm to a matrix target (or get close).
 
         Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
