@@ -352,7 +352,7 @@ def translate_in_self(_frame: npt.NDArray[np.float64], translation: List[float])
     Args :
         _frame      : the input frame
         translation : the translation to be applied
-    
+
     Returns:
       The function `translate_in_self` returns a new frame that is the input frame translated in itself.
     """
@@ -399,14 +399,14 @@ def get_normal_vector(vector: npt.NDArray[np.float64], arc_direction: str) -> Op
     """
     The function `get_normal_vector` calculates a normal vector to a given vector based on a specified
     direction.
-    
+
     Args:
       vector (npt.NDArray[np.float64]): The `vector` parameter is a numpy array representing a vector in
     3D space. It should be of type `npt.NDArray[np.float64]`.
       arc_direction (str): The `arc_direction` parameter specifies the desired direction for the normal
     vector. It can be one of the following options: 'above', 'below', 'front', 'back', 'right', or
     'left'.
-    
+
     Returns:
       the normal vector to the given vector in the specified direction.
     """
