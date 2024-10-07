@@ -21,36 +21,36 @@ SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "
 """Named tuple for easy access to request variables"""
 
 
-def convert_to_radians(my_list: List[float]) -> Any:
+def convert_to_radians(angles_list: List[float]) -> Any:
     """
     This function converts a list of angles from degrees to radians.
 
     Args:
-      my_list (List[float]): A list of angles in degrees that you want to convert to radians.
+      angles_list (List[float]): A list of angles in degrees that you want to convert to radians.
 
     Returns:
       The function `convert_to_radians` takes a list of angles in degrees as input, converts them to
     radians using NumPy's `deg2rad` function, and then returns the converted angles as a list.
     """
-    a = np.array(my_list)
+    a = np.array(angles_list)
     a = np.deg2rad(a)
 
     return a.tolist()
 
 
-def convert_to_degrees(my_list: List[float]) -> Any:
+def convert_to_degrees(angles_list: List[float]) -> Any:
     """
     This function converts a list of angles from radians to degrees.
 
     Args:
-      my_list (List[float]): The `my_list` parameter is a list of angles in radians that you want to
+      angles_list (List[float]): The `my_list` parameter is a list of angles in radians that you want to
     convert to degrees using the `convert_to_degrees` function.
 
     Returns:
       The function `convert_to_degrees` takes a list of angles in radians as input, converts them to
     degrees using NumPy's `rad2deg` function, and returns the converted angles as a list.
     """
-    a = np.array(my_list)
+    a = np.array(angles_list)
     a = np.rad2deg(a)
 
     return a.tolist()
@@ -63,9 +63,8 @@ def list_to_arm_position(positions: List[float], degrees: bool = True) -> ArmPos
 
     Args:
       positions (List[float]): The `positions` parameter is a list of float values representing joint
-    positions. The list should contain values for shoulder and elbow joint positions, as well as roll,
-    pitch, and yaw values for the wrist position. The length of the list should be 7, with the values in
-    the following order:
+    positions. The length of the list should be 7, with the values in the following order:
+    [shoulder.pitch, shoulder.yaw, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw]
       degrees (bool): The `degrees` parameter in the `list_to_arm_position` function is a boolean flag
     that indicates whether the input joint positions are in degrees or radians. If `degrees` is set to
     `True`, it means that the input joint positions are in degrees, and they will be converted to
@@ -137,8 +136,7 @@ def ext_euler_angles_to_list(euler_angles: ExtEulerAngles, degrees: bool = True)
     option to return the result in degrees.
 
     Args:
-      euler_angles (ExtEulerAngles): An `ExtEulerAngles` object representing a 3D rotation message. It
-    likely contains the following attributes:
+      euler_angles (ExtEulerAngles): An `ExtEulerAngles` object representing a 3D rotation message.
       degrees (bool): The `degrees` parameter in the function `ext_euler_angles_to_list` is a boolean
     parameter that specifies whether the output should be in degrees or not. If `degrees` is set to
     `True`, the function will convert the Euler angles to degrees before returning the list of joint
@@ -164,7 +162,7 @@ def get_grpc_interpolation_mode(interpolation_mode: str) -> GoToInterpolation:
       interpolation_mode (str): The `interpolation_mode` parameter is a string that represents the type
     of interpolation to be used. It can have two possible values: "minimum_jerk" or "linear". The
     function `get_grpc_interpolation_mode` takes this string as input and converts it to the
-    corresponding `GoTo
+    corresponding `GoToInterpolation`.
 
     Returns:
       An instance of the `GoToInterpolation` class with the interpolation type set based on the input
@@ -189,7 +187,7 @@ def get_interpolation_mode(interpolation_mode: InterpolationMode) -> str:
       interpolation_mode (InterpolationMode): `interpolation_mode` is a parameter of type
     `InterpolationMode` that is passed to the `get_interpolation_mode` function. The function converts
     the interpolation mode given as `InterpolationMode` to a string representation. The supported
-    interpolation modes are `MINIMUM_JERK` and `
+    interpolation modes are `MINIMUM_JERK` and `LINEAR`
 
     Returns:
       The function `get_interpolation_mode` returns a string representing the interpolation mode based
@@ -214,9 +212,7 @@ def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Tuple[Quaternion, npt.N
 
     Args:
       matrix (npt.NDArray[np.float64]): The `matrix` parameter in the `decompose_matrix` function is
-    expected to be a homogeneous 4x4 matrix represented as a NumPy array of type `np.float64`. This
-    matrix is typically used in computer graphics and robotics to represent transformations in 3D space,
-    including rotation and translation
+    expected to be a homogeneous 4x4 matrix represented as a NumPy array of type `np.float64`.
 
     Returns:
       A tuple containing a Quaternion representing the rotation component and a NumPy array representing
@@ -242,7 +238,6 @@ def recompose_matrix(rotation: npt.NDArray[np.float64], translation: npt.NDArray
       translation (npt.NDArray[np.float64]): Translation is a vector that represents the displacement of
     an object in space. In the context of the `recompose_matrix` function, the translation parameter is
     a 1D NumPy array of shape (3,) that contains the x, y, and z components of the translation vector.
-    These components specify
 
     Returns:
       The function `recompose_matrix` returns a homogeneous 4x4 matrix composed from the rotation
@@ -263,10 +258,8 @@ def matrix_from_euler_angles(roll: float, pitch: float, yaw: float, degrees: boo
       roll (float): The `roll` parameter represents the rotation angle around the x-axis in the Euler
     angles representation.
       pitch (float): The `pitch` parameter in the `matrix_from_euler_angles` function represents the
-    rotation around the y-axis in the Euler angles representation. It is the angle of rotation about the
-    x-axis in a 3D coordinate system.
-      yaw (float): The yaw angle represents the rotation around the z-axis in a 3D coordinate system. It
-    is also known as the heading angle.
+    rotation around the y-axis in the Euler angles representation.
+      yaw (float): The yaw angle represents the rotation around the z-axis in a 3D coordinate system.
       degrees (bool): The `degrees` parameter in the `matrix_from_euler_angles` function is a boolean
     flag that specifies whether the input angles (`roll`, `pitch`, `yaw`) are in degrees or radians. If
     `degrees` is set to `True`, the function converts the input angles from degrees to radians. Defaults
@@ -308,7 +301,7 @@ def invert_affine_transformation_matrix(matrix: npt.NDArray[np.float64]) -> npt.
     Args:
       matrix (npt.NDArray[np.float64]): The `matrix` parameter in the
     `invert_affine_transformation_matrix` function is expected to be a 4x4 NumPy array representing a
-    homogeneous transformation matrix. The matrix should have the following structure:
+    homogeneous transformation matrix.
 
     Returns:
       The function `invert_affine_transformation_matrix` returns the inverse of a given homogeneous
