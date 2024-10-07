@@ -72,7 +72,7 @@ class Orbita(ABC):
 
         self._error_status: Optional[str] = None
 
-        self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
+        self._thread_check_position: Optional[Thread] = None
         self._cancel_check = False
 
     @abstractmethod
@@ -163,9 +163,10 @@ class Orbita(ABC):
         pass
 
     def _post_send_goal_positions(self) -> None:
-        if not self._thread_check_position.is_alive():
+        if self._thread_check_position is None or not self._thread_check_position.is_alive():
             self._cancel_check = True
-            self._thread_check_position.join()
+            if self._thread_check_position is not None:
+                self._thread_check_position.join()
             self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
             self._thread_check_position.start()
 
