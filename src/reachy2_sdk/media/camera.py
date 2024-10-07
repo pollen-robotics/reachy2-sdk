@@ -1,7 +1,7 @@
 """Reachy Camera module.
 
-Define the RGB Camera of Reachy's head (Teleop) and the RGBD Camera of its torso (Depth). 
-Provide access to the frames (color, depth, disparity) and the camera parameters. 
+Define the RGB Camera of Reachy's head (Teleop) and the RGBD Camera of its torso (Depth).
+Provide access to the frames (color, depth, disparity) and the camera parameters.
 
 """
 
@@ -14,6 +14,8 @@ import numpy as np
 import numpy.typing as npt
 from reachy2_sdk_api.video_pb2 import CameraFeatures, View, ViewRequest
 from reachy2_sdk_api.video_pb2_grpc import VideoServiceStub
+
+from ..utils.utils import invert_affine_transformation_matrix
 
 
 class CameraView(Enum):
@@ -53,22 +55,61 @@ class Camera:
     def get_parameters(
         self, view: CameraView = CameraView.LEFT
     ) -> Optional[
-        Tuple[int, int, str, npt.NDArray[np.uint8], npt.NDArray[np.uint8], npt.NDArray[np.uint8], npt.NDArray[np.uint8]]
+        Tuple[int, int, str, npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]
     ]:
-        """Get camera parameters:
-        - frame height
-        - frame width
-        - distortion model
-        - distortion parameters D
-        - intrinsic camera matrix K
-        - rectification matrix R
-        - projection matrix P
-        """
+        """Returns the height, width, distortion model, distortion coefficients, instrinsic matrix,"""
+        """ rotation matrix and projection matrix"""
         params = self._video_stub.GetParameters(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if params.K == []:
             self._logger.warning("No parameter retrieved")
             return None
-        return params.height, params.width, params.distortion_model, params.D, params.K, params.R, params.P
+
+        D = np.array(params.D)
+        K = np.array(params.K).reshape((3, 3))
+        R = np.array(params.R).reshape((3, 3))
+        P = np.array(params.P).reshape((3, 4))
+
+        return params.height, params.width, params.distortion_model, D, K, R, P
+
+    def get_extrinsics(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.float64]]:
+        """Returns the 4x4 extrinsic matrix"""
+        res = self._video_stub.GetExtrinsics(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
+        if res.extrinsics is None:
+            self._logger.warning("No extrinsic matrix retrieved")
+            return None
+        return np.array(res.extrinsics.data).reshape((4, 4))
+
+    def pixel_to_world(
+        self, u: int, v: int, z_c: float = 1.0, view: CameraView = CameraView.LEFT
+    ) -> Optional[npt.NDArray[np.float64]]:
+        """Compute the XYZ position given a uv pixel in a camera view. If known the depth z_c (meter) may be provided"""
+        params = self.get_parameters(view)
+
+        if params is None:
+            return None
+
+        height, width, distortion_model, D, K, R, P = params
+
+        if u < 0 or u > width:
+            self._logger.warning(f"u value should be between 0 and {width}")
+            return None
+        if v < 0 or v > height:
+            self._logger.warning(f"v value should be between 0 and {height}")
+            return None
+
+        T_cam_world = self.get_extrinsics(view)
+        if T_cam_world is None:
+            return None
+
+        T_world_cam = invert_affine_transformation_matrix(T_cam_world)
+
+        uv_homogeneous = np.array([u, v, 1])
+        camera_coords = np.linalg.inv(K) @ uv_homogeneous
+        camera_coords_homogeneous = np.array([camera_coords[0] * z_c, camera_coords[1] * z_c, z_c, 1])
+
+        world_coords_homogeneous = T_world_cam @ camera_coords_homogeneous
+
+        return np.array(world_coords_homogeneous[:3])
 
     def __repr__(self) -> str:
         """Clean representation of a RGB camera"""

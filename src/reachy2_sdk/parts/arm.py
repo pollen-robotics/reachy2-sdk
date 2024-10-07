@@ -45,9 +45,12 @@ from ..utils.utils import (
     arm_position_to_list,
     decompose_matrix,
     get_grpc_interpolation_mode,
+    get_normal_vector,
     list_to_arm_position,
     matrix_from_euler_angles,
     recompose_matrix,
+    rotate_in_self,
+    translate_in_self,
 )
 from .goto_based_part import IGoToBasedPart
 from .hand import Hand
@@ -220,7 +223,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         duration = 3
 
         self.set_torque_limits(torque_limit_low)
-        self.set_pose(duration=duration, wait_for_moves_end=False)
+        self.goto_posture(duration=duration, wait_for_goto_end=False)
 
         countingTime = 0
         while countingTime < duration:
@@ -370,6 +373,24 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             answer = np.round(answer, round).tolist()
         return answer
 
+    def get_default_posture_joints(self, common_posture: str = "default") -> List[float]:
+        """Return the list of the joints positions for the default poses."""
+        if common_posture not in ["default", "elbow_90"]:
+            raise ValueError(f"common_posture {common_posture} not supported! Should be 'default' or 'elbow_90'")
+        if common_posture == "elbow_90":
+            elbow_pitch = -90
+        else:
+            elbow_pitch = 0
+        if self._part_id.name == "r_arm":
+            return [0, -15, -15, elbow_pitch, 0, 0, 0]
+        else:
+            return [0, 15, 15, elbow_pitch, 0, 0, 0]
+
+    def get_default_posture_matrix(self, common_posture: str = "default") -> npt.NDArray[np.float64]:
+        """Return the 4x4 pose matrix of default robot poses."""
+        joints = self.get_default_posture_joints(common_posture)
+        return self.forward_kinematics(joints)
+
     def goto_from_matrix(
         self,
         target: npt.NDArray[np.float64],
@@ -440,7 +461,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.error(f"Target pose:\n {target} \nwas not reachable. No command sent.")
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -449,6 +470,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self,
         target: npt.NDArray[np.float64],
         duration: float = 2,
+        arc_direction: Optional[str] = None,
+        elliptic_radius: Optional[float] = None,
         interpolation_frequency: float = 120,
         precision_distance_xyz: float = 0.003,
     ) -> None:
@@ -480,7 +503,20 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         it will try to compute a joint solution to reach this target (or get close).
         It will interpolate the movement in cartesian space in a number of intermediate points defined
         by the interpolation frequency and the duration.
+
+        Arguments :
+            target          : the 4x4 goal pose matrix in the robot coordinate system, reached at the end of the interpolation
+            duration        : the target duration of the movement
+            arc_direction   : if None, leads to a linear interpolation. If set, direction of the elliptic interpolation.
+                            Can be set to 'above', 'below', 'right', 'left', 'front' or 'back'
+            elliptic_radius : the second radius of the computed ellipse, first radius being the present to target pose distance.
+                            If None, leads to a circular interpolation.
+            interpolation_frequency : the frequency of the interpolation
+            precision_distance_xyz  : the maximum distance between the target pose and the reached pose after the interpolation.
+                                      Precision is prioritized over duration.
         """
+
+        self.cancel_all_goto()
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
         if duration == 0:
@@ -491,7 +527,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         try:
             self.inverse_kinematics(target)
         except ValueError:
-            raise ValueError("Target pose is not reachable!")
+            raise ValueError(f"Target pose: \n{target}\n is not reachable!")
 
         origin_matrix = self.forward_kinematics()
         nb_steps = int(duration * interpolation_frequency)
@@ -500,23 +536,20 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         q1, trans1 = decompose_matrix(origin_matrix)
         q2, trans2 = decompose_matrix(target)
 
-        for t in np.linspace(0, 1, nb_steps):
-            # Linear interpolation for translation
-            trans_interpolated = (1 - t) * trans1 + t * trans2
+        if arc_direction is None:
+            self._send_linear_interpolation(trans1, trans2, q1, q2, nb_steps=nb_steps, time_step=time_step)
 
-            # SLERP for rotation interpolation
-            q_interpolated = Quaternion.slerp(q1, q2, t)
-            rot_interpolated = q_interpolated.rotation_matrix
-
-            # Recompose the interpolated matrix
-            interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
-
-            request = ArmCartesianGoal(
-                id=self._part_id,
-                goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+        else:
+            self._send_elliptical_interpolation(
+                trans1,
+                trans2,
+                q1,
+                q2,
+                arc_direction=arc_direction,
+                secondary_radius=elliptic_radius,
+                nb_steps=nb_steps,
+                time_step=time_step,
             )
-            self._stub.SendArmCartesianGoal(request)
-            time.sleep(time_step)
 
         current_pose = self.forward_kinematics()
         current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
@@ -535,6 +568,110 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             current_pose = self.forward_kinematics()
             current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
         self._logger.info(f"l2 xyz distance to goal: {current_precision_distance_xyz}")
+
+    def _send_linear_interpolation(
+        self,
+        origin_trans: npt.NDArray[np.float64],
+        target_trans: npt.NDArray[np.float64],
+        origin_rot: Quaternion,
+        target_rot: Quaternion,
+        nb_steps: int,
+        time_step: float,
+    ) -> None:
+        """Generate linear interpolation."""
+        for t in np.linspace(0, 1, nb_steps):
+            # Linear interpolation for translation
+            trans_interpolated = (1 - t) * origin_trans + t * target_trans
+
+            # SLERP for rotation interpolation
+            q_interpolated = Quaternion.slerp(origin_rot, target_rot, t)
+            rot_interpolated = q_interpolated.rotation_matrix
+
+            # Recompose the interpolated matrix
+            interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
+
+            request = ArmCartesianGoal(
+                id=self._part_id,
+                goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+            )
+            self._stub.SendArmCartesianGoal(request)
+            time.sleep(time_step)
+
+    def _send_elliptical_interpolation(
+        self,
+        origin_trans: npt.NDArray[np.float64],
+        target_trans: npt.NDArray[np.float64],
+        origin_rot: Quaternion,
+        target_rot: Quaternion,
+        arc_direction: str,
+        secondary_radius: Optional[float],
+        nb_steps: int,
+        time_step: float,
+    ) -> None:
+        """Generate elliptical interpolation."""
+        vector_target_origin = target_trans - origin_trans
+
+        center = (origin_trans + target_trans) / 2
+        radius = float(np.linalg.norm(vector_target_origin) / 2)
+
+        vector_origin_center = origin_trans - center
+        vector_target_center = target_trans - center
+
+        if np.isclose(radius, 0, atol=1e-03):
+            self._logger.warning(f"{self._part_id.name} is already at the target pose. No command sent.")
+            return
+        if secondary_radius is None:
+            secondary_radius = radius
+        if secondary_radius is not None and secondary_radius > 0.3:
+            self._logger.warning("interpolation elliptic_radius was too large, reduced to 0.3")
+            secondary_radius = 0.3
+
+        normal = get_normal_vector(vector=vector_target_origin, arc_direction=arc_direction)
+
+        if normal is None:
+            self._logger.warning("arc_direction has no solution. Executing linear interpolation instead.")
+            self._send_linear_interpolation(
+                origin_trans=origin_trans,
+                target_trans=target_trans,
+                origin_rot=origin_rot,
+                target_rot=target_rot,
+                nb_steps=nb_steps,
+                time_step=time_step,
+            )
+            return
+
+        cos_angle = np.dot(vector_origin_center, vector_target_center) / (
+            np.linalg.norm(vector_origin_center) * np.linalg.norm(vector_target_center)
+        )
+        angle = np.arccos(np.clip(cos_angle, -1, 1))
+
+        for t in np.linspace(0, 1, nb_steps):
+            # Interpolated angles
+            theta = t * angle
+
+            # Rotation of origin_vector around the circle center in the plan defined by 'normal'
+            q1 = Quaternion(axis=normal, angle=theta)
+            rotation_matrix = q1.rotation_matrix
+
+            # Interpolated point in plan
+            trans_interpolated = np.dot(rotation_matrix, vector_origin_center)
+            # Adjusting the ellipse
+            ellipse_interpolated = trans_interpolated * np.array([1, 1, secondary_radius / radius])
+            trans_interpolated = ellipse_interpolated + center
+
+            # SLERP for the rotation
+            q_interpolated = Quaternion.slerp(origin_rot, target_rot, t)
+            rot_interpolated = q_interpolated.rotation_matrix
+
+            # Recompose the interpolated matrix
+            interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
+
+            request = ArmCartesianGoal(
+                id=self._part_id,
+                goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+            )
+            self._stub.SendArmCartesianGoal(request)
+            time.sleep(time_step)
 
     def goto_joints(
         self,
@@ -569,7 +706,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.error(f"Position {positions} was not reachable. No command sent.")
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -603,11 +740,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose[1, 3] += y
             pose[2, 3] += z
         elif frame == "gripper":
-            translation_matrix = np.eye(4)
-            translation_matrix[0, 3] += x
-            translation_matrix[1, 3] += y
-            translation_matrix[2, 3] += z
-            pose = np.dot(pose, translation_matrix)
+            pose = translate_in_self(initial_pose, [x, y, z])
         return pose
 
     def translate_by(
@@ -620,20 +753,20 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         frame: str = "robot",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Create a goto to translate the arm's end effector from the last move sent on the part.
-        If no move has been sent, use the current position.
+        """Create a goto to translate the arm's end effector from the last goto sent on the part.
+        If no goto has been sent, use the current position.
 
         Two frames can be used:
         - robot frame : translation is done in Reachy's coordinate system
         - gripper frame : translation is done in the gripper's coordinate system
         """
         try:
-            move = self.get_moves_queue()[-1]
+            goto = self.get_goto_queue()[-1]
         except IndexError:
-            move = self.get_move_playing()
+            goto = self.get_goto_playing()
 
-        if move.id != -1:
-            joints_request = self._get_move_joints_request(move)
+        if goto.id != -1:
+            joints_request = self._get_goto_joints_request(goto)
         else:
             joints_request = None
 
@@ -677,7 +810,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose_rotation = rotation @ pose_rotation
             pose = recompose_matrix(pose_rotation[:3, :3], pose_translation)
         elif frame == "gripper":
-            pose = pose @ rotation
+            pose = rotate_in_self(initial_pose, [roll, pitch, yaw], degrees=degrees)
 
         return pose
 
@@ -692,8 +825,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         frame: str = "robot",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Create a goto to rotate the arm's end effector from the last move sent on the part.
-        If no move has been sent, use the current position.
+        """Create a goto to rotate the arm's end effector from the last goto sent on the part.
+        If no goto has been sent, use the current position.
 
         Two frames can be used:
         - robot frame : rotation is done around Reachy's coordinate system axis
@@ -703,12 +836,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
 
         try:
-            move = self.get_moves_queue()[-1]
+            goto = self.get_goto_queue()[-1]
         except IndexError:
-            move = self.get_move_playing()
+            goto = self.get_goto_playing()
 
-        if move.id != -1:
-            joints_request = self._get_move_joints_request(move)
+        if goto.id != -1:
+            joints_request = self._get_goto_joints_request(goto)
         else:
             joints_request = None
 
@@ -745,7 +878,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_move_finished(response):
+            while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
         return response
@@ -779,35 +912,28 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
 
-    def set_pose(
+    def goto_posture(
         self,
-        common_pose: str = "default",
+        common_posture: str = "default",
         duration: float = 2,
         wait: bool = False,
-        wait_for_moves_end: bool = True,
+        wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Send all joints to standard positions in specified duration.
 
-        common_pose can be 'default', arms being straight, or 'elbow_90'.
+        common_posture can be 'default' or 'elbow_90'.
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
-        if common_pose == "elbow_90":
-            elbow_pitch = -90
-        else:
-            elbow_pitch = 0
+        joints = self.get_default_posture_joints(common_posture=common_posture)
+        if common_posture == "default":
             if self._gripper is not None and self._gripper.is_on():
                 self._gripper.open()
-        if not wait_for_moves_end:
-            self.cancel_all_moves()
+        if not wait_for_goto_end:
+            self.cancel_all_goto()
         if self.is_on():
-            if self._part_id.name == "r_arm":
-                return self.goto_joints([0, -15, -15, elbow_pitch, 0, 0, 0], duration, wait, interpolation_mode)
-            else:
-                return self.goto_joints([0, 15, 15, elbow_pitch, 0, 0, 0], duration, wait, interpolation_mode)
+            return self.goto_joints(joints, duration, wait, interpolation_mode)
         else:
             self._logger.warning(f"{self._part_id.name} is off. No command sent.")
         return GoToId(id=-1)

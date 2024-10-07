@@ -10,8 +10,13 @@ from reachy2_sdk.utils.utils import (
     ext_euler_angles_to_list,
     get_grpc_interpolation_mode,
     get_interpolation_mode,
+    get_normal_vector,
+    get_pose_matrix,
+    invert_affine_transformation_matrix,
     list_to_arm_position,
     matrix_from_euler_angles,
+    rotate_in_self,
+    translate_in_self,
 )
 
 
@@ -107,3 +112,203 @@ def test_matrix_from_euler_angles() -> None:
     expected_C = np.eye(4)
     expected_C[:3, :3] = scipy_result_C
     np.array_equal(expected_C, C)
+
+
+@pytest.mark.offline
+def test_get_pose_matrix() -> None:
+    A = np.array([[0.0, 0.0, -1.0, 0.5], [0.0, 1.0, 0.0, 0.1], [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
+    pose_A = get_pose_matrix([0.5, 0.1, 0], [0, -90, 0])
+    assert np.allclose(A, pose_A, atol=1e-03)
+
+    B = np.array([[0.0, 1.0, -0.0, 0.2], [0.0, 0.0, 1.0, 0.4], [1.0, -0.0, 0.0, -0.2], [0.0, 0.0, 0.0, 1.0]])
+    pose_B = get_pose_matrix([0.2, 0.4, -0.2], [-90, -90, 0])
+    assert np.allclose(B, pose_B, atol=1e-03)
+
+    C = np.array([[0.262, -0.808, -0.528, 0.5], [0.72, 0.528, -0.451, -0.8], [0.643, -0.262, 0.72, 0.0], [0.0, 0.0, 0.0, 1.0]])
+    pose_C = get_pose_matrix([0.5, -0.8, 0], [-20, -40, 70])
+    assert np.allclose(C, pose_C, atol=1e-03)
+
+    with pytest.raises(TypeError):
+        get_pose_matrix([1, 2, "coucou"], [1, 2, 3])
+    with pytest.raises(TypeError):
+        get_pose_matrix([1, 2, 3], [1, 2, "coucou"])
+    with pytest.raises(TypeError):
+        get_pose_matrix([0.1, 0.2, 0.3], -90)
+    with pytest.raises(ValueError):
+        get_pose_matrix([0.1, 0.2, 0.1, 0.1], [0, -90, 0])
+    with pytest.raises(ValueError):
+        get_pose_matrix([0.1, 0.2, 0.1], [-20, -90, -50, 10])
+
+
+@pytest.mark.offline
+def test_rotate_in_self() -> None:
+    A = get_pose_matrix([0.2, -0.2, -0.1], [0, -90, 0])
+    A_rot = rotate_in_self(A, [0, 20, 0], degrees=True)
+
+    expected_A_rot = np.array(
+        [[0.34202014, 0.0, -0.93969262, 0.2], [0.0, 1.0, 0.0, -0.2], [0.93969262, 0.0, 0.34202014, -0.1], [0.0, 0.0, 0.0, 1.0]]
+    )
+
+    assert np.allclose(A_rot, expected_A_rot, atol=1e-03)
+
+    A2_rot = rotate_in_self(A, [10, 30, -10])
+    expected_A2_rot = np.array(
+        [
+            [0.5, -0.15038373, -0.85286853, 0.2],
+            [-0.15038373, 0.95476947, -0.25651511, -0.2],
+            [0.85286853, 0.25651511, 0.45476947, -0.1],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+    assert np.allclose(A2_rot, expected_A2_rot, atol=1e-03)
+
+    B = get_pose_matrix([0.3, 0.2, -0.1], [0, -60, 30])
+    B_rot = rotate_in_self(B, [10, 20, 40], degrees=True)
+    expected_B_rot = np.array(
+        [
+            [0.26620632, -0.77307934, -0.5757452, 0.3],
+            [0.85115971, 0.46885778, -0.23600748, 0.2],
+            [0.45239512, -0.42722444, 0.78282689, -0.1],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+    assert np.allclose(B_rot, expected_B_rot, atol=1e-03)
+
+
+@pytest.mark.offline
+def test_translate_in_self() -> None:
+    A = get_pose_matrix([0.2, -0.2, -0.1], [0, -90, 0])
+    A_trans = translate_in_self(A, [0, 0.2, 0])
+
+    expected_A_trans = np.array([[0.0, 0.0, -1.0, 0.2], [0.0, 1.0, 0.0, 0.0], [1.0, 0.0, 0.0, -0.1], [0.0, 0.0, 0.0, 1.0]])
+    assert np.allclose(A_trans, expected_A_trans, atol=1e-03)
+
+    A2_trans = translate_in_self(A, [0.1, 0.3, -0.1])
+    expected_A2_trans = np.array([[0.0, 0.0, -1.0, 0.3], [0.0, 1.0, 0.0, 0.1], [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
+    assert np.allclose(A2_trans, expected_A2_trans, atol=1e-03)
+
+    B = get_pose_matrix([0.3, 0.2, -0.1], [0, -60, 30])
+    B_trans = translate_in_self(B, [0.1, -0.2, 0.4])
+    expected_B_trans = np.array(
+        [
+            [0.433012, -0.5, -0.75, 0.1433012],
+            [0.25, 0.866025, -0.433012, -0.12141],
+            [0.866025, 0.0, 0.5, 0.1866025],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+    assert np.allclose(B_trans, expected_B_trans, atol=1e-03)
+
+
+@pytest.mark.offline
+def test_invert_affine_transformation_matrix() -> None:
+    M = np.eye(2)
+
+    with pytest.raises(ValueError):
+        invert_affine_transformation_matrix(M)
+
+    # pure translation
+    M = np.eye(4)
+    M[0][3] = 5
+    M[2][3] = -8
+    M_inv_ref = np.eye(4)
+    M_inv_ref[0][3] = -5
+    M_inv_ref[2][3] = 8
+
+    M_computed = invert_affine_transformation_matrix(M)
+    assert np.array_equal(M_inv_ref, M_computed)
+
+    # pure rotation
+    # from pyquaternion: Quaternion(axis=[1, 0, 0], angle=3.14159265)
+    M = np.array(
+        [
+            [0.79389263, -0.5720614, 0.20610737, 0.0],
+            [0.5720614, 0.58778525, -0.5720614, 0.0],
+            [0.20610737, 0.5720614, 0.79389263, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+
+    M_inv_ref = np.array(
+        [
+            [0.79389263, 0.5720614, 0.20610737, 0.0],
+            [-0.5720614, 0.58778525, 0.5720614, 0.0],
+            [0.20610737, -0.5720614, 0.79389263, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+
+    M_computed = invert_affine_transformation_matrix(M)
+    assert np.array_equal(M_inv_ref, M_computed)
+
+    # both
+    M = np.array(
+        [
+            [0.79389263, -0.5720614, 0.20610737, 5.0],
+            [0.5720614, 0.58778525, -0.5720614, 0.0],
+            [0.20610737, 0.5720614, 0.79389263, -8.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+
+    M_inv_ref = np.array(
+        [
+            [0.79389263, 0.5720614, 0.20610737, -2.32060419],
+            [-0.5720614, 0.58778525, 0.5720614, 7.4367982],
+            [0.20610737, -0.5720614, 0.79389263, 5.32060419],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+
+    M_computed = invert_affine_transformation_matrix(M)
+    assert np.array_equal(M_inv_ref, M_computed)
+
+
+@pytest.mark.offline
+def test_get_normal_vector() -> None:
+    initial_vector = [0, 0.7071, 0.7071]
+    normal_above = get_normal_vector(vector=initial_vector, arc_direction="above")
+    normal_below = get_normal_vector(vector=initial_vector, arc_direction="below")
+    normal_front = get_normal_vector(vector=initial_vector, arc_direction="front")
+    normal_back = get_normal_vector(vector=initial_vector, arc_direction="back")
+    normal_right = get_normal_vector(vector=initial_vector, arc_direction="right")
+    normal_left = get_normal_vector(vector=initial_vector, arc_direction="left")
+
+    expected_normal_above = [-1, 0, 0]
+    expected_normal_below = [1, 0, 0]
+    expected_normal_front = [0, -0.7071, 0.7071]
+    expected_normal_back = [0, 0.7071, -0.7071]
+    expected_normal_right = [-1, 0, 0]
+    expected_normal_left = [1, 0, 0]
+
+    assert np.allclose(normal_above, expected_normal_above, atol=1e-03)
+    assert np.allclose(normal_below, expected_normal_below, atol=1e-03)
+    assert np.allclose(normal_front, expected_normal_front, atol=1e-03)
+    assert np.allclose(normal_back, expected_normal_back, atol=1e-03)
+    assert np.allclose(normal_right, expected_normal_right, atol=1e-03)
+    assert np.allclose(normal_left, expected_normal_left, atol=1e-03)
+
+    initial_vector = [1, 0, 0]
+    normal_above = get_normal_vector(vector=initial_vector, arc_direction="above")
+    normal_below = get_normal_vector(vector=initial_vector, arc_direction="below")
+    normal_front = get_normal_vector(vector=initial_vector, arc_direction="front")
+    normal_back = get_normal_vector(vector=initial_vector, arc_direction="back")
+    normal_right = get_normal_vector(vector=initial_vector, arc_direction="right")
+    normal_left = get_normal_vector(vector=initial_vector, arc_direction="left")
+
+    expected_normal_above = [0, 1, 0]
+    expected_normal_below = [0, -1, 0]
+    expected_normal_front = None
+    expected_normal_back = None
+    expected_normal_right = [0, 0, 1]
+    expected_normal_left = [0, 0, -1]
+
+    assert np.allclose(normal_above, expected_normal_above, atol=1e-03)
+    assert np.allclose(normal_below, expected_normal_below, atol=1e-03)
+    assert np.allclose(normal_right, expected_normal_right, atol=1e-03)
+    assert np.allclose(normal_left, expected_normal_left, atol=1e-03)
+    assert normal_front is expected_normal_front
+    assert normal_back is expected_normal_back
+
+    with pytest.raises(ValueError):
+        get_normal_vector([0.1, 0.2, 0.3], arc_direction="coucou")
