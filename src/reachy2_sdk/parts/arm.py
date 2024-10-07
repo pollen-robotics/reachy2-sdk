@@ -45,6 +45,7 @@ from ..utils.utils import (
     arm_position_to_list,
     decompose_matrix,
     get_grpc_interpolation_mode,
+    get_normal_vector,
     list_to_arm_position,
     matrix_from_euler_angles,
     recompose_matrix,
@@ -504,6 +505,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         vector_target_center = target_trans - center
 
         if radius == 0:
+            self._logger.warning(f"{self._part_id.name} is already at the target pose. No command sent.")
             return
         if secondary_radius is None:
             secondary_radius = radius
@@ -511,7 +513,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.warning("interpolation elliptic_radius was too large, reduced to 0.3")
             secondary_radius = 0.3
 
-        normal = self._get_normal_vector(vector=vector_target_origin, arc_direction=arc_direction)
+        normal = get_normal_vector(vector=vector_target_origin, arc_direction=arc_direction)
 
         if normal is None:
             self._logger.warning("arc_direction has no solution. Executing linear interpolation instead.")
@@ -544,7 +546,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             ellipse_interpolated = trans_interpolated * np.array([1, 1, secondary_radius / radius])
             trans_interpolated = ellipse_interpolated + center
 
-            # SLERP pour la rotation
+            # SLERP for the rotation
             q_interpolated = Quaternion.slerp(origin_rot, target_rot, t)
             rot_interpolated = q_interpolated.rotation_matrix
 
@@ -557,46 +559,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             )
             self._stub.SendArmCartesianGoal(request)
             time.sleep(time_step)
-
-    def _get_normal_vector(self, vector: npt.NDArray[np.float64], arc_direction: str) -> Optional[npt.NDArray[np.float64]]:
-        """Get a normal vector to the given vector in the desired direction."""
-        match arc_direction:
-            case "above":
-                if abs(vector[0]) < 0.001 and abs(vector[1]) < 0.001:
-                    return None
-                normal = np.cross(vector, [0, 0, -1])
-            case "below":
-                if abs(vector[0]) < 0.001 and abs(vector[1]) < 0.001:
-                    return None
-                normal = np.cross(vector, [0, 0, 1])
-            case "left":
-                if abs(vector[0]) < 0.001 and abs(vector[2]) < 0.001:
-                    return None
-                normal = np.cross(vector, [0, -1, 0])
-            case "right":
-                if abs(vector[0]) < 0.001 and abs(vector[2]) < 0.001:
-                    return None
-                normal = np.cross(vector, [0, 1, 0])
-            case "front":
-                if abs(vector[1]) < 0.001 and abs(vector[2]) < 0.001:
-                    return None
-                normal = np.cross(vector, [-1, 0, 0])
-            case "back":
-                if abs(vector[1]) < 0.001 and abs(vector[2]) < 0.001:
-                    return None
-                normal = np.cross(vector, [1, 0, 0])
-            case _:
-                raise ValueError(
-                    f"arc_direction '{arc_direction}' not supported! Should be one of: "
-                    "'above', 'below', 'front', 'back', 'right' or 'left'"
-                )
-
-        if np.linalg.norm(normal) == 0:
-            # Return None if the vector is in the requested arc_direction
-            return None
-
-        normal = normal / np.linalg.norm(normal)
-        return normal
 
     def goto_joints(
         self,
