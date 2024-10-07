@@ -504,7 +504,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         vector_origin_center = origin_trans - center
         vector_target_center = target_trans - center
 
-        if radius == 0:
+        if np.isclose(radius, 0, atol=1e-03):
             self._logger.warning(f"{self._part_id.name} is already at the target pose. No command sent.")
             return
         if secondary_radius is None:
