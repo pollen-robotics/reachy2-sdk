@@ -293,7 +293,7 @@ def matrix_from_euler_angles(roll: float, pitch: float, yaw: float, degrees: boo
 
 def get_pose_matrix(position: List[float], rotation: List[float], degrees: bool = True) -> npt.NDArray[np.float64]:
     """Creates the 4x4 pose matrix from a position vector and \"roll pitch yaw\" angles (rotation).
-    Arguments :
+    Args :
         position : a list of size 3. It is the requested position of the end effector in the robot coordinate system
         rotation : a list of size 3. It it the requested orientation of the end effector in the robot coordinate system.
                    Rotation is given as intrinsic angles, that are executed in roll, pitch, yaw order.
@@ -321,12 +321,15 @@ def get_pose_matrix(position: List[float], rotation: List[float], degrees: bool 
 
 def rotate_in_self(_frame: npt.NDArray[np.float64], rotation: List[float], degrees: bool = True) -> npt.NDArray[np.float64]:
     """
-    Returns a new frame that is the input frame rotated in itself.
-    Arguments :
+    The function `rotate_in_self` returns a new frame that is the input frame rotated in itself.
+
+    Args :
         _frame   : the input frame
         rotation : the rotation to be applied [x, y, z]
         degrees  : are the angles of the rotation in degrees or radians ?
 
+    Returns:
+      The function `rotate_in_self` returns a new frame that is the input frame rotated in itself.
     """
     frame = _frame.copy()
 
@@ -344,10 +347,14 @@ def rotate_in_self(_frame: npt.NDArray[np.float64], rotation: List[float], degre
 
 def translate_in_self(_frame: npt.NDArray[np.float64], translation: List[float]) -> npt.NDArray[np.float64]:
     """
-    Returns a new frame that is the input frame translated along its own axes
-    Arguments :
+    The function `translate_in_self` returns a new frame that is the input frame translated along its own axes.
+
+    Args :
         _frame      : the input frame
         translation : the translation to be applied
+    
+    Returns:
+      The function `translate_in_self` returns a new frame that is the input frame translated in itself.
     """
     frame = _frame.copy()
 
@@ -365,8 +372,8 @@ def translate_in_self(_frame: npt.NDArray[np.float64], translation: List[float])
 
 def invert_affine_transformation_matrix(matrix: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """
-    This Python function inverts a 4x4 homogeneous transformation matrix by computing its transpose and
-    adjusting the translation component,"""
+    The `invert_affine_transformation_matrix` function inverts a 4x4 homogeneous transformation matrix by
+    computing its transpose and adjusting the translation component,"""
     """with matrix M = [R t] , returns M^-1 = [R.T -R.T * t]"""
     """                [0 1]                  [0          1]"""
     """
@@ -389,9 +396,19 @@ def invert_affine_transformation_matrix(matrix: npt.NDArray[np.float64]) -> npt.
 
 
 def get_normal_vector(vector: npt.NDArray[np.float64], arc_direction: str) -> Optional[npt.NDArray[np.float64]]:
-    """Get a normal vector to the given vector in the desired direction.
-
-    direction can be: 'above', 'below', 'front', 'back', 'right' or 'left'.
+    """
+    The function `get_normal_vector` calculates a normal vector to a given vector based on a specified
+    direction.
+    
+    Args:
+      vector (npt.NDArray[np.float64]): The `vector` parameter is a numpy array representing a vector in
+    3D space. It should be of type `npt.NDArray[np.float64]`.
+      arc_direction (str): The `arc_direction` parameter specifies the desired direction for the normal
+    vector. It can be one of the following options: 'above', 'below', 'front', 'back', 'right', or
+    'left'.
+    
+    Returns:
+      the normal vector to the given vector in the specified direction.
     """
     match arc_direction:
         case "above":
