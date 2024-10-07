@@ -14,6 +14,7 @@ from queue import Queue
 from typing import Dict, Optional
 
 import grpc
+import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from numpy import deg2rad, rad2deg, round
 from reachy2_sdk_api.mobile_base_mobility_pb2 import (
@@ -187,13 +188,36 @@ class MobileBase(Part):
         )
         self._mobility_stub.SendDirection(req)
 
+    def translate_by(self, x: float, y: float, timeout: Optional[float] = None) -> None:
+        """Send a target position relative to the current position of the mobile base.
+
+        (x, y) define the translation wanted in the mobile base in cartesian space."""
+        odometry = self.odometry
+        x_current = odometry["x"]
+        y_current = odometry["y"]
+        theta = odometry["theta"]
+        theta_rad = deg2rad(theta)
+        x_goal = x_current + (x * np.cos(theta_rad) - y * np.sin(theta_rad))
+        y_goal = y_current + (x * np.sin(theta_rad) + y * np.cos(theta_rad))
+        self.goto(x_goal, y_goal, theta, timeout=timeout)
+
+    def rotate_by(self, theta: float, timeout: Optional[float] = None) -> None:
+        """Send a target rotation relative to the current rotation of the mobile base.
+
+        theta defines the rotation wanted in the mobile base in cartesian space."""
+        odometry = self.odometry
+        x = odometry["x"]
+        y = odometry["y"]
+        theta = odometry["theta"] + theta
+        self.goto(x, y, theta, timeout=timeout)
+
     def goto(
         self,
         x: float,
         y: float,
         theta: float,
         timeout: Optional[float] = None,
-        tolerance: Dict[str, float] = {"delta_x": 0.1, "delta_y": 0.1, "delta_theta": 15, "distance": 0.1},
+        tolerance: Dict[str, float] = {"delta_x": 0.05, "delta_y": 0.05, "delta_theta": 5, "distance": 0.05},
     ) -> None:
         """Send target position. x, y are in meters and theta is in degree.
 
@@ -241,7 +265,7 @@ class MobileBase(Part):
         y: float,
         theta: float,
         timeout: float,
-        tolerance: Dict[str, float] = {"delta_x": 0.1, "delta_y": 0.1, "delta_theta": 15, "distance": 0.1},
+        tolerance: Dict[str, float] = {"delta_x": 0.05, "delta_y": 0.05, "delta_theta": 5, "distance": 0.05},
     ) -> None:
         """Async version of the goto method."""
         for pos, value in {"x": x, "y": y}.items():

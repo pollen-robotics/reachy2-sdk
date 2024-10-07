@@ -556,7 +556,7 @@ class ReachySDK:
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
         if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
+            raise ValueError(f"common_pose {common_pose} not supported! Should be 'default' or 'elbow_90'")
         head_id = None
         r_arm_id = None
         l_arm_id = None
