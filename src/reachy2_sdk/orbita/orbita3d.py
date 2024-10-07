@@ -1,4 +1,5 @@
 """This module defines the Orbita3d class and its registers, joints, motors and axis."""
+
 from typing import Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
@@ -139,6 +140,7 @@ class Orbita3d(Orbita):
             )
             self._outgoing_goal_positions = {}
             self._stub.SendCommand(command)
+            self._post_send_goal_positions()
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
         """Set a speed_limit as a percentage of the max speed on all motors of the actuator"""
