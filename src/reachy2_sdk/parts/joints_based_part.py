@@ -39,9 +39,9 @@ class JointsBasedPart(Part):
                 _joints[actuator_name + "." + joint._axis_type] = joint
         return _joints
 
-    @abstractmethod
-    def get_joints_positions(self) -> List[float]:
-        pass
+    # @abstractmethod
+    # def get_joints_positions(self) -> List[float]:
+    #     pass
 
     @abstractmethod
     def send_goal_positions(self) -> None:

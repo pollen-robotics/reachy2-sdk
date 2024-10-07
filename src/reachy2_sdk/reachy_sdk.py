@@ -532,14 +532,17 @@ class ReachySDK:
             return False
         return True
 
-    def send_goal_positions(self) -> None:
+    def reset_default_limits(self) -> None:
+        """Set back speed and torque limits of all parts to maximum value (100)."""
         if not self.info:
             self._logger.warning("Reachy is not connected!")
             return
 
         for part in self.info._enabled_parts.values():
             if issubclass(type(part), JointsBasedPart):
-                part.send_goal_positions()
+                part.set_speed_limits(100)
+                part.set_torque_limits(100)
+        time.sleep(0.5)
 
     def goto_posture(
         self,
@@ -593,18 +596,6 @@ class ReachySDK:
         )
         return ids
 
-    def reset_default_limits(self) -> None:
-        """Set back speed and torque limits of all parts to maximum value (100)."""
-        if not self.info:
-            self._logger.warning("Reachy is not connected!")
-            return
-
-        for part in self.info._enabled_parts.values():
-            if issubclass(type(part), JointsBasedPart):
-                part.set_speed_limits(100)
-                part.set_torque_limits(100)
-        time.sleep(0.5)
-
     def is_goto_finished(self, goto_id: GoToId) -> bool:
         """Return True if goto has been played and has been cancelled, False otherwise."""
         if not self._grpc_connected:
@@ -635,32 +626,6 @@ class ReachySDK:
             return False
         state = self._get_goto_state(goto_id)
         return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
-
-    def cancel_all_goto(self) -> GoToAck:
-        """Cancel all the goto tasks."""
-        if not self._grpc_connected:
-            self._logger.warning("Reachy is not connected!")
-            return None
-        response = self._goto_stub.CancelAllGoTo(Empty())
-        return response
-
-    def _get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
-        """Return the current state of a goto, given its id."""
-        response = self._goto_stub.GetGoToState(goto_id)
-        return response
-
-    def cancel_goto_by_id(self, goto_id: GoToId) -> GoToAck:
-        """Ask the cancellation of a single goto on the arm, given its id"""
-        if not self._grpc_connected:
-            self._logger.warning("Reachy is not connected!")
-            return None
-        if not isinstance(goto_id, GoToId):
-            raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
-        if goto_id.id == -1:
-            self._logger.error("cancel_goto_by_id() asked for unvalid movement. Goto not played.")
-            return GoToAck(ack=True)
-        response = self._goto_stub.CancelGoTo(goto_id)
-        return response
 
     def get_goto_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
         """Returns the part affected, the joints goal positions, duration and mode of the corresponding GoToId
@@ -697,3 +662,38 @@ class ReachySDK:
             mode=mode,
         )
         return request
+
+    def _get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
+        """Return the current state of a goto, given its id."""
+        response = self._goto_stub.GetGoToState(goto_id)
+        return response
+
+    def cancel_goto_by_id(self, goto_id: GoToId) -> GoToAck:
+        """Ask the cancellation of a single goto on the arm, given its id"""
+        if not self._grpc_connected:
+            self._logger.warning("Reachy is not connected!")
+            return None
+        if not isinstance(goto_id, GoToId):
+            raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
+        if goto_id.id == -1:
+            self._logger.error("cancel_goto_by_id() asked for unvalid movement. Goto not played.")
+            return GoToAck(ack=True)
+        response = self._goto_stub.CancelGoTo(goto_id)
+        return response
+
+    def cancel_all_goto(self) -> GoToAck:
+        """Cancel all the goto tasks."""
+        if not self._grpc_connected:
+            self._logger.warning("Reachy is not connected!")
+            return None
+        response = self._goto_stub.CancelAllGoTo(Empty())
+        return response
+
+    def send_goal_positions(self) -> None:
+        if not self.info:
+            self._logger.warning("Reachy is not connected!")
+            return
+
+        for part in self.info._enabled_parts.values():
+            if issubclass(type(part), JointsBasedPart):
+                part.send_goal_positions()

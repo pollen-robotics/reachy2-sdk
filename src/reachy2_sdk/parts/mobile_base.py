@@ -141,75 +141,35 @@ class MobileBase(Part):
         else:
             raise ValueError(f"Control mode requested should be in {possible_control_modes}!")
 
-    def reset_odometry(self) -> None:
-        """Reset the odometry."""
-        self._stub.ResetOdometry(self._part_id)
-        time.sleep(0.03)
+    def is_on(self) -> bool:
+        """Return True if the mobile base is not compliant."""
+        return not self._drive_mode == "free_wheel"
 
-    def set_goal_speed(self, x: float | int = 0, y: float | int = 0, theta: float | int = 0) -> None:
+    def is_off(self) -> bool:
+        """Return True if the mobile base is compliant."""
+        if self._drive_mode == "free_wheel":
+            return True
+        return False
+
+    def get_current_state(self, degrees: bool = True, round_int: Optional[int] = None) -> Dict[str, float]:
         """
-        Set the goal speed for the mobile base. x_vel and y_vel are in m/s and rot_vel in deg/s.
-        This method is used before sending the command with the send_speed_command method,
-        which will make the mobile base move for 0.2s.
+        Get the current odometry of the mobile base in its reference frame:
+        - position in x
+        - position in y
+        - orientation in degrees or radians
+        - linear velocity in x axis
+        - linear velocity in y axis
+        - angular velocity
         """
-        for vel in [x, y, theta]:
-            if not isinstance(vel, float) | isinstance(vel, int):
-                raise TypeError("goal_speed must be a float or int")
+        current_state = self.odometry.copy()
+        if not degrees:
+            current_state["theta"] = deg2rad(current_state["theta"])
+            current_state["vtheta"] = deg2rad(current_state["vtheta"])
 
-        self._x_vel_goal = x
-        self._y_vel_goal = y
-        self._rot_vel_goal = theta
+        if round_int is not None:
+            current_state = {key: round(value, round_int) for key, value in current_state.items()}
 
-    def send_speed_command(self) -> None:
-        """Send goal speed, after setting them with set_goal_speed method.
-
-        The 200ms duration is predefined at the ROS level of the mobile base's code.
-        This mode is prefered if the user wants to send speed instructions frequently.
-        """
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. speed_command not sent.")
-            return
-        for vel, value in {"x_vel": self._x_vel_goal, "y_vel": self._y_vel_goal}.items():
-            if abs(value) > self._max_xy_vel:
-                raise ValueError(f"The absolute value of {vel} should not be more than {self._max_xy_vel}!")
-
-        if abs(self._rot_vel_goal) > self._max_rot_vel:
-            raise ValueError(f"The absolute value of rot_vel should not be more than {self._max_rot_vel}!")
-
-        if self._drive_mode != "cmd_vel":
-            self._set_drive_mode("cmd_vel")
-
-        req = TargetDirectionCommand(
-            direction=DirectionVector(
-                x=FloatValue(value=self._x_vel_goal),
-                y=FloatValue(value=self._y_vel_goal),
-                theta=FloatValue(value=deg2rad(self._rot_vel_goal)),
-            )
-        )
-        self._mobility_stub.SendDirection(req)
-
-    def translate_by(self, x: float, y: float, timeout: Optional[float] = None) -> None:
-        """Send a target position relative to the current position of the mobile base.
-
-        (x, y) define the translation wanted in the mobile base in cartesian space."""
-        odometry = self.odometry
-        x_current = odometry["x"]
-        y_current = odometry["y"]
-        theta = odometry["theta"]
-        theta_rad = deg2rad(theta)
-        x_goal = x_current + (x * np.cos(theta_rad) - y * np.sin(theta_rad))
-        y_goal = y_current + (x * np.sin(theta_rad) + y * np.cos(theta_rad))
-        self.goto(x_goal, y_goal, theta, timeout=timeout)
-
-    def rotate_by(self, theta: float, timeout: Optional[float] = None) -> None:
-        """Send a target rotation relative to the current rotation of the mobile base.
-
-        theta defines the rotation wanted in the mobile base in cartesian space."""
-        odometry = self.odometry
-        x = odometry["x"]
-        y = odometry["y"]
-        theta = odometry["theta"] + theta
-        self.goto(x, y, theta, timeout=timeout)
+        return current_state
 
     def goto(
         self,
@@ -299,26 +259,6 @@ class MobileBase(Part):
                 break
         return arrived
 
-    def get_current_state(self, degrees: bool = True, round_int: Optional[int] = None) -> Dict[str, float]:
-        """
-        Get the current odometry of the mobile base in its reference frame:
-        - position in x
-        - position in y
-        - orientation in degrees or radians
-        - linear velocity in x axis
-        - linear velocity in y axis
-        - angular velocity
-        """
-        current_state = self.odometry.copy()
-        if not degrees:
-            current_state["theta"] = deg2rad(current_state["theta"])
-            current_state["vtheta"] = deg2rad(current_state["vtheta"])
-
-        if round_int is not None:
-            current_state = {key: round(value, round_int) for key, value in current_state.items()}
-
-        return current_state
-
     def _distance_to_goto_goal(self) -> Dict[str, float]:
         response = self._mobility_stub.DistanceToGoal(self._part_id)
         distance = {
@@ -329,15 +269,75 @@ class MobileBase(Part):
         }
         return distance
 
-    def is_on(self) -> bool:
-        """Return True if the mobile base is not compliant."""
-        return not self._drive_mode == "free_wheel"
+    def translate_by(self, x: float, y: float, timeout: Optional[float] = None) -> None:
+        """Send a target position relative to the current position of the mobile base.
 
-    def is_off(self) -> bool:
-        """Return True if the mobile base is compliant."""
-        if self._drive_mode == "free_wheel":
-            return True
-        return False
+        (x, y) define the translation wanted in the mobile base in cartesian space."""
+        odometry = self.odometry
+        x_current = odometry["x"]
+        y_current = odometry["y"]
+        theta = odometry["theta"]
+        theta_rad = deg2rad(theta)
+        x_goal = x_current + (x * np.cos(theta_rad) - y * np.sin(theta_rad))
+        y_goal = y_current + (x * np.sin(theta_rad) + y * np.cos(theta_rad))
+        self.goto(x_goal, y_goal, theta, timeout=timeout)
+
+    def rotate_by(self, theta: float, timeout: Optional[float] = None) -> None:
+        """Send a target rotation relative to the current rotation of the mobile base.
+
+        theta defines the rotation wanted in the mobile base in cartesian space."""
+        odometry = self.odometry
+        x = odometry["x"]
+        y = odometry["y"]
+        theta = odometry["theta"] + theta
+        self.goto(x, y, theta, timeout=timeout)
+
+    def reset_odometry(self) -> None:
+        """Reset the odometry."""
+        self._stub.ResetOdometry(self._part_id)
+        time.sleep(0.03)
+
+    def set_goal_speed(self, x: float | int = 0, y: float | int = 0, theta: float | int = 0) -> None:
+        """
+        Set the goal speed for the mobile base. x_vel and y_vel are in m/s and rot_vel in deg/s.
+        This method is used before sending the command with the send_speed_command method,
+        which will make the mobile base move for 0.2s.
+        """
+        for vel in [x, y, theta]:
+            if not isinstance(vel, float) | isinstance(vel, int):
+                raise TypeError("goal_speed must be a float or int")
+
+        self._x_vel_goal = x
+        self._y_vel_goal = y
+        self._rot_vel_goal = theta
+
+    def send_speed_command(self) -> None:
+        """Send speed command, after setting them with set_goal_speed method.
+
+        The 200ms duration is predefined at the ROS level of the mobile base's code.
+        This mode is prefered if the user wants to send speed instructions frequently.
+        """
+        if self.is_off():
+            self._logger.warning(f"{self._part_id.name} is off. speed_command not sent.")
+            return
+        for vel, value in {"x_vel": self._x_vel_goal, "y_vel": self._y_vel_goal}.items():
+            if abs(value) > self._max_xy_vel:
+                raise ValueError(f"The absolute value of {vel} should not be more than {self._max_xy_vel}!")
+
+        if abs(self._rot_vel_goal) > self._max_rot_vel:
+            raise ValueError(f"The absolute value of rot_vel should not be more than {self._max_rot_vel}!")
+
+        if self._drive_mode != "cmd_vel":
+            self._set_drive_mode("cmd_vel")
+
+        req = TargetDirectionCommand(
+            direction=DirectionVector(
+                x=FloatValue(value=self._x_vel_goal),
+                y=FloatValue(value=self._y_vel_goal),
+                theta=FloatValue(value=deg2rad(self._rot_vel_goal)),
+            )
+        )
+        self._mobility_stub.SendDirection(req)
 
     def _update_with(self, new_state: MobileBaseState) -> None:
         self._battery_level = new_state.battery_level.level.value
