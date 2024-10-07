@@ -61,7 +61,7 @@ def test_gripper_goal_position(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_gripper_off(reachy_sdk_zeroed: ReachySDK) -> None:
-    reachy_sdk_zeroed.goto_default_pose("elbow_90")
+    reachy_sdk_zeroed.goto_posture("elbow_90")
     reachy_sdk_zeroed.l_arm.gripper.turn_off()
     reachy_sdk_zeroed.l_arm.goto_joints([15, 15, 0, -60, 0, 0, 0])
     time.sleep(3.0)

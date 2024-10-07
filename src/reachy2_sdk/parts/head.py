@@ -249,7 +249,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
 
-    def goto_default_pose(
+    def goto_posture(
         self,
         duration: float = 2,
         wait: bool = False,

@@ -101,7 +101,7 @@ if __name__ == "__main__":
     time.sleep(0.2)
 
     print("Set to Elbow 90 pose ...")
-    goto_ids = reachy.goto_default_pose("elbow_90")
+    goto_ids = reachy.goto_posture("elbow_90")
     wait_for_pose_to_finish(goto_ids)
 
     print("Move to point A")
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     draw_square(reachy)
 
     print("Set to Zero pose ...")
-    goto_ids = reachy.goto_default_pose("straight_arms")
+    goto_ids = reachy.goto_posture("default")
     wait_for_pose_to_finish(goto_ids)
 
     print("Turning off Reachy")

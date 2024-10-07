@@ -477,7 +477,7 @@ class ReachySDK:
         for part in self.info._enabled_parts.values():
             if "arm" in part._part_id.name:
                 part.set_torque_limits(torque_limit_low)
-                part.goto_default_pose(duration=duration, wait_for_goto_end=False)
+                part.goto_posture(duration=duration, wait_for_goto_end=False)
                 arms_list.append(part)
             else:
                 part._turn_off()
@@ -541,9 +541,9 @@ class ReachySDK:
             if issubclass(type(part), JointsBasedPart):
                 part.send_goal_positions()
 
-    def goto_default_pose(
+    def goto_posture(
         self,
-        common_pose: str = "straight_arms",
+        common_pose: str = "default",
         wait: bool = False,
         wait_for_goto_end: bool = True,
         duration: float = 2,
@@ -551,12 +551,12 @@ class ReachySDK:
     ) -> GoToHomeId:
         """Send all joints to standard positions in specified duration.
 
-        common_pose can be 'straight_arms' or 'elbow_90'.
+        common_pose can be 'default' or 'elbow_90'.
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        if common_pose not in ["straight_arms", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'straight_arms' or 'elbow_90'")
+        if common_pose not in ["default", "elbow_90"]:
+            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
         head_id = None
         r_arm_id = None
         l_arm_id = None
@@ -565,13 +565,13 @@ class ReachySDK:
         if self.head is not None:
             is_last_commmand = self.r_arm is None and self.l_arm is None
             wait_head = wait and is_last_commmand
-            head_id = self.head.goto_default_pose(
+            head_id = self.head.goto_posture(
                 duration=duration, wait=wait_head, wait_for_goto_end=wait_for_goto_end, interpolation_mode=interpolation_mode
             )
         if self.r_arm is not None:
             is_last_commmand = self.l_arm is None
             wait_r_arm = wait and is_last_commmand
-            r_arm_id = self.r_arm.goto_default_pose(
+            r_arm_id = self.r_arm.goto_posture(
                 common_pose,
                 duration=duration,
                 wait=wait_r_arm,
@@ -579,7 +579,7 @@ class ReachySDK:
                 interpolation_mode=interpolation_mode,
             )
         if self.l_arm is not None:
-            l_arm_id = self.l_arm.goto_default_pose(
+            l_arm_id = self.l_arm.goto_posture(
                 common_pose,
                 duration=duration,
                 wait=wait,

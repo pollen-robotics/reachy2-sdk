@@ -185,7 +185,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         duration = 3
 
         self.set_torque_limits(torque_limit_low)
-        self.goto_default_pose(duration=duration, wait_for_goto_end=False)
+        self.goto_posture(duration=duration, wait_for_goto_end=False)
 
         countingTime = 0
         while countingTime < duration:
@@ -666,9 +666,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
 
-    def goto_default_pose(
+    def goto_posture(
         self,
-        common_pose: str = "straight_arms",
+        common_pose: str = "default",
         duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
@@ -676,12 +676,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     ) -> GoToId:
         """Send all joints to standard positions in specified duration.
 
-        common_pose can be 'straight_arms' or 'elbow_90'.
+        common_pose can be 'default' or 'elbow_90'.
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        if common_pose not in ["straight_arms", "elbow_90"]:
-            raise ValueError(f"common_pose {common_pose} not supported! Should be 'straight_arms' or 'elbow_90'")
+        if common_pose not in ["default", "elbow_90"]:
+            raise ValueError(f"common_pose {common_pose} not supported! Should be 'default' or 'elbow_90'")
         if common_pose == "elbow_90":
             elbow_pitch = -90
         else:

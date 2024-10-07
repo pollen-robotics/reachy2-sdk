@@ -270,20 +270,20 @@ def test_get_goto_joints_request(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 @pytest.mark.online
-def test_reachy_goto_default_pose(reachy_sdk_zeroed: ReachySDK) -> None:
+def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
     # Test the default pose
     reachy_sdk_zeroed.l_arm.gripper.close()
     reachy_sdk_zeroed.r_arm.gripper.close()
-    reachy_sdk_zeroed.goto_default_pose("straight_arms")
+    reachy_sdk_zeroed.goto_posture("default")
     time.sleep(2)
     assert reachy_sdk_zeroed.l_arm.gripper.opening == 100.0
     assert reachy_sdk_zeroed.r_arm.gripper.opening == 100.0
     reachy_sdk_zeroed.l_arm.gripper.set_opening(30)
     reachy_sdk_zeroed.r_arm.gripper.close()
-    reachy_sdk_zeroed.goto_default_pose("elbow_90")
+    reachy_sdk_zeroed.goto_posture("elbow_90")
     time.sleep(2)
     reachy_sdk_zeroed.l_arm.turn_off()
-    reachy_sdk_zeroed.goto_default_pose("straight_arms")
+    reachy_sdk_zeroed.goto_posture("default")
     time.sleep(2)
     assert np.isclose(reachy_sdk_zeroed.l_arm.gripper.opening, 30, atol=5)
     assert reachy_sdk_zeroed.r_arm.gripper.opening == 100.0
@@ -304,7 +304,7 @@ def test_reachy_goto_default_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     time.sleep(2)
 
-    req_h, req_r, req_l = reachy_sdk_zeroed.goto_default_pose()
+    req_h, req_r, req_l = reachy_sdk_zeroed.goto_posture()
 
     assert reachy_sdk_zeroed._get_goto_state(req1).goal_status == GoalStatus.STATUS_EXECUTING
     assert reachy_sdk_zeroed._get_goto_state(req2).goal_status == GoalStatus.STATUS_EXECUTING
@@ -360,8 +360,8 @@ def test_reachy_goto_default_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     time.sleep(2)
 
-    req_h2, req_r2, req_l2 = reachy_sdk_zeroed.goto_default_pose(
-        "straight_arms", wait_for_goto_end=False, duration=1, interpolation_mode="linear"
+    req_h2, req_r2, req_l2 = reachy_sdk_zeroed.goto_posture(
+        "default", wait_for_goto_end=False, duration=1, interpolation_mode="linear"
     )
 
     assert (reachy_sdk_zeroed._get_goto_state(req4).goal_status == GoalStatus.STATUS_CANCELING) | (
@@ -394,7 +394,7 @@ def test_reachy_goto_default_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.allclose(reachy_sdk_zeroed.r_arm.get_joints_positions(), zero_r_arm, atol=1e-03)
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_joints_positions(), zero_l_arm, atol=1e-03)
 
-    # Test with 'elbow_90' instead of 'straight_arms'
+    # Test with 'elbow_90' instead of 'default'
 
     req7 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
     req8 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=5)
@@ -402,7 +402,7 @@ def test_reachy_goto_default_pose(reachy_sdk_zeroed: ReachySDK) -> None:
 
     time.sleep(2)
 
-    req_h3, req_r3, req_l3 = reachy_sdk_zeroed.goto_default_pose("elbow_90", wait_for_goto_end=False, duration=2)
+    req_h3, req_r3, req_l3 = reachy_sdk_zeroed.goto_posture("elbow_90", wait_for_goto_end=False, duration=2)
 
     assert (reachy_sdk_zeroed._get_goto_state(req7).goal_status == GoalStatus.STATUS_CANCELING) | (
         reachy_sdk_zeroed._get_goto_state(req7).goal_status == GoalStatus.STATUS_CANCELED
@@ -441,7 +441,7 @@ def test_reachy_goto_default_pose(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.head.turn_off()
     time.sleep(0.1)
 
-    req_h4, req_r4, req_l4 = reachy_sdk_zeroed.goto_default_pose("straight_arms", wait_for_goto_end=True, duration=2)
+    req_h4, req_r4, req_l4 = reachy_sdk_zeroed.goto_posture("default", wait_for_goto_end=True, duration=2)
 
     time.sleep(0.5)
 
@@ -467,7 +467,7 @@ def test_wait_move(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed.r_arm.get_goto_playing().id != -1
 
     tic = time.time()
-    reachy_sdk_zeroed.goto_default_pose("straight_arms", duration=2, wait=True, wait_for_goto_end=False)
+    reachy_sdk_zeroed.goto_posture("default", duration=2, wait=True, wait_for_goto_end=False)
     elapsed_time = time.time() - tic
     assert np.isclose(elapsed_time, 2.0, 1e-01)
 
@@ -694,7 +694,7 @@ def test_get_rotation_by(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_translate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.r_arm.goto_default_pose("elbow_90")
+    req1 = reachy_sdk_zeroed.r_arm.goto_posture("elbow_90")
     while not is_goto_finished(reachy_sdk_zeroed, req1):
         time.sleep(0.1)
 
@@ -728,7 +728,7 @@ def test_translate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_translate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.r_arm.goto_default_pose("elbow_90")
+    req1 = reachy_sdk_zeroed.r_arm.goto_posture("elbow_90")
     while not is_goto_finished(reachy_sdk_zeroed, req1):
         time.sleep(0.1)
 
@@ -778,7 +778,7 @@ def test_translate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_rotate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.r_arm.goto_default_pose("elbow_90")
+    req1 = reachy_sdk_zeroed.r_arm.goto_posture("elbow_90")
     while not is_goto_finished(reachy_sdk_zeroed, req1):
         time.sleep(0.1)
 
@@ -836,7 +836,7 @@ def test_rotate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.r_arm.goto_default_pose("elbow_90")
+    req1 = reachy_sdk_zeroed.r_arm.goto_posture("elbow_90")
     while not is_goto_finished(reachy_sdk_zeroed, req1):
         time.sleep(0.1)
 
