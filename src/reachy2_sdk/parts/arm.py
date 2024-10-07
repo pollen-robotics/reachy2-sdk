@@ -668,7 +668,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     def goto_posture(
         self,
-        common_pose: str = "default",
+        common_posture: str = "default",
         duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
@@ -676,13 +676,13 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     ) -> GoToId:
         """Send all joints to standard positions in specified duration.
 
-        common_pose can be 'default' or 'elbow_90'.
+        common_posture can be 'default' or 'elbow_90'.
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {common_pose} not supported! Should be 'default' or 'elbow_90'")
-        if common_pose == "elbow_90":
+        if common_posture not in ["default", "elbow_90"]:
+            raise ValueError(f"common_posture {common_posture} not supported! Should be 'default' or 'elbow_90'")
+        if common_posture == "elbow_90":
             elbow_pitch = -90
         else:
             elbow_pitch = 0

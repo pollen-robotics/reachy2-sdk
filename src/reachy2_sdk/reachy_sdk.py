@@ -543,7 +543,7 @@ class ReachySDK:
 
     def goto_posture(
         self,
-        common_pose: str = "default",
+        common_posture: str = "default",
         wait: bool = False,
         wait_for_goto_end: bool = True,
         duration: float = 2,
@@ -551,12 +551,12 @@ class ReachySDK:
     ) -> GoToHomeId:
         """Send all joints to standard positions in specified duration.
 
-        common_pose can be 'default' or 'elbow_90'.
+        common_posture can be 'default' or 'elbow_90'.
         Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
         Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
         """
-        if common_pose not in ["default", "elbow_90"]:
-            raise ValueError(f"common_pose {interpolation_mode} not supported! Should be 'default' or 'elbow_90'")
+        if common_posture not in ["default", "elbow_90"]:
+            raise ValueError(f"common_posture {common_posture} not supported! Should be 'default' or 'elbow_90'")
         head_id = None
         r_arm_id = None
         l_arm_id = None
@@ -572,7 +572,7 @@ class ReachySDK:
             is_last_commmand = self.l_arm is None
             wait_r_arm = wait and is_last_commmand
             r_arm_id = self.r_arm.goto_posture(
-                common_pose,
+                common_posture,
                 duration=duration,
                 wait=wait_r_arm,
                 wait_for_goto_end=wait_for_goto_end,
@@ -580,7 +580,7 @@ class ReachySDK:
             )
         if self.l_arm is not None:
             l_arm_id = self.l_arm.goto_posture(
-                common_pose,
+                common_posture,
                 duration=duration,
                 wait=wait,
                 wait_for_goto_end=wait_for_goto_end,
