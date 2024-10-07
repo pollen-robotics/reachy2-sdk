@@ -60,29 +60,29 @@ def draw_square(reachy: ReachySDK) -> None:
     print("Pose A: ", current_pos)
 
 
-def move_to_point_A(reachy: ReachySDK) -> None:
+def goto_to_point_A(reachy: ReachySDK) -> None:
     # position of point A in space
     target_pose = build_pose_matrix(0.4, -0.5, -0.2)
     # get the position in the joint space
     joints_positions = reachy.r_arm.inverse_kinematics(target_pose)
     # move Reachy's right arm to this point
-    move_id = reachy.r_arm.goto_joints(joints_positions, duration=2)
+    goto_id = reachy.r_arm.goto_joints(joints_positions, duration=2)
 
     # wait for movement to finish
-    while not reachy.is_move_finished(move_id):
+    while not reachy.is_goto_finished(goto_id):
         time.sleep(0.1)
 
 
 def wait_for_pose_to_finish(ids: GoToHomeId) -> None:
-    # pose is a special move function that returns 3 move id
+    # pose is a special goto function that returns 3 goto id
 
-    while not reachy.is_move_finished(ids.head):
+    while not reachy.is_goto_finished(ids.head):
         time.sleep(0.1)
 
-    while not reachy.is_move_finished(ids.r_arm):
+    while not reachy.is_goto_finished(ids.r_arm):
         time.sleep(0.1)
 
-    while not reachy.is_move_finished(ids.l_arm):
+    while not reachy.is_goto_finished(ids.l_arm):
         time.sleep(0.1)
 
 
@@ -101,18 +101,18 @@ if __name__ == "__main__":
     time.sleep(0.2)
 
     print("Set to Elbow 90 pose ...")
-    move_ids = reachy.set_pose("elbow_90")
-    wait_for_pose_to_finish(move_ids)
+    goto_ids = reachy.goto_posture("elbow_90")
+    wait_for_pose_to_finish(goto_ids)
 
     print("Move to point A")
-    move_to_point_A(reachy)
+    goto_to_point_A(reachy)
 
     print("Draw a square with the right arm ...")
     draw_square(reachy)
 
     print("Set to Zero pose ...")
-    move_ids = reachy.set_pose("default")
-    wait_for_pose_to_finish(move_ids)
+    goto_ids = reachy.goto_posture("default")
+    wait_for_pose_to_finish(goto_ids)
 
     print("Turning off Reachy")
     reachy.turn_off()

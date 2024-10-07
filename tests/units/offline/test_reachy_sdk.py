@@ -70,9 +70,9 @@ def test_unconnected() -> None:
     assert rsdk.is_on() == False
     assert rsdk.is_off() == True
 
-    assert rsdk.cancel_all_moves() is None
-    assert rsdk.cancel_move_by_id(GoToId(id=1)) is None
-    assert rsdk.get_move_joints_request(GoToId(id=1)) is None
+    assert rsdk.cancel_all_goto() is None
+    assert rsdk.cancel_goto_by_id(GoToId(id=1)) is None
+    assert rsdk.get_goto_joints_request(GoToId(id=1)) is None
 
-    assert rsdk.is_move_finished(GoToId(id=1)) is False
-    assert rsdk.is_move_playing(GoToId(id=1)) is False
+    assert rsdk.is_goto_finished(GoToId(id=1)) is False
+    assert rsdk.is_goto_playing(GoToId(id=1)) is False

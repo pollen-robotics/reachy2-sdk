@@ -27,7 +27,7 @@ if __name__ == "__main__":
     time.sleep(0.2)
 
     print("Set to zero pose...")
-    reachy.set_pose("default")
+    reachy.goto_posture("default")
 
     time.sleep(1)
 
