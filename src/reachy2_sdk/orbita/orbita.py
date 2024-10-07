@@ -182,7 +182,10 @@ class Orbita(ABC):
         for joint, orbitajoint in self._joints.items():
             # precision is low we are looking for unreachable positions
             if not np.isclose(orbitajoint.present_position, orbitajoint.goal_position, atol=1):
-                self._logger.warning("required goal position is unreachable.")
+                self._logger.warning(
+                    f"required goal position for {self._name}.{joint} is unreachable."
+                    f" current position is ({orbitajoint.present_position}"
+                )
 
     def _update_with(self, new_state: Orbita2dState | Orbita3dState) -> None:
         state: Dict[str, Dict[str, FloatValue]] = self._create_dict_state(new_state)
