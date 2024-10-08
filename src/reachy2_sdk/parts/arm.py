@@ -7,7 +7,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 """
 
 import time
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 import grpc
 import numpy as np

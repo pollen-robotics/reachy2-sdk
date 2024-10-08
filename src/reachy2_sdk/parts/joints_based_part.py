@@ -1,7 +1,8 @@
 from abc import abstractmethod
-from typing import List
+from typing import List, Union
 
 import grpc
+from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import SpeedLimitRequest, TorqueLimitRequest
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
@@ -39,9 +40,9 @@ class JointsBasedPart(Part):
                 _joints[actuator_name + "." + joint._axis_type] = joint
         return _joints
 
-    # @abstractmethod
-    # def get_current_state(self) -> List[float]:
-    #     pass
+    @abstractmethod
+    def get_current_state(self) -> Union[List[float], pyQuat]:
+        pass
 
     @abstractmethod
     def send_goal_positions(self) -> None:
