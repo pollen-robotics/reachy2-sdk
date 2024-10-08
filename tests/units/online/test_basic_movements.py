@@ -88,7 +88,7 @@ def is_goto_finished(reachy: ReachySDK, id: GoToId) -> bool:
 def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.head.turn_on()
     q0 = Quaternion(axis=[1, 0, 0], degrees=30)
-    id = reachy_sdk_zeroed.head.goto_quat(q0, duration=1)
+    id = reachy_sdk_zeroed.head.goto(q0, duration=1)
 
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
@@ -96,7 +96,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     q1 = reachy_sdk_zeroed.head.get_current_state(as_quat=True)
     assert np.isclose(Quaternion.distance(q0, q1), 0, atol=1e-04)
 
-    id = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=1)
+    id = reachy_sdk_zeroed.head.goto([0, 40, 0], duration=1)
     q2 = Quaternion(axis=[0, 1, 0], degrees=50)  # 10 degrees between joint and cartesian spaces
 
     while not is_goto_finished(reachy_sdk_zeroed, id):

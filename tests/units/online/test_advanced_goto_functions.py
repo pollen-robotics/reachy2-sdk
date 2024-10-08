@@ -13,7 +13,7 @@ from .test_basic_movements import build_pose_matrix, is_goto_finished
 
 @pytest.mark.online
 def test_cancel_goto_by_id(reachy_sdk_zeroed: ReachySDK) -> None:
-    req = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
+    req = reachy_sdk_zeroed.head.goto([0, 40, 0], duration=10, interpolation_mode="linear")
     time.sleep(2)
     cancel = reachy_sdk_zeroed.cancel_goto_by_id(req)
     assert cancel.ack
@@ -41,10 +41,10 @@ def test_cancel_goto_by_id(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_goto_queue(reachy_sdk_zeroed: ReachySDK) -> None:
-    _ = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
-    req2 = reachy_sdk_zeroed.head.goto_joints([20, 0, 0], duration=10, interpolation_mode="linear")
+    _ = reachy_sdk_zeroed.head.goto([0, 40, 0], duration=10, interpolation_mode="linear")
+    req2 = reachy_sdk_zeroed.head.goto([20, 0, 0], duration=10, interpolation_mode="linear")
     _ = reachy_sdk_zeroed.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
-    req4 = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
+    req4 = reachy_sdk_zeroed.head.goto([0, 40, 0], duration=10, interpolation_mode="linear")
 
     assert len(reachy_sdk_zeroed.head.get_goto_queue()) == 2
     assert reachy_sdk_zeroed.head.get_goto_queue() == [req2, req4]
@@ -62,7 +62,7 @@ def test_goto_queue(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_cancel_all_goto(reachy_sdk_zeroed: ReachySDK) -> None:
-    _ = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
+    _ = reachy_sdk_zeroed.head.goto([0, 40, 0], duration=10, interpolation_mode="linear")
     _ = reachy_sdk_zeroed.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
     time.sleep(2)
     cancel = reachy_sdk_zeroed.cancel_all_goto()
@@ -83,7 +83,7 @@ def test_cancel_all_goto(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_cancel_part_all_goto(reachy_sdk_zeroed: ReachySDK) -> None:
-    _ = reachy_sdk_zeroed.head.goto_joints([0, 40, 0], duration=10, interpolation_mode="linear")
+    _ = reachy_sdk_zeroed.head.goto([0, 40, 0], duration=10, interpolation_mode="linear")
     _ = reachy_sdk_zeroed.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=10, interpolation_mode="linear")
     time.sleep(2)
     cancel = reachy_sdk_zeroed.head.cancel_all_goto()
@@ -132,11 +132,11 @@ def test_cancel_part_all_goto(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_get_goto_playing(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.goto_joints([0, 0, -10], duration=3)
+    req1 = reachy_sdk_zeroed.head.goto([0, 0, -10], duration=3)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=5)
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=10)
 
-    req4 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=5)
+    req4 = reachy_sdk_zeroed.head.goto([30, 0, 0], duration=5)
     req5 = reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 5, -40, 10, -10, 0], duration=6)
     req6 = reachy_sdk_zeroed.r_arm.goto_joints([15, 15, 0, 0, 25, 20, -5], duration=5)
 
@@ -171,11 +171,11 @@ def test_get_goto_playing(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_get_goto_state(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.goto_joints([0, 0, -10], duration=3)
+    req1 = reachy_sdk_zeroed.head.goto([0, 0, -10], duration=3)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=5)
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=10)
 
-    req4 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=5)
+    req4 = reachy_sdk_zeroed.head.goto([30, 0, 0], duration=5)
     req5 = reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 5, -40, 10, -10, 0], duration=6)
     req6 = reachy_sdk_zeroed.r_arm.goto_joints([15, 15, 0, 0, 25, 20, -5], duration=5)
 
@@ -240,7 +240,7 @@ def test_get_goto_state(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_get_goto_joints_request(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=5)
+    req1 = reachy_sdk_zeroed.head.goto([30, 0, 0], duration=5)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=7, interpolation_mode="linear")
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=10)
 
@@ -298,7 +298,7 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
 
     # Test waiting for part's gotos to end
 
-    req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
+    req1 = reachy_sdk_zeroed.head.goto([30, 0, 0], duration=4)
     req2 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=5)
     req3 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=6)
 
@@ -354,7 +354,7 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
 
     # Test without waiting for part's gotos to end
 
-    req4 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
+    req4 = reachy_sdk_zeroed.head.goto([30, 0, 0], duration=4)
     req5 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=5)
     req6 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=6)
 
@@ -396,7 +396,7 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
 
     # Test with 'elbow_90' instead of 'default'
 
-    req7 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
+    req7 = reachy_sdk_zeroed.head.goto([30, 0, 0], duration=4)
     req8 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=5)
     req9 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=6)
 
@@ -455,7 +455,7 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
 @pytest.mark.online
 def test_wait_move(reachy_sdk_zeroed: ReachySDK) -> None:
     tic = time.time()
-    reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=4)
+    reachy_sdk_zeroed.head.goto([30, 0, 0], duration=4)
     reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=3, wait=True, interpolation_mode="linear")
     elapsed_time = time.time() - tic
     assert np.isclose(elapsed_time, 3.0, 1e-01)
@@ -486,7 +486,7 @@ def test_wait_move(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_is_goto_finished(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=2)
+    req1 = reachy_sdk_zeroed.head.goto([30, 0, 0], duration=2)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=3, interpolation_mode="linear")
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=4)
 
@@ -495,7 +495,7 @@ def test_is_goto_finished(reachy_sdk_zeroed: ReachySDK) -> None:
     assert not reachy_sdk_zeroed.is_goto_finished(req2)
     assert not reachy_sdk_zeroed.is_goto_finished(req3)
 
-    req4 = reachy_sdk_zeroed.head.goto_joints([0, 0, 0], duration=1)
+    req4 = reachy_sdk_zeroed.head.goto([0, 0, 0], duration=1)
     req5 = reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=1)
     req6 = reachy_sdk_zeroed.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=4)
 
@@ -531,7 +531,7 @@ def test_is_goto_finished(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_is_goto_playing(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=2)
+    req1 = reachy_sdk_zeroed.head.goto([30, 0, 0], duration=2)
     req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=3, interpolation_mode="linear")
     req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=4)
 
@@ -540,7 +540,7 @@ def test_is_goto_playing(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed.is_goto_playing(req2)
     assert reachy_sdk_zeroed.is_goto_playing(req3)
 
-    req4 = reachy_sdk_zeroed.head.goto_joints([0, 0, 0], duration=1)
+    req4 = reachy_sdk_zeroed.head.goto([0, 0, 0], duration=1)
     req5 = reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=1)
     req6 = reachy_sdk_zeroed.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=4)
 

@@ -118,51 +118,110 @@ class Head(JointsBasedPart, IGoToBasedPart):
                 return [roll, pitch, yaw]
             return [np.deg2rad(roll), np.deg2rad(pitch), np.deg2rad(yaw)]
 
-    def goto_joints(
+    def goto(
         self,
-        positions: List[float],
+        target: Union[List[float], pyQuat],
         duration: float = 2.0,
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
     ) -> GoToId:
-        """Send neck to rpy position.
+        """Send neck to the orientation.
 
-        Rotation is done in order roll, pitch, yaw.
+        If the input is a List[roll, pitch, yaw], it will send the neck to this RPY position.
+        If the input is a pyQuat, it will send the neck to the given quaternion orientation.
         """
+
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
+
         if not self.neck.is_on():
             self._logger.warning("head.neck is off. No command sent.")
             return GoToId(id=-1)
 
-        if degrees:
-            positions = np.deg2rad(positions).tolist()
+        if isinstance(target, list) and len(target) == 3:
+            if degrees:
+                target = np.deg2rad(target).tolist()
+            joints_goal = NeckOrientation(
+                rotation=Rotation3d(
+                    rpy=ExtEulerAngles(
+                        roll=FloatValue(value=target[0]),
+                        pitch=FloatValue(value=target[1]),
+                        yaw=FloatValue(value=target[2]),
+                    )
+                )
+            )
+        elif isinstance(target, pyQuat):
+            joints_goal = NeckOrientation(rotation=Rotation3d(q=Quaternion(w=target.w, x=target.x, y=target.y, z=target.z)))
+        else:
+            raise ValueError("Invalid input type for orientation. Must be either a list of 3 floats or a pyQuat.")
+
         request = GoToRequest(
             joints_goal=JointsGoal(
                 neck_joint_goal=NeckJointGoal(
                     id=self._part_id,
-                    joints_goal=NeckOrientation(
-                        rotation=Rotation3d(
-                            rpy=ExtEulerAngles(
-                                roll=FloatValue(value=positions[0]),
-                                pitch=FloatValue(value=positions[1]),
-                                yaw=FloatValue(value=positions[2]),
-                            )
-                        )
-                    ),
+                    joints_goal=joints_goal,
                     duration=FloatValue(value=duration),
                 )
             ),
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
+
         response = self._goto_stub.GoToJoints(request)
+
         if wait:
             self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_goto_finished(response):
                 time.sleep(0.1)
             self._logger.info(f"Movement with {response} finished.")
+
         return response
+
+    # def goto_joints(
+    #     self,
+    #     positions: List[float],
+    #     duration: float = 2.0,
+    #     wait: bool = False,
+    #     interpolation_mode: str = "minimum_jerk",
+    #     degrees: bool = True,
+    # ) -> GoToId:
+    #     """Send neck to rpy position.
+
+    #     Rotation is done in order roll, pitch, yaw.
+    #     """
+    #     if duration == 0:
+    #         raise ValueError("duration cannot be set to 0.")
+    #     if not self.neck.is_on():
+    #         self._logger.warning("head.neck is off. No command sent.")
+    #         return GoToId(id=-1)
+
+    #     if degrees:
+    #         positions = np.deg2rad(positions).tolist()
+    #     request = GoToRequest(
+    #         joints_goal=JointsGoal(
+    #             neck_joint_goal=NeckJointGoal(
+    #                 id=self._part_id,
+    #                 joints_goal=NeckOrientation(
+    #                     rotation=Rotation3d(
+    #                         rpy=ExtEulerAngles(
+    #                             roll=FloatValue(value=positions[0]),
+    #                             pitch=FloatValue(value=positions[1]),
+    #                             yaw=FloatValue(value=positions[2]),
+    #                         )
+    #                     )
+    #                 ),
+    #                 duration=FloatValue(value=duration),
+    #             )
+    #         ),
+    #         interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+    #     )
+    #     response = self._goto_stub.GoToJoints(request)
+    #     if wait:
+    #         self._logger.info(f"Waiting for movement with {response}.")
+    #         while not self._is_goto_finished(response):
+    #             time.sleep(0.1)
+    #         self._logger.info(f"Movement with {response} finished.")
+    #     return response
 
     def _goto_single_joint(
         self,
@@ -194,33 +253,33 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._logger.info(f"Movement with {response} finished.")
         return response
 
-    def goto_quat(
-        self, q: pyQuat, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk"
-    ) -> GoToId:
-        """Send neck to the orientation given as a quaternion."""
-        if duration == 0:
-            raise ValueError("duration cannot be set to 0.")
-        if not self.neck.is_on():
-            self._logger.warning("head.neck is off. No command sent.")
-            return GoToId(id=-1)
+    # def goto(
+    #     self, q: pyQuat, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk"
+    # ) -> GoToId:
+    #     """Send neck to the orientation given as a quaternion."""
+    #     if duration == 0:
+    #         raise ValueError("duration cannot be set to 0.")
+    #     if not self.neck.is_on():
+    #         self._logger.warning("head.neck is off. No command sent.")
+    #         return GoToId(id=-1)
 
-        request = GoToRequest(
-            joints_goal=JointsGoal(
-                neck_joint_goal=NeckJointGoal(
-                    id=self._part_id,
-                    joints_goal=NeckOrientation(rotation=Rotation3d(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z))),
-                    duration=FloatValue(value=duration),
-                )
-            ),
-            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-        )
-        response = self._goto_stub.GoToJoints(request)
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
-        return response
+    #     request = GoToRequest(
+    #         joints_goal=JointsGoal(
+    #             neck_joint_goal=NeckJointGoal(
+    #                 id=self._part_id,
+    #                 joints_goal=NeckOrientation(rotation=Rotation3d(q=Quaternion(w=q.w, x=q.x, y=q.y, z=q.z))),
+    #                 duration=FloatValue(value=duration),
+    #             )
+    #         ),
+    #         interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+    #     )
+    #     response = self._goto_stub.GoToJoints(request)
+    #     if wait:
+    #         self._logger.info(f"Waiting for movement with {response}.")
+    #         while not self._is_goto_finished(response):
+    #             time.sleep(0.1)
+    #         self._logger.info(f"Movement with {response} finished.")
+    #     return response
 
     def look_at(
         self, x: float, y: float, z: float, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk"
@@ -269,7 +328,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if not wait_for_goto_end:
             self.cancel_all_goto()
         if self.neck.is_on():
-            return self.goto_joints([0, -10, 0], duration, wait, interpolation_mode)
+            return self.goto([0, -10, 0], duration, wait, interpolation_mode)
         else:
             self._logger.warning("Head is off. No command sent.")
         return GoToId(id=-1)

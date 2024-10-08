@@ -715,22 +715,22 @@ def test_goto_rejection(reachy: ReachySDK) -> None:
 
 
 def test_head_orient(reachy: ReachySDK) -> None:
-    id = reachy.head.goto_joints([0, 0, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0, 0, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
-    id = reachy.head.goto_joints([0, 0.5, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0, 0.5, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
-    id = reachy.head.goto_joints([0.5, 0.5, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0.5, 0.5, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
-    id = reachy.head.goto_joints([0.5, 0.5, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0.5, 0.5, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
-    id = reachy.head.goto_joints([0.5, 0.0, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0.5, 0.0, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
-    id = reachy.head.goto_joints([0.0, 0.0, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0.0, 0.0, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
 
@@ -877,7 +877,7 @@ def multi_test():
         joint.goal_position = 0
     time.sleep(1)
 
-    reachy.head.goto_joints([0, 40, 0])
+    reachy.head.goto([0, 40, 0])
 
     reachy.disconnect()
 
