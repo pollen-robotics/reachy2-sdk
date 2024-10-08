@@ -1,6 +1,10 @@
+import logging
+import time
 from abc import ABC, abstractmethod
+from threading import Thread
 from typing import Any, Dict, Optional, Tuple
 
+import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import ComponentId
 from reachy2_sdk_api.orbita2d_pb2 import (
@@ -51,6 +55,7 @@ class Orbita(ABC):
         - stub: stub to call Orbitas methods
         - part: refers to the part the Orbita belongs to, in order to retrieve the parent part of the actuator.
         """
+        self._logger = logging.getLogger(__name__)
         self._name = name
         self._id = uid
         self._orbita_type = orbita_type
@@ -66,6 +71,9 @@ class Orbita(ABC):
         self._axis: Dict[str, OrbitaAxis] = {}
 
         self._error_status: Optional[str] = None
+
+        self._thread_check_position: Optional[Thread] = None
+        self._cancel_check = False
 
     @abstractmethod
     def _create_dict_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
@@ -153,6 +161,31 @@ class Orbita(ABC):
     @abstractmethod
     def send_goal_positions(self) -> None:
         pass
+
+    def _post_send_goal_positions(self) -> None:
+        self._cancel_check = True
+        if self._thread_check_position is not None and self._thread_check_position.is_alive():
+            self._thread_check_position.join()
+        self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
+        self._thread_check_position.start()
+
+    def _check_goal_positions(self) -> None:
+        """Send command does not return a status. Manual check of the present position vs the goal position"""
+        self._cancel_check = False
+        t1 = time.time()
+        while time.time() - t1 < 1:
+            time.sleep(0.05)
+            if self._cancel_check:
+                # in case of multiple send_goal_positions we'll check the next call
+                return
+
+        for joint, orbitajoint in self._joints.items():
+            # precision is low we are looking for unreachable positions
+            if not np.isclose(orbitajoint.present_position, orbitajoint.goal_position, atol=1):
+                self._logger.warning(
+                    f"required goal position for {self._name}.{joint} is unreachable."
+                    f" current position is ({orbitajoint.present_position}"
+                )
 
     def _update_with(self, new_state: Orbita2dState | Orbita3dState) -> None:
         state: Dict[str, Dict[str, FloatValue]] = self._create_dict_state(new_state)
