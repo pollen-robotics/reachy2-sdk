@@ -40,7 +40,7 @@ class JointsBasedPart(Part):
         return _joints
 
     # @abstractmethod
-    # def get_joints_positions(self) -> List[float]:
+    # def get_current_state(self) -> List[float]:
     #     pass
 
     @abstractmethod

@@ -384,7 +384,7 @@ def fix_3_multiturn_if_needed(reachy: ReachySDK, max_values_wrist_elbow_shoulder
             reachy_arm = reachy.r_arm
             t_pose = r_t_pose
 
-        current_joints = reachy_arm.get_joints_positions()
+        current_joints = reachy_arm.get_current_state()
         print(f"Current joints for {arm_name}_arm: {current_joints}")
 
         wrist_elbow_shoulder = [
@@ -410,7 +410,7 @@ def fix_3_multiturn_if_needed(reachy: ReachySDK, max_values_wrist_elbow_shoulder
             print(f"At least the elbow or the shoulder are problematic, T-Posing for {arm_name}_arm!")
             task_space_interpolation_goto(reachy_arm, t_pose)
             time.sleep(0.1)
-            current_joints = reachy_arm.get_joints_positions()
+            current_joints = reachy_arm.get_current_state()
             goal_joints = copy.deepcopy(current_joints)
             goal_joints[6] = 0
             goal_joints[2] = 0
@@ -433,7 +433,7 @@ def fix_multiturn_if_needed(reachy: ReachySDK, max_values_elbow_shoulder=[180, 1
             reachy_arm = reachy.r_arm
             t_pose = r_t_pose
 
-        current_joints = reachy_arm.get_joints_positions()
+        current_joints = reachy_arm.get_current_state()
         print(f"Current joints for {arm_name}_arm: {current_joints}")
 
         elbow_shoulder = [
@@ -453,7 +453,7 @@ def fix_multiturn_if_needed(reachy: ReachySDK, max_values_elbow_shoulder=[180, 1
             print(f"At least the elbow or the shoulder are problematic, T-Posing for {arm_name}_arm!")
             task_space_interpolation_goto(reachy_arm, t_pose)
             time.sleep(0.1)
-            current_joints = reachy_arm.get_joints_positions()
+            current_joints = reachy_arm.get_current_state()
             goal_joints = copy.deepcopy(current_joints)
             goal_joints[2] = 0
             goal_joints[0] = 0
