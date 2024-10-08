@@ -38,7 +38,7 @@ def test_triangle(reachy_sdk_zeroed: ReachySDK) -> None:
     # In C position, the effector is at (0.3, -0.1, -0.3) in the world frame
 
     A = build_pose_matrix(0.3, -0.4, -0.3)
-    m1 = reachy_sdk_zeroed.r_arm.goto_from_matrix(A)
+    m1 = reachy_sdk_zeroed.r_arm.goto(A)
 
     while not is_goto_finished(reachy_sdk_zeroed, m1):
         time.sleep(0.1)
@@ -47,7 +47,7 @@ def test_triangle(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.allclose(current_pos, A, atol=1e-03)
 
     B = build_pose_matrix(0.3, -0.4, 0)
-    m2 = reachy_sdk_zeroed.r_arm.goto_from_matrix(B)
+    m2 = reachy_sdk_zeroed.r_arm.goto(B)
 
     while not is_goto_finished(reachy_sdk_zeroed, m2):
         time.sleep(0.1)
@@ -56,7 +56,7 @@ def test_triangle(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.allclose(current_pos, B, atol=1e-03)
 
     C = build_pose_matrix(0.3, -0.2, -0.3)
-    m3 = reachy_sdk_zeroed.r_arm.goto_from_matrix(C)
+    m3 = reachy_sdk_zeroed.r_arm.goto(C)
 
     while not is_goto_finished(reachy_sdk_zeroed, m3):
         time.sleep(0.1)
@@ -65,7 +65,7 @@ def test_triangle(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.allclose(current_pos, C, atol=1e-03)
 
     A = build_pose_matrix(0.3, -0.4, -0.3)
-    m1 = reachy_sdk_zeroed.r_arm.goto_from_matrix(A)
+    m1 = reachy_sdk_zeroed.r_arm.goto(A)
 
     while not is_goto_finished(reachy_sdk_zeroed, m1):
         time.sleep(0.1)
@@ -131,7 +131,7 @@ def test_basic_get_positions(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_state(), expected_pos1, atol=1e-03)
 
     expected_pos2 = [15, 10, 20, -50, 10, 10, 20]
-    id = reachy_sdk_zeroed.l_arm.goto_joints(expected_pos2, duration=3)
+    id = reachy_sdk_zeroed.l_arm.goto(expected_pos2, duration=3)
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_state(), expected_pos2, atol=1e-03)

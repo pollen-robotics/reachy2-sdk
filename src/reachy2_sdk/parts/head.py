@@ -177,7 +177,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
         return response
 
-    # def goto_joints(
+    # def goto(
     #     self,
     #     positions: List[float],
     #     duration: float = 2.0,

@@ -7,7 +7,7 @@ Handles all specific method to an Arm (left and/or right) especially:
 """
 
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import grpc
 import numpy as np
@@ -308,43 +308,117 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             answer = np.round(answer, round).tolist()
         return answer
 
-    def goto_joints(
+    def goto(
         self,
-        positions: List[float],
+        target: Union[List[float], npt.NDArray[np.float64]],
         duration: float = 2,
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
+        q0: Optional[List[float]] = None,
     ) -> GoToId:
-        """Move the arm's joints to reach the given position.
+        """Move the arm to either a joint position (7 values) or a matrix target (4x4)."""
 
-        Given a list of joint positions (exactly 7 joint positions),
-        it will move the arm to that position.
-        """
-        if len(positions) != 7:
-            raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
+        if not ((isinstance(target, list) and len(target) == 7) or (isinstance(target, np.ndarray) and target.shape == (4, 4))):
+            raise ValueError("Invalid target: must be either a list of 7 joint positions or a 4x4 matrix.")
+
+        if q0 is not None and len(q0) != 7:
+            raise ValueError(f"q0 should be of length 7 (got {len(q0)} instead)!")
+
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
+
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
 
-        arm_pos = list_to_arm_position(positions, degrees)
+        if isinstance(target, list) and len(target) == 7:
+            response = self._goto_joints(target, duration, interpolation_mode, degrees)
+        elif isinstance(target, np.ndarray) and target.shape == (4, 4):
+            response = self._goto_from_matrix(target, duration, interpolation_mode, q0)
+
+        if response.id == -1:
+            self._logger.error("Target was not reachable. No command sent.")
+
+        if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
+            while not self._is_goto_finished(response):
+                time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
+
+        return response
+
+    def _goto_joints(self, target: List[float], duration: float, interpolation_mode: str, degrees: bool) -> GoToId:
+        """Handle movement to joint positions."""
+        if isinstance(target, np.ndarray):
+            target = target.tolist()
+        arm_pos = list_to_arm_position(target, degrees)
         request = GoToRequest(
             joints_goal=JointsGoal(
                 arm_joint_goal=ArmJointGoal(id=self._part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
             ),
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
-        response = self._goto_stub.GoToJoints(request)
-        if response.id == -1:
-            self._logger.error(f"Position {positions} was not reachable. No command sent.")
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
-        return response
+        return self._goto_stub.GoToJoints(request)
+
+    def _goto_from_matrix(
+        self, target: npt.NDArray[np.float64], duration: float, interpolation_mode: str, q0: Optional[List[float]]
+    ) -> GoToId:
+        """Handle movement to a cartesian target using a 4x4 matrix."""
+        if q0 is not None and len(q0) != 7:
+            raise ValueError(f"q0 should be of length 7 (got {len(q0)} instead)!")
+
+        goal_pose = Matrix4x4(data=target.flatten().tolist())
+        request = GoToRequest(
+            cartesian_goal=CartesianGoal(
+                arm_cartesian_goal=ArmCartesianGoal(
+                    id=self._part_id,
+                    goal_pose=goal_pose,
+                    duration=FloatValue(value=duration),
+                    q0=list_to_arm_position(q0) if q0 is not None else None,
+                )
+            ),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+        )
+        return self._goto_stub.GoToCartesian(request)
+
+    # def goto(
+    #     self,
+    #     positions: List[float],
+    #     duration: float = 2,
+    #     wait: bool = False,
+    #     interpolation_mode: str = "minimum_jerk",
+    #     degrees: bool = True,
+    # ) -> GoToId:
+    #     """Move the arm's joints to reach the given position.
+
+    #     Given a list of joint positions (exactly 7 joint positions),
+    #     it will move the arm to that position.
+    #     """
+    #     if len(positions) != 7:
+    #         raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
+    #     if duration == 0:
+    #         raise ValueError("duration cannot be set to 0.")
+    #     if self.is_off():
+    #         self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
+    #         return GoToId(id=-1)
+
+    #     arm_pos = list_to_arm_position(positions, degrees)
+    #     request = GoToRequest(
+    #         joints_goal=JointsGoal(
+    #             arm_joint_goal=ArmJointGoal(id=self._part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
+    #         ),
+    #         interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+    #     )
+    #     response = self._goto_stub.GoToJoints(request)
+    #     if response.id == -1:
+    #         self._logger.error(f"Position {positions} was not reachable. No command sent.")
+    #     if wait:
+    #         self._logger.info(f"Waiting for movement with {response}.")
+    #         while not self._is_goto_finished(response):
+    #             time.sleep(0.1)
+    #         self._logger.info(f"Movement with {response} finished.")
+    #     return response
 
     def _goto_single_joint(
         self,
@@ -376,63 +450,63 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.info(f"Movement with {response} finished.")
         return response
 
-    def goto_from_matrix(
-        self,
-        target: npt.NDArray[np.float64],
-        duration: float = 2,
-        wait: bool = False,
-        interpolation_mode: str = "minimum_jerk",
-        q0: Optional[List[float]] = None,
-    ) -> GoToId:
-        """Move the arm to a matrix target (or get close).
+    # def goto(
+    #     self,
+    #     target: npt.NDArray[np.float64],
+    #     duration: float = 2,
+    #     wait: bool = False,
+    #     interpolation_mode: str = "minimum_jerk",
+    #     q0: Optional[List[float]] = None,
+    # ) -> GoToId:
+    #     """Move the arm to a matrix target (or get close).
 
-        Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
-        it will try to compute a joint solution to reach this target (or get close),
-        and move to this position in the defined duration.
-        """
-        if target.shape != (4, 4):
-            raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
-        if q0 is not None and (len(q0) != 7):
-            raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
-        if duration == 0:
-            raise ValueError("duration cannot be set to 0.")
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
-            return GoToId(id=-1)
+    #     Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
+    #     it will try to compute a joint solution to reach this target (or get close),
+    #     and move to this position in the defined duration.
+    #     """
+    #     if target.shape != (4, 4):
+    #         raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
+    #     if q0 is not None and (len(q0) != 7):
+    #         raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
+    #     if duration == 0:
+    #         raise ValueError("duration cannot be set to 0.")
+    #     if self.is_off():
+    #         self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
+    #         return GoToId(id=-1)
 
-        if q0 is not None:
-            q0 = list_to_arm_position(q0)
-            request = GoToRequest(
-                cartesian_goal=CartesianGoal(
-                    arm_cartesian_goal=ArmCartesianGoal(
-                        id=self._part_id,
-                        goal_pose=Matrix4x4(data=target.flatten().tolist()),
-                        duration=FloatValue(value=duration),
-                        q0=q0,
-                    )
-                ),
-                interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-            )
-        else:
-            request = GoToRequest(
-                cartesian_goal=CartesianGoal(
-                    arm_cartesian_goal=ArmCartesianGoal(
-                        id=self._part_id,
-                        goal_pose=Matrix4x4(data=target.flatten().tolist()),
-                        duration=FloatValue(value=duration),
-                    )
-                ),
-                interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-            )
-        response = self._goto_stub.GoToCartesian(request)
-        if response.id == -1:
-            self._logger.error(f"Target pose:\n {target} \nwas not reachable. No command sent.")
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
-        return response
+    #     if q0 is not None:
+    #         q0 = list_to_arm_position(q0)
+    #         request = GoToRequest(
+    #             cartesian_goal=CartesianGoal(
+    #                 arm_cartesian_goal=ArmCartesianGoal(
+    #                     id=self._part_id,
+    #                     goal_pose=Matrix4x4(data=target.flatten().tolist()),
+    #                     duration=FloatValue(value=duration),
+    #                     q0=q0,
+    #                 )
+    #             ),
+    #             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+    #         )
+    #     else:
+    #         request = GoToRequest(
+    #             cartesian_goal=CartesianGoal(
+    #                 arm_cartesian_goal=ArmCartesianGoal(
+    #                     id=self._part_id,
+    #                     goal_pose=Matrix4x4(data=target.flatten().tolist()),
+    #                     duration=FloatValue(value=duration),
+    #                 )
+    #             ),
+    #             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+    #         )
+    #     response = self._goto_stub.GoToCartesian(request)
+    #     if response.id == -1:
+    #         self._logger.error(f"Target pose:\n {target} \nwas not reachable. No command sent.")
+    #     if wait:
+    #         self._logger.info(f"Waiting for movement with {response}.")
+    #         while not self._is_goto_finished(response):
+    #             time.sleep(0.1)
+    #         self._logger.info(f"Movement with {response} finished.")
+    #     return response
 
     def goto_posture(
         self,
@@ -455,7 +529,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if not wait_for_goto_end:
             self.cancel_all_goto()
         if self.is_on():
-            return self.goto_joints(joints, duration, wait, interpolation_mode)
+            return self.goto(joints, duration, wait, interpolation_mode)
         else:
             self._logger.warning(f"{self._part_id.name} is off. No command sent.")
         return GoToId(id=-1)
@@ -543,7 +617,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = self.forward_kinematics()
 
         pose = self.get_translation_by(x, y, z, initial_pose=pose, frame=frame)
-        return self.goto_from_matrix(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
+        return self.goto(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
 
     def get_rotation_by(
         self,
@@ -618,7 +692,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = self.forward_kinematics()
 
         pose = self.get_rotation_by(roll, pitch, yaw, initial_pose=pose, degrees=degrees, frame=frame)
-        return self.goto_from_matrix(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
+        return self.goto(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
 
     # @property
     # def joints_limits(self) -> ArmLimits:

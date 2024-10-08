@@ -42,7 +42,7 @@ def test_same_robot(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy2.r_arm.get_current_state(round_int=3) == reachy_sdk_zeroed.r_arm.get_current_state(round_int=3)
 
     move1_goal = [10, 20, 25, -90, 10, 10, 10]
-    move1_id = reachy_sdk_zeroed.l_arm.goto_joints(move1_goal, duration=5)
+    move1_id = reachy_sdk_zeroed.l_arm.goto(move1_goal, duration=5)
 
     time.sleep(0.1)
     assert reachy_sdk_zeroed.is_goto_playing(move1_id) == reachy2.is_goto_playing(move1_id)

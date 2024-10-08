@@ -47,7 +47,7 @@ def test_send_cartesian_interpolation_linear(reachy_sdk_zeroed: ReachySDK) -> No
     def test_pose_trajectory(
         A: npt.NDArray[np.float64], B: npt.NDArray[np.float64], duration: float
     ) -> List[npt.NDArray[np.float64]]:
-        reachy_sdk_zeroed.r_arm.goto_from_matrix(A, wait=True)
+        reachy_sdk_zeroed.r_arm.goto(A, wait=True)
         t = LoopThread(reachy_sdk_zeroed, "r_arm")
         t.start()
         tic = time.time()
@@ -103,7 +103,7 @@ def test_send_cartesian_interpolation_circular(reachy_sdk_zeroed: ReachySDK) -> 
     def test_pose_trajectory(
         A: npt.NDArray[np.float64], B: npt.NDArray[np.float64], duration: float, arc_direction: str
     ) -> List[npt.NDArray[np.float64]]:
-        reachy_sdk_zeroed.r_arm.goto_from_matrix(A, wait=True)
+        reachy_sdk_zeroed.r_arm.goto(A, wait=True)
         t = LoopThread(reachy_sdk_zeroed, "r_arm")
         t.start()
         tic = time.time()
