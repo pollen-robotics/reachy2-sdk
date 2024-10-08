@@ -29,25 +29,43 @@ class IGoToBasedPart(ABC):
         self._goto_stub = goto_stub
 
     def get_goto_playing(self) -> GoToId:
-        """Return the id of the goto currently playing on the part"""
+        """
+        Returns the id of the goto currently playing on a specific part.
+
+        Returns:
+          the `GoToId` of the goto currently playing on the part.
+        """
         response = self._goto_stub.GetPartGoToPlaying(self.part._part_id)
         return response
 
     def get_goto_queue(self) -> List[GoToId]:
-        """Return the list of all goto ids waiting to be played on the part"""
+        """
+        Returns a list of all goto ids waiting to be played on a specific part.
+
+        Returns:
+          a list of all `GoToIds` waiting to be played on the part.
+        """
         response = self._goto_stub.GetPartGoToQueue(self.part._part_id)
         return [goal_id for goal_id in response.goto_ids]
 
     def cancel_all_goto(self) -> GoToAck:
-        """Ask the cancellation of all waiting goto on the part"""
+        """
+        Requests the cancellation of all playing and waiting goto commands for a specific part.
+
+        Returns:
+          a `GoToAck` object, acknowledging the cancellation of all goto commands.
+        """
         response = self._goto_stub.CancelPartAllGoTo(self.part._part_id)
         return response
 
     def _get_goto_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
-        """Returns the part affected, the joints goal positions, duration and mode of the corresponding GoToId
+        """
+        Returns the part affected, the joints goal positions, duration and mode of the corresponding GoToId. Part can be either
+        'r_arm', 'l_arm' or 'head'.
 
-        Part can be either 'r_arm', 'l_arm' or 'head'
-        Goal_position is returned as a list in degrees
+        Returns:
+            a `SimplifiedRequest` object containing the part, goal_positions, duration and mode of the corresponding GoToId.
+        `goal_position` is returned as a list in degrees
         """
         response = self._goto_stub.GetGoToRequest(goto_id)
         if response.joints_goal.HasField("arm_joint_goal"):
@@ -72,7 +90,12 @@ class IGoToBasedPart(ABC):
         return request
 
     def _is_goto_finished(self, id: GoToId) -> bool:
-        """Return True if goto has been played and has been cancelled, False otherwise."""
+        """
+        Returns `True` if goto has been played or has been cancelled, `False` otherwise.
+
+        Returns:
+          a boolean value indicating whether the goto is finished.
+        """
         state = self._goto_stub.GetGoToState(id)
         result = bool(
             state.goal_status == GoalStatus.STATUS_ABORTED
