@@ -29,7 +29,7 @@ class IGoToBasedPart(ABC):
         """Initialize the common attributes."""
         self.part = part
         self._goto_stub = goto_stub
-        self._logger_goto = logging.getLogger(__name__)  # avoid name conflict with class logger
+        self._logger_goto = logging.getLogger(__name__)  # not using self._logger to avoid name conflict in multiple inheritance
 
     def get_goto_playing(self) -> GoToId:
         """Return the id of the goto currently playing on the part"""
