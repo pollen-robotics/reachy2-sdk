@@ -354,7 +354,7 @@ def invert_affine_transformation_matrix(matrix: npt.NDArray[np.float64]) -> npt.
       matrix (npt.NDArray[np.float64]): a 4x4 NumPy array representing a homogeneous transformation matrix.
 
     Returns:
-      a new 4x4 homogeneous matrix, that is the inverse of the input matrix. 
+      a new 4x4 homogeneous matrix, that is the inverse of the input matrix.
     """
     if matrix.shape != (4, 4):
         raise ValueError("matrix should be 4x4")
