@@ -131,7 +131,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToCartesian(request)
-        if wait:
+        if response.id == -1:
+            self._logger.error(f"Position {x}, {y}, {z} was not reachable. No command sent.")
+        elif wait:
             self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_goto_finished(response):
                 time.sleep(0.1)
@@ -177,7 +179,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
-        if wait:
+        if response.id == -1:
+            self._logger.error(f"Position {positions} was not reachable. No command sent.")
+        elif wait:
             self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_goto_finished(response):
                 time.sleep(0.1)
@@ -207,7 +211,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
-        if wait:
+        if response.id == -1:
+            self._logger.error(f"Position {goal_position} was not reachable. No command sent.")
+        elif wait:
             self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_goto_finished(response):
                 time.sleep(0.1)
@@ -235,7 +241,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
-        if wait:
+        if response.id == -1:
+            self._logger.error(f"Orientation {q} was not reachable. No command sent.")
+        elif wait:
             self._logger.info(f"Waiting for movement with {response}.")
             while not self._is_goto_finished(response):
                 time.sleep(0.1)
