@@ -369,10 +369,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Target pose:\n {target} \nwas not reachable. No command sent.")
         elif wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+            self._wait_goto(response, duration + 1)
         return response
 
     def send_cartesian_interpolation(
@@ -592,10 +589,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Position {positions} was not reachable. No command sent.")
         elif wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+            self._wait_goto(response, duration + 1)
         return response
 
     def get_translation_by(
@@ -767,10 +761,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Position {goal_position} was not reachable. No command sent.")
         elif wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+            self._wait_goto(response, duration + 1)
         return response
 
     def get_joints_positions(self, degrees: bool = True, round: Optional[int] = None) -> List[float]:

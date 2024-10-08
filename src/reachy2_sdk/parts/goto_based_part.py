@@ -1,3 +1,5 @@
+import logging
+import time
 from abc import ABC
 from typing import List, Optional
 
@@ -27,6 +29,7 @@ class IGoToBasedPart(ABC):
         """Initialize the common attributes."""
         self.part = part
         self._goto_stub = goto_stub
+        self._logger_goto = logging.getLogger(__name__)  # avoid name conflict with class logger
 
     def get_goto_playing(self) -> GoToId:
         """Return the id of the goto currently playing on the part"""
@@ -80,3 +83,14 @@ class IGoToBasedPart(ABC):
             or state.goal_status == GoalStatus.STATUS_SUCCEEDED
         )
         return result
+
+    def _wait_goto(self, id: GoToId, timeout: float = 10) -> None:
+        """Wait for a goto to finish. timeout is in seconds."""
+        self._logger_goto.info(f"Waiting for movement with {id}.")
+        t1 = time.time()
+        while not self._is_goto_finished(id):
+            time.sleep(0.1)
+            if time.time() - t1 > timeout:
+                self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
+                return
+        self._logger_goto.info(f"Movement with {id} finished.")

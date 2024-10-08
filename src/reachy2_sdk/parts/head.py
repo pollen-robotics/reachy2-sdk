@@ -5,7 +5,6 @@ Handles all specific method to an Head:
 - look_at function
 """
 
-import time
 from typing import List
 
 import grpc
@@ -134,10 +133,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Position {x}, {y}, {z} was not reachable. No command sent.")
         elif wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+            self._wait_goto(response, duration + 1)
         return response
 
     def goto_joints(
@@ -182,10 +178,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Position {positions} was not reachable. No command sent.")
         elif wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+            self._wait_goto(response, duration + 1)
         return response
 
     def _goto_single_joint(
@@ -214,10 +207,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Position {goal_position} was not reachable. No command sent.")
         elif wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+            self._wait_goto(response, duration + 1)
         return response
 
     def goto_quat(
@@ -244,10 +234,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Orientation {q} was not reachable. No command sent.")
         elif wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+            self._wait_goto(response, duration + 1)
         return response
 
     def send_goal_positions(self) -> None:
