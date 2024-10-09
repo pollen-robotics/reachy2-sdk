@@ -90,17 +90,18 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
         """
-        Initializes the arm's actuators (shoulder, elbow, and wrist) based on
-        the arm's description and initial state.
+        Initialize the arm's actuators (shoulder, elbow, and wrist) based on the arm's description and initial state.
 
         Args:
-          arm (Arm_proto): The `_setup_arm` method is setting up the actuators (shoulder, elbow, and
-        wrist) of an arm based on the provided arm description and initial state. The method creates
-        instances of `Orbita2d` for the shoulder and elbow actuators, and an instance of `Or
-          initial_state (ArmState): The `initial_state` parameter in the `_setup_arm` method represents
-        the initial state of the arm's actuators (shoulder, elbow, and wrist). It contains the initial
-        positions or states of these actuators when the arm is set up. This information is used to
-        initialize the Orbita2 and Orbita3d instances for the shoulder, elbow, and wrist actuators.
+            arm (Arm_proto): The arm description used to set up the actuators, including the shoulder,
+                elbow, and wrist. The method creates instances of `Orbita2d` for the shoulder and
+                elbow, and an instance of `Orbita3d` for the wrist.
+            initial_state (ArmState): The initial state of the arm's actuators, containing the starting
+                positions or states of the shoulder, elbow, and wrist. This information is used to
+                initialize the corresponding actuators.
+
+        Returns:
+            None
         """
         description = arm.description
         self._shoulder = Orbita2d(
@@ -138,40 +139,40 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     @property
     def shoulder(self) -> Orbita2d:
         """
-        Returns the Orbita2d object stored in the `_shoulder` attribute of the class instance.
+        The shoulder actuator of the arm.
 
         Returns:
-          An instance of the `Orbita2d` class representing the shoulder.
+            Orbita2d: The shoulder actuator.
         """
         return self._shoulder
 
     @property
     def elbow(self) -> Orbita2d:
         """
-        Returns the Orbita2d object stored in the `_elbow` attribute of the class instance.
+        The elbow actuator of the arm.
 
         Returns:
-          An instance of the `Orbita2d` class stored in the `_elbow` attribute of the object.
+            Orbita2d: The elbow actuator.
         """
         return self._elbow
 
     @property
     def wrist(self) -> Orbita3d:
         """
-        Returns the Orbita3d object stored in the `_wrist` attribute of the class instance.
+        The wrist actuator of the arm.
 
         Returns:
-          An instance of the `Orbita3d` class representing the wrist.
+            Orbita3d: The wrist actuator.
         """
         return self._wrist
 
     @property
     def gripper(self) -> Optional[Hand]:
         """
-        Returns the gripper attribute of the arm, which is an instance of the `Hand` class or `None`.
+        The gripper of the arm.
 
         Returns:
-          an `Hand` object or `None` if `_gripper` is not set.
+            Optional[Hand]: The gripper, or None if not set.
         """
         return self._gripper
 
@@ -263,18 +264,21 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self, joints_positions: Optional[List[float]] = None, degrees: bool = True
     ) -> npt.NDArray[np.float64]:
         """
-        Computes the forward kinematics of an arm and returns a 4x4 pose matrix expressed in Reachy coordinate system.
+        Compute the forward kinematics of the arm and return a 4x4 pose matrix.
+        The pose matrix is expressed in the Reachy coordinate system.
 
         Args:
-          joints_positions (Optional[List[float]]): a list of float values representing the positions of the joints
-        in the arm. It is an optional parameter, meaning you can either provide a list of joint
-        positions or leave it as `None` to use the current robot position. Defaults to None
-          degrees (bool): a boolean flag that specifies whether the joint positions should be interpreted as degrees or radians.
-        If `degrees` is set to `True`, the joint positions are expected to be provided in degrees. If set to `False`, the joint
-        positions must be provided in radians. Defaults to True.
+            - **joints_positions** (Optional[List[float]]): A list of float values representing the positions of the joints
+                in the arm. If not provided, the current robot joints positions are used. Defaults to None.
+            - **degrees** (bool): Indicates whether the joint positions are in degrees or radians.
+                If `True`, the positions are in degrees; if `False`, in radians. Defaults to True.
 
         Returns:
-          a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system.
+            - npt.NDArray[np.float64]: A 4x4 pose matrix as a NumPy array, expressed in Reachy coordinate system.
+
+        Raises:
+            ValueError: If `joints_positions` is provided and its length is not 7.
+            ValueError: If no solution is found for the given joint positions.
         """
         req_params = {
             "id": self._part_id,
@@ -304,22 +308,27 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         round: Optional[int] = None,
     ) -> List[float]:
         """
-        Computes a joint solution for a given target pose for the arm end-effector.
+        Compute a joint configuration to reach a specified target pose for the arm end-effector.
 
         Args:
-          target (npt.NDArray[np.float64]): a 4x4 homogeneous pose matrix expressed in Reachy coordinate systems.
-        It is represented as a numpy array. The function computes a joint solution to reach the specified target.
-          q0 (Optional[List[float]]): a list of floats representing an arm joints configuration which can be specified as a
-        prior for the solution. If provided, the function will try to compute a joint solution from this initial configuration.
-        Defaults to None.
-          degrees (bool): a boolean flag that specifies whether the joint angles should be returned in degrees or radians.
-        If `degrees` is set to `True`, the function will return the joint angles in degrees. Otherwise it will return them in
-        radians. Defaults to True.
-          round (Optional[int]): number of decimal places to round the computed joint angles to before returning them.
+            - **target** (npt.NDArray[np.float64]): A 4x4 homogeneous pose matrix representing the target pose in
+                Reachy coordinate system, provided as a NumPy array.
+            - **q0** (Optional[List[float]]): An optional initial joint configuration for the arm. If provided, the
+                algorithm will use it as a starting point for finding a solution. Defaults to None.
+            - **degrees** (bool): Indicates whether the returned joint angles should be in degrees or radians.
+                If `True`, angles are in degrees; if `False`, in radians. Defaults to True.
+            - **round** (Optional[int]): Number of decimal places to round the computed joint angles to before
+                returning. If None, no rounding is performed. Defaults to None.
 
         Returns:
-          A list of joint angles representing the solution to reach the target pose.
-          It will raise a ValueError if no solution is found.
+            - List[float]: A list of joint angles representing the solution to reach the target pose, in the following order:
+                [shoulder.pitch, shoulder.roll, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].
+
+        Raises:
+            ValueError: If the target shape is not (4, 4).
+            ValueError: If the length of `q0` is not 7.
+            ValueError: If vectorized kinematics is attempted (unsupported).
+            ValueError: If no solution is found for the given target.
         """
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
