@@ -133,7 +133,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Position {x}, {y}, {z} was not reachable. No command sent.")
         elif wait:
-            self._wait_goto(response, duration + 1)
+            self._wait_goto(response)
         return response
 
     def goto_joints(
@@ -178,7 +178,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Position {positions} was not reachable. No command sent.")
         elif wait:
-            self._wait_goto(response, duration + 1)
+            self._wait_goto(response)
         return response
 
     def _goto_single_joint(
@@ -207,7 +207,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Position {goal_position} was not reachable. No command sent.")
         elif wait:
-            self._wait_goto(response, duration + 1)
+            self._wait_goto(response)
         return response
 
     def goto_quat(
@@ -234,7 +234,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Orientation {q} was not reachable. No command sent.")
         elif wait:
-            self._wait_goto(response, duration + 1)
+            self._wait_goto(response)
         return response
 
     def send_goal_positions(self) -> None:

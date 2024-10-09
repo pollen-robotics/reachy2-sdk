@@ -84,25 +84,29 @@ class IGoToBasedPart(ABC):
         )
         return result
 
-    def _wait_goto(self, id: GoToId, timeout: float = 10) -> None:
+    def _wait_goto(self, id: GoToId) -> None:
         """Wait for a goto to finish. timeout is in seconds."""
         self._logger_goto.info(f"Waiting for movement with {id}.")
 
-        t_goto = None  # timeout for this goto
-        t_all = time.time()  # timeout for others
+        id_playing = self.get_goto_playing()
+        info_gotos = [self._get_goto_joints_request(id_playing)]
+        ids_queue = self.get_goto_queue()
+        for id in ids_queue:
+            info_gotos.append(self._get_goto_joints_request(id))
+
+        timeout = 1  # adding one more sec
+        for igoto in info_gotos:
+            if igoto is not None:
+                timeout += igoto.duration
+
+        self._logger_goto.debug(f"timeout is set to {timeout}")
+
+        t_start = time.time()  # timeout for others
         while not self._is_goto_finished(id):
             time.sleep(0.1)
 
-            if t_goto is None:
-                if self.get_goto_playing() == id:
-                    t_goto = time.time()
-                elif time.time() - t_all > 60:  # ToDo: we need to know how long to wait for
-                    self._logger_goto.warning(
-                        f"Waiting time for movement with {id} is timeout. Previous movements are not finished."
-                    )
-                    return
-
-            elif time.time() - t_goto > timeout:
+            if time.time() - t_start > timeout:
                 self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
                 return
+
         self._logger_goto.info(f"Movement with {id} finished.")
