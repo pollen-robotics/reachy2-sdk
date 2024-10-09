@@ -440,7 +440,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         current_pose = self.forward_kinematics()
         current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
-        while current_precision_distance_xyz > precision_distance_xyz:
+        if current_precision_distance_xyz > precision_distance_xyz:
             request = ArmCartesianGoal(
                 id=self._part_id,
                 goal_pose=Matrix4x4(data=target.flatten().tolist()),
