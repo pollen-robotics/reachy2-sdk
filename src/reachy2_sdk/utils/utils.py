@@ -22,17 +22,14 @@ SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "
 
 
 def convert_to_radians(angles_list: List[float]) -> Any:
-    # fmt: off
-    """
-    Convert a list of angles from degrees to radians.
+    """Convert a list of angles from degrees to radians.
 
-    Args:  
-        - **angles_list** (List[float]): A list of angles in degrees to convert to radians.  
+    Args:
+        angles_list: A list of angles in degrees to convert to radians.
 
-    Returns:  
-        List[float]: A list of angles converted to radians.  
+    Returns:
+        A list of angles converted to radians.
     """
-    # fmt: on
     a = np.array(angles_list)
     a = np.deg2rad(a)
 
@@ -40,17 +37,14 @@ def convert_to_radians(angles_list: List[float]) -> Any:
 
 
 def convert_to_degrees(angles_list: List[float]) -> Any:
-    # fmt: off
-    """
-    Convert a list of angles from radians to degrees.
+    """Convert a list of angles from radians to degrees.
 
-    Args:  
-        - **angles_list** (List[float]): A list of angles in radians to convert to degrees.  
+    Args:
+        angles_list: A list of angles in radians to convert to degrees.
 
-    Returns:  
-        List[float]: A list of angles converted to degrees.  
+    Returns:
+        A list of angles converted to degrees.
     """
-    # fmt: on
     a = np.array(angles_list)
     a = np.rad2deg(a)
 
@@ -58,22 +52,18 @@ def convert_to_degrees(angles_list: List[float]) -> Any:
 
 
 def list_to_arm_position(positions: List[float], degrees: bool = True) -> ArmPosition:
-    # fmt: off
-    """
-    Convert a list of joint positions to an ArmPosition message, considering whether the positions are in degrees or radians.
+    """Convert a list of joint positions to an ArmPosition message, considering whether the positions are in degrees or radians.
 
-    Args:  
-        - **positions** (List[float]): A list of float values representing joint positions. The length 
-            of the list should be 7, with the values in the following order: 
-            [shoulder.pitch, shoulder.yaw, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].  
-        - **degrees** (bool): A flag indicating whether the input joint positions are in degrees. 
-            If set to `True`, the input positions are in degrees. Defaults to `True`.  
+    Args:
+        positions: A list of float values representing joint positions. The list should contain 7 values
+            in the following order: [shoulder.pitch, shoulder.yaw, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].
+        degrees: A flag indicating whether the input joint positions are in degrees. If set to `True`,
+            the input positions are in degrees. Defaults to `True`.
 
-    Returns:  
-        ArmPosition: An ArmPosition message containing the shoulder position, elbow position, and 
-        wrist position based on the input list of joint positions.  
+    Returns:
+        An ArmPosition message containing the shoulder position, elbow position, and wrist position
+        based on the input list of joint positions.
     """
-    # fmt: on
     if degrees:
         positions = convert_to_radians(positions)
     arm_pos = ArmPosition(
@@ -98,20 +88,17 @@ def list_to_arm_position(positions: List[float], degrees: bool = True) -> ArmPos
 
 
 def arm_position_to_list(arm_pos: ArmPosition, degrees: bool = True) -> List[float]:
-    # fmt: off
-    """
-    Convert an ArmPosition message to a list of joint positions, with an option to return the result in degrees.
+    """Convert an ArmPosition message to a list of joint positions, with an option to return the result in degrees.
 
-    Args:  
-        - **arm_pos** (ArmPosition): An ArmPosition message containing shoulder, elbow, and wrist positions.  
-        - **degrees** (bool): Specifies whether the joint positions should be returned in degrees. 
-            If set to `True`, the positions are converted to degrees. Defaults to `True`.  
+    Args:
+        arm_pos: An ArmPosition message containing shoulder, elbow, and wrist positions.
+        degrees: Specifies whether the joint positions should be returned in degrees. If set to `True`,
+            the positions are converted to degrees. Defaults to `True`.
 
-    Returns:  
-        List[float]: A list of joint positions based on the ArmPosition, returned in the following order: 
-        [shoulder.pitch, shoulder.yaw, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].  
+    Returns:
+        A list of joint positions based on the ArmPosition, returned in the following order:
+        [shoulder.pitch, shoulder.yaw, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].
     """
-    # fmt: on
     positions = []
 
     for _, value in arm_pos.shoulder_position.ListFields():
@@ -128,19 +115,16 @@ def arm_position_to_list(arm_pos: ArmPosition, degrees: bool = True) -> List[flo
 
 
 def ext_euler_angles_to_list(euler_angles: ExtEulerAngles, degrees: bool = True) -> List[float]:
-    # fmt: off
-    """
-    Convert an ExtEulerAngles 3D rotation message to a list of joint positions, with an option to return the result in degrees.
+    """Convert an ExtEulerAngles 3D rotation message to a list of joint positions.
 
-    Args:  
-        - **euler_angles** (ExtEulerAngles): An `ExtEulerAngles` object representing a 3D rotation message.  
-        - **degrees** (bool): Specifies whether the output should be in degrees. If set to `True`, 
-            the function converts the angles to degrees before returning the list. Defaults to `True`.  
+    Args:
+        euler_angles: An ExtEulerAngles object representing a 3D rotation message.
+        degrees: Specifies whether the output should be in degrees. If set to `True`, the function
+            converts the angles to degrees before returning the list. Defaults to `True`.
 
-    Returns:  
-        List[float]: A list of joint positions representing the Euler angles in the order [roll, pitch, yaw].  
+    Returns:
+        A list of joint positions representing the Euler angles in the order [roll, pitch, yaw].
     """
-    # fmt: on
     positions = [euler_angles.roll.value, euler_angles.pitch.value, euler_angles.yaw.value]
 
     if degrees:
@@ -150,22 +134,19 @@ def ext_euler_angles_to_list(euler_angles: ExtEulerAngles, degrees: bool = True)
 
 
 def get_grpc_interpolation_mode(interpolation_mode: str) -> GoToInterpolation:
-    # fmt: off
+    """Convert a given interpolation mode string to a corresponding GoToInterpolation object.
+
+    Args:
+        interpolation_mode: A string representing the type of interpolation to be used. It can be either
+            "minimum_jerk" or "linear".
+
+    Returns:
+        An instance of the GoToInterpolation class with the interpolation type set based on the input
+        interpolation_mode string.
+
+    Raises:
+        ValueError: If the interpolation_mode is not "minimum_jerk" or "linear".
     """
-    Convert a given interpolation mode string to a corresponding GoToInterpolation object.
-
-    Args:  
-        - **interpolation_mode** (str): A string representing the type of interpolation to be used. 
-            It can be either "minimum_jerk" or "linear".  
-
-    Returns:  
-        GoToInterpolation: An instance of the `GoToInterpolation` class with the interpolation type 
-        set based on the input `interpolation_mode` string.  
-
-    Raises:  
-        - ValueError: If the `interpolation_mode` is not "minimum_jerk" or "linear".  
-    """
-    # fmt: on
     if interpolation_mode not in ["minimum_jerk", "linear"]:
         raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
 
@@ -177,23 +158,20 @@ def get_grpc_interpolation_mode(interpolation_mode: str) -> GoToInterpolation:
 
 
 def get_interpolation_mode(interpolation_mode: InterpolationMode) -> str:
-    # fmt: off
+    """Convert an interpolation mode enum to a string representation.
+
+    Args:
+        interpolation_mode: The interpolation mode given as InterpolationMode. The supported interpolation
+            modes are MINIMUM_JERK and LINEAR.
+
+    Returns:
+        A string representing the interpolation mode based on the input interpolation_mode. Returns
+        "minimum_jerk" if the mode is InterpolationMode.MINIMUM_JERK, and "linear" if it is
+        InterpolationMode.LINEAR.
+
+    Raises:
+        ValueError: If the interpolation_mode is not InterpolationMode.MINIMUM_JERK or InterpolationMode.LINEAR.
     """
-    Convert an interpolation mode enum to a string representation.
-
-    Args:  
-        - **interpolation_mode** (InterpolationMode): The interpolation mode given as `InterpolationMode`. 
-            The supported interpolation modes are `MINIMUM_JERK` and `LINEAR`.  
-
-    Returns:  
-        str: A string representing the interpolation mode based on the input `interpolation_mode`. 
-        Returns "minimum_jerk" if the mode is `InterpolationMode.MINIMUM_JERK`, and "linear" if it is 
-        `InterpolationMode.LINEAR`.  
-
-    Raises:  
-        - ValueError: If the `interpolation_mode` is not `InterpolationMode.MINIMUM_JERK` or `InterpolationMode.LINEAR`.  
-    """
-    # fmt: on
     if interpolation_mode not in [InterpolationMode.MINIMUM_JERK, InterpolationMode.LINEAR]:
         raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
 
@@ -205,19 +183,15 @@ def get_interpolation_mode(interpolation_mode: InterpolationMode) -> str:
 
 
 def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Tuple[Quaternion, npt.NDArray[np.float64]]:
-    # fmt: off
-    """
-    Decompose a homogeneous 4x4 matrix into rotation (represented as a quaternion) and translation components.
+    """Decompose a homogeneous 4x4 matrix into rotation (represented as a quaternion) and translation components.
 
-    Args:  
-        - **matrix** (npt.NDArray[np.float64]): A homogeneous 4x4 matrix represented as a NumPy array of 
-            type `np.float64`.  
+    Args:
+        matrix: A homogeneous 4x4 matrix represented as a NumPy array of type np.float64.
 
-    Returns:  
-        Tuple[Quaternion, npt.NDArray[np.float64]]: A tuple containing a `Quaternion` representing the 
-        rotation component and a NumPy array representing the translation component of the input matrix.  
+    Returns:
+        A tuple containing a Quaternion representing the rotation component and a NumPy array
+        representing the translation component of the input matrix.
     """
-    # fmt: on
     rotation_matrix = matrix[:3, :3]
     translation = matrix[:3, 3]
 
@@ -228,21 +202,16 @@ def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Tuple[Quaternion, npt.N
 
 
 def recompose_matrix(rotation: npt.NDArray[np.float64], translation: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-    # fmt: off
-    """
-    Recompose a homogeneous 4x4 matrix from rotation (quaternion) and translation components.
+    """Recompose a homogeneous 4x4 matrix from rotation (quaternion) and translation components.
 
-    Args:  
-        - **rotation** (npt.NDArray[np.float64]): A 3x3 rotation matrix represented as a NumPy array of 
-            type `np.float64`.  
-        - **translation** (npt.NDArray[np.float64]): A vector representing the displacement in space, 
-            containing the x, y, and z components of the translation vector.  
+    Args:
+        rotation: A 3x3 rotation matrix represented as a NumPy array of type np.float64.
+        translation: A vector representing the displacement in space, containing the x, y, and z
+            components of the translation vector.
 
-    Returns:  
-        npt.NDArray[np.float64]: A homogeneous 4x4 matrix composed from the provided rotation and 
-        translation components.  
+    Returns:
+        A homogeneous 4x4 matrix composed from the provided rotation and translation components.
     """
-    # fmt: on
     matrix = np.eye(4)
     matrix[:3, :3] = rotation  # .as_matrix()
     matrix[:3, 3] = translation
@@ -250,21 +219,18 @@ def recompose_matrix(rotation: npt.NDArray[np.float64], translation: npt.NDArray
 
 
 def matrix_from_euler_angles(roll: float, pitch: float, yaw: float, degrees: bool = True) -> npt.NDArray[np.float64]:
-    # fmt: off
-    """
-    Create a 4x4 homogeneous rotation matrix from roll, pitch, and yaw angles, with an option to input angles in degrees.
+    """Create a 4x4 homogeneous rotation matrix from roll, pitch, and yaw angles, with an option to input angles in degrees.
 
-    Args:  
-        - **roll** (float): The rotation angle around the x-axis in the Euler angles representation.  
-        - **pitch** (float): The rotation angle around the y-axis in the Euler angles representation.  
-        - **yaw** (float): The rotation angle around the z-axis in the Euler angles representation.  
-        - **degrees** (bool): Specifies whether the input angles (`roll`, `pitch`, `yaw`) are in degrees. 
-            If set to `True`, the input angles are expected to be in degrees. Defaults to `True`.  
+    Args:
+        roll: The rotation angle around the x-axis in the Euler angles representation.
+        pitch: The rotation angle around the y-axis in the Euler angles representation.
+        yaw: The rotation angle around the z-axis in the Euler angles representation.
+        degrees: Specifies whether the input angles (roll, pitch, yaw) are in degrees. If set to `True`,
+            the input angles are expected to be in degrees. Defaults to `True`.
 
-    Returns:  
-        npt.NDArray[np.float64]: A 4x4 homogeneous rotation matrix created from the input roll, pitch, and yaw angles.  
+    Returns:
+        A 4x4 homogeneous rotation matrix created from the input roll, pitch, and yaw angles.
     """
-    # fmt: on
     if degrees:
         roll = np.deg2rad(roll)
         pitch = np.deg2rad(pitch)
@@ -288,30 +254,24 @@ def matrix_from_euler_angles(roll: float, pitch: float, yaw: float, degrees: boo
 
 
 def get_pose_matrix(position: List[float], rotation: List[float], degrees: bool = True) -> npt.NDArray[np.float64]:
-    # fmt: off
+    """Create a 4x4 pose matrix from a position vector and "roll, pitch, yaw" angles (rotation).
+
+    Args:
+        position: A list of size 3 representing the requested position of the end effector in the Reachy coordinate system.
+        rotation: A list of size 3 representing the requested orientation of the end effector in the Reachy coordinate system.
+            The rotation is given as intrinsic angles, executed in roll, pitch, yaw order.
+        degrees: Specifies whether the input angles are in degrees. If set to `True`, the angles are interpreted as degrees.
+            If set to `False`, they are interpreted as radians. Defaults to `True`.
+
+    Returns:
+        The constructed 4x4 pose matrix.
+
+    Raises:
+        TypeError: If `position` is not a list of floats or integers.
+        TypeError: If `rotation` is not a list of floats or integers.
+        ValueError: If the length of `position` is not 3.
+        ValueError: If the length of `rotation` is not 3.
     """
-    Create a 4x4 pose matrix from a position vector and "roll, pitch, yaw" angles (rotation).
-
-    Args:  
-        - **position** (List[float]): A list of size 3 representing the requested position of the end 
-            effector in the Reachy coordinate system.  
-        - **rotation** (List[float]): A list of size 3 representing the requested orientation of the 
-            end effector in the Reachy coordinate system. The rotation is given as intrinsic angles, 
-            executed in roll, pitch, yaw order.  
-        - **degrees** (bool): Specifies whether the input angles are in degrees. If set to `True`, the 
-            angles are interpreted as degrees. If set to `False`, they are interpreted as radians. 
-            Defaults to `True`.  
-
-    Returns:  
-        npt.NDArray[np.float64]: The constructed 4x4 pose matrix.  
-
-    Raises:  
-        - TypeError: If `position` is not a list of floats or integers.  
-        - TypeError: If `rotation` is not a list of floats or integers.  
-        - ValueError: If the length of `position` is not 3.  
-        - ValueError: If the length of `rotation` is not 3.  
-    """
-    # fmt: on
     if not (isinstance(position, np.ndarray) or isinstance(position, list)) or not all(
         isinstance(pos, float | int) for pos in position
     ):
@@ -331,22 +291,18 @@ def get_pose_matrix(position: List[float], rotation: List[float], degrees: bool 
 
 
 def rotate_in_self(_frame: npt.NDArray[np.float64], rotation: List[float], degrees: bool = True) -> npt.NDArray[np.float64]:
-    # fmt: off
-    """
-    Return a new homogeneous 4x4 pose matrix that is the input matrix rotated in itself.
+    """Return a new homogeneous 4x4 pose matrix that is the input matrix rotated in itself.
 
-    Args:  
-        - **_frame** (npt.NDArray[np.float64]): The input frame, given as a 4x4 homogeneous matrix.  
-        - **rotation** (List[float]): A list of size 3 representing the rotation to be applied. 
-            The rotation is given as intrinsic angles, executed in roll, pitch, yaw order.  
-        - **degrees** (bool): Specifies whether the input angles are in degrees. If set to `True`, 
-            the angles are interpreted as degrees. If set to `False`, they are interpreted as radians. 
-            Defaults to `True`.  
+    Args:
+        _frame: The input frame, given as a 4x4 homogeneous matrix.
+        rotation: A list of size 3 representing the rotation to be applied. The rotation is given as intrinsic angles,
+            executed in roll, pitch, yaw order.
+        degrees: Specifies whether the input angles are in degrees. If set to `True`, the angles are interpreted as degrees.
+            If set to `False`, they are interpreted as radians. Defaults to `True`.
 
-    Returns:  
-        npt.NDArray[np.float64]: A new 4x4 homogeneous matrix after applying the specified rotation.  
+    Returns:
+        A new 4x4 homogeneous matrix after applying the specified rotation.
     """
-    # fmt: on
     frame = _frame.copy()
 
     toOrigin = np.eye(4)
@@ -362,19 +318,15 @@ def rotate_in_self(_frame: npt.NDArray[np.float64], rotation: List[float], degre
 
 
 def translate_in_self(_frame: npt.NDArray[np.float64], translation: List[float]) -> npt.NDArray[np.float64]:
-    # fmt: off
-    """
-    Return a new homogeneous 4x4 pose matrix that is the input frame translated along its own axes.
+    """Return a new homogeneous 4x4 pose matrix that is the input frame translated along its own axes.
 
-    Args:  
-        - **_frame** (npt.NDArray[np.float64]): The input frame, given as a 4x4 homogeneous matrix.  
-        - **translation** (List[float]): A list of size 3 representing the translation to be applied, 
-            given as [x, y, z].  
+    Args:
+        _frame: The input frame, given as a 4x4 homogeneous matrix.
+        translation: A list of size 3 representing the translation to be applied, given as [x, y, z].
 
-    Returns:  
-        npt.NDArray[np.float64]: A new homogeneous 4x4 pose matrix after translating the input frame along its own axes.  
+    Returns:
+        A new homogeneous 4x4 pose matrix after translating the input frame along its own axes.
     """
-    # fmt: on
     frame = _frame.copy()
 
     toOrigin = np.eye(4)
@@ -390,22 +342,19 @@ def translate_in_self(_frame: npt.NDArray[np.float64], translation: List[float])
 
 
 def invert_affine_transformation_matrix(matrix: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-    # fmt: off
-    """
-    Invert a 4x4 homogeneous transformation matrix.
+    """Invert a 4x4 homogeneous transformation matrix.
 
     The function computes the inverse by transposing the rotation component and adjusting the translation component.
 
-    Args:  
-        - **matrix** (npt.NDArray[np.float64]): A 4x4 NumPy array representing a homogeneous transformation matrix.  
+    Args:
+        matrix: A 4x4 NumPy array representing a homogeneous transformation matrix.
 
-    Returns:  
-        npt.NDArray[np.float64]: A new 4x4 homogeneous matrix that is the inverse of the input matrix.  
+    Returns:
+        A new 4x4 homogeneous matrix that is the inverse of the input matrix.
 
-    Raises:  
-        - ValueError: If the input matrix is not 4x4.  
+    Raises:
+        ValueError: If the input matrix is not 4x4.
     """
-    # fmt: on
     if matrix.shape != (4, 4):
         raise ValueError("matrix should be 4x4")
 
@@ -416,24 +365,20 @@ def invert_affine_transformation_matrix(matrix: npt.NDArray[np.float64]) -> npt.
 
 
 def get_normal_vector(vector: npt.NDArray[np.float64], arc_direction: str) -> Optional[npt.NDArray[np.float64]]:
-    # fmt: off
+    """Calculate a normal vector to a given vector based on a specified direction.
+
+    Args:
+        vector: A vector [x, y, z] in 3D space.
+        arc_direction: The desired direction for the normal vector. It can be one of the following options:
+            'above', 'below', 'front', 'back', 'right', or 'left'.
+
+    Returns:
+        The normal vector [x, y, z] to the given vector in the specified direction. Returns `None` if the
+        normal vector cannot be computed or if the vector is in the requested arc_direction.
+
+    Raises:
+        ValueError: If the arc_direction is not one of 'above', 'below', 'front', 'back', 'right', or 'left'.
     """
-    Calculate a normal vector to a given vector based on a specified direction.
-
-    Args:  
-        - **vector** (npt.NDArray[np.float64]): A vector [x, y, z] in 3D space.  
-        - **arc_direction** (str): The desired direction for the normal vector. It can be one of the 
-            following options: 'above', 'below', 'front', 'back', 'right', or 'left'.  
-
-    Returns:  
-        Optional[npt.NDArray[np.float64]]: The normal vector [x, y, z] to the given vector in the 
-        specified direction. Returns `None` if the normal vector cannot be computed or if the vector 
-        is in the requested arc_direction.  
-
-    Raises:  
-        - ValueError: If the `arc_direction` is not one of 'above', 'below', 'front', 'back', 'right', or 'left'.  
-    """
-    # fmt: on
     match arc_direction:
         case "above":
             if abs(vector[0]) < 0.001 and abs(vector[1]) < 0.001:
