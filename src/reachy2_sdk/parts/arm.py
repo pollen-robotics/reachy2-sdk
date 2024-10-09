@@ -232,10 +232,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     def is_on(self) -> bool:
         """
-        Returns True if all actuators of the arm are stiff.
+        Check if all actuators of the arm are stiff.
 
         Returns:
-          a boolean value. It will return `True` if all actuators of the arm are stiff, and `False` otherwise.
+          bool: `True` if all actuators of the arm are stiff, `False` otherwise.
         """
         if not super().is_on():
             return False
@@ -243,10 +243,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     def is_off(self) -> bool:
         """
-        Returns True if all actuators of the arm are stiff.
+        Check if all actuators of the arm are compliant.
 
         Returns:
-          a boolean value. It will return True if all actuators of the arm are stiff, otherwise it will return False.
+          bool: `True` if all actuators of the arm are compliant, `False` otherwise.
         """
         if not super().is_off():
             return False

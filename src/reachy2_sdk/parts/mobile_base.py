@@ -296,11 +296,21 @@ class MobileBase(Part):
         return distance
 
     def is_on(self) -> bool:
-        """Return True if the mobile base is not compliant."""
+        """
+        Check if the mobile base is currently stiff (not in free-wheel mode).
+
+        Returns:
+            bool: `True` if the mobile base is not compliant, `False` otherwise.
+        """
         return not self._drive_mode == "free_wheel"
 
     def is_off(self) -> bool:
-        """Return True if the mobile base is compliant."""
+        """
+        Check if the mobile base is currently compliant (in free-wheel mode).
+
+        Returns:
+            bool: `True` if the mobile base is compliant, `False` otherwise.
+        """
         if self._drive_mode == "free_wheel":
             return True
         return False
