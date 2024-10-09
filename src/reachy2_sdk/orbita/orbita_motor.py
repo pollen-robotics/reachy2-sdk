@@ -26,25 +26,37 @@ class OrbitaMotor:
 
     @property
     def speed_limit(self) -> float:
+        """Get the speed limit of the motor, as a percentage of the max allowed speed, rounded to three decimal places."""
         return float(np.round(self._speed_limit, 3))
 
     @property
     def temperature(self) -> float:
+        """Get the current temperature of the motor in Celsius degrees."""
         return float(self._temperature)
 
     @property
     def torque_limit(self) -> float:
+        """Get the torque limit of the axis, as a percentage of the max allowed speed, rounded to three decimal places."""
         return float(np.round(self._torque_limit, 3))
 
     @property
     def compliant(self) -> float:
+        """Get the compliance status of the motor."""
         return float(self._compliant)
 
     @property
     def pid(self) -> PIDGains:
+        """Get the PID gains of the motor."""
         return self._pid
 
     def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
+        """Update the state of the motor with new values from the provided state dictionary.
+
+        Args:
+            new_state: A dictionary containing the new state values for the axis. The keys should include
+                "temperature", "speed_limit", "torque_limit", "compliant", and "pid", with corresponding
+                FloatValue objects as values.
+        """
         self._temperature = new_state["temperature"].value
         self._speed_limit = new_state["speed_limit"].value * 100  # received value in [0, 1]
         self._torque_limit = new_state["torque_limit"].value * 100  # received value in [0, 1]
