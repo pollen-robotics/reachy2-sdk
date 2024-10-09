@@ -73,7 +73,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         grpc_channel: grpc.Channel,
         goto_stub: GoToServiceStub,
     ) -> None:
-        """Define an arm (left or right).
+        """
+        Define an arm (left or right).
 
         Connect to the arm's gRPC server stub and set up the arm's actuators.
         """
@@ -89,17 +90,19 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self._actuators["wrist"] = self.wrist
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
+        # fmt: off
         """
         Initialize the arm's actuators (shoulder, elbow, and wrist) based on the arm's description and initial state.
 
-        Args:
+        Args:  
             - **arm** (Arm_proto): The arm description used to set up the actuators, including the shoulder,
                 elbow, and wrist. The method creates instances of `Orbita2d` for the shoulder and
-                elbow, and an instance of `Orbita3d` for the wrist.
+                elbow, and an instance of `Orbita3d` for the wrist.  
             - **initial_state** (ArmState): The initial state of the arm's actuators, containing the starting
                 positions or states of the shoulder, elbow, and wrist. This information is used to
-                initialize the corresponding actuators.
+                initialize the corresponding actuators.  
         """
+        # fmt: on
         description = arm.description
         self._shoulder = Orbita2d(
             uid=description.shoulder.id.id,
@@ -182,62 +185,52 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return self._gripper
 
     def turn_on(self) -> None:
-        # fmt: off
         """
         Turn on all motors of the part, making all arm motors stiff.
 
         If a gripper is present, it will also be turned on.
         """
-        # fmt: on
         if self._gripper is not None:
             self._gripper._turn_on()
         super().turn_on()
 
     def turn_off(self) -> None:
-        # fmt: off
         """
         Turn off all motors of the part, making all arm motors compliant.
 
         If a gripper is present, it will also be turned off.
         """
-        # fmt: on
         if self._gripper is not None:
             self._gripper._turn_off()
         super().turn_off()
 
     def _turn_on(self) -> None:
-        # fmt: off
         """
         Turn on all motors of the part.
 
         This will make all arm motors stiff. If a gripper is present, it will also be turned on.
         """
-        # fmt: on
         if self._gripper is not None:
             self._gripper._turn_on()
         super()._turn_on()
 
     def _turn_off(self) -> None:
-        # fmt: off
         """
         Turn off all motors of the part.
 
         This will make all arm motors compliant. If a gripper is present, it will also be turned off.
         """
-        # fmt: on
         if self._gripper is not None:
             self._gripper._turn_off()
         super()._turn_off()
 
     def turn_off_smoothly(self) -> None:
-        # fmt: off
         """
         Gradually reduce the torque limit of all motors over 3 seconds before turning them off.
 
         This function decreases the torque limit in steps until the motors are turned off.
         It then restores the torque limit to its original value.
         """
-        # fmt: on
         torque_limit_low = 35
         torque_limit_high = 100
         duration = 3
@@ -549,9 +542,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 the current end-effector position and the target position. If the end-effector is
                 further than this distance from the target after the movement, the movement is repeated
                 until the precision is met.  
-
-        Returns:  
-            None
         """
         # fmt: on
         self.cancel_all_goto()
@@ -635,9 +625,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             - **nb_steps** (int): The number of steps or intervals for the interpolation process, determining
                 how many intermediate points will be calculated between the origin and target poses.
             - **time_step** (float): The time interval in seconds between each step of the interpolation.
-
-        Returns:
-            None
         """
         # fmt: on
         for t in np.linspace(0, 1, nb_steps):
@@ -692,9 +679,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             - **nb_steps** (int): The number of steps for the interpolation, determining how many
                 intermediate poses will be generated between the origin and target.  
             - **time_step** (float): The time interval in seconds between each interpolation step.  
-
-        Returns:  
-            None
         """
         # fmt: on
         vector_target_origin = target_trans - origin_trans
@@ -1149,9 +1133,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         Send goal positions to the gripper and actuators if the parts are on.
 
         The function checks if the gripper and actuators are active before sending the goal positions.
-
-        Returns:  
-            None 
         """
         # fmt: on
         if self._gripper is not None:
