@@ -276,6 +276,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         Returns:
           - bool: `True` if all actuators of the arm are compliant, `False` otherwise.
         """
+        # fmt: on
         if not super().is_off():
             return False
         return True
