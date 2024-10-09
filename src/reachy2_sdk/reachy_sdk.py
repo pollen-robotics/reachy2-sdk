@@ -623,19 +623,6 @@ class ReachySDK:
         )
         return result
 
-    def is_goto_playing(self, goto_id: GoToId) -> bool:
-        """Return True if goto is currently playing, False otherwise."""
-        if not self._grpc_connected:
-            self._logger.warning("Reachy is not connected!")
-            return False
-        if not isinstance(goto_id, GoToId):
-            raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
-        if goto_id.id == -1:
-            self._logger.error("is_goto_playing() asked for unvalid movement. Goto not played.")
-            return False
-        state = self._get_goto_state(goto_id)
-        return bool(state.goal_status == GoalStatus.STATUS_EXECUTING)
-
     def cancel_all_goto(self) -> GoToAck:
         """Cancel all the goto tasks."""
         if not self._grpc_connected:

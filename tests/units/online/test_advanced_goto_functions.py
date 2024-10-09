@@ -530,56 +530,10 @@ def test_is_goto_finished(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 @pytest.mark.online
-def test_is_goto_playing(reachy_sdk_zeroed: ReachySDK) -> None:
-    req1 = reachy_sdk_zeroed.head.goto_joints([30, 0, 0], duration=2)
-    req2 = reachy_sdk_zeroed.l_arm.goto_joints([10, 10, 15, -20, 15, -15, -10], duration=3, interpolation_mode="linear")
-    req3 = reachy_sdk_zeroed.r_arm.goto_joints([0, 10, 20, -40, 10, 10, -15], duration=4)
-
-    time.sleep(1)
-    assert reachy_sdk_zeroed.is_goto_playing(req1)
-    assert reachy_sdk_zeroed.is_goto_playing(req2)
-    assert reachy_sdk_zeroed.is_goto_playing(req3)
-
-    req4 = reachy_sdk_zeroed.head.goto_joints([0, 0, 0], duration=1)
-    req5 = reachy_sdk_zeroed.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=1)
-    req6 = reachy_sdk_zeroed.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], duration=4)
-
-    time.sleep(1)
-    assert reachy_sdk_zeroed._get_goto_state(req1).goal_status == GoalStatus.STATUS_SUCCEEDED
-    assert reachy_sdk_zeroed._get_goto_state(req2).goal_status == GoalStatus.STATUS_EXECUTING
-    assert reachy_sdk_zeroed._get_goto_state(req3).goal_status == GoalStatus.STATUS_EXECUTING
-    assert not reachy_sdk_zeroed.is_goto_playing(req1)
-    assert reachy_sdk_zeroed.is_goto_playing(req2)
-    assert reachy_sdk_zeroed.is_goto_playing(req3)
-    assert reachy_sdk_zeroed.is_goto_playing(req4)
-    assert not reachy_sdk_zeroed.is_goto_playing(req5)
-    assert not reachy_sdk_zeroed.is_goto_playing(req6)
-
-    cancel = reachy_sdk_zeroed.l_arm.cancel_all_goto()
-    assert cancel.ack
-    assert not reachy_sdk_zeroed.is_goto_playing(req2)
-
-    time.sleep(2)
-    assert reachy_sdk_zeroed._get_goto_state(req1).goal_status == GoalStatus.STATUS_SUCCEEDED
-    assert reachy_sdk_zeroed._get_goto_state(req2).goal_status == GoalStatus.STATUS_CANCELED
-    assert reachy_sdk_zeroed._get_goto_state(req3).goal_status == GoalStatus.STATUS_SUCCEEDED
-    assert not reachy_sdk_zeroed.is_goto_playing(req1)
-    assert not reachy_sdk_zeroed.is_goto_playing(req2)
-    assert not reachy_sdk_zeroed.is_goto_playing(req3)
-    assert not reachy_sdk_zeroed.is_goto_playing(req4)
-    assert not reachy_sdk_zeroed.is_goto_playing(req5)
-    assert reachy_sdk_zeroed.is_goto_playing(req6)
-
-    with pytest.raises(TypeError):
-        reachy_sdk_zeroed.is_goto_finished(3)
-
-
-@pytest.mark.online
 def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     req1 = reachy_sdk_zeroed.r_arm.elbow.pitch.goto(-90, duration=3)
     time.sleep(0.5)
 
-    assert reachy_sdk_zeroed.is_goto_playing(req1)
     while not is_goto_finished(reachy_sdk_zeroed, req1):
         time.sleep(0.1)
 
@@ -588,7 +542,6 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     req2 = reachy_sdk_zeroed.r_arm.elbow.pitch.goto(0, duration=1)
     time.sleep(0.5)
 
-    assert reachy_sdk_zeroed.is_goto_playing(req2)
     while not is_goto_finished(reachy_sdk_zeroed, req2):
         time.sleep(0.1)
 
@@ -599,9 +552,6 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     req5 = reachy_sdk_zeroed.l_arm.wrist.pitch.goto(15, duration=1)
     time.sleep(0.5)
 
-    assert reachy_sdk_zeroed.is_goto_playing(req3)
-    assert not reachy_sdk_zeroed.is_goto_playing(req4)
-    assert not reachy_sdk_zeroed.is_goto_playing(req5)
     assert len(reachy_sdk_zeroed.l_arm.get_goto_queue()) == 2
     while not is_goto_finished(reachy_sdk_zeroed, req5):
         time.sleep(0.1)
@@ -612,8 +562,6 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     req7 = reachy_sdk_zeroed.head.neck.yaw.goto(10, duration=1)
     time.sleep(0.5)
 
-    assert reachy_sdk_zeroed.is_goto_playing(req6)
-    assert not reachy_sdk_zeroed.is_goto_playing(req7)
     assert len(reachy_sdk_zeroed.head.get_goto_queue()) == 1
     while not is_goto_finished(reachy_sdk_zeroed, req7):
         time.sleep(0.1)

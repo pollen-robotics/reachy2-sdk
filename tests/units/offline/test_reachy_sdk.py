@@ -75,4 +75,3 @@ def test_unconnected() -> None:
     assert rsdk.get_goto_joints_request(GoToId(id=1)) is None
 
     assert rsdk.is_goto_finished(GoToId(id=1)) is False
-    assert rsdk.is_goto_playing(GoToId(id=1)) is False
