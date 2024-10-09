@@ -84,6 +84,22 @@ class Orbita3d(Orbita):
         self._axis = {"x": self.__x, "y": self.__y, "z": self.__z}
 
     def _create_dict_state(self, initial_state: Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:  # noqa: C901
+        """Create a dictionary representation of the state for the actuator.
+
+        The method processes the fields in the given Orbita2dState and converts them into a nested dictionary
+        structure, where the top-level keys are the axis, motor and joints names, and the inner dictionaries contain
+        field names and corresponding FloatValue objects.
+
+        Args:
+            initial_state: An Orbita2dState object representing the initial state of the actuator.
+
+        Returns:
+            A dictionary where the keys represent the axis, motors and joints, and the values are dictionaries
+            containing field names and corresponding FloatValue objects.
+
+        Raises:
+            ValueError: If the field type is not recognized or supported.
+        """
         init_state: Dict[str, Dict[str, FloatValue]] = {}
 
         for field, value in initial_state.ListFields():
@@ -112,17 +128,25 @@ class Orbita3d(Orbita):
 
     @property
     def roll(self) -> OrbitaJoint:
+        """Get the roll joint of the actuator."""
+
         return self._roll
 
     @property
     def pitch(self) -> OrbitaJoint:
+        """Get the pitch joint of the actuator."""
         return self._pitch
 
     @property
     def yaw(self) -> OrbitaJoint:
+        """Get the yaw joint of the actuator."""
         return self._yaw
 
     def send_goal_positions(self) -> None:
+        """Send goal positions to the actuator's joints.
+
+        If goal positions have been specified for any joint of this actuator, sends them to the actuator.
+        """
         if self._outgoing_goal_positions:
             req_pos = {}
             for joint_axis in self._joints.keys():
@@ -143,7 +167,12 @@ class Orbita3d(Orbita):
             self._post_send_goal_positions()
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
-        """Set a speed_limit as a percentage of the max speed on all motors of the actuator"""
+        """Set the speed limit as a percentage of the maximum speed for all motors of the actuator.
+
+        Args:
+            speed_limit: The desired speed limit as a percentage (0-100) of the maximum speed. Can be
+                specified as a float or int.
+        """
         super().set_speed_limits(speed_limit)
         speed_limit = speed_limit / 100.0
         command = Orbita3dsCommand(
@@ -161,7 +190,12 @@ class Orbita3d(Orbita):
         self._stub.SendCommand(command)
 
     def set_torque_limits(self, torque_limit: float | int) -> None:
-        """Set a torque_limit as a percentage of the max torque on all motors of the actuator"""
+        """Set the torque limit as a percentage of the maximum torque for all motors of the actuator.
+
+        Args:
+            torque_limit: The desired torque limit as a percentage (0-100) of the maximum torque. Can be
+                specified as a float or int.
+        """
         super().set_torque_limits(torque_limit)
         torque_limit = torque_limit / 100.0
         command = Orbita3dsCommand(
