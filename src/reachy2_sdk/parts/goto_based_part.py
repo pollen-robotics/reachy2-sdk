@@ -29,56 +29,44 @@ class IGoToBasedPart(ABC):
         self._goto_stub = goto_stub
 
     def get_goto_playing(self) -> GoToId:
-        # fmt: off
-        """
-        Return the ID of the currently playing goto movement on a specific part.
+        """Return the GoToId of the currently playing goto movement on a specific part.
 
-        Returns:  
-            GoToId: The ID of the goto currently playing on the part.  
+        Returns:
+            The unique GoToId of the goto currently playing on the part.
         """
-        # fmt: on
         response = self._goto_stub.GetPartGoToPlaying(self.part._part_id)
         return response
 
     def get_goto_queue(self) -> List[GoToId]:
-        # fmt: off
-        """
-        Return a list of all goto IDs waiting to be played on a specific part.
+        """Return a list of all GoToIds waiting to be played on a specific part.
 
-        Returns:  
-            List[GoToId]: A list of all goto IDs waiting to be played on the part.  
+        Returns:
+            A list of all unique GoToIds for gotos waiting to be played on the part.
         """
-        # fmt: on
         response = self._goto_stub.GetPartGoToQueue(self.part._part_id)
         return [goal_id for goal_id in response.goto_ids]
 
     def cancel_all_goto(self) -> GoToAck:
-        # fmt: off
-        """
-        Request the cancellation of all playing and waiting goto commands for a specific part.
+        """Request the cancellation of all playing and waiting goto commands for a specific part.
 
-        Returns:  
-            GoToAck: An object acknowledging the cancellation of all goto commands.  
+        Returns:
+            A GoToAck acknowledging the cancellation of all goto commands.
         """
-        # fmt: on
         response = self._goto_stub.CancelPartAllGoTo(self.part._part_id)
         return response
 
     def _get_goto_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
-        # fmt: off
-        """
-        Return the part affected, joint goal positions, duration, and mode for the given GoToId.
+        """Return the part affected, joint goal positions, duration, and mode for the given GoToId.
 
         The part can be 'r_arm', 'l_arm', or 'head'.
 
-        Args:  
-            - **goto_id** (GoToId): The ID of the goto command for which to retrieve the details.  
+        Args:
+            goto_id: The ID of the goto command for which to retrieve the details.
 
-        Returns:  
-            Optional[SimplifiedRequest]: A `SimplifiedRequest` object containing the part, goal_positions, 
-            duration, and mode for the corresponding GoToId. The `goal_positions` are returned as a list in degrees.  
+        Returns:
+            A SimplifiedRequest object containing the part, goal_positions, duration, and mode for the
+            corresponding GoToId. The goal_positions are returned as a list in degrees.
         """
-        # fmt: on
         response = self._goto_stub.GetGoToRequest(goto_id)
         if response.joints_goal.HasField("arm_joint_goal"):
             part = response.joints_goal.arm_joint_goal.id.name
@@ -102,14 +90,11 @@ class IGoToBasedPart(ABC):
         return request
 
     def _is_goto_finished(self, id: GoToId) -> bool:
-        # fmt: off
-        """
-        Check if the goto movement has been completed or cancelled.
+        """Check if the goto movement has been completed or cancelled.
 
-        Returns:  
-            bool: `True` if the goto has been played or cancelled, `False` otherwise.  
+        Returns:
+           `True if the goto has been played or cancelled, False otherwise.
         """
-        # fmt: on
         state = self._goto_stub.GetGoToState(id)
         result = bool(
             state.goal_status == GoalStatus.STATUS_ABORTED
