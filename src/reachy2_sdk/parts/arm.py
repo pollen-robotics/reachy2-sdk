@@ -73,8 +73,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         grpc_channel: grpc.Channel,
         goto_stub: GoToServiceStub,
     ) -> None:
-        """
-        Define an arm (left or right).
+        """Define an arm (left or right).
 
         Connect to the arm's gRPC server stub and set up the arm's actuators.
         """
@@ -91,8 +90,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
         # fmt: off
-        """
-        Initialize the arm's actuators (shoulder, elbow, and wrist) based on the arm's description and initial state.
+        """Initialize the arm's actuators (shoulder, elbow, and wrist) based on the arm's description and initial state.
 
         Args:  
             - **arm** (Arm_proto): The arm description used to set up the actuators, including the shoulder,
@@ -139,8 +137,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     @property
     def shoulder(self) -> Orbita2d:
         # fmt: off
-        """
-        The shoulder actuator of the arm.
+        """The shoulder actuator of the arm.
 
         Returns:  
             Orbita2d: The shoulder actuator.
@@ -151,8 +148,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     @property
     def elbow(self) -> Orbita2d:
         # fmt: off
-        """
-        The elbow actuator of the arm.
+        """The elbow actuator of the arm.
 
         Returns:  
             Orbita2d: The elbow actuator.
@@ -163,8 +159,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     @property
     def wrist(self) -> Orbita3d:
         # fmt: off
-        """
-        The wrist actuator of the arm.
+        """The wrist actuator of the arm.
 
         Returns:  
             Orbita3d: The wrist actuator.
@@ -175,8 +170,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     @property
     def gripper(self) -> Optional[Hand]:
         # fmt: off
-        """
-        The gripper of the arm.
+        """The gripper of the arm.
 
         Returns:  
             Optional[Hand]: The gripper, or None if not set.
@@ -185,8 +179,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return self._gripper
 
     def turn_on(self) -> None:
-        """
-        Turn on all motors of the part, making all arm motors stiff.
+        """Turn on all motors of the part, making all arm motors stiff.
 
         If a gripper is present, it will also be turned on.
         """
@@ -195,8 +188,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         super().turn_on()
 
     def turn_off(self) -> None:
-        """
-        Turn off all motors of the part, making all arm motors compliant.
+        """Turn off all motors of the part, making all arm motors compliant.
 
         If a gripper is present, it will also be turned off.
         """
@@ -205,8 +197,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         super().turn_off()
 
     def _turn_on(self) -> None:
-        """
-        Turn on all motors of the part.
+        """Turn on all motors of the part.
 
         This will make all arm motors stiff. If a gripper is present, it will also be turned on.
         """
@@ -215,8 +206,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         super()._turn_on()
 
     def _turn_off(self) -> None:
-        """
-        Turn off all motors of the part.
+        """Turn off all motors of the part.
 
         This will make all arm motors compliant. If a gripper is present, it will also be turned off.
         """
@@ -225,8 +215,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         super()._turn_off()
 
     def turn_off_smoothly(self) -> None:
-        """
-        Gradually reduce the torque limit of all motors over 3 seconds before turning them off.
+        """Gradually reduce the torque limit of all motors over 3 seconds before turning them off.
 
         This function decreases the torque limit in steps until the motors are turned off.
         It then restores the torque limit to its original value.
@@ -250,8 +239,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     def is_on(self) -> bool:
         # fmt: off
-        """
-        Check if all actuators of the arm are stiff.
+        """Check if all actuators of the arm are stiff.
 
         Returns:  
             bool: `True` if all actuators of the arm are stiff, `False` otherwise.
@@ -263,8 +251,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     def is_off(self) -> bool:
         # fmt: off
-        """
-        Check if all actuators of the arm are compliant.
+        """Check if all actuators of the arm are compliant.
 
         Returns:
           - bool: `True` if all actuators of the arm are compliant, `False` otherwise.
@@ -285,8 +272,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self, joints_positions: Optional[List[float]] = None, degrees: bool = True
     ) -> npt.NDArray[np.float64]:
         # fmt: off
-        """
-        Compute the forward kinematics of the arm and return a 4x4 pose matrix.
+        """Compute the forward kinematics of the arm and return a 4x4 pose matrix.
+
         The pose matrix is expressed in Reachy coordinate system.
 
         Args:  
