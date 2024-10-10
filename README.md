@@ -23,7 +23,10 @@ Check out the [examples](src/examples/) folder for jupyter notebooks and example
 
 ## Documentation
 
-Documentation is generated via pdoc. It can be generated locally with:
+Documentation is generated via pdoc, and it's available at [https://pollen-robotics.github.io/reachy2-sdk/reachy2_sdk.html](https://pollen-robotics.github.io/reachy2-sdk/reachy2_sdk.html)
+
+
+It can be generated locally with:
 ```console
 pdoc reachy2_sdk --output-dir docs --logo "https://www.pollen-robotics.com/img/company/logo/pollen_logo_square_black.svg"
 ```
