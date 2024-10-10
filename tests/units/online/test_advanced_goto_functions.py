@@ -89,7 +89,7 @@ def test_cancel_part_all_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     cancel = reachy_sdk_zeroed.head.cancel_all_goto()
     assert cancel.ack
 
-    l_arm_position = reachy_sdk_zeroed.l_arm.get_current_state()
+    l_arm_position = reachy_sdk_zeroed.l_arm.get_current_positions()
 
     # 40*2/10 -> 8° ideally. but timing is not precise
     assert np.isclose(reachy_sdk_zeroed.head.neck.pitch.present_position, 8.0, atol=1)
@@ -104,7 +104,7 @@ def test_cancel_part_all_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.isclose(l_arm_position[6], 4.0, atol=1)
 
     time.sleep(2)
-    l_arm_position = reachy_sdk_zeroed.l_arm.get_current_state()
+    l_arm_position = reachy_sdk_zeroed.l_arm.get_current_positions()
 
     assert np.isclose(reachy_sdk_zeroed.head.neck.pitch.present_position, 8.0, atol=1)
     assert np.isclose(reachy_sdk_zeroed.head.neck.roll.present_position, 0.0)
@@ -345,9 +345,9 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_goto_state(req_h).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_goto_state(req_r).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_goto_state(req_l).goal_status == GoalStatus.STATUS_SUCCEEDED
-    assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_current_state(as_quat=True), zero_head), 0, atol=1e-04)
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_state(), zero_r_arm, atol=1e-03)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_state(), zero_l_arm, atol=1e-03)
+    assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_current_orientation(), zero_head), 0, atol=1e-04)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_positions(), zero_r_arm, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), zero_l_arm, atol=1e-03)
 
     cancel = reachy_sdk_zeroed.cancel_all_goto()
     assert cancel.ack
@@ -390,9 +390,9 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_goto_state(req_h2).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_goto_state(req_r2).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_goto_state(req_l2).goal_status == GoalStatus.STATUS_SUCCEEDED
-    assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_current_state(as_quat=True), zero_head), 0, atol=1e-04)
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_state(), zero_r_arm, atol=1e-03)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_state(), zero_l_arm, atol=1e-03)
+    assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_current_orientation(), zero_head), 0, atol=1e-04)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_positions(), zero_r_arm, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), zero_l_arm, atol=1e-03)
 
     # Test with 'elbow_90' instead of 'default'
 
@@ -430,10 +430,10 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_goto_state(req_r3).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_goto_state(req_l3).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert np.isclose(
-        Quaternion.distance(reachy_sdk_zeroed.head.get_current_state(as_quat=True), zero_head), 0, atol=1e-04
+        Quaternion.distance(reachy_sdk_zeroed.head.get_current_orientation(), zero_head), 0, atol=1e-04
     )  # why not 1e-04 here?
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_state(), elbow_90_r_arm, atol=1e-03)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_state(), elbow_90_l_arm, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_positions(), elbow_90_r_arm, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), elbow_90_l_arm, atol=1e-03)
 
     # Test with some parts off
 
@@ -583,7 +583,7 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req1):
         time.sleep(0.1)
 
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_state(), [0, 0, 0, -90, 0, 0, 0], atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_positions(), [0, 0, 0, -90, 0, 0, 0], atol=1e-01)
 
     req2 = reachy_sdk_zeroed.r_arm.elbow.pitch.goto(0, duration=1)
     time.sleep(0.5)
@@ -592,7 +592,7 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req2):
         time.sleep(0.1)
 
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_state(), [0, 0, 0, 0, 0, 0, 0], atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_positions(), [0, 0, 0, 0, 0, 0, 0], atol=1e-01)
 
     req3 = reachy_sdk_zeroed.l_arm.shoulder.pitch.goto(-10, duration=1)
     req4 = reachy_sdk_zeroed.l_arm.elbow.yaw.goto(20, duration=1)
@@ -606,7 +606,7 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req5):
         time.sleep(0.1)
 
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_state(), [-10, 0, 20, 0, 0, 15, 0], atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), [-10, 0, 20, 0, 0, 15, 0], atol=1e-01)
 
     req6 = reachy_sdk_zeroed.head.neck.roll.goto(15, duration=1)
     req7 = reachy_sdk_zeroed.head.neck.yaw.goto(10, duration=1)
@@ -618,7 +618,7 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req7):
         time.sleep(0.1)
 
-    assert np.allclose(reachy_sdk_zeroed.head.get_current_state(), [15, 0, 10], atol=1e-01)
+    assert np.allclose(reachy_sdk_zeroed.head.get_current_positions(), [15, 0, 10], atol=1e-01)
 
 
 @pytest.mark.online

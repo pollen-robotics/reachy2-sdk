@@ -151,7 +151,7 @@ class MobileBase(Part):
             return True
         return False
 
-    def get_current_state(self, degrees: bool = True, round_int: Optional[int] = None) -> Dict[str, float]:
+    def get_current_odometry(self, degrees: bool = True) -> Dict[str, float]:
         """
         Get the current odometry of the mobile base in its reference frame:
         - position in x
@@ -165,9 +165,6 @@ class MobileBase(Part):
         if not degrees:
             current_state["theta"] = deg2rad(current_state["theta"])
             current_state["vtheta"] = deg2rad(current_state["vtheta"])
-
-        if round_int is not None:
-            current_state = {key: round(value, round_int) for key, value in current_state.items()}
 
         return current_state
 

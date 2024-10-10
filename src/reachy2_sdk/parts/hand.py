@@ -104,7 +104,7 @@ class Hand(Part):
             self._last_present_positions.clear()
         self._last_present_positions.append(present_position)
 
-    def get_current_state(self) -> float:
+    def get_current_opening(self) -> float:
         return self.opening
 
     def open(self) -> None:

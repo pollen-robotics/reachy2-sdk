@@ -7,13 +7,12 @@ Handles all specific method to an Arm (left and/or right) especially:
 """
 
 import time
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, overload
 
 import grpc
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
-from numpy import round
 from pyquaternion import Quaternion
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
@@ -220,12 +219,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             return False
         return True
 
-    def get_current_state(self, degrees: bool = True, round_int: Optional[int] = None) -> List[float]:
+    def get_current_positions(self, degrees: bool = True) -> List[float]:
         """Return the current joints positions of the arm, by default in degrees"""
         response = self._stub.GetJointPosition(self._part_id)
         positions: List[float] = arm_position_to_list(response, degrees)
-        if round_int is not None:
-            positions = round(arm_position_to_list(response, degrees), round_int).tolist()
         return positions
 
     def forward_kinematics(
@@ -261,7 +258,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: npt.NDArray[np.float64],
         q0: Optional[List[float]] = None,
         degrees: bool = True,
-        round: Optional[int] = None,
     ) -> List[float]:
         """Compute the inverse kinematics of the arm.
 
@@ -304,13 +300,35 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             raise ValueError(f"No solution found for the given target ({target})!")
 
         answer: List[float] = arm_position_to_list(resp.arm_position, degrees)
-        if round is not None:
-            answer = np.round(answer, round).tolist()
         return answer
+
+    @overload
+    def goto(
+        self,
+        target: List[float],
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
+        q0: Optional[List[float]] = None,
+    ) -> GoToId:
+        ...
+
+    @overload
+    def goto(
+        self,
+        target: npt.NDArray[np.float64],
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
+        q0: Optional[List[float]] = None,
+    ) -> GoToId:
+        ...
 
     def goto(
         self,
-        target: Union[List[float], npt.NDArray[np.float64]],
+        target: Any,
         duration: float = 2,
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",

@@ -93,7 +93,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
 
-    q1 = reachy_sdk_zeroed.head.get_current_state(as_quat=True)
+    q1 = reachy_sdk_zeroed.head.get_current_orientation()
     assert np.isclose(Quaternion.distance(q0, q1), 0, atol=1e-04)
 
     id = reachy_sdk_zeroed.head.goto([0, 40, 0], duration=1)
@@ -102,7 +102,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
 
-    q3 = reachy_sdk_zeroed.head.get_current_state(as_quat=True)
+    q3 = reachy_sdk_zeroed.head.get_current_orientation()
     assert np.isclose(Quaternion.distance(q2, q3), 0, atol=1e-04)
 
     id = reachy_sdk_zeroed.head.look_at(10000, 10000, 0, duration=1)
@@ -111,7 +111,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
 
-    q5 = reachy_sdk_zeroed.head.get_current_state(as_quat=True)
+    q5 = reachy_sdk_zeroed.head.get_current_orientation()
     assert np.isclose(Quaternion.distance(q4, q5), 0, atol=1e-04)
 
     id = reachy_sdk_zeroed.head.look_at(10000, 0, -10000, duration=1)
@@ -120,7 +120,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
 
-    q7 = reachy_sdk_zeroed.head.get_current_state(as_quat=True)
+    q7 = reachy_sdk_zeroed.head.get_current_orientation()
     assert np.isclose(Quaternion.distance(q6, q7), 0, atol=1e-04)
 
 
@@ -128,13 +128,13 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
 def test_basic_get_positions(reachy_sdk_zeroed: ReachySDK) -> None:
     expected_pos1 = [0, 0, 0, 0, 0, 0, 0]
 
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_state(), expected_pos1, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), expected_pos1, atol=1e-03)
 
     expected_pos2 = [15, 10, 20, -50, 10, 10, 20]
     id = reachy_sdk_zeroed.l_arm.goto(expected_pos2, duration=3)
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_state(), expected_pos2, atol=1e-03)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), expected_pos2, atol=1e-03)
 
 
 @pytest.mark.online
@@ -168,9 +168,9 @@ def test_send_goal_positions(reachy_sdk_zeroed: ReachySDK) -> None:
 
         for i in range(nbr_points):
             if prev_goal is not None:
-                assert np.allclose(reachy.r_arm.get_current_state(), prev_goal, atol=1e-03)
+                assert np.allclose(reachy.r_arm.get_current_positions(), prev_goal, atol=1e-03)
             if prev_l_goal is not None:
-                assert np.allclose(reachy.l_arm.get_current_state(), prev_l_goal, atol=1e-03)
+                assert np.allclose(reachy.l_arm.get_current_positions(), prev_l_goal, atol=1e-03)
             pose = build_pose_matrix(X[i], Y_r[i], Z[i])
             prev_goal = go_to_pose(reachy, pose, "r_arm")
 

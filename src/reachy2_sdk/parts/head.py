@@ -6,7 +6,7 @@ Handles all specific method to an Head:
 """
 
 import time
-from typing import List, Optional, Union
+from typing import Any, List, overload
 
 import grpc
 import numpy as np
@@ -89,38 +89,48 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def neck(self) -> Orbita3d:
         return self._neck
 
-    def get_current_state(
-        self, degrees: bool = True, round_int: Optional[int] = None, as_quat: bool = False
-    ) -> Union[List[float], pyQuat]:
-        """Return the current state of the head.
+    def get_current_orientation(self) -> pyQuat:
+        """Return the current orientation of the head, as a quaternion."""
+        quat = self._stub.GetOrientation(self._part_id).q
+        return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
-        It will return the List[roll, pitch, yaw] in degrees or in radians, or the quaternion (x,y,z,w) if as_quat is True.
+    def get_current_positions(self, degrees: bool = True) -> List[float]:
+        """Return the current joint positions of the head.
+
+        It will return the List[roll, pitch, yaw] in degrees or in radians.
         """
-        if as_quat:
-            quat = self._stub.GetOrientation(self._part_id).q
-            if round_int is not None:
-                return pyQuat(
-                    w=np.round(quat.w, round_int),
-                    x=np.round(quat.x, round_int),
-                    y=np.round(quat.y, round_int),
-                    z=np.round(quat.z, round_int),
-                )
-            return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
+        roll = self.neck._joints["roll"].present_position
+        pitch = self.neck._joints["pitch"].present_position
+        yaw = self.neck._joints["yaw"].present_position
+        if degrees:
+            return [roll, pitch, yaw]
+        return [np.deg2rad(roll), np.deg2rad(pitch), np.deg2rad(yaw)]
 
-        else:
-            roll = self.neck._joints["roll"].present_position
-            pitch = self.neck._joints["pitch"].present_position
-            yaw = self.neck._joints["yaw"].present_position
-            if round_int is not None:
-                roll, pitch, yaw = np.round([roll, pitch, yaw], round_int)
+    @overload
+    def goto(
+        self,
+        target: List[float],
+        duration: float = 2.0,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
+    ) -> GoToId:
+        ...
 
-            if degrees:
-                return [roll, pitch, yaw]
-            return [np.deg2rad(roll), np.deg2rad(pitch), np.deg2rad(yaw)]
+    @overload
+    def goto(
+        self,
+        target: pyQuat,
+        duration: float = 2.0,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
+    ) -> GoToId:
+        ...
 
     def goto(
         self,
-        target: Union[List[float], pyQuat],
+        target: Any,
         duration: float = 2.0,
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
