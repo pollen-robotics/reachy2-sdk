@@ -93,7 +93,7 @@ class IGoToBasedPart(ABC):
         """Check if the goto movement has been completed or cancelled.
 
         Returns:
-           `True if the goto has been played or cancelled, False otherwise.
+           `True` if the goto has been played or cancelled, `False` otherwise.
         """
         state = self._goto_stub.GetGoToState(id)
         result = bool(
