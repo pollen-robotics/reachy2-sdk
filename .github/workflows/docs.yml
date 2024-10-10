@@ -30,6 +30,7 @@ jobs:
 
   publish-docs:
     needs: build-docs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-22.04
     steps:
       - name: Download Documentation
