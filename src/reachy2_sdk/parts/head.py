@@ -210,11 +210,10 @@ class Head(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+        if response.id == -1:
+            self._logger.error(f"Position {goal_position} was not reachable. No command sent.")
+        elif wait:
+            self._wait_goto(response)
         return response
 
     def look_at(
