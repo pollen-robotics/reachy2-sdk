@@ -19,11 +19,6 @@ class IGoToBasedPart(ABC):
     The `IGoToBasedPart` class defines a common interface for handling goto-based movements. It is
     designed to be implemented by parts of the robot that perform movements via the goto mechanism,
     such as the Arm, Head, or potentially the MobileBase in the future.
-
-    Methods:
-        get_goto_playing: Retrieve the currently playing goto command for a specific part.
-        get_goto_queue: Get a list of all queued goto commands for the part.
-        cancel_all_goto: Cancel all active and pending goto commands for the part.
     """
 
     def __init__(

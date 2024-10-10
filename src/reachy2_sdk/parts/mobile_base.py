@@ -50,18 +50,6 @@ class MobileBase(Part):
 
     Attributes:
         lidar: Lidar object for handling safety features.
-
-    Methods:
-        battery_voltage: Returns the current battery voltage.
-        odometry: Returns the current odometry information of the base.
-        last_cmd_vel: Returns the last command velocity sent to the base.
-        reset_odometry: Resets the base's odometry.
-        set_speed: Sends a target speed to the base.
-        translate_by: Translates the base by a specified distance.
-        rotate_by: Rotates the base by a specified angle.
-        goto: Sends the base to a specified target position.
-        is_on: Checks if the base is in stiff mode.
-        is_off: Checks if the base is in free-wheel mode.
     """
 
     def __init__(

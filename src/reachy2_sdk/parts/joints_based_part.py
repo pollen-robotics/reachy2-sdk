@@ -21,15 +21,6 @@ class JointsBasedPart(Part):
     The `JointsBasedPart` class serves as a base for parts of the robot that consist of multiple joints,
     such as arms and heads. This class provides common functionality for controlling joints, setting speed
     and torque limits, and managing joint positions.
-
-    Attributes:
-        _joints: A dictionary containing all the joints of the part, with joint names as keys and joint objects as values.
-
-    Methods:
-        get_joints_positions: Abstract method to retrieve the current positions of all joints.
-        send_goal_positions: Abstract method to send goal positions to the part's joints.
-        set_torque_limits: Set the torque limit as a percentage of the maximum torque for all motors.
-        set_speed_limits: Set the speed limit as a percentage of the maximum speed for all motors.
     """
 
     def __init__(

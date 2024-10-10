@@ -25,13 +25,6 @@ class Part(ABC):
     This class provides a common interface for managing robot components, including turning them on or off, checking their
     status, and updating their states. The class is intended to be subclassed to implement specific behaviors for different
     types of robot parts.
-
-    Methods:
-        turn_on: Turns on the part, setting speed limits before and after.
-        turn_off: Turns off the part with a brief delay to ensure completion.
-        is_on: Checks if all actuators are on.
-        is_off: Checks if all actuators are off.
-        audit: Returns a dictionary with the audit status of all actuators.
     """
 
     def __init__(

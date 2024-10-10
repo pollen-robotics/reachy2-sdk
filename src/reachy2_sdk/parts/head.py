@@ -48,15 +48,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
     Attributes:
         neck: An instance of `Orbita3d` representing the neck actuator of the head.
-
-    Methods:
-        get_orientation: Get the current orientation of the head as a quaternion.
-        get_joints_positions: Return the current joint positions of the neck.
-        look_at: Compute and send a neck position to look at a specified point in Cartesian space.
-        goto_joints: Send the neck to specified roll, pitch, and yaw positions.
-        goto_quat: Send the neck to a specified orientation defined by a quaternion.
-        send_goal_positions: Send goal positions to the head's joints.
-        goto_posture: Move all neck joints to standard positions within a specified duration.
     """
 
     def __init__(
