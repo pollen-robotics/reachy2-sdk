@@ -485,7 +485,7 @@ def test_wait_move(reachy_sdk_zeroed: ReachySDK) -> None:
 
     tic = time.time()
     reachy_sdk_zeroed.goto_posture("default", duration=1.0)
-    reachy_sdk_zeroed.r_arm.goto_from_matrix(A, wait=True, duration=1.0)
+    reachy_sdk_zeroed.r_arm.goto(A, wait=True, duration=1.0)
     elapsed_time = time.time() - tic
     assert elapsed_time >= 2.0
 

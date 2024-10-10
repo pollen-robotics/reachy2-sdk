@@ -179,12 +179,13 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
         response = self._goto_stub.GoToJoints(request)
 
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
-
+        if response.id == -1:
+            if isinstance(target, list):
+                self._logger.error(f"Position {target} was not reachable. No command sent.")
+            elif isinstance(target, pyQuat):
+                self._logger.error(f"Orientation {target} was not reachable. No command sent.")
+        elif wait:
+            self._wait_goto(response)
         return response
 
     def _goto_single_joint(
@@ -240,11 +241,12 @@ class Head(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToCartesian(request)
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+
+        if response.id == -1:
+            self._logger.error(f"Position {x}, {y}, {z} was not reachable. No command sent.")
+        elif wait:
+            self._wait_goto(response)
+
         return response
 
     def goto_posture(
