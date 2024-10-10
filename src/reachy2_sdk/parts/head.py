@@ -5,7 +5,6 @@ Handles all specific method to an Head:
 - look_at function
 """
 
-import time
 from typing import Any, List, overload
 
 import grpc
