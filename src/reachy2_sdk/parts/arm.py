@@ -58,12 +58,35 @@ from .joints_based_part import JointsBasedPart
 
 
 class Arm(JointsBasedPart, IGoToBasedPart):
-    """Arm class used for both left/right arms.
+    """Reachy Arm module.
 
-    It exposes the kinematics functions for the arm:
-    - you can compute the forward and inverse kinematics
-    It also exposes movements functions.
-    Arm can be turned on and off.
+    Handles specific functionalities for the arm (left and/or right), including:
+    - Forward and inverse kinematics
+    - Goto functions for movement
+    - Turning the arm on and off
+    - Cartesian interpolation for movements
+
+    Attributes:
+        shoulder (Orbita2d): The shoulder actuator of the arm.
+        elbow (Orbita2d): The elbow actuator of the arm.
+        wrist (Orbita3d): The wrist actuator of the arm.
+        gripper (Optional[Hand]): The gripper of the arm, if initialized.
+
+    Methods:
+        turn_on: Activate all motors, making the arm stiff.
+        turn_off: Deactivate all motors, making the arm compliant.
+        turn_off_smoothly: Gradually reduce the torque limit over time before turning off.
+        forward_kinematics: Compute the arm's pose based on joint positions.
+        inverse_kinematics: Calculate joint configurations to reach a target pose.
+        goto_from_matrix: Move the arm to a specified 4x4 pose matrix.
+        send_cartesian_interpolation: Perform a movement using Cartesian interpolation.
+        goto_joints: Move the arm's joints to specified positions.
+        translate_by: Move the arm's end effector by a specified translation.
+        rotate_by: Rotate the arm's end effector by specified roll, pitch, and yaw angles.
+        get_translation_by: Get a new pose matrix with a specified translation applied.
+        get_rotation_by: Get a new pose matrix with a specified rotation applied.
+        goto_posture: Move all joints to a standard posture ('default' or 'elbow_90').
+        send_goal_positions: Send goal positions to the gripper and actuators.
     """
 
     def __init__(
