@@ -3,6 +3,8 @@
 Handles common interface for parts performing movement using goto mechanism.
 """
 
+import logging
+import time
 from abc import ABC
 from typing import List, Optional
 
@@ -43,6 +45,7 @@ class IGoToBasedPart(ABC):
         """
         self.part = part
         self._goto_stub = goto_stub
+        self._logger_goto = logging.getLogger(__name__)  # not using self._logger to avoid name conflict in multiple inheritance
 
     def get_goto_playing(self) -> GoToId:
         """Return the GoToId of the currently playing goto movement on a specific part.
@@ -118,3 +121,30 @@ class IGoToBasedPart(ABC):
             or state.goal_status == GoalStatus.STATUS_SUCCEEDED
         )
         return result
+
+    def _wait_goto(self, id: GoToId) -> None:
+        """Wait for a goto to finish. timeout is in seconds."""
+        self._logger_goto.info(f"Waiting for movement with {id}.")
+
+        id_playing = self.get_goto_playing()
+        info_gotos = [self._get_goto_joints_request(id_playing)]
+        ids_queue = self.get_goto_queue()
+        for id in ids_queue:
+            info_gotos.append(self._get_goto_joints_request(id))
+
+        timeout = 1  # adding one more sec
+        for igoto in info_gotos:
+            if igoto is not None:
+                timeout += igoto.duration
+
+        self._logger_goto.debug(f"timeout is set to {timeout}")
+
+        t_start = time.time()  # timeout for others
+        while not self._is_goto_finished(id):
+            time.sleep(0.1)
+
+            if time.time() - t_start > timeout:
+                self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
+                return
+
+        self._logger_goto.info(f"Movement with {id} finished.")

@@ -456,11 +456,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToCartesian(request)
         if response.id == -1:
             self._logger.error(f"Target pose:\n {target} \nwas not reachable. No command sent.")
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+        elif wait:
+            self._wait_goto(response)
         return response
 
     def send_cartesian_interpolation(
@@ -533,17 +530,13 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         current_pose = self.forward_kinematics()
         current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
         if current_precision_distance_xyz > precision_distance_xyz:
-            for t in np.linspace(0, 1, nb_steps):
-                # Spamming the goal position to make sure its reached
-                request = ArmCartesianGoal(
-                    id=self._part_id,
-                    goal_pose=Matrix4x4(data=target.flatten().tolist()),
-                )
-                self._stub.SendArmCartesianGoal(request)
-                time.sleep(time_step)
+            request = ArmCartesianGoal(
+                id=self._part_id,
+                goal_pose=Matrix4x4(data=target.flatten().tolist()),
+            )
+            self._stub.SendArmCartesianGoal(request)
+            time.sleep(time_step)
 
-            # Small delay to make sure the present position is correctly read
-            time.sleep(0.1)
             current_pose = self.forward_kinematics()
             current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
         self._logger.info(f"l2 xyz distance to goal: {current_precision_distance_xyz}")
@@ -737,11 +730,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         response = self._goto_stub.GoToJoints(request)
         if response.id == -1:
             self._logger.error(f"Position {positions} was not reachable. No command sent.")
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+        elif wait:
+            self._wait_goto(response)
         return response
 
     def get_translation_by(
@@ -1009,11 +999,11 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+
+        if response.id == -1:
+            self._logger.error(f"Position {goal_position} was not reachable. No command sent.")
+        elif wait:
+            self._wait_goto(response)
         return response
 
     def get_joints_positions(self, degrees: bool = True, round: Optional[int] = None) -> List[float]:
