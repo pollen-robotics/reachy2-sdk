@@ -3,7 +3,6 @@
 Handles all specific methods commmon to all Reachy parts (Arm, Head, Hand or MobileBase).
 """
 
-
 import logging
 import time
 from abc import ABC, abstractmethod

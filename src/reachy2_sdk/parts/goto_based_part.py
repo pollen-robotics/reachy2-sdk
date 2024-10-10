@@ -3,7 +3,6 @@
 Handles common interface for parts performing movement using goto mechanism.
 """
 
-
 from abc import ABC
 from typing import List, Optional
 

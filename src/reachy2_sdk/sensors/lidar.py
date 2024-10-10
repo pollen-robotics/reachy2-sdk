@@ -1,11 +1,8 @@
-"""LIDAR module for mobile base SDK.
+"""Reachy Lidar module.
 
-Handles the LIDAR features:
-    - get the map of the environment
-    - set the safety distance
-    - set the critical distance
-    - enable/disable the safety feature
+Handles all specific methods to the Lidar sensor.
 """
+
 import logging
 from typing import Optional
 

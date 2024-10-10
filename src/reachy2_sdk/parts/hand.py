@@ -2,6 +2,7 @@
 
 Handles all specific method to a Hand.
 """
+
 from collections import deque
 from typing import Deque, Optional
 

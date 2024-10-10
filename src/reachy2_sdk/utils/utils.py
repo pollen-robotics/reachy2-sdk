@@ -3,6 +3,9 @@
 This module contains various useful functions especially:
 - angle conversion from/to degree/radian
 - enum conversion to string
+- matrix decomposition/recomposition
+- pose matrix creation
+- various grpc messages conversion
 """
 
 from collections import namedtuple
