@@ -26,6 +26,27 @@ from .part import Part
 
 
 class Hand(Part):
+    """Class for controlling the Reachy's hand.
+
+    The `Hand` class provides methods to control the gripper of Reachy, including opening and closing
+    the hand, setting the goal position, and checking the hand's state. It also manages the hand's
+    compliance status (whether it is stiff or free).
+
+    Attributes:
+        opening: The opening of the hand as a percentage (0-100), rounded to two decimal places.
+        present_position: The current position of the hand in degrees.
+        goal_position: The target goal position of the hand in degrees.
+
+    Methods:
+        set_opening: Set the opening value for the hand.
+        send_goal_positions: Send the goal position to the hand actuator.
+        open: Open the hand.
+        close: Close the hand.
+        is_on: Check if the hand is stiff.
+        is_off: Check if the hand is compliant.
+        is_moving: Indicates if the hand is currently moving.
+    """
+
     def __init__(
         self,
         hand_msg: Hand_proto,
