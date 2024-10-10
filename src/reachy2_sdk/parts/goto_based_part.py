@@ -14,9 +14,16 @@ from .part import Part
 
 
 class IGoToBasedPart(ABC):
-    """The IGoToBasedPart class is an interface to define default behavior of all parts using goto functions.
+    """Interface for parts of Reachy that use goto functions.
 
-    This interface is meant to be implemented by any relevant part of the robot : Arm, Head, (MobileBase in the future)
+    The `IGoToBasedPart` class defines a common interface for handling goto-based movements. It is
+    designed to be implemented by parts of the robot that perform movements via the goto mechanism,
+    such as the Arm, Head, or potentially the MobileBase in the future.
+
+    Methods:
+        get_goto_playing: Retrieve the currently playing goto command for a specific part.
+        get_goto_queue: Get a list of all queued goto commands for the part.
+        cancel_all_goto: Cancel all active and pending goto commands for the part.
     """
 
     def __init__(
