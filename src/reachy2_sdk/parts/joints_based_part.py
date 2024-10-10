@@ -1,3 +1,8 @@
+"""Reachy JointsBasedPart module.
+
+Handles all specific methods to parts composed of controllable joints.
+"""
+
 from abc import abstractmethod
 from typing import List
 

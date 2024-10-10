@@ -1,9 +1,6 @@
 """Reachy Arm module.
 
-Handles all specific method to an Arm (left and/or right) especially:
-- the forward kinematics
-- the inverse kinematics
-- goto functions
+Handles all specific methods to an Arm (left and/or right).
 """
 
 import time

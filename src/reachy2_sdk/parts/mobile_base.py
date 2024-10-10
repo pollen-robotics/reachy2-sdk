@@ -1,9 +1,6 @@
 """Reachy MobileBase module.
 
-This package provides access to the mobile base of a Reachy robot.
-You can have access to basic information from the mobile base such as the battery voltage
-or the odometry. You can also easily make the mobile base move by setting a goal position
-in cartesian coordinates (x, y, theta) or directly send velocities (x_vel, y_vel, theta_vel).
+Handles all specific methods to a MobileBase.
 """
 
 import asyncio

@@ -1,8 +1,6 @@
 """Reachy Head module.
 
-Handles all specific method to an Head:
-- the inverse kinematics
-- look_at function
+Handles all specific methods to a Head.
 """
 
 import time

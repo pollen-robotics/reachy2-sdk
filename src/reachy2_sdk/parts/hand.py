@@ -1,9 +1,6 @@
 """Reachy Hand module.
 
-
-Handles all specific method to a Hand:
-    - turn_on / turn_off
-    - open / close
+Handles all specific method to a Hand.
 """
 from collections import deque
 from typing import Deque, Optional
