@@ -1,6 +1,10 @@
-name: Generate Python Documentation
+name: Documentation
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   build-docs:
@@ -30,7 +34,7 @@ jobs:
 
   publish-docs:
     needs: build-docs
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-22.04
     steps:
       - name: Download Documentation
