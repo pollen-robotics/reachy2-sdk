@@ -2,7 +2,6 @@
 
 Define the RGB Camera of Reachy's head (Teleop) and the RGBD Camera of its torso (Depth).
 Provide access to the frames (color, depth, disparity) and the camera parameters.
-
 """
 
 import logging
@@ -32,9 +31,13 @@ class CameraType(Enum):
 
 
 class Camera:
-    """
-    RGB Camera. Mainly for the teleoperation camera, but also for the RGB part of the RGBD torso camera.
-    Allows access to the frame and to the camera parameters.
+    """Camera class represents an RGB camera on the robot.
+
+    The Camera class is primarily used for teleoperation cameras but can also be
+    utilized for the RGB component of the RGB-D torso camera. It provides access
+    to camera frames and parameters such as intrinsic, extrinsic matrices, and
+    distortion coefficients. Additionally, it allows for converting pixel coordinates
+    to world coordinates.
     """
 
     def __init__(self, cam_info: CameraFeatures, video_stub: VideoServiceStub) -> None:
@@ -43,7 +46,16 @@ class Camera:
         self._video_stub = video_stub
 
     def get_frame(self, view: CameraView = CameraView.LEFT) -> Optional[Tuple[npt.NDArray[np.uint8], int]]:
-        """Get RGB frame (OpenCV) and timestamp in nanosecs"""
+        """Retrieve an RGB frame from the camera.
+
+        Args:
+            view: The camera view to retrieve the frame from. Default is CameraView.LEFT.
+
+        Returns:
+            A tuple containing the frame as a NumPy array in OpenCV format and the timestamp in nanoseconds.
+            Returns None if no frame is retrieved.
+        """
+
         frame = self._video_stub.GetFrame(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if frame.data == b"":
             self._logger.warning("No frame retrieved")
@@ -57,8 +69,15 @@ class Camera:
     ) -> Optional[
         Tuple[int, int, str, npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]
     ]:
-        """Returns the height, width, distortion model, distortion coefficients, instrinsic matrix,"""
-        """ rotation matrix and projection matrix"""
+        """Retrieve camera parameters including intrinsic and extrinsic matrices.
+
+        Args:
+            view: The camera view for which parameters should be retrieved. Default is CameraView.LEFT.
+
+        Returns:
+            A tuple containing height, width, distortion model, distortion coefficients, intrinsic matrix,
+            rotation matrix, and projection matrix. Returns None if no parameters are retrieved.
+        """
         params = self._video_stub.GetParameters(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if params.K == []:
             self._logger.warning("No parameter retrieved")
@@ -72,7 +91,14 @@ class Camera:
         return params.height, params.width, params.distortion_model, D, K, R, P
 
     def get_extrinsics(self, view: CameraView = CameraView.LEFT) -> Optional[npt.NDArray[np.float64]]:
-        """Returns the 4x4 extrinsic matrix"""
+        """Retrieve the 4x4 extrinsic matrix of the camera.
+
+        Args:
+            view: The camera view for which the extrinsic matrix should be retrieved. Default is CameraView.LEFT.
+
+        Returns:
+            The extrinsic matrix as a NumPy array. Returns None if no matrix is retrieved.
+        """
         res = self._video_stub.GetExtrinsics(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if res.extrinsics is None:
             self._logger.warning("No extrinsic matrix retrieved")
@@ -82,7 +108,17 @@ class Camera:
     def pixel_to_world(
         self, u: int, v: int, z_c: float = 1.0, view: CameraView = CameraView.LEFT
     ) -> Optional[npt.NDArray[np.float64]]:
-        """Compute the XYZ position given a uv pixel in a camera view. If known the depth z_c (meter) may be provided"""
+        """Convert pixel coordinates to XYZ coordinate in Reachy coordinate system.
+
+        Args:
+            u: The x-coordinate (pixel) in the camera view.
+            v: The y-coordinate (pixel) in the camera view.
+            z_c: The depth value in meters at the given pixel. Default is 1.0.
+            view: The camera view to use for the conversion. Default is CameraView.LEFT.
+
+        Returns:
+            A NumPy array containing the [X, Y, Z] world coordinates in meters. Returns None if the conversion fails.
+        """
         params = self.get_parameters(view)
 
         if params is None:
@@ -123,13 +159,22 @@ class Camera:
 
 
 class DepthCamera(Camera):
-    """
-    Depth part of the RGBD torso camera.
-    Allows access to the depth frame.
+    """DepthCamera class represents the depth component of the RGB-D torso camera.
+
+    It provides access to depth frames and extends the functionality
+    of the Camera class, allowing users to retrieve depth information.
     """
 
     def get_depth_frame(self, view: CameraView = CameraView.DEPTH) -> Optional[Tuple[npt.NDArray[np.uint16], int]]:
-        """Get 16bit depth view (OpenCV format) and timestamp in nanosecs"""
+        """Retrieve a depth frame from the camera.
+
+        Args:
+            view: The camera view to retrieve the depth frame from. Default is CameraView.DEPTH.
+
+        Returns:
+            A tuple containing the depth frame as a NumPy array in 16-bit format and the timestamp in nanoseconds.
+            Returns None if no frame is retrieved.
+        """
         frame = self._video_stub.GetDepth(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if frame.data == b"":
             self._logger.error("No frame retrieved")

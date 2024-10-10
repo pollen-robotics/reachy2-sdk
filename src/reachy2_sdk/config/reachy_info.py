@@ -2,6 +2,7 @@
 
 This module provides main informations about the robot.
 """
+
 from typing import Any, Dict, List, Optional
 
 from reachy2_sdk_api.reachy_pb2 import Reachy
@@ -10,15 +11,22 @@ from ..parts.mobile_base import MobileBase
 
 
 class ReachyInfo:
-    """The ReachyInfo class saves information of the robot that won't be modified during the session.
+    """The ReachyInfo class saves information of the global robot.
 
-    The ReachyInfo class gives access to:
-        - the robot's serial_number, that will never change
-        - the robot's hardware version, that will not change during a session
-        - the robot's core software version, that will not change during a session
+    The ReachyInfo class gives access to informations that won't be modified during the session:
+        - the robot's hardware version
+        - the robot's core software version
+        - the robot's configuration
+        - the robot's serial_number
+    But also to the battery voltage.
     """
 
     def __init__(self, reachy: Reachy) -> None:
+        """Initialize the ReachyInfo instance with robot details.
+
+        Args:
+            reachy: The Reachy robot object, which provides the robot's info and configuration details.
+        """
         self._robot_serial_number: str = reachy.info.serial_number
 
         self._hardware_version: str = reachy.info.version_hard
@@ -31,9 +39,13 @@ class ReachyInfo:
         self._set_config(reachy)
 
     def _set_config(self, msg: Reachy) -> None:
-        """Returns the current configuration of the robot :
-        - full kit or starter kit (left or right arm) or custom configuration
-        - with ou without mobile base
+        """Determine the robot's configuration.
+
+        Sets the configuration string to indicate whether the robot is a full kit, starter kit
+        (with left or right arm), or a custom configuration. Also accounts for the presence of a mobile base.
+
+        Args:
+            msg: The Reachy instance containing the current configuration of the robot.
         """
         self.config: str = ""
 
@@ -51,6 +63,11 @@ class ReachyInfo:
             self.config = "custom_config"
 
     def _set_mobile_base(self, mobile_base: MobileBase) -> None:
+        """Set the mobile base for the robot.
+
+        Args:
+            mobile_base: The MobileBase instance to associate with the robot.
+        """
         self._mobile_base = mobile_base
 
     def __repr__(self) -> str:
@@ -70,9 +87,13 @@ class ReachyInfo:
 
     @property
     def battery_voltage(self) -> float:
-        """Returns the mobile base battery voltage.
+        """Get the battery voltage of the mobile base.
 
-        If there is no mobile base, returns full battery value.
+        If the mobile base is present, returns its battery voltage. Otherwise, returns a default full
+        battery value.
+
+        Returns:
+            The battery voltage as a float.
         """
         if self._mobile_base is not None:
             # ToDo : https://github.com/pollen-robotics/mobile-base-sdk/issues/18
@@ -87,7 +108,7 @@ class ReachyInfo:
 
     @property
     def hardware_version(self) -> str:
-        """ "Returns the robot's hardware version."""
+        """Returns the robot's hardware version."""
         return self._hardware_version
 
     @property
