@@ -26,7 +26,16 @@ class IGoToBasedPart(ABC):
         part: Part,
         goto_stub: GoToServiceStub,
     ) -> None:
-        """Initialize the common attributes."""
+        """Initialize the IGoToBasedPart interface.
+
+        Sets up the common attributes needed for handling goto-based movements. This includes
+        associating the part with the interface and setting up the gRPC stub for performing
+        goto commands.
+
+        Args:
+            part: The robot part that uses this interface, such as an Arm or Head.
+            goto_stub: The gRPC stub used to send goto commands to the robot part.
+        """
         self.part = part
         self._goto_stub = goto_stub
 

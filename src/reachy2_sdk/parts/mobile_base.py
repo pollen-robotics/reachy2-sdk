@@ -58,7 +58,18 @@ class MobileBase(Part):
         initial_state: MobileBaseState,
         grpc_channel: grpc.Channel,
     ) -> None:
-        """Set up the connection with the mobile base."""
+        """Initialize the MobileBase with its gRPC communication and configuration.
+
+        This sets up the gRPC communication channel and service stubs for controlling the
+        mobile base, initializes the drive and control modes.
+        It also sets up the LIDAR safety monitoring.
+
+        Args:
+            mb_msg: A MobileBase_proto message containing the configuration details for the mobile base.
+            initial_state: The initial state of the mobile base, as a MobileBaseState object.
+            grpc_channel: The gRPC channel used to communicate with the mobile base service.
+        """
+
         self._logger = logging.getLogger(__name__)
         super().__init__(mb_msg, grpc_channel, MobileBaseUtilityServiceStub(grpc_channel))
 

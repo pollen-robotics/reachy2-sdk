@@ -29,7 +29,18 @@ class JointsBasedPart(Part):
         grpc_channel: grpc.Channel,
         stub: ArmServiceStub | HeadServiceStub | MobileBaseUtilityServiceStub,
     ) -> None:
-        """Initialize the common attributes."""
+        """Initialize the JointsBasedPart with its common attributes.
+
+        Sets up the gRPC communication channel and service stub for controlling the joint-based
+        part of the robot, such as an arm or head.
+
+        Args:
+            proto_msg: A protocol message representing the part's configuration. It can be an
+                Arm_proto, Head_proto, or MobileBase_proto object.
+            grpc_channel: The gRPC channel used to communicate with the corresponding service.
+            stub: The service stub for the gRPC communication, which can be an ArmServiceStub,
+                HeadServiceStub, or MobileBaseUtilityServiceStub, depending on the part type.
+        """
         super().__init__(proto_msg, grpc_channel, stub)
 
     @property

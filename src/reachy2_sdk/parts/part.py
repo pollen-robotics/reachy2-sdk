@@ -33,7 +33,19 @@ class Part(ABC):
         grpc_channel: grpc.Channel,
         stub: ArmServiceStub | HeadServiceStub | HandServiceStub | MobileBaseUtilityServiceStub,
     ) -> None:
-        """Initialize the common attributes."""
+        """Initialize the Part with common attributes for gRPC communication.
+
+        This sets up the communication channel and service stubs for the specified part,
+        configures the part's unique identifier. It provides the foundation for specific parts of the robot
+        (Arm, Head, Hand, MobileBase) to be derived from this class.
+
+        Args:
+            proto_msg: The protobuf message containing configuration details for the part
+                (Arm, Head, Hand, or MobileBase).
+            grpc_channel: The gRPC channel used to communicate with the service.
+            stub: The service stub for the gRPC communication, which could be for Arm, Head,
+                Hand, or MobileBase.
+        """
         self._grpc_channel = grpc_channel
         self._stub = stub
         self._part_id = PartId(id=proto_msg.part_id.id, name=proto_msg.part_id.name)

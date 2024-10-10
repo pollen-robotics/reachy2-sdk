@@ -44,7 +44,16 @@ class Hand(Part):
         initial_state: HandState,
         grpc_channel: grpc.Channel,
     ) -> None:
-        """Set up the hand."""
+        """Initialize the Hand component.
+
+        Sets up the necessary attributes and configuration for the hand, including the gRPC
+        stub and initial state.
+
+        Args:
+            hand_msg: The Hand_proto object containing the configuration details for the hand.
+            initial_state: The initial state of the hand, represented as a HandState object.
+            grpc_channel: The gRPC channel used to communicate with the hand's gRPC service.
+        """
         super().__init__(hand_msg, grpc_channel, HandServiceStub(grpc_channel))
         self._hand_stub = HandServiceStub(grpc_channel)
 

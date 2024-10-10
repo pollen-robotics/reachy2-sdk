@@ -57,7 +57,18 @@ class Head(JointsBasedPart, IGoToBasedPart):
         grpc_channel: grpc.Channel,
         goto_stub: GoToServiceStub,
     ) -> None:
-        """Initialize the head with its actuators."""
+        """Initialize the Head component with its actuators.
+
+        Sets up the necessary attributes and configuration for the head, including the gRPC
+        stubs and initial state.
+
+        Args:
+            head_msg: The Head_proto object containing the configuration details for the head.
+            initial_state: The initial state of the head, represented as a HeadState object.
+            grpc_channel: The gRPC channel used to communicate with the head's gRPC service.
+            goto_stub: The GoToServiceStub used to handle goto-based movements for the head.
+        """
+
         JointsBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel))
         IGoToBasedPart.__init__(self, self, goto_stub)
 
