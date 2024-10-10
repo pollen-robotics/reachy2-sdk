@@ -26,7 +26,7 @@ jobs:
         pip install .[dev]
 
     - name: Generate Documentation
-      run: pdoc reachy2_sdk --output-dir docs --logo "https://www.pollen-robotics.com/img/company/logo/pollen_logo_square_black.svg"
+      run: pdoc reachy2_sdk --output-dir docs --logo "https://pollen-robotics.github.io/reachy2-sdk/POLLEN_LOGO.png" --logo-link "https://www.pollen-robotics.com"
 
     - name: Archive Documentation
       uses: actions/upload-artifact@v4
