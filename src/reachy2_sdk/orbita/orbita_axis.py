@@ -1,4 +1,8 @@
-"""This module describes Orbita axes."""
+"""Reachy OrbitaAxis module.
+
+Handles all specific methods to OrbitaAxis.
+"""
+
 from typing import Dict
 
 from google.protobuf.wrappers_pb2 import FloatValue
@@ -15,8 +19,12 @@ class OrbitaAxis:
     """
 
     def __init__(self, initial_state: Dict[str, FloatValue]) -> None:
-        """Initialize the axis with its initial state."""
+        """Initialize the axis with its initial state.
 
+        Args:
+            initial_state: A dictionary containing the initial state values for the axis. The keys should include
+                "present_speed" and "present_load", with corresponding FloatValue objects as values.
+        """
         self._update_with(initial_state)
 
     @property

@@ -1,4 +1,8 @@
-"""This module defines the Orbita2d class and its registers, joints, motors and axis."""
+"""Reachy Orbita2d module.
+
+Handles all specific methods to Orbita2d.
+"""
+
 from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
@@ -24,7 +28,7 @@ from .orbita_motor import OrbitaMotor
 
 
 class Orbita2d(Orbita):
-    """The Orbita2d class represents any Orbita2d actuator and its registers, joints, motors and axis.
+    """The Orbita2d class represents any Orbita2d actuator and its joints, motors and axis.
 
     The Orbita2d class is used to store the up-to-date state of the actuator, especially:
         - its compliancy
@@ -32,15 +36,12 @@ class Orbita2d(Orbita):
         - its motors state
         - its axis state
 
-    The only register available at the actuator is the compliancy RW register.
-    You can set the compliance on/off (boolean).
-
-    You can access registers of the motors from the actuators with function that act on all the actuator's motors.
-    Lower registers which can be read/write at actuator level:
-    - speed limit (in degree per second, for all motors of the actuator)
-    - torque limit (in %, for all motors of the actuator)
+    You can access properties of the motors from the actuators with function that act on all the actuator's motors:
+    - speed limit (in percentage, for all motors of the actuator)
+    - torque limit (in percentage, for all motors of the actuator)
     - pid (for all motors of the actuator)
-    Lower registers that are read-only but acessible at actuator level:
+    - compliancy (for all motors of the actuator)
+    Lower properties that are read-only but acessible at actuator level:
     - temperatures (temperatures of all motors of the actuator)
     """
 
@@ -55,7 +56,21 @@ class Orbita2d(Orbita):
         part: Part,
         joints_position_order: List[int],
     ):
-        """Initialize the Orbita2d with its joints, motors and its two axis (either roll, pitch or yaw for both)."""
+        """Initialize the Orbita2d actuator with its joints, motors, and axes.
+
+        Args:
+            uid: The unique identifier for the actuator.
+            name: The name of the actuator.
+            axis1: The first axis of the actuator, typically representing roll, pitch, or yaw.
+            axis2: The second axis of the actuator, typically representing roll, pitch, or yaw.
+            initial_state: The initial state of the Orbita2d actuator, containing the states
+                of the joints, motors, and axes.
+            grpc_channel: The gRPC communication channel used for interfacing with the
+                Orbita2d actuator.
+            part: The robot part that this actuator belongs to.
+            joints_position_order: A list defining the order of the joint positions in the
+                containing part, used to map the actuator's joint positions correctly.
+        """
         super().__init__(uid, name, "2d", Orbita2dServiceStub(grpc_channel), part)
 
         axis1_name = Axis.DESCRIPTOR.values_by_number[axis1].name.lower()

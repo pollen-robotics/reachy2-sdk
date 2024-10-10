@@ -1,4 +1,8 @@
-"""This module describes Orbita2d and Orbita3d joints."""
+"""Reachy OrbitaJoint module.
+
+Handles all specific methods to OrbitaJoint.
+"""
+
 from typing import Any, Dict
 
 from google.protobuf.wrappers_pb2 import FloatValue
@@ -22,7 +26,19 @@ class OrbitaJoint:
         actuator: Any,
         position_order_in_part: int,
     ) -> None:
-        """Initialize the joint with its initial state."""
+        """Initialize the OrbitaJoint with its initial state and configuration.
+
+        This sets up the joint by assigning its actuator, axis type, and position order within
+        the part, and updates its state based on the provided initial values.
+
+        Args:
+            initial_state: A dictionary containing the initial state of the joint, with
+                each entry representing a specific parameter of the joint (e.g., present position).
+            axis_type: The type of axis for the joint (e.g., roll, pitch, yaw).
+            actuator: The actuator to which this joint belongs.
+            position_order_in_part: The position order of this joint in the overall part's
+                list of joints.
+        """
         self._actuator = actuator
         self._axis_type = axis_type
         self._position_order_in_part = position_order_in_part

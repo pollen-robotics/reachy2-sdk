@@ -61,8 +61,8 @@ class Part(ABC):
     def turn_on(self) -> None:
         """Turn on the part.
 
-        This method sets the speed limits to a low value, turns on the part, and then restores the speed limits to maximum.
-        It waits for a brief period to ensure the operation is complete.
+        This method sets the speed limits to a low value, turns on all motors of the part, and then restores the speed limits
+        to maximum. It waits for a brief period to ensure the operation is complete.
         """
         self._set_speed_limits(1)
         time.sleep(0.05)
@@ -74,7 +74,7 @@ class Part(ABC):
     def turn_off(self) -> None:
         """Turn off the part.
 
-        This method shuts down the part and waits for a brief period to ensure the operation is complete.
+        This method turns off all motors of the part and waits for a brief period to ensure the operation is complete.
         """
         self._turn_off()
         time.sleep(0.5)
