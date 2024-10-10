@@ -33,3 +33,19 @@ jobs:
       with:
         name: documentation
         path: docs/
+
+  publish-docs:
+    needs: build-docs
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download Documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation
+          path: docs/
+            
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
