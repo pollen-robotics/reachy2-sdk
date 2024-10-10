@@ -122,7 +122,6 @@ class Lidar:
             value: A boolean indicating whether the safety features are enabled or disabled. If `True`, the safety feature
                 is enabled.
         """
-
         self._stub.SetZuuuSafety(
             LidarSafety(
                 safety_on=BoolValue(value=value),

@@ -78,45 +78,45 @@ class JointsBasedPart(Part):
         """
         pass
 
-    def set_torque_limits(self, value: int) -> None:
+    def set_torque_limits(self, torque_limit: int) -> None:
         """Set the torque limit as a percentage of the maximum torque for all motors of the part.
 
         Args:
             torque_limit: The desired torque limit as a percentage (0-100) of the maximum torque. Can be
                 specified as a float or int.
         """
-        if not isinstance(value, float | int):
-            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(value).__name__}")
-        if not (0 <= value <= 100):
-            raise ValueError(f"torque_limit must be in [0, 100], got {value}.")
+        if not isinstance(torque_limit, float | int):
+            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
+        if not (0 <= torque_limit <= 100):
+            raise ValueError(f"torque_limit must be in [0, 100], got {torque_limit}.")
         req = TorqueLimitRequest(
             id=self._part_id,
-            limit=value,
+            limit=torque_limit,
         )
         self._stub.SetTorqueLimit(req)
 
-    def set_speed_limits(self, value: int) -> None:
+    def set_speed_limits(self, speed_limit: int) -> None:
         """Set the speed limit as a percentage of the maximum speed for all motors of the part.
 
         Args:
             speed_limit: The desired speed limit as a percentage (0-100) of the maximum speed. Can be
                 specified as a float or int.
         """
-        if not isinstance(value, float | int):
-            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(value).__name__}")
-        if not (0 <= value <= 100):
-            raise ValueError(f"speed_limit must be in [0, 100], got {value}.")
+        if not isinstance(speed_limit, float | int):
+            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
+        if not (0 <= speed_limit <= 100):
+            raise ValueError(f"speed_limit must be in [0, 100], got {speed_limit}.")
         req = SpeedLimitRequest(
             id=self._part_id,
-            limit=value,
+            limit=speed_limit,
         )
         self._stub.SetSpeedLimit(req)
 
-    def _set_speed_limits(self, value: int) -> None:
+    def _set_speed_limits(self, speed_limit: int) -> None:
         """Set the speed limit as a percentage of the maximum speed for all motors of the part.
 
         Args:
             speed_limit: The desired speed limit as a percentage (0-100) of the maximum speed. Can be
                 specified as a float or int.
         """
-        return self.set_speed_limits(value)
+        return self.set_speed_limits(speed_limit)

@@ -66,7 +66,6 @@ class MobileBase(Part):
             initial_state: The initial state of the mobile base, as a MobileBaseState object.
             grpc_channel: The gRPC channel used to communicate with the mobile base service.
         """
-
         self._logger = logging.getLogger(__name__)
         super().__init__(mb_msg, grpc_channel, MobileBaseUtilityServiceStub(grpc_channel))
 
@@ -235,7 +234,7 @@ class MobileBase(Part):
         self._mobility_stub.SendDirection(req)
 
     def translate_by(self, x: float, y: float, timeout: Optional[float] = None) -> None:
-        """ "Send a target position relative to the current position of the mobile base.
+        """Send a target position relative to the current position of the mobile base.
 
         The (x, y) coordinates specify the desired translation in the mobile base's Cartesian space.
 

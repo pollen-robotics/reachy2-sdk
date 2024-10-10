@@ -46,6 +46,7 @@ class OrbitaJoint:
         self._update_with(initial_state)
 
     def __repr__(self) -> str:
+        """Clean representation of the OrbitaJoint."""
         repr_template = (
             '<OrbitaJoint axis_type="{axis_type}" present_position={present_position} goal_position={goal_position} >'
         )
@@ -78,7 +79,6 @@ class OrbitaJoint:
         Raises:
             TypeError: If the provided value is not a float or int.
         """
-
         if isinstance(value, float) | isinstance(value, int):
             self._actuator._set_outgoing_goal_position(self._axis_type, to_internal_position(value))
         else:

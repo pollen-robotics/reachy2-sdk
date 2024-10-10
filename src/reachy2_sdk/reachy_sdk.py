@@ -147,7 +147,6 @@ class ReachySDK:
 
     def __repr__(self) -> str:
         """Clean representation of a Reachy."""
-
         if not self._grpc_connected or self.info is None:
             return "Reachy is not connected"
 
@@ -674,7 +673,7 @@ class ReachySDK:
         time.sleep(0.5)
 
     def is_goto_finished(self, goto_id: GoToId) -> bool:
-        """ "Check if a goto command has completed.
+        """Check if a goto command has completed.
 
         Args:
             goto_id: The unique GoToId of the goto command.

@@ -13,5 +13,6 @@ class CustomDict(dict[K, V], Generic[K, V]):
     """CustomDict is an implementation of dict with a custom __repr__ method, to enhance readability."""
 
     def __repr__(self) -> str:
+        """Clean representation of the CustomDict."""
         items = ",\n".join(f"'{k}': {v}" for k, v in self.items())
         return f"""{{{items}}}"""

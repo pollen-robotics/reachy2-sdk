@@ -86,11 +86,11 @@ class Audio:
         self._audio_stub.PlaySound(SoundRequest(speaker=self._speaker_id, sound=SoundId(id=sound_name)))
 
     def stop(self) -> None:
-        """Stop playing current file"""
+        """Stop playing current file."""
         self._audio_stub.StopSound(self._speaker_id)
 
     def start_recording(self, sound_name: str) -> None:
-        """ "Start recording audio.
+        """Start recording audio.
 
         Begins recording an .ogg audio file using the configured microphone.
         The sound_name parameter does not require the .ogg extension.
@@ -106,7 +106,7 @@ class Audio:
             raise RuntimeError("Failed to starting recording.")
 
     def stop_recording(self) -> None:
-        """Stop the recording, and save the .ogg file"""
+        """Stop the recording, and save the .ogg file."""
         self._audio_stub.StopRecording(self._microphone_id)
 
     def set_audio_volume(self, volume: float) -> None:

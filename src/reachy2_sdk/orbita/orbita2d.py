@@ -155,6 +155,19 @@ class Orbita2d(Orbita):
         return init_state
 
     def __setattr__(self, __name: str, __value: Any) -> None:
+        """Custom attribute setting to prevent modification of specific attributes.
+
+        This method overrides the default behavior of setting attributes to ensure that
+        certain attributes ('roll', 'pitch', 'yaw') cannot be modified after being set initially.
+        If an attempt is made to set these attributes again, an AttributeError is raised.
+
+        Args:
+            __name: The name of the attribute.
+            __value: The value to assign to the attribute.
+
+        Raises:
+            AttributeError: If trying to set the value of 'roll', 'pitch', or 'yaw' after they are already set.
+        """
         if __name in ["roll", "pitch", "yaw"]:
             if hasattr(self, __name):
                 raise AttributeError(f"can't set attribute '{__name}'")

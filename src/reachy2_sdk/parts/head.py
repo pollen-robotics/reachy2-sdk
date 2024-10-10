@@ -66,7 +66,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
             grpc_channel: The gRPC channel used to communicate with the head's gRPC service.
             goto_stub: The GoToServiceStub used to handle goto-based movements for the head.
         """
-
         JointsBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel))
         IGoToBasedPart.__init__(self, self, goto_stub)
 

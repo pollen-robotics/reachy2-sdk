@@ -1,5 +1,4 @@
-"""
-# ReachySDK package.
+"""ReachySDK package.
 
 This package provides remote access (via socket) to a Reachy robot.
 It automatically handles the synchronization with the robot.

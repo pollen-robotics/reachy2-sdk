@@ -18,13 +18,19 @@ from ..utils.utils import invert_affine_transformation_matrix
 
 
 class CameraView(Enum):
+    """Enumeration for different camera views.
+
+    The `CameraView` enum provides options for specifying the view from which
+    to capture images or video frames.
+    """
+
     LEFT = View.LEFT
     RIGHT = View.RIGHT
     DEPTH = View.DEPTH
 
 
 class CameraType(Enum):
-    """Camera names defined in pollen-vision"""
+    """Camera names defined in pollen-vision."""
 
     TELEOP = "teleop_head"
     DEPTH = "depth_camera"
@@ -41,6 +47,18 @@ class Camera:
     """
 
     def __init__(self, cam_info: CameraFeatures, video_stub: VideoServiceStub) -> None:
+        """Initialize a Camera instance.
+
+        This constructor sets up a camera instance by storing the camera's
+        information and gRPC video stub for accessing camera-related services.
+
+        Args:
+            cam_info: An instance of `CameraFeatures` containing the camera's
+                details, such as its name, capabilities, and settings.
+            video_stub: A `VideoServiceStub` for making gRPC calls to the video
+                service, enabling access to camera frames, parameters, and other
+                camera-related functionality.
+        """
         self._logger = logging.getLogger(__name__)
         self._cam_info = cam_info
         self._video_stub = video_stub
@@ -55,7 +73,6 @@ class Camera:
             A tuple containing the frame as a NumPy array in OpenCV format and the timestamp in nanoseconds.
             Returns None if no frame is retrieved.
         """
-
         frame = self._video_stub.GetFrame(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if frame.data == b"":
             self._logger.warning("No frame retrieved")
@@ -148,7 +165,7 @@ class Camera:
         return np.array(world_coords_homogeneous[:3])
 
     def __repr__(self) -> str:
-        """Clean representation of a RGB camera"""
+        """Clean representation of a RGB camera."""
         if self._cam_info.name == CameraType.TELEOP.value:
             name = "teleop"
         elif self._cam_info.name == CameraType.DEPTH.value:

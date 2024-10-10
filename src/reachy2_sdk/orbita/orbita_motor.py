@@ -27,9 +27,10 @@ class OrbitaMotor:
         """Initialize the motor with its initial state.
 
         Args:
-            new_state: A dictionary containing the new state values for the axis. The keys should include
+            initial_state: A dictionary containing the initial state values for the motor. The keys should include
                 "temperature", "speed_limit", "torque_limit", "compliant", and "pid", with corresponding
                 FloatValue objects as values.
+            actuator: The actuator to which the motor belongs.
         """
         self._actuator = actuator
         self._update_with(initial_state)

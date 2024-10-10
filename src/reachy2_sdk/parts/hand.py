@@ -164,7 +164,6 @@ class Hand(Part):
         If any goal position has been specified to the gripper, sends them to the robot.
         If the hand is off, the command is not sent.
         """
-
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
             return

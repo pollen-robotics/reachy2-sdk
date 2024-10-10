@@ -17,7 +17,8 @@ class CameraManager:
     """CameraManager class manages the available cameras on the robot.
 
     Provides access to the robot's cameras, including teleoperation and depth cameras.
-    It handles the initialization of cameras and offers methods to retrieve camera objects for use."""
+    It handles the initialization of cameras and offers methods to retrieve camera objects for use.
+    """
 
     def __init__(self, host: str, port: int) -> None:
         """Set up the camera manager module.
