@@ -80,9 +80,16 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         grpc_channel: grpc.Channel,
         goto_stub: GoToServiceStub,
     ) -> None:
-        """Define an arm (left or right).
+        """Initialize an Arm instance.
 
-        Connect to the arm's gRPC server stub and set up the arm's actuators.
+        This constructor sets up the arm's gRPC communication and initializes its actuators
+        (shoulder, elbow, and wrist). Optionally, a gripper can also be configured.
+
+        Args:
+            arm_msg: The protobuf message containing the arm's configuration details.
+            initial_state: The initial state of the arm's actuators.
+            grpc_channel: The gRPC channel used for communication with the arm's server.
+            goto_stub: The gRPC stub for controlling goto movements.
         """
         JointsBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel))
         IGoToBasedPart.__init__(self, self, goto_stub)
