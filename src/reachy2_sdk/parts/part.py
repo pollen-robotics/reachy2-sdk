@@ -20,9 +20,18 @@ from reachy2_sdk_api.part_pb2 import PartId
 
 
 class Part(ABC):
-    """The Part class is an abstract class to represent any part of the robot.
+    """The Part class serves as an abstract base class representing parts of a robot, such as Arm, Hand, Head, or MobileBase.
 
-    This class is meant to be derived by any part of the robot : Arm, Hand, Head, MobileBase
+    This class provides a common interface for managing robot components, including turning them on or off, checking their
+    status, and updating their states. The class is intended to be subclassed to implement specific behaviors for different
+    types of robot parts.
+
+    Methods:
+        turn_on: Turns on the part, setting speed limits before and after.
+        turn_off: Turns off the part with a brief delay to ensure completion.
+        is_on: Checks if all actuators are on.
+        is_off: Checks if all actuators are off.
+        audit: Returns a dictionary with the audit status of all actuators.
     """
 
     def __init__(

@@ -41,16 +41,27 @@ from .part import Part
 
 
 class MobileBase(Part):
-    """The MobileBase class handles Reachy's mobile base.
+    """MobileBase class for controlling Reachy's mobile base.
 
-    It holds:
+    This class provides methods to interact with and control the mobile base of a Reachy robot. It allows
+    users to access essential information such as battery voltage and odometry, as well as send commands
+    to move the base to specified positions or velocities. The class supports different drive modes and
+    control modes, and provides methods for resetting the base's odometry.
 
-    - the odometry of the base (you can also easily reset it),
-    - the battery voltage to monitor the battery usage,
-    - the control and drive mode of the base,
-    - two methods to send target positions or target velocities.
+    Attributes:
+        lidar: Lidar object for handling safety features.
 
-    If you encounter a problem when using the base, you have access to an emergency shutdown method.
+    Methods:
+        battery_voltage: Returns the current battery voltage.
+        odometry: Returns the current odometry information of the base.
+        last_cmd_vel: Returns the last command velocity sent to the base.
+        reset_odometry: Resets the base's odometry.
+        set_speed: Sends a target speed to the base.
+        translate_by: Translates the base by a specified distance.
+        rotate_by: Rotates the base by a specified angle.
+        goto: Sends the base to a specified target position.
+        is_on: Checks if the base is in stiff mode.
+        is_off: Checks if the base is in free-wheel mode.
     """
 
     def __init__(
