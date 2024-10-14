@@ -4,7 +4,7 @@ Handles all specific methods to an Arm (left and/or right).
 """
 
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, overload
 
 import grpc
 import numpy as np
@@ -163,6 +163,13 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """Get the gripper of the arm, or None if not set."""
         return self._gripper
 
+    def __repr__(self) -> str:
+        """Clean representation of an Arm."""
+        s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
+        return f"""<Arm on={self.is_on()} actuators=\n\t{
+            s
+        }\n>"""
+
     def turn_on(self) -> None:
         """Turn on all motors of the part, making all arm motors stiff.
 
@@ -180,24 +187,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if self._gripper is not None:
             self._gripper._turn_off()
         super().turn_off()
-
-    def _turn_on(self) -> None:
-        """Turn on all motors of the part.
-
-        This will make all arm motors stiff. If a gripper is present, it will also be turned on.
-        """
-        if self._gripper is not None:
-            self._gripper._turn_on()
-        super()._turn_on()
-
-    def _turn_off(self) -> None:
-        """Turn off all motors of the part.
-
-        This will make all arm motors compliant. If a gripper is present, it will also be turned off.
-        """
-        if self._gripper is not None:
-            self._gripper._turn_off()
-        super()._turn_off()
 
     def turn_off_smoothly(self) -> None:
         """Gradually reduce the torque limit of all motors over 3 seconds before turning them off.
@@ -222,6 +211,24 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         super().turn_off()
         self.set_torque_limits(torque_limit_high)
 
+    def _turn_on(self) -> None:
+        """Turn on all motors of the part.
+
+        This will make all arm motors stiff. If a gripper is present, it will also be turned on.
+        """
+        if self._gripper is not None:
+            self._gripper._turn_on()
+        super()._turn_on()
+
+    def _turn_off(self) -> None:
+        """Turn off all motors of the part.
+
+        This will make all arm motors compliant. If a gripper is present, it will also be turned off.
+        """
+        if self._gripper is not None:
+            self._gripper._turn_off()
+        super()._turn_off()
+
     def is_on(self) -> bool:
         """Check if all actuators of the arm are stiff.
 
@@ -242,12 +249,22 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             return False
         return True
 
-    def __repr__(self) -> str:
-        """Clean representation of an Arm."""
-        s = "\n\t".join([act_name + ": " + str(actuator) for act_name, actuator in self._actuators.items()])
-        return f"""<Arm on={self.is_on()} actuators=\n\t{
-            s
-        }\n>"""
+    def get_current_positions(self, degrees: bool = True) -> List[float]:
+        """Return the current joint positions of the arm, either in degrees or radians.
+
+        Args:
+            degrees: Specifies whether the joint positions should be returned in degrees.
+                If set to `True`, the positions are returned in degrees; otherwise, they are returned in radians.
+                Defaults to `True`.
+
+        Returns:
+            A list of float values representing the current joint positions of the arm in the
+            following order: [shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch,
+            wrist_yaw].
+        """
+        response = self._stub.GetJointPosition(self._part_id)
+        positions: List[float] = arm_position_to_list(response, degrees)
+        return positions
 
     def forward_kinematics(
         self, joints_positions: Optional[List[float]] = None, degrees: bool = True
@@ -294,7 +311,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: npt.NDArray[np.float64],
         q0: Optional[List[float]] = None,
         degrees: bool = True,
-        round: Optional[int] = None,
     ) -> List[float]:
         """Compute a joint configuration to reach a specified target pose for the arm end-effector.
 
@@ -350,9 +366,250 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             raise ValueError(f"No solution found for the given target ({target})!")
 
         answer: List[float] = arm_position_to_list(resp.arm_position, degrees)
-        if round is not None:
-            answer = np.round(answer, round).tolist()
         return answer
+
+    @overload
+    def goto(
+        self,
+        target: List[float],
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
+        q0: Optional[List[float]] = None,
+    ) -> GoToId:
+        ...
+
+    @overload
+    def goto(
+        self,
+        target: npt.NDArray[np.float64],
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
+        q0: Optional[List[float]] = None,
+    ) -> GoToId:
+        ...
+
+    def goto(
+        self,
+        target: Any,
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
+        q0: Optional[List[float]] = None,
+    ) -> GoToId:
+        """Move the arm to a specified target position, either in joint space or Cartesian space.
+
+        This function allows the arm to move to a specified target using either:
+        - A list of 7 joint positions, or
+        - A 4x4 pose matrix representing the desired end-effector position.
+
+        The function also supports an optional initial configuration `q0` for
+        computing the inverse kinematics solution when the target is in Cartesian space.
+
+        Args:
+            target: The target position. It can either be a list of 7 joint values (for joint space)
+                    or a 4x4 NumPy array (for Cartesian space).
+            duration: The time in seconds for the movement to be completed. Defaults to 2.
+            wait: If True, the function waits until the movement is completed before returning.
+                    Defaults to False.
+            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk"
+                    or "linear". Defaults to "minimum_jerk".
+            degrees: If True, the joint values in the `target` argument are treated as degrees.
+                    Defaults to True.
+            q0: An optional list of 7 joint values representing the initial configuration
+                    for inverse kinematics. Defaults to None.
+
+        Returns:
+            GoToId: The unique GoToId identifier for the movement command.
+
+        Raises:
+            ValueError: If the `target` is neither a list of 7 joint values nor a 4x4 pose matrix.
+            ValueError: If the `q0` list has a length other than 7.
+            ValueError: If the `duration` is set to 0.
+        """
+        if not ((isinstance(target, list) and len(target) == 7) or (isinstance(target, np.ndarray) and target.shape == (4, 4))):
+            raise ValueError("Invalid target: must be either a list of 7 joint positions or a 4x4 matrix.")
+
+        if q0 is not None and len(q0) != 7:
+            raise ValueError(f"q0 should be of length 7 (got {len(q0)} instead)!")
+
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
+
+        if self.is_off():
+            self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
+            return GoToId(id=-1)
+
+        if isinstance(target, list) and len(target) == 7:
+            response = self._goto_joints(target, duration, interpolation_mode, degrees)
+        elif isinstance(target, np.ndarray) and target.shape == (4, 4):
+            response = self._goto_from_matrix(target, duration, interpolation_mode, q0)
+
+        if response.id == -1:
+            self._logger.error("Target was not reachable. No command sent.")
+
+        if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
+            while not self._is_goto_finished(response):
+                time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
+
+        return response
+
+    def _goto_joints(self, target: List[float], duration: float, interpolation_mode: str, degrees: bool) -> GoToId:
+        """Handle movement to a specified position in joint space.
+
+        Args:
+            target: A list of 7 joint positions to move the arm to.
+            duration: The time in seconds for the movement to be completed.
+            interpolation_mode: The interpolation method to be used. Can be "minimum_jerk" or "linear".
+            degrees: If True, the joint positions are interpreted as degrees; otherwise, as radians.
+
+        Returns:
+            GoToId: A unique identifier for the movement command.
+        """
+        if isinstance(target, np.ndarray):
+            target = target.tolist()
+        arm_pos = list_to_arm_position(target, degrees)
+        request = GoToRequest(
+            joints_goal=JointsGoal(
+                arm_joint_goal=ArmJointGoal(id=self._part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
+            ),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+        )
+        return self._goto_stub.GoToJoints(request)
+
+    def _goto_from_matrix(
+        self, target: npt.NDArray[np.float64], duration: float, interpolation_mode: str, q0: Optional[List[float]]
+    ) -> GoToId:
+        """Handle movement to a Cartesian target using a 4x4 transformation matrix.
+
+        This function computes and sends a command to move the arm to a Cartesian target specified by a
+        4x4 homogeneous transformation matrix. Optionally, an initial joint configuration (`q0`) can be provided
+        for the inverse kinematics calculation.
+
+        Args:
+            target: A 4x4 NumPy array representing the Cartesian target pose.
+            duration: The time in seconds for the movement to be completed.
+            interpolation_mode: The interpolation method to be used. Can be "minimum_jerk" or "linear".
+            q0: An optional list of 7 joint positions representing the initial configuration. Defaults to None.
+
+        Returns:
+            GoToId: A unique identifier for the movement command.
+
+        Raises:
+            ValueError: If the length of `q0` is not 7.
+        """
+        if q0 is not None and len(q0) != 7:
+            raise ValueError(f"q0 should be of length 7 (got {len(q0)} instead)!")
+
+        goal_pose = Matrix4x4(data=target.flatten().tolist())
+        request = GoToRequest(
+            cartesian_goal=CartesianGoal(
+                arm_cartesian_goal=ArmCartesianGoal(
+                    id=self._part_id,
+                    goal_pose=goal_pose,
+                    duration=FloatValue(value=duration),
+                    q0=list_to_arm_position(q0) if q0 is not None else None,
+                )
+            ),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+        )
+        return self._goto_stub.GoToCartesian(request)
+
+    def _goto_single_joint(
+        self,
+        arm_joint: int,
+        goal_position: float,
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
+    ) -> GoToId:
+        """Move a single joint of the arm to a specified position.
+
+        The function allows for optional parameters for duration, interpolation mode, and waiting for completion.
+
+        Args:
+            arm_joint: The specific joint of the arm to move, identified by an integer value.
+            goal_position: The target position for the specified arm joint, given as a float.
+                The value can be in radians or degrees, depending on the `degrees` parameter.
+            duration: The time duration in seconds for the joint to reach the specified goal
+                position. Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program waits for the movement to complete before continuing
+                execution. Defaults to `False`.
+            interpolation_mode: The type of interpolation to use when moving the arm's joint.
+                Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+            degrees: Specifies whether the joint positions are in degrees. If set to `True`,
+                the goal position is interpreted as degrees. Defaults to `True`.
+
+        Returns:
+            A unique GoToId identifier corresponding to this specific goto movement.
+        """
+        if degrees:
+            goal_position = np.deg2rad(goal_position)
+        request = GoToRequest(
+            joints_goal=JointsGoal(
+                custom_joint_goal=CustomJointGoal(
+                    id=self._part_id,
+                    arm_joints=CustomArmJoints(joints=[arm_joint]),
+                    joints_goals=[FloatValue(value=goal_position)],
+                    duration=FloatValue(value=duration),
+                )
+            ),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+        )
+        response = self._goto_stub.GoToJoints(request)
+        if wait:
+            self._logger.info(f"Waiting for movement with {response}.")
+            while not self._is_goto_finished(response):
+                time.sleep(0.1)
+            self._logger.info(f"Movement with {response} finished.")
+        return response
+
+    def goto_posture(
+        self,
+        common_posture: str = "default",
+        duration: float = 2,
+        wait: bool = False,
+        wait_for_goto_end: bool = True,
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode.
+
+        Args:
+            common_posture: The standard positions to which all joints will be sent.
+                It can be 'default' or 'elbow_90'. Defaults to 'default'.
+            duration: The time duration in seconds for the robot to move to the specified posture.
+                Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program waits for the movement to complete before continuing
+                execution. Defaults to `False`.
+            wait_for_goto_end: Specifies whether commands will be sent to a part immediately or
+                only after all previous commands in the queue have been executed. If set to `False`, the program
+                will cancel all executing moves and queues. Defaults to `True`.
+            interpolation_mode: The type of interpolation used when moving the arm's joints.
+                Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+
+        Returns:
+            A unique GoToId identifier for this specific movement.
+        """
+        joints = self.get_default_posture_joints(common_posture=common_posture)
+        if common_posture == "default":
+            if self._gripper is not None and self._gripper.is_on():
+                self._gripper.open()
+        if not wait_for_goto_end:
+            self.cancel_all_goto()
+        if self.is_on():
+            return self.goto(joints, duration, wait, interpolation_mode)
+        else:
+            self._logger.warning(f"{self._part_id.name} is off. No command sent.")
+        return GoToId(id=-1)
 
     def get_default_posture_joints(self, common_posture: str = "default") -> List[float]:
         """Get the list of joint positions for default or elbow_90 poses.
@@ -391,74 +648,238 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         joints = self.get_default_posture_joints(common_posture)
         return self.forward_kinematics(joints)
 
-    def goto_from_matrix(
+    def get_translation_by(
         self,
-        target: npt.NDArray[np.float64],
-        duration: float = 2,
-        wait: bool = False,
-        interpolation_mode: str = "minimum_jerk",
-        q0: Optional[List[float]] = None,
-    ) -> GoToId:
-        """Move the arm to a specified target pose.
+        x: float,
+        y: float,
+        z: float,
+        initial_pose: Optional[npt.NDArray[np.float64]] = None,
+        frame: str = "robot",
+    ) -> npt.NDArray[np.float64]:
+        """Return a 4x4 matrix representing a pose translated by specified x, y, z values.
+
+        The translation is performed in either the robot or gripper coordinate system.
 
         Args:
-            target: A 4x4 homogeneous pose matrix representing the target
-                position and orientation in Reachy coordinate system.
-            duration: The time in seconds for the movement to be completed. Defaults to 2.
-            wait: Whether to wait for the movement to complete before returning. Defaults to False.
-            interpolation_mode: The interpolation method for moving the joints. Can be "minimum_jerk"
-                or "linear". Defaults to "minimum_jerk".
-            q0: An optional list of 7 joint angles to use as the initial configuration
-                for computing the inverse kinematics solution. Defaults to None.
+            x: Translation along the x-axis in meters (forwards direction) to apply
+                to the pose matrix.
+            y: Translation along the y-axis in meters (left direction) to apply
+                to the pose matrix.
+            z: Translation along the z-axis in meters (upwards direction) to apply
+                to the pose matrix.
+            initial_pose: A 4x4 matrix representing the initial pose of the end-effector in Reachy coordinate system,
+                expressed as a NumPy array of type `np.float64`.
+                If not provided, the current pose of the arm is used. Defaults to `None`.
+            frame: The coordinate system in which the translation should be performed.
+                Can be either "robot" or "gripper". Defaults to "robot".
 
         Returns:
-            A unique GoToId identifier for the movement command.
+            A 4x4 pose matrix, expressed in Reachy coordinate system,
+            translated by the specified x, y, z values from the initial pose.
 
         Raises:
-            ValueError: If the `target` shape is not (4, 4).
-            ValueError: If the length of `q0` is not 7.
-            ValueError: If the `duration` is set to 0.
+            ValueError: If the `frame` is not "robot" or "gripper".
         """
-        if target.shape != (4, 4):
-            raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
-        if q0 is not None and (len(q0) != 7):
-            raise ValueError(f"q0 should be length 7 (got {len(q0)} instead)!")
-        if duration == 0:
-            raise ValueError("duration cannot be set to 0.")
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
-            return GoToId(id=-1)
+        if frame not in ["robot", "gripper"]:
+            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
 
-        if q0 is not None:
-            q0 = list_to_arm_position(q0)
-            request = GoToRequest(
-                cartesian_goal=CartesianGoal(
-                    arm_cartesian_goal=ArmCartesianGoal(
-                        id=self._part_id,
-                        goal_pose=Matrix4x4(data=target.flatten().tolist()),
-                        duration=FloatValue(value=duration),
-                        q0=q0,
-                    )
-                ),
-                interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-            )
+        if initial_pose is None:
+            initial_pose = self.forward_kinematics()
+
+        pose = initial_pose.copy()
+
+        if frame == "robot":
+            pose[0, 3] += x
+            pose[1, 3] += y
+            pose[2, 3] += z
+        elif frame == "gripper":
+            pose = translate_in_self(initial_pose, [x, y, z])
+        return pose
+
+    def translate_by(
+        self,
+        x: float,
+        y: float,
+        z: float,
+        duration: float = 2,
+        wait: bool = False,
+        frame: str = "robot",
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        """Create a translation movement for the arm's end effector.
+
+        The movement is based on the last sent position or the current position.
+
+        Args:
+            x: Translation along the x-axis in meters (forwards direction) to apply
+                to the pose matrix.
+            y: Translation along the y-axis in meters (left direction) to apply
+                to the pose matrix.
+            z: Translation along the z-axis in meters (vertical direction) to apply
+                to the pose matrix.
+            duration: Time duration in seconds for the translation movement to be completed.
+                Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program waits for the movement to complete before continuing
+                execution. Defaults to `False`.
+            frame: The coordinate system in which the translation should be performed.
+                Can be "robot" or "gripper". Defaults to "robot".
+            interpolation_mode: The type of interpolation to be used when moving the arm's
+                joints. Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+
+        Returns:
+            The GoToId of the movement command, created using the `goto_from_matrix` method with the
+            translated pose computed in the specified frame.
+
+        Raises:
+            ValueError: If the `frame` is not "robot" or "gripper".
+        """
+        try:
+            goto = self.get_goto_queue()[-1]
+        except IndexError:
+            goto = self.get_goto_playing()
+
+        if goto.id != -1:
+            joints_request = self._get_goto_joints_request(goto)
         else:
-            request = GoToRequest(
-                cartesian_goal=CartesianGoal(
-                    arm_cartesian_goal=ArmCartesianGoal(
-                        id=self._part_id,
-                        goal_pose=Matrix4x4(data=target.flatten().tolist()),
-                        duration=FloatValue(value=duration),
-                    )
-                ),
-                interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-            )
-        response = self._goto_stub.GoToCartesian(request)
-        if response.id == -1:
-            self._logger.error(f"Target pose:\n {target} \nwas not reachable. No command sent.")
-        elif wait:
-            self._wait_goto(response)
-        return response
+            joints_request = None
+
+        if joints_request is not None:
+            pose = self.forward_kinematics(joints_request.goal_positions)
+        else:
+            pose = self.forward_kinematics()
+
+        pose = self.get_translation_by(x, y, z, initial_pose=pose, frame=frame)
+        return self.goto(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
+
+    def get_rotation_by(
+        self,
+        roll: float,
+        pitch: float,
+        yaw: float,
+        initial_pose: Optional[npt.NDArray[np.float64]] = None,
+        degrees: bool = True,
+        frame: str = "robot",
+    ) -> npt.NDArray[np.float64]:
+        """Calculate a new pose matrix by rotating an initial pose matrix by specified roll, pitch, and yaw angles.
+
+        The rotation is performed in either the robot or gripper coordinate system.
+
+        Args:
+            roll: Rotation around the x-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            pitch: Rotation around the y-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            yaw: Rotation around the z-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            initial_pose: A 4x4 matrix representing the initial
+                pose of the end-effector, expressed as a NumPy array of type `np.float64`. If not provided,
+                the current pose of the arm is used. Defaults to `None`.
+            degrees: Specifies whether the rotation angles are provided in degrees. If set to
+                `True`, the angles are interpreted as degrees. Defaults to `True`.
+            frame: The coordinate system in which the rotation should be performed. Can be
+                "robot" or "gripper". Defaults to "robot".
+
+        Returns:
+            A 4x4 pose matrix, expressed in the Reachy coordinate system, rotated
+            by the specified roll, pitch, and yaw angles from the initial pose, in the specified frame.
+
+        Raises:
+            ValueError: If the `frame` is not "robot" or "gripper".
+        """
+        if frame not in ["robot", "gripper"]:
+            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
+
+        if initial_pose is None:
+            initial_pose = self.forward_kinematics()
+
+        pose = initial_pose.copy()
+        rotation = matrix_from_euler_angles(roll, pitch, yaw, degrees=degrees)
+
+        if frame == "robot":
+            pose_rotation = np.eye(4)
+            pose_rotation[:3, :3] = pose.copy()[:3, :3]
+            pose_translation = pose.copy()[:3, 3]
+            pose_rotation = rotation @ pose_rotation
+            pose = recompose_matrix(pose_rotation[:3, :3], pose_translation)
+        elif frame == "gripper":
+            pose = rotate_in_self(initial_pose, [roll, pitch, yaw], degrees=degrees)
+
+        return pose
+
+    def rotate_by(
+        self,
+        roll: float,
+        pitch: float,
+        yaw: float,
+        duration: float = 2,
+        wait: bool = False,
+        degrees: bool = True,
+        frame: str = "robot",
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        """Create a rotation movement for the arm's end effector based on the specified roll, pitch, and yaw angles.
+
+        The rotation is performed in either the robot or gripper frame.
+
+        Args:
+            roll: Rotation around the x-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            pitch: Rotation around the y-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            yaw: Rotation around the z-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            duration: Time duration in seconds for the rotation movement to be completed.
+                Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program waits for the movement to complete before continuing
+                execution. Defaults to `False`.
+            degrees: Specifies whether the rotation angles are provided in degrees. If set to
+                `True`, the angles are interpreted as degrees. Defaults to `True`.
+            frame: The coordinate system in which the rotation should be performed. Can be
+                "robot" or "gripper". Defaults to "robot".
+            interpolation_mode: The type of interpolation to be used when moving the arm's
+                joints. Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+
+        Returns:
+            The GoToId of the movement command, created by calling the `goto_from_matrix` method with
+            the rotated pose computed in the specified frame.
+
+        Raises:
+            ValueError: If the `frame` is not "robot" or "gripper".
+        """
+        if frame not in ["robot", "gripper"]:
+            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
+
+        try:
+            goto = self.get_goto_queue()[-1]
+        except IndexError:
+            goto = self.get_goto_playing()
+
+        if goto.id != -1:
+            joints_request = self._get_goto_joints_request(goto)
+        else:
+            joints_request = None
+
+        if joints_request is not None:
+            pose = self.forward_kinematics(joints_request.goal_positions)
+        else:
+            pose = self.forward_kinematics()
+
+        pose = self.get_rotation_by(roll, pitch, yaw, initial_pose=pose, degrees=degrees, frame=frame)
+        return self.goto(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
+
+    # @property
+    # def joints_limits(self) -> ArmLimits:
+    #     """Get limits of all the part's joints"""
+    #     limits = self._arm_stub.GetJointsLimits(self._part_id)
+    #     return limits
+
+    # @property
+    # def temperatures(self) -> ArmTemperatures:
+    #     """Get temperatures of all the part's motors"""
+    #     temperatures = self._arm_stub.GetTemperatures(self._part_id)
+    #     return temperatures
 
     def send_cartesian_interpolation(
         self,
@@ -683,364 +1104,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._stub.SendArmCartesianGoal(request)
             time.sleep(time_step)
 
-    def goto_joints(
-        self,
-        positions: List[float],
-        duration: float = 2,
-        wait: bool = False,
-        interpolation_mode: str = "minimum_jerk",
-        degrees: bool = True,
-    ) -> GoToId:
-        """Move the arm's joints to a specified position with a given duration and interpolation mode.
-
-        The function allows for optional waiting for the movement to complete.
-
-        Args:
-            positions: A list of float values representing the desired joint positions
-                of the arm. It should contain exactly 7 joint positions in the following order:
-                [shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch, wrist_yaw].
-            duration: The time duration in seconds for the arm to reach the desired joint
-                positions. Defaults to 2.
-            wait: Determines whether the program should wait for the movement to finish before
-                returning. If set to `True`, the program will wait for the movement to complete before
-                continuing execution. Defaults to `False`.
-            interpolation_mode: The type of interpolation to be used when moving the arm's
-                joints. Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
-            degrees: Specifies whether the joint positions are provided in degrees. If set to
-                `True`, the values in the `positions` list are interpreted as degrees. Defaults to `True`.
-
-        Returns:
-            A unique GoToId identifier for the movement command.
-        """
-        if len(positions) != 7:
-            raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
-        if duration == 0:
-            raise ValueError("duration cannot be set to 0.")
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
-            return GoToId(id=-1)
-
-        arm_pos = list_to_arm_position(positions, degrees)
-        request = GoToRequest(
-            joints_goal=JointsGoal(
-                arm_joint_goal=ArmJointGoal(id=self._part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
-            ),
-            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-        )
-        response = self._goto_stub.GoToJoints(request)
-        if response.id == -1:
-            self._logger.error(f"Position {positions} was not reachable. No command sent.")
-        elif wait:
-            self._wait_goto(response)
-        return response
-
-    def get_translation_by(
-        self,
-        x: float,
-        y: float,
-        z: float,
-        initial_pose: Optional[npt.NDArray[np.float64]] = None,
-        frame: str = "robot",
-    ) -> npt.NDArray[np.float64]:
-        """Return a 4x4 matrix representing a pose translated by specified x, y, z values.
-
-        The translation is performed in either the robot or gripper coordinate system.
-
-        Args:
-            x: Translation along the x-axis in meters (forwards direction) to apply
-                to the pose matrix.
-            y: Translation along the y-axis in meters (left direction) to apply
-                to the pose matrix.
-            z: Translation along the z-axis in meters (upwards direction) to apply
-                to the pose matrix.
-            initial_pose: A 4x4 matrix representing the initial pose of the end-effector in Reachy coordinate system,
-                expressed as a NumPy array of type `np.float64`.
-                If not provided, the current pose of the arm is used. Defaults to `None`.
-            frame: The coordinate system in which the translation should be performed.
-                Can be either "robot" or "gripper". Defaults to "robot".
-
-        Returns:
-            A 4x4 pose matrix, expressed in Reachy coordinate system,
-            translated by the specified x, y, z values from the initial pose.
-
-        Raises:
-            ValueError: If the `frame` is not "robot" or "gripper".
-        """
-        if frame not in ["robot", "gripper"]:
-            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
-
-        if initial_pose is None:
-            initial_pose = self.forward_kinematics()
-
-        pose = initial_pose.copy()
-
-        if frame == "robot":
-            pose[0, 3] += x
-            pose[1, 3] += y
-            pose[2, 3] += z
-        elif frame == "gripper":
-            pose = translate_in_self(initial_pose, [x, y, z])
-        return pose
-
-    def translate_by(
-        self,
-        x: float,
-        y: float,
-        z: float,
-        duration: float = 2,
-        wait: bool = False,
-        frame: str = "robot",
-        interpolation_mode: str = "minimum_jerk",
-    ) -> GoToId:
-        """Create a translation movement for the arm's end effector.
-
-        The movement is based on the last sent position or the current position.
-
-        Args:
-            x: Translation along the x-axis in meters (forwards direction) to apply
-                to the pose matrix.
-            y: Translation along the y-axis in meters (left direction) to apply
-                to the pose matrix.
-            z: Translation along the z-axis in meters (vertical direction) to apply
-                to the pose matrix.
-            duration: Time duration in seconds for the translation movement to be completed.
-                Defaults to 2.
-            wait: Determines whether the program should wait for the movement to finish before
-                returning. If set to `True`, the program waits for the movement to complete before continuing
-                execution. Defaults to `False`.
-            frame: The coordinate system in which the translation should be performed.
-                Can be "robot" or "gripper". Defaults to "robot".
-            interpolation_mode: The type of interpolation to be used when moving the arm's
-                joints. Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
-
-        Returns:
-            The GoToId of the movement command, created using the `goto_from_matrix` method with the
-            translated pose computed in the specified frame.
-
-        Raises:
-            ValueError: If the `frame` is not "robot" or "gripper".
-        """
-        try:
-            goto = self.get_goto_queue()[-1]
-        except IndexError:
-            goto = self.get_goto_playing()
-
-        if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
-        else:
-            joints_request = None
-
-        if joints_request is not None:
-            pose = self.forward_kinematics(joints_request.goal_positions)
-        else:
-            pose = self.forward_kinematics()
-
-        pose = self.get_translation_by(x, y, z, initial_pose=pose, frame=frame)
-        return self.goto_from_matrix(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
-
-    def get_rotation_by(
-        self,
-        roll: float,
-        pitch: float,
-        yaw: float,
-        initial_pose: Optional[npt.NDArray[np.float64]] = None,
-        degrees: bool = True,
-        frame: str = "robot",
-    ) -> npt.NDArray[np.float64]:
-        """Calculate a new pose matrix by rotating an initial pose matrix by specified roll, pitch, and yaw angles.
-
-        The rotation is performed in either the robot or gripper coordinate system.
-
-        Args:
-            roll: Rotation around the x-axis in the Euler angles representation, specified
-                in radians or degrees (based on the `degrees` parameter).
-            pitch: Rotation around the y-axis in the Euler angles representation, specified
-                in radians or degrees (based on the `degrees` parameter).
-            yaw: Rotation around the z-axis in the Euler angles representation, specified
-                in radians or degrees (based on the `degrees` parameter).
-            initial_pose: A 4x4 matrix representing the initial
-                pose of the end-effector, expressed as a NumPy array of type `np.float64`. If not provided,
-                the current pose of the arm is used. Defaults to `None`.
-            degrees: Specifies whether the rotation angles are provided in degrees. If set to
-                `True`, the angles are interpreted as degrees. Defaults to `True`.
-            frame: The coordinate system in which the rotation should be performed. Can be
-                "robot" or "gripper". Defaults to "robot".
-
-        Returns:
-            A 4x4 pose matrix, expressed in the Reachy coordinate system, rotated
-            by the specified roll, pitch, and yaw angles from the initial pose, in the specified frame.
-
-        Raises:
-            ValueError: If the `frame` is not "robot" or "gripper".
-        """
-        if frame not in ["robot", "gripper"]:
-            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
-
-        if initial_pose is None:
-            initial_pose = self.forward_kinematics()
-
-        pose = initial_pose.copy()
-        rotation = matrix_from_euler_angles(roll, pitch, yaw, degrees=degrees)
-
-        if frame == "robot":
-            pose_rotation = np.eye(4)
-            pose_rotation[:3, :3] = pose.copy()[:3, :3]
-            pose_translation = pose.copy()[:3, 3]
-            pose_rotation = rotation @ pose_rotation
-            pose = recompose_matrix(pose_rotation[:3, :3], pose_translation)
-        elif frame == "gripper":
-            pose = rotate_in_self(initial_pose, [roll, pitch, yaw], degrees=degrees)
-
-        return pose
-
-    def rotate_by(
-        self,
-        roll: float,
-        pitch: float,
-        yaw: float,
-        duration: float = 2,
-        wait: bool = False,
-        degrees: bool = True,
-        frame: str = "robot",
-        interpolation_mode: str = "minimum_jerk",
-    ) -> GoToId:
-        """Create a rotation movement for the arm's end effector based on the specified roll, pitch, and yaw angles.
-
-        The rotation is performed in either the robot or gripper frame.
-
-        Args:
-            roll: Rotation around the x-axis in the Euler angles representation, specified
-                in radians or degrees (based on the `degrees` parameter).
-            pitch: Rotation around the y-axis in the Euler angles representation, specified
-                in radians or degrees (based on the `degrees` parameter).
-            yaw: Rotation around the z-axis in the Euler angles representation, specified
-                in radians or degrees (based on the `degrees` parameter).
-            duration: Time duration in seconds for the rotation movement to be completed.
-                Defaults to 2.
-            wait: Determines whether the program should wait for the movement to finish before
-                returning. If set to `True`, the program waits for the movement to complete before continuing
-                execution. Defaults to `False`.
-            degrees: Specifies whether the rotation angles are provided in degrees. If set to
-                `True`, the angles are interpreted as degrees. Defaults to `True`.
-            frame: The coordinate system in which the rotation should be performed. Can be
-                "robot" or "gripper". Defaults to "robot".
-            interpolation_mode: The type of interpolation to be used when moving the arm's
-                joints. Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
-
-        Returns:
-            The GoToId of the movement command, created by calling the `goto_from_matrix` method with
-            the rotated pose computed in the specified frame.
-
-        Raises:
-            ValueError: If the `frame` is not "robot" or "gripper".
-        """
-        if frame not in ["robot", "gripper"]:
-            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
-
-        try:
-            goto = self.get_goto_queue()[-1]
-        except IndexError:
-            goto = self.get_goto_playing()
-
-        if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
-        else:
-            joints_request = None
-
-        if joints_request is not None:
-            pose = self.forward_kinematics(joints_request.goal_positions)
-        else:
-            pose = self.forward_kinematics()
-
-        pose = self.get_rotation_by(roll, pitch, yaw, initial_pose=pose, degrees=degrees, frame=frame)
-        return self.goto_from_matrix(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
-
-    def _goto_single_joint(
-        self,
-        arm_joint: int,
-        goal_position: float,
-        duration: float = 2,
-        wait: bool = False,
-        interpolation_mode: str = "minimum_jerk",
-        degrees: bool = True,
-    ) -> GoToId:
-        """Move a single joint of the arm to a specified position.
-
-        The function allows for optional parameters for duration, interpolation mode, and waiting for completion.
-
-        Args:
-            arm_joint: The specific joint of the arm to move, identified by an integer value.
-            goal_position: The target position for the specified arm joint, given as a float.
-                The value can be in radians or degrees, depending on the `degrees` parameter.
-            duration: The time duration in seconds for the joint to reach the specified goal
-                position. Defaults to 2.
-            wait: Determines whether the program should wait for the movement to finish before
-                returning. If set to `True`, the program waits for the movement to complete before continuing
-                execution. Defaults to `False`.
-            interpolation_mode: The type of interpolation to use when moving the arm's joint.
-                Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
-            degrees: Specifies whether the joint positions are in degrees. If set to `True`,
-                the goal position is interpreted as degrees. Defaults to `True`.
-
-        Returns:
-            A unique GoToId identifier corresponding to this specific goto movement.
-        """
-        if degrees:
-            goal_position = np.deg2rad(goal_position)
-        request = GoToRequest(
-            joints_goal=JointsGoal(
-                custom_joint_goal=CustomJointGoal(
-                    id=self._part_id,
-                    arm_joints=CustomArmJoints(joints=[arm_joint]),
-                    joints_goals=[FloatValue(value=goal_position)],
-                    duration=FloatValue(value=duration),
-                )
-            ),
-            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-        )
-        response = self._goto_stub.GoToJoints(request)
-
-        if response.id == -1:
-            self._logger.error(f"Position {goal_position} was not reachable. No command sent.")
-        elif wait:
-            self._wait_goto(response)
-        return response
-
-    def get_joints_positions(self, degrees: bool = True, round: Optional[int] = None) -> List[float]:
-        """Return the current joint positions of the arm, either in degrees or radians.
-
-        The function also provides an option to round the values.
-
-        Args:
-            degrees: Specifies whether the joint positions should be returned in degrees.
-                If set to `True`, the positions are returned in degrees; otherwise, they are returned in radians.
-                Defaults to `True`.
-            round: The number of decimal places to round the joint positions to before
-                returning them. If `None`, no rounding is applied.
-
-        Returns:
-            A list of float values representing the current joint positions of the arm in the
-            following order: [shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch,
-            wrist_yaw].
-        """
-        response = self._stub.GetJointPosition(self._part_id)
-        positions: List[float] = arm_position_to_list(response, degrees)
-        if round is not None:
-            positions = np.round(arm_position_to_list(response, degrees), round).tolist()
-        return positions
-
-    # @property
-    # def joints_limits(self) -> ArmLimits:
-    #     """Get limits of all the part's joints"""
-    #     limits = self._arm_stub.GetJointsLimits(self._part_id)
-    #     return limits
-
-    # @property
-    # def temperatures(self) -> ArmTemperatures:
-    #     """Get temperatures of all the part's motors"""
-    #     temperatures = self._arm_stub.GetTemperatures(self._part_id)
-    #     return temperatures
-
     def send_goal_positions(self) -> None:
         """Send goal positions to the gripper and actuators if the parts are on.
 
@@ -1053,45 +1116,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             return
         for actuator in self._actuators.values():
             actuator.send_goal_positions()
-
-    def goto_posture(
-        self,
-        common_posture: str = "default",
-        duration: float = 2,
-        wait: bool = False,
-        wait_for_goto_end: bool = True,
-        interpolation_mode: str = "minimum_jerk",
-    ) -> GoToId:
-        """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode.
-
-        Args:
-            common_posture: The standard positions to which all joints will be sent.
-                It can be 'default' or 'elbow_90'. Defaults to 'default'.
-            duration: The time duration in seconds for the robot to move to the specified posture.
-                Defaults to 2.
-            wait: Determines whether the program should wait for the movement to finish before
-                returning. If set to `True`, the program waits for the movement to complete before continuing
-                execution. Defaults to `False`.
-            wait_for_goto_end: Specifies whether commands will be sent to a part immediately or
-                only after all previous commands in the queue have been executed. If set to `False`, the program
-                will cancel all executing moves and queues. Defaults to `True`.
-            interpolation_mode: The type of interpolation used when moving the arm's joints.
-                Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
-
-        Returns:
-            A unique GoToId identifier for this specific movement.
-        """
-        joints = self.get_default_posture_joints(common_posture=common_posture)
-        if common_posture == "default":
-            if self._gripper is not None and self._gripper.is_on():
-                self._gripper.open()
-        if not wait_for_goto_end:
-            self.cancel_all_goto()
-        if self.is_on():
-            return self.goto_joints(joints, duration, wait, interpolation_mode)
-        else:
-            self._logger.warning(f"{self._part_id.name} is off. No command sent.")
-        return GoToId(id=-1)
 
     def _update_with(self, new_state: ArmState) -> None:
         """Update the arm with a newly received (partial) state from the gRPC server.

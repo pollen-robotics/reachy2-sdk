@@ -73,19 +73,19 @@ def test_goto_joint(reachy: ReachySDK) -> None:
 
     pose = build_pose_matrix(0.3, -0.4, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
+    reachy.r_arm.goto(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
 
     pose = build_pose_matrix(0.3, -0.4, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
+    reachy.r_arm.goto(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
 
     pose = build_pose_matrix(0.3, -0.1, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
+    reachy.r_arm.goto(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
 
     pose = build_pose_matrix(0.3, -0.1, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
+    reachy.r_arm.goto(ik, 2.0, degrees=True, interpolation_mode="minimum_jerk")
 
     time.sleep(1.0)
     init_pose(reachy)
@@ -94,19 +94,19 @@ def test_goto_joint(reachy: ReachySDK) -> None:
 
     pose = build_pose_matrix(0.3, -0.4, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="linear")
+    reachy.r_arm.goto(ik, 2.0, degrees=True, interpolation_mode="linear")
 
     pose = build_pose_matrix(0.3, -0.4, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="linear")
+    reachy.r_arm.goto(ik, 2.0, degrees=True, interpolation_mode="linear")
 
     pose = build_pose_matrix(0.3, -0.1, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="linear")
+    reachy.r_arm.goto(ik, 2.0, degrees=True, interpolation_mode="linear")
 
     pose = build_pose_matrix(0.3, -0.1, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True, interpolation_mode="linear")
+    reachy.r_arm.goto(ik, 2.0, degrees=True, interpolation_mode="linear")
 
     time.sleep(1.0)
     init_pose(reachy)
@@ -120,32 +120,32 @@ def test_both_arms(reachy: ReachySDK) -> None:
 
     pose = build_pose_matrix(0.3, -0.45, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, 2.0, degrees=True)
     time.sleep(1.0)
     pose = build_pose_matrix(0.3, 0.45, -0.3)
     ik = reachy.l_arm.inverse_kinematics(pose)
-    reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.l_arm.goto(ik, 2.0, degrees=True)
 
     pose = build_pose_matrix(0.3, -0.45, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, 2.0, degrees=True)
     pose = build_pose_matrix(0.3, 0.45, 0.0)
     ik = reachy.l_arm.inverse_kinematics(pose)
-    reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.l_arm.goto(ik, 2.0, degrees=True)
 
     pose = build_pose_matrix(0.3, -0.25, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, 2.0, degrees=True)
     pose = build_pose_matrix(0.3, 0.25, 0.0)
     ik = reachy.l_arm.inverse_kinematics(pose)
-    reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.l_arm.goto(ik, 2.0, degrees=True)
 
     pose = build_pose_matrix(0.3, -0.15, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, 2.0, degrees=True)
     pose = build_pose_matrix(0.3, 0.15, -0.3)
     ik = reachy.l_arm.inverse_kinematics(pose)
-    id = reachy.l_arm.goto_joints(ik, 2.0, degrees=True)
+    id = reachy.l_arm.goto(ik, 2.0, degrees=True)
 
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
@@ -155,7 +155,7 @@ def test_both_arms(reachy: ReachySDK) -> None:
 def test_state(reachy: ReachySDK) -> None:
     pose = build_pose_matrix(0.3, -0.4, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    id = reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    id = reachy.r_arm.goto(ik, 2.0, degrees=True)
     print(f"goto id={id}")
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
@@ -166,8 +166,8 @@ def test_state(reachy: ReachySDK) -> None:
 
 def init_pose(reachy: ReachySDK) -> None:
     print("Putting each joint at 0 degrees angle with a goto")
-    id1 = reachy.r_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 2.0, degrees=True)
-    id2 = reachy.l_arm.goto_joints([0, 0, 0, 0, 0, 0, 0], 2.0, degrees=True)
+    id1 = reachy.r_arm.goto([0, 0, 0, 0, 0, 0, 0], 2.0, degrees=True)
+    id2 = reachy.l_arm.goto([0, 0, 0, 0, 0, 0, 0], 2.0, degrees=True)
     while is_goto_finished(reachy, id1) is False or is_goto_finished(reachy, id2) is False:
         time.sleep(0.1)
 
@@ -175,7 +175,7 @@ def init_pose(reachy: ReachySDK) -> None:
 def test_goto_cancel(reachy: ReachySDK) -> None:
     pose = build_pose_matrix(0.3, -0.4, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    id = reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    id = reachy.r_arm.goto(ik, 2.0, degrees=True)
 
     time.sleep(1.0)
     print("Canceling the goto goal!")
@@ -188,19 +188,19 @@ def test_goto_cancel(reachy: ReachySDK) -> None:
     print("Setting up a lot of gotos!")
     pose = build_pose_matrix(0.3, -0.4, -0.3)
     reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, 2.0, degrees=True)
 
     pose = build_pose_matrix(0.3, -0.4, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, 2.0, degrees=True)
 
     pose = build_pose_matrix(0.3, -0.1, 0.0)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, 2.0, degrees=True)
 
     pose = build_pose_matrix(0.3, -0.1, -0.3)
     ik = reachy.r_arm.inverse_kinematics(pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, 2.0, degrees=True)
 
     time.sleep(1.0)
     print("Canceling all gotos!")
@@ -238,7 +238,7 @@ def test_goto_cartesian(reachy: ReachySDK) -> None:
     # Problematic goal :
     # goals = [([0.3, -0.4, -0.3], [0.0,-30,0.0]), ([0.3, -0.4, -0.3], [0.0,0,0.0])]
     for goal in goals:
-        id = reachy.r_arm.goto_from_matrix(
+        id = reachy.r_arm.goto(
             get_homogeneous_matrix_msg_from_euler(position=goal[0], euler_angles=goal[1], degrees=True), delay
         )
         if id.id < 0:
@@ -317,7 +317,7 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
 
     for mat in list_of_mats:
         input("press enter to go to the next pose!")
-        id = reachy.l_arm.goto_from_matrix(mat)
+        id = reachy.l_arm.goto(mat)
         if id.id < 0:
             print("The goto was rejected! Unreachable pose.")
             time.sleep(1.0)
@@ -353,7 +353,7 @@ def test_goto_single_pose(reachy: ReachySDK) -> None:
 
     for mat in list_of_mats:
         input("press enter to go to the next pose!")
-        id = reachy.r_arm.goto_from_matrix(mat)
+        id = reachy.r_arm.goto(mat)
         if id.id < 0:
             print("The goto was rejected! Unreachable pose.")
             time.sleep(1.0)
@@ -384,7 +384,7 @@ def fix_3_multiturn_if_needed(reachy: ReachySDK, max_values_wrist_elbow_shoulder
             reachy_arm = reachy.r_arm
             t_pose = r_t_pose
 
-        current_joints = reachy_arm.get_joints_positions()
+        current_joints = reachy_arm.get_current_positions()
         print(f"Current joints for {arm_name}_arm: {current_joints}")
 
         wrist_elbow_shoulder = [
@@ -405,17 +405,17 @@ def fix_3_multiturn_if_needed(reachy: ReachySDK, max_values_wrist_elbow_shoulder
             print(f"The wrist is the only joint that has a multiturn for {arm_name}_arm, fixing in place")
             goal_joints = copy.deepcopy(current_joints)
             goal_joints[6] = 0
-            reachy_arm.goto_joints(goal_joints, 2.0, degrees=True)
+            reachy_arm.goto(goal_joints, 2.0, degrees=True)
         else:
             print(f"At least the elbow or the shoulder are problematic, T-Posing for {arm_name}_arm!")
             task_space_interpolation_goto(reachy_arm, t_pose)
             time.sleep(0.1)
-            current_joints = reachy_arm.get_joints_positions()
+            current_joints = reachy_arm.get_current_positions()
             goal_joints = copy.deepcopy(current_joints)
             goal_joints[6] = 0
             goal_joints[2] = 0
             goal_joints[0] = 0
-            reachy_arm.goto_joints(goal_joints, 2.0, degrees=True)
+            reachy_arm.goto(goal_joints, 2.0, degrees=True)
 
 
 def fix_multiturn_if_needed(reachy: ReachySDK, max_values_elbow_shoulder=[180, 180]) -> None:
@@ -433,7 +433,7 @@ def fix_multiturn_if_needed(reachy: ReachySDK, max_values_elbow_shoulder=[180, 1
             reachy_arm = reachy.r_arm
             t_pose = r_t_pose
 
-        current_joints = reachy_arm.get_joints_positions()
+        current_joints = reachy_arm.get_current_positions()
         print(f"Current joints for {arm_name}_arm: {current_joints}")
 
         elbow_shoulder = [
@@ -453,11 +453,11 @@ def fix_multiturn_if_needed(reachy: ReachySDK, max_values_elbow_shoulder=[180, 1
             print(f"At least the elbow or the shoulder are problematic, T-Posing for {arm_name}_arm!")
             task_space_interpolation_goto(reachy_arm, t_pose)
             time.sleep(0.1)
-            current_joints = reachy_arm.get_joints_positions()
+            current_joints = reachy_arm.get_current_positions()
             goal_joints = copy.deepcopy(current_joints)
             goal_joints[2] = 0
             goal_joints[0] = 0
-            reachy_arm.goto_joints(goal_joints, 2.0, degrees=True)
+            reachy_arm.goto(goal_joints, 2.0, degrees=True)
 
 
 def test_task_space_interpolation_goto(reachy: ReachySDK) -> None:
@@ -633,8 +633,8 @@ def test_multiturn_fix(reachy: ReachySDK) -> None:
 
             input(f"press enter to go to the next random joints: {l_q}")
             duration = 2.0
-            reachy.l_arm.goto_joints(l_q, duration, degrees=True)
-            reachy.r_arm.goto_joints(r_q, duration, degrees=True)
+            reachy.l_arm.goto(l_q, duration, degrees=True)
+            reachy.r_arm.goto(r_q, duration, degrees=True)
             time.sleep(duration + 0.1)
 
             fix_multiturn_if_needed(reachy)
@@ -705,7 +705,7 @@ def test_goto_cartesian_with_interpolation(reachy: ReachySDK) -> None:
 
 def test_goto_rejection(reachy: ReachySDK) -> None:
     print("Trying a goto with duration 0.0")
-    id = reachy.r_arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), 0.0)
+    id = reachy.r_arm.goto(build_pose_matrix(0.3, -0.4, -0.3), 0.0)
     print(f"goto id={id}")
     if id.id < 0:
         print("The goto was rejected as expected!")
@@ -715,22 +715,22 @@ def test_goto_rejection(reachy: ReachySDK) -> None:
 
 
 def test_head_orient(reachy: ReachySDK) -> None:
-    id = reachy.head.goto_joints([0, 0, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0, 0, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
-    id = reachy.head.goto_joints([0, 0.5, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0, 0.5, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
-    id = reachy.head.goto_joints([0.5, 0.5, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0.5, 0.5, 0.5], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
-    id = reachy.head.goto_joints([0.5, 0.5, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0.5, 0.5, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
-    id = reachy.head.goto_joints([0.5, 0.0, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0.5, 0.0, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
-    id = reachy.head.goto_joints([0.0, 0.0, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
+    id = reachy.head.goto([0.0, 0.0, 0.0], duration=1.0, interpolation_mode="minimum_jerk", degrees=False)
     while is_goto_finished(reachy, id) is False:
         time.sleep(0.1)
 
@@ -757,8 +757,8 @@ def main_test() -> None:
     print(reachy.info)
     reachy.turn_on()
 
-    reachy.l_arm.goto_joints([0, 20, 0, 0, 0, 0, 0], duration=2)
-    id = reachy.r_arm.goto_joints([0, -20, 0, 0, 0, 0, 0], duration=2)
+    reachy.l_arm.goto([0, 20, 0, 0, 0, 0, 0], duration=2)
+    id = reachy.r_arm.goto([0, -20, 0, 0, 0, 0, 0], duration=2)
     while not reachy.is_goto_finished(id):
         time.sleep(0.1)
 
@@ -870,14 +870,14 @@ def multi_test():
     for joint in reachy.joints.values():
         joint.goal_position = 0
 
-    reachy.l_arm.goto_joints([15, 10, 20, -50, 10, 10, 20], duration=3, interpolation_mode="linear")
+    reachy.l_arm.goto([15, 10, 20, -50, 10, 10, 20], duration=3, interpolation_mode="linear")
     time.sleep(4)
 
     for joint in reachy.joints.values():
         joint.goal_position = 0
     time.sleep(1)
 
-    reachy.head.goto_joints([0, 40, 0])
+    reachy.head.goto([0, 40, 0])
 
     reachy.disconnect()
 
