@@ -82,7 +82,15 @@ class Camera:
         return img, frame.timestamp.ToNanoseconds()
 
     def get_compressed_frame(self, view: CameraView = CameraView.LEFT) -> Optional[Tuple[bytes, int]]:
-        """Get JPEG frame (bytes) and timestamp in nanosecs"""
+        """Retrieve an RGB frame in a JPEG format from the camera.
+
+        Args:
+            view: The camera view to retrieve the frame from. Default is CameraView.LEFT.
+
+        Returns:
+            A bytes array containing the jpeg frame and the timestamp in nanoseconds.
+            Returns None if no frame is retrieved.
+        """
         frame = self._video_stub.GetFrame(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
         if frame.data == b"":
             self._logger.warning("No frame retrieved")
