@@ -13,7 +13,7 @@ reachy = ReachySDK(host="ip_address")
 
 And you're ready to use Reachy!
 
-*Examples and tutorials are available [here](../src/examples/)!*
+*Examples and tutorials are available [here](https://github.com/pollen-robotics/reachy2-sdk/tree/main/src/examples)!*
 
 """
 
