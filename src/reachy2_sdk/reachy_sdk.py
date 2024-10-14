@@ -24,7 +24,6 @@ from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.reachy_pb2 import ReachyState
 
 from .config.reachy_info import ReachyInfo
-from .media.audio import Audio
 from .media.camera_manager import CameraManager
 from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
@@ -312,10 +311,11 @@ class ReachySDK:
 
         Attempts to connect to the audio server and initializes the audio-related components.
         """
-        try:
-            self.audio = Audio(self._host, self._audio_port)
-        except Exception:
-            self._logger.error("Failed to connect to audio server. ReachySDK.audio will not be available.")
+        # try:
+        #     self.audio = Audio(self._host, self._audio_port)
+        # except Exception:
+        #     self._logger.error("Failed to connect to audio server. ReachySDK.audio will not be available.")
+        pass
 
     def _setup_video(self) -> Optional[CameraManager]:
         """Set up the video server for the robot.
