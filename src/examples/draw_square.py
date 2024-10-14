@@ -5,7 +5,6 @@ import numpy as np
 import numpy.typing as npt
 
 from reachy2_sdk import ReachySDK
-from reachy2_sdk.reachy_sdk import GoToHomeId
 
 
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
@@ -66,7 +65,7 @@ def goto_to_point_A(reachy: ReachySDK) -> None:
     # get the position in the joint space
     joints_positions = reachy.r_arm.inverse_kinematics(target_pose)
     # move Reachy's right arm to this point
-    goto_id = reachy.r_arm.goto_joints(joints_positions, duration=2)
+    reachy.r_arm.goto_joints(joints_positions, duration=2)
 
 
 if __name__ == "__main__":
