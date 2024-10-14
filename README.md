@@ -29,8 +29,6 @@ Documentation is generated via pdoc, and it's available at [https://pollen-robot
 It can be generated locally with:
 ```console
 pdoc reachy2_sdk --output-dir docs --logo "https://pollen-robotics.github.io/reachy2-sdk/pollen_logo.png" --logo-link "https://www.pollen-robotics.com" --docformat google
-
-
 ```
 
 The documentation relies on the provided docstrings with the google style. pydocstyle is used to enforced this style.
