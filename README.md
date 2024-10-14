@@ -23,6 +23,11 @@ Documentation is generated via pdoc. It can be generated locally with:
 pdoc reachy2_sdk --output-dir docs --logo "https://www.pollen-robotics.com/img/company/logo/pollen_logo_square_black.svg"
 ```
 
+The documentation relies on the provided docstings with the google style. pydocstyle is used to enforced this style.
+```console
+pydocstyle src/ --convention google --count
+```
+
 ## Unit tests
 
 To ensure everything is functioning correctly, run the unit tests. There are two groups of tests: offline and online. Offline tests check internal functions using mock objects. Online tests require a connection to a simulated robot (e.g., in rviz), and the virtual robot should exhibit movement during these tests.
