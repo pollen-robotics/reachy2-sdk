@@ -21,7 +21,7 @@ class CameraView(Enum):
     """Enumeration for different camera views.
 
     The `CameraView` enum provides options for specifying the view from which
-    to capture images or video frames.
+    to capture images or video frames. For monocular cameras, LEFT is used as default.
     """
 
     LEFT = View.LEFT

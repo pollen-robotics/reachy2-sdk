@@ -48,20 +48,12 @@ class IGoToBasedPart(ABC):
         self._logger_goto = logging.getLogger(__name__)  # not using self._logger to avoid name conflict in multiple inheritance
 
     def get_goto_playing(self) -> GoToId:
-        """Return the GoToId of the currently playing goto movement on a specific part.
-
-        Returns:
-            The unique GoToId of the goto currently playing on the part.
-        """
+        """Return the GoToId of the currently playing goto movement on a specific part."""
         response = self._goto_stub.GetPartGoToPlaying(self.part._part_id)
         return response
 
     def get_goto_queue(self) -> List[GoToId]:
-        """Return a list of all GoToIds waiting to be played on a specific part.
-
-        Returns:
-            A list of all unique GoToIds for gotos waiting to be played on the part.
-        """
+        """Return a list of all GoToIds waiting to be played on a specific part."""
         response = self._goto_stub.GetPartGoToQueue(self.part._part_id)
         return [goal_id for goal_id in response.goto_ids]
 

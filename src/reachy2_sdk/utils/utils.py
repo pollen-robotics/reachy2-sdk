@@ -293,11 +293,11 @@ def get_pose_matrix(position: List[float], rotation: List[float], degrees: bool 
     return pose
 
 
-def rotate_in_self(_frame: npt.NDArray[np.float64], rotation: List[float], degrees: bool = True) -> npt.NDArray[np.float64]:
+def rotate_in_self(frame: npt.NDArray[np.float64], rotation: List[float], degrees: bool = True) -> npt.NDArray[np.float64]:
     """Return a new homogeneous 4x4 pose matrix that is the input matrix rotated in itself.
 
     Args:
-        _frame: The input frame, given as a 4x4 homogeneous matrix.
+        frame: The input frame, given as a 4x4 homogeneous matrix.
         rotation: A list of size 3 representing the rotation to be applied. The rotation is given as intrinsic angles,
             executed in roll, pitch, yaw order.
         degrees: Specifies whether the input angles are in degrees. If set to `True`, the angles are interpreted as degrees.
@@ -306,42 +306,42 @@ def rotate_in_self(_frame: npt.NDArray[np.float64], rotation: List[float], degre
     Returns:
         A new 4x4 homogeneous matrix after applying the specified rotation.
     """
-    frame = _frame.copy()
+    new_frame = frame.copy()
 
     toOrigin = np.eye(4)
-    toOrigin[:3, :3] = frame[:3, :3]
-    toOrigin[:3, 3] = frame[:3, 3]
+    toOrigin[:3, :3] = new_frame[:3, :3]
+    toOrigin[:3, 3] = new_frame[:3, 3]
     toOrigin = np.linalg.inv(toOrigin)
 
-    frame = toOrigin @ frame
-    frame = get_pose_matrix([0.0, 0.0, 0.0], rotation, degrees=degrees) @ frame
-    frame = np.linalg.inv(toOrigin) @ frame
+    new_frame = toOrigin @ new_frame
+    new_frame = get_pose_matrix([0.0, 0.0, 0.0], rotation, degrees=degrees) @ new_frame
+    new_frame = np.linalg.inv(toOrigin) @ new_frame
 
-    return frame
+    return new_frame
 
 
-def translate_in_self(_frame: npt.NDArray[np.float64], translation: List[float]) -> npt.NDArray[np.float64]:
+def translate_in_self(frame: npt.NDArray[np.float64], translation: List[float]) -> npt.NDArray[np.float64]:
     """Return a new homogeneous 4x4 pose matrix that is the input frame translated along its own axes.
 
     Args:
-        _frame: The input frame, given as a 4x4 homogeneous matrix.
+        frame: The input frame, given as a 4x4 homogeneous matrix.
         translation: A list of size 3 representing the translation to be applied, given as [x, y, z].
 
     Returns:
         A new homogeneous 4x4 pose matrix after translating the input frame along its own axes.
     """
-    frame = _frame.copy()
+    new_frame = frame.copy()
 
     toOrigin = np.eye(4)
-    toOrigin[:3, :3] = frame[:3, :3]
-    toOrigin[:3, 3] = frame[:3, 3]
+    toOrigin[:3, :3] = new_frame[:3, :3]
+    toOrigin[:3, 3] = new_frame[:3, 3]
     toOrigin = np.linalg.inv(toOrigin)
 
-    frame = toOrigin @ frame
-    frame = get_pose_matrix(translation, [0, 0, 0]) @ frame
-    frame = np.linalg.inv(toOrigin) @ frame
+    new_frame = toOrigin @ new_frame
+    new_frame = get_pose_matrix(translation, [0, 0, 0]) @ new_frame
+    new_frame = np.linalg.inv(toOrigin) @ new_frame
 
-    return frame
+    return new_frame
 
 
 def invert_affine_transformation_matrix(matrix: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
