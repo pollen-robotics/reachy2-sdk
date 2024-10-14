@@ -23,7 +23,7 @@ Documentation is generated via pdoc. It can be generated locally with:
 pdoc reachy2_sdk --output-dir docs --logo "https://www.pollen-robotics.com/img/company/logo/pollen_logo_square_black.svg"
 ```
 
-The documentation relies on the provided docstings with the google style. pydocstyle is used to enforced this style.
+The documentation relies on the provided docstrings with the google style. pydocstyle is used to enforced this style.
 ```console
 pydocstyle src/ --convention google --count
 ```
