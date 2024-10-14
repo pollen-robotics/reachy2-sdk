@@ -431,7 +431,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             ValueError: If the `q0` list has a length other than 7.
             ValueError: If the `duration` is set to 0.
         """
-
         if not ((isinstance(target, list) and len(target) == 7) or (isinstance(target, np.ndarray) and target.shape == (4, 4))):
             raise ValueError("Invalid target: must be either a list of 7 joint positions or a 4x4 matrix.")
 

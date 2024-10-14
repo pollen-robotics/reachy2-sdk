@@ -176,7 +176,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
         Returns:
             GoToId: The unique identifier for the movement command.
         """
-
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
 
