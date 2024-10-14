@@ -1,4 +1,8 @@
-"""This module defines the Orbita2d class and its registers, joints, motors and axis."""
+"""Reachy Orbita2d module.
+
+Handles all specific methods to Orbita2d.
+"""
+
 from typing import Any, Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
@@ -24,7 +28,7 @@ from .orbita_motor import OrbitaMotor
 
 
 class Orbita2d(Orbita):
-    """The Orbita2d class represents any Orbita2d actuator and its registers, joints, motors and axis.
+    """The Orbita2d class represents any Orbita2d actuator and its joints, motors and axis.
 
     The Orbita2d class is used to store the up-to-date state of the actuator, especially:
         - its compliancy
@@ -32,15 +36,12 @@ class Orbita2d(Orbita):
         - its motors state
         - its axis state
 
-    The only register available at the actuator is the compliancy RW register.
-    You can set the compliance on/off (boolean).
-
-    You can access registers of the motors from the actuators with function that act on all the actuator's motors.
-    Lower registers which can be read/write at actuator level:
-    - speed limit (in degree per second, for all motors of the actuator)
-    - torque limit (in %, for all motors of the actuator)
+    You can access properties of the motors from the actuators with function that act on all the actuator's motors:
+    - speed limit (in percentage, for all motors of the actuator)
+    - torque limit (in percentage, for all motors of the actuator)
     - pid (for all motors of the actuator)
-    Lower registers that are read-only but acessible at actuator level:
+    - compliancy (for all motors of the actuator)
+    Lower properties that are read-only but acessible at actuator level:
     - temperatures (temperatures of all motors of the actuator)
     """
 
@@ -55,7 +56,21 @@ class Orbita2d(Orbita):
         part: Part,
         joints_position_order: List[int],
     ):
-        """Initialize the Orbita2d with its joints, motors and its two axis (either roll, pitch or yaw for both)."""
+        """Initialize the Orbita2d actuator with its joints, motors, and axes.
+
+        Args:
+            uid: The unique identifier for the actuator.
+            name: The name of the actuator.
+            axis1: The first axis of the actuator, typically representing roll, pitch, or yaw.
+            axis2: The second axis of the actuator, typically representing roll, pitch, or yaw.
+            initial_state: The initial state of the Orbita2d actuator, containing the states
+                of the joints, motors, and axes.
+            grpc_channel: The gRPC communication channel used for interfacing with the
+                Orbita2d actuator.
+            part: The robot part that this actuator belongs to.
+            joints_position_order: A list defining the order of the joint positions in the
+                containing part, used to map the actuator's joint positions correctly.
+        """
         super().__init__(uid, name, "2d", Orbita2dServiceStub(grpc_channel), part)
 
         axis1_name = Axis.DESCRIPTOR.values_by_number[axis1].name.lower()
@@ -98,6 +113,22 @@ class Orbita2d(Orbita):
         self._axis = {"x": self.__x, "y": self.__y}
 
     def _create_dict_state(self, initial_state: Orbita2dState) -> Dict[str, Dict[str, FloatValue]]:  # noqa: C901
+        """Create a dictionary representation of the state for the actuator.
+
+        The method processes the fields in the given Orbita2dState and converts them into a nested dictionary
+        structure, where the top-level keys are the axis, motor and joints names, and the inner dictionaries contain
+        field names and corresponding FloatValue objects.
+
+        Args:
+            initial_state: An Orbita2dState object representing the initial state of the actuator.
+
+        Returns:
+            A dictionary where the keys represent the axis, motors and joints, and the values are dictionaries
+            containing field names and corresponding FloatValue objects.
+
+        Raises:
+            ValueError: If the field type is not recognized or supported.
+        """
         init_state: Dict[str, Dict[str, FloatValue]] = {}
 
         for field, value in initial_state.ListFields():
@@ -124,12 +155,29 @@ class Orbita2d(Orbita):
         return init_state
 
     def __setattr__(self, __name: str, __value: Any) -> None:
+        """Custom attribute setting to prevent modification of specific attributes.
+
+        This method overrides the default behavior of setting attributes to ensure that
+        certain attributes ('roll', 'pitch', 'yaw') cannot be modified after being set initially.
+        If an attempt is made to set these attributes again, an AttributeError is raised.
+
+        Args:
+            __name: The name of the attribute.
+            __value: The value to assign to the attribute.
+
+        Raises:
+            AttributeError: If trying to set the value of 'roll', 'pitch', or 'yaw' after they are already set.
+        """
         if __name in ["roll", "pitch", "yaw"]:
             if hasattr(self, __name):
                 raise AttributeError(f"can't set attribute '{__name}'")
         super().__setattr__(__name, __value)
 
     def send_goal_positions(self) -> None:
+        """Send goal positions to the actuator's joints.
+
+        If goal positions have been specified for any joint of this actuator, sends them to the actuator.
+        """
         if self._outgoing_goal_positions:
             req_pos = {}
             for joint_axis in self._joints.keys():
@@ -150,7 +198,12 @@ class Orbita2d(Orbita):
             self._post_send_goal_positions()
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
-        """Set a speed_limit as a percentage of the max speed on all motors of the actuator"""
+        """Set the speed limit as a percentage of the maximum speed for all motors of the actuator.
+
+        Args:
+            speed_limit: The desired speed limit as a percentage (0-100) of the maximum speed. Can be
+                specified as a float or int.
+        """
         super().set_speed_limits(speed_limit)
         speed_limit = speed_limit / 100.0
         command = Orbita2dsCommand(
@@ -167,7 +220,12 @@ class Orbita2d(Orbita):
         self._stub.SendCommand(command)
 
     def set_torque_limits(self, torque_limit: float | int) -> None:
-        """Set a torque_limit as a percentage of the max torque on all motors of the actuator"""
+        """Set the torque limit as a percentage of the maximum torque for all motors of the actuator.
+
+        Args:
+            torque_limit: The desired torque limit as a percentage (0-100) of the maximum torque. Can be
+                specified as a float or int.
+        """
         super().set_torque_limits(torque_limit)
         torque_limit = torque_limit / 100.0
         command = Orbita2dsCommand(
@@ -181,5 +239,4 @@ class Orbita2d(Orbita):
                 )
             ]
         )
-        print(command)
         self._stub.SendCommand(command)

@@ -1,9 +1,6 @@
 """Reachy Arm module.
 
-Handles all specific method to an Arm (left and/or right) especially:
-- the forward kinematics
-- the inverse kinematics
-- goto functions
+Handles all specific methods to an Arm (left and/or right).
 """
 
 import time
@@ -58,12 +55,19 @@ from .joints_based_part import JointsBasedPart
 
 
 class Arm(JointsBasedPart, IGoToBasedPart):
-    """Arm class used for both left/right arms.
+    """Reachy Arm module.
 
-    It exposes the kinematics functions for the arm:
-    - you can compute the forward and inverse kinematics
-    It also exposes movements functions.
-    Arm can be turned on and off.
+    Handles specific functionalities for the arm (left and/or right), including:
+    - Forward and inverse kinematics
+    - Goto functions for movement
+    - Turning the arm on and off
+    - Cartesian interpolation for movements
+
+    Attributes:
+        shoulder (Orbita2d): The shoulder actuator of the arm.
+        elbow (Orbita2d): The elbow actuator of the arm.
+        wrist (Orbita3d): The wrist actuator of the arm.
+        gripper (Optional[Hand]): The gripper of the arm, if initialized.
     """
 
     def __init__(
@@ -73,9 +77,16 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         grpc_channel: grpc.Channel,
         goto_stub: GoToServiceStub,
     ) -> None:
-        """Define an arm (left or right).
+        """Initialize an Arm instance.
 
-        Connect to the arm's gRPC server stub and set up the arm's actuators.
+        This constructor sets up the arm's gRPC communication and initializes its actuators
+        (shoulder, elbow, and wrist). Optionally, a gripper can also be configured.
+
+        Args:
+            arm_msg: The protobuf message containing the arm's configuration details.
+            initial_state: The initial state of the arm's actuators.
+            grpc_channel: The gRPC channel used for communication with the arm's server.
+            goto_stub: The gRPC stub for controlling goto movements.
         """
         JointsBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel))
         IGoToBasedPart.__init__(self, self, goto_stub)
@@ -89,9 +100,15 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self._actuators["wrist"] = self.wrist
 
     def _setup_arm(self, arm: Arm_proto, initial_state: ArmState) -> None:
-        """Set up the arm.
+        """Initialize the arm's actuators (shoulder, elbow, and wrist) based on the arm's description and initial state.
 
-        Set up the arm's actuators (shoulder, elbow and wrist) with the arm's description and initial state.
+        Args:
+            arm: The arm description used to set up the actuators, including the shoulder,
+                elbow, and wrist. The method creates instances of `Orbita2d` for the shoulder and
+                elbow, and an instance of `Orbita3d` for the wrist.
+            initial_state: The initial state of the arm's actuators, containing the starting
+                positions or states of the shoulder, elbow, and wrist. This information is used to
+                initialize the corresponding actuators.
         """
         description = arm.description
         self._shoulder = Orbita2d(
@@ -128,60 +145,65 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
     @property
     def shoulder(self) -> Orbita2d:
+        """Get the shoulder actuator of the arm."""
         return self._shoulder
 
     @property
     def elbow(self) -> Orbita2d:
+        """Get the elbow actuator of the arm."""
         return self._elbow
 
     @property
     def wrist(self) -> Orbita3d:
+        """Get the wrist actuator of the arm."""
         return self._wrist
 
     @property
     def gripper(self) -> Optional[Hand]:
+        """Get the gripper of the arm, or None if not set."""
         return self._gripper
 
     def turn_on(self) -> None:
-        """Turn all motors of the part on.
+        """Turn on all motors of the part, making all arm motors stiff.
 
-        All arm's motors will then be stiff.
+        If a gripper is present, it will also be turned on.
         """
         if self._gripper is not None:
             self._gripper._turn_on()
         super().turn_on()
 
     def turn_off(self) -> None:
-        """Turn all motors of the part off.
+        """Turn off all motors of the part, making all arm motors compliant.
 
-        All arm's motors will then be compliant.
+        If a gripper is present, it will also be turned off.
         """
         if self._gripper is not None:
             self._gripper._turn_off()
         super().turn_off()
 
     def _turn_on(self) -> None:
-        """Turn all motors of the part on.
+        """Turn on all motors of the part.
 
-        All arm's motors will then be stiff.
+        This will make all arm motors stiff. If a gripper is present, it will also be turned on.
         """
         if self._gripper is not None:
             self._gripper._turn_on()
         super()._turn_on()
 
     def _turn_off(self) -> None:
-        """Turn all motors of the part off.
+        """Turn off all motors of the part.
 
-        All arm's motors will then be compliant.
+        This will make all arm motors compliant. If a gripper is present, it will also be turned off.
         """
         if self._gripper is not None:
             self._gripper._turn_off()
         super()._turn_off()
 
     def turn_off_smoothly(self) -> None:
-        """Turn all motors of the part off.
+        """Gradually reduce the torque limit of all motors over 3 seconds before turning them off.
 
-        All arm's motors will see their torque limit reduces for 3 seconds, then will be fully compliant.
+        This function decreases the torque limit in steps until the motors are turned off.
+        It then restores the torque limit to its original value.
         """
         torque_limit_low = 35
         torque_limit_high = 100
@@ -201,13 +223,21 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self.set_torque_limits(torque_limit_high)
 
     def is_on(self) -> bool:
-        """Return True if all actuators of the arm are stiff"""
+        """Check if all actuators of the arm are stiff.
+
+        Returns:
+            `True` if all actuators of the arm are stiff, `False` otherwise.
+        """
         if not super().is_on():
             return False
         return True
 
     def is_off(self) -> bool:
-        """Return True if all actuators of the arm are stiff"""
+        """Check if all actuators of the arm are compliant.
+
+        Returns:
+            `True` if all actuators of the arm are compliant, `False` otherwise.
+        """
         if not super().is_off():
             return False
         return True
@@ -222,10 +252,22 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     def forward_kinematics(
         self, joints_positions: Optional[List[float]] = None, degrees: bool = True
     ) -> npt.NDArray[np.float64]:
-        """Compute the forward kinematics of the arm.
+        """Compute the forward kinematics of the arm and return a 4x4 pose matrix.
 
-        It will return the pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate systems.
-        You can either specify a given joints position, otherwise it will use the current robot position.
+        The pose matrix is expressed in Reachy coordinate system.
+
+        Args:
+            joints_positions: A list of float values representing the positions of the joints
+                in the arm. If not provided, the current robot joints positions are used. Defaults to None.
+            degrees: Indicates whether the joint positions are in degrees or radians.
+                If `True`, the positions are in degrees; if `False`, in radians. Defaults to True.
+
+        Returns:
+            A 4x4 pose matrix as a NumPy array, expressed in Reachy coordinate system.
+
+        Raises:
+            ValueError: If `joints_positions` is provided and its length is not 7.
+            ValueError: If no solution is found for the given joint positions.
         """
         req_params = {
             "id": self._part_id,
@@ -254,14 +296,27 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         degrees: bool = True,
         round: Optional[int] = None,
     ) -> List[float]:
-        """Compute the inverse kinematics of the arm.
+        """Compute a joint configuration to reach a specified target pose for the arm end-effector.
 
-        Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
-        it will try to compute a joint solution to reach this target (or get close).
+        Args:
+            target: A 4x4 homogeneous pose matrix representing the target pose in
+                Reachy coordinate system, provided as a NumPy array.
+            q0: An optional initial joint configuration for the arm. If provided, the
+                algorithm will use it as a starting point for finding a solution. Defaults to None.
+            degrees: Indicates whether the returned joint angles should be in degrees or radians.
+                If `True`, angles are in degrees; if `False`, in radians. Defaults to True.
+            round: Number of decimal places to round the computed joint angles to before
+                returning. If None, no rounding is performed. Defaults to None.
 
-        It will raise a ValueError if no solution is found.
+        Returns:
+            A list of joint angles representing the solution to reach the target pose, in the following order:
+                [shoulder.pitch, shoulder.roll, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].
 
-        You can also specify a basic joint configuration as a prior for the solution.
+        Raises:
+            ValueError: If the target shape is not (4, 4).
+            ValueError: If the length of `q0` is not 7.
+            ValueError: If vectorized kinematics is attempted (unsupported).
+            ValueError: If no solution is found for the given target.
         """
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
@@ -300,7 +355,18 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return answer
 
     def get_default_posture_joints(self, common_posture: str = "default") -> List[float]:
-        """Return the list of the joints positions for the default poses."""
+        """Get the list of joint positions for default or elbow_90 poses.
+
+        Args:
+            common_posture: The name of the posture to retrieve. Can be "default" or "elbow_90".
+                Defaults to "default".
+
+        Returns:
+            A list of joint positions in degrees for the specified posture.
+
+        Raises:
+            ValueError: If `common_posture` is not "default" or "elbow_90".
+        """
         if common_posture not in ["default", "elbow_90"]:
             raise ValueError(f"common_posture {common_posture} not supported! Should be 'default' or 'elbow_90'")
         if common_posture == "elbow_90":
@@ -313,7 +379,15 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             return [0, 15, 15, elbow_pitch, 0, 0, 0]
 
     def get_default_posture_matrix(self, common_posture: str = "default") -> npt.NDArray[np.float64]:
-        """Return the 4x4 pose matrix of default robot poses."""
+        """Get the 4x4 pose matrix in Reachy coordinate system for a default robot posture.
+
+        Args:
+            common_posture: The posture to retrieve. Can be "default" or "elbow_90".
+                Defaults to "default".
+
+        Returns:
+            The 4x4 homogeneous pose matrix for the specified posture in Reachy coordinate system.
+        """
         joints = self.get_default_posture_joints(common_posture)
         return self.forward_kinematics(joints)
 
@@ -325,11 +399,25 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         q0: Optional[List[float]] = None,
     ) -> GoToId:
-        """Move the arm to a matrix target (or get close).
+        """Move the arm to a specified target pose.
 
-        Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
-        it will try to compute a joint solution to reach this target (or get close),
-        and move to this position in the defined duration.
+        Args:
+            target: A 4x4 homogeneous pose matrix representing the target
+                position and orientation in Reachy coordinate system.
+            duration: The time in seconds for the movement to be completed. Defaults to 2.
+            wait: Whether to wait for the movement to complete before returning. Defaults to False.
+            interpolation_mode: The interpolation method for moving the joints. Can be "minimum_jerk"
+                or "linear". Defaults to "minimum_jerk".
+            q0: An optional list of 7 joint angles to use as the initial configuration
+                for computing the inverse kinematics solution. Defaults to None.
+
+        Returns:
+            A unique GoToId identifier for the movement command.
+
+        Raises:
+            ValueError: If the `target` shape is not (4, 4).
+            ValueError: If the length of `q0` is not 7.
+            ValueError: If the `duration` is set to 0.
         """
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
@@ -381,25 +469,29 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_frequency: float = 120,
         precision_distance_xyz: float = 0.003,
     ) -> None:
-        """Move the arm to a matrix target (or get close).
+        """Perform Cartesian interpolation and move the arm towards a target pose.
 
-        Given a pose 4x4 target matrix (as a numpy array) expressed in Reachy coordinate systems,
-        it will try to compute a joint solution to reach this target (or get close).
-        It will interpolate the movement in cartesian space in a number of intermediate points defined
-        by the interpolation frequency and the duration.
+        The function uses linear or elliptical interpolation for translation to reach or get close
+        to the specified target pose.
 
-        Arguments :
-            target          : the 4x4 goal pose matrix in the robot coordinate system, reached at the end of the interpolation
-            duration        : the target duration of the movement
-            arc_direction   : if None, leads to a linear interpolation. If set, direction of the elliptic interpolation.
-                            Can be set to 'above', 'below', 'right', 'left', 'front' or 'back'
-            elliptic_radius : the second radius of the computed ellipse, first radius being the present to target pose distance.
-                            If None, leads to a circular interpolation.
-            interpolation_frequency : the frequency of the interpolation
-            precision_distance_xyz  : the maximum distance between the target pose and the reached pose after the interpolation.
-                                      Precision is prioritized over duration.
+        Args:
+            target: A 4x4 homogeneous pose matrix representing the desired
+                position and orientation in the Reachy coordinate system, provided as a NumPy array.
+            duration: The expected time in seconds for the arm to reach the target position
+                from its current position. Defaults to 2.
+            arc_direction: The direction for elliptic interpolation when moving
+                the arm towards the target pose. Can be 'above', 'below', 'right', 'left', 'front',
+                or 'back'. If not specified, a linear interpolation is computed.
+            elliptic_radius: The second radius of the computed ellipse for elliptical
+                interpolation. The first radius is the distance between the current pose and the
+                target pose. If not specified, a circular interpolation is used.
+            interpolation_frequency: The number of intermediate points used to interpolate
+                the movement in Cartesian space between the initial and target poses. Defaults to 120.
+            precision_distance_xyz: The maximum allowed distance in meters in the XYZ space between
+                the current end-effector position and the target position. If the end-effector is
+                further than this distance from the target after the movement, the movement is repeated
+                until the precision is met. Defaults to 0.003.
         """
-
         self.cancel_all_goto()
         if target.shape != (4, 4):
             raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
@@ -458,7 +550,24 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         nb_steps: int,
         time_step: float,
     ) -> None:
-        """Generate linear interpolation."""
+        """Generate linear interpolation between two poses over a specified number of steps.
+
+        The function performs linear interpolation for both translation and rotation between
+        the origin and target poses.
+
+        Args:
+            origin_trans: The original translation vector in 3D space,
+                given as a NumPy array of type `np.float64`, containing the translation components
+                along the x, y, and z axes in meters.
+            target_trans: The target translation vector in 3D space, given
+                as a NumPy array of type `np.float64`, representing the desired final translation in meters.
+            origin_rot: The initial rotation quaternion, used as the starting point for
+                the rotation interpolation.
+            target_rot: The target rotation quaternion for the interpolation.
+            nb_steps: The number of steps or intervals for the interpolation process, determining
+                how many intermediate points will be calculated between the origin and target poses.
+            time_step: The time interval in seconds between each step of the interpolation.
+        """
         for t in np.linspace(0, 1, nb_steps):
             # Linear interpolation for translation
             trans_interpolated = (1 - t) * origin_trans + t * target_trans
@@ -488,7 +597,28 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         nb_steps: int,
         time_step: float,
     ) -> None:
-        """Generate elliptical interpolation."""
+        """Generate elliptical interpolation between two poses for the arm.
+
+        The function performs elliptical interpolation for both translation and rotation from the
+        origin to the target pose.
+
+        Args:
+            origin_trans: The initial translation vector of the arm,
+                given as a NumPy array of type `np.float64`, containing the x, y, and z coordinates.
+            target_trans: The target translation vector that the robot
+                end-effector should reach, provided as a NumPy array of type `np.float64` with the x,
+                y, and z coordinates.
+            origin_rot: The initial orientation (rotation) of the end-effector.
+            target_rot: The target orientation (rotation) that the end-effector should reach.
+            arc_direction: The direction of the elliptical interpolation, which can be 'above',
+                'below', 'right', 'left', 'front', or 'back'.
+            secondary_radius: The radius of the secondary axis of the ellipse. If not
+                provided, it defaults to the primary radius, which is based on the distance between the
+                origin and target poses.
+            nb_steps: The number of steps for the interpolation, determining how many
+                intermediate poses will be generated between the origin and target.
+            time_step: The time interval in seconds between each interpolation step.
+        """
         vector_target_origin = target_trans - origin_trans
 
         center = (origin_trans + target_trans) / 2
@@ -561,10 +691,26 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
     ) -> GoToId:
-        """Move the arm's joints to reach the given position.
+        """Move the arm's joints to a specified position with a given duration and interpolation mode.
 
-        Given a list of joint positions (exactly 7 joint positions),
-        it will move the arm to that position.
+        The function allows for optional waiting for the movement to complete.
+
+        Args:
+            positions: A list of float values representing the desired joint positions
+                of the arm. It should contain exactly 7 joint positions in the following order:
+                [shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch, wrist_yaw].
+            duration: The time duration in seconds for the arm to reach the desired joint
+                positions. Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program will wait for the movement to complete before
+                continuing execution. Defaults to `False`.
+            interpolation_mode: The type of interpolation to be used when moving the arm's
+                joints. Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+            degrees: Specifies whether the joint positions are provided in degrees. If set to
+                `True`, the values in the `positions` list are interpreted as degrees. Defaults to `True`.
+
+        Returns:
+            A unique GoToId identifier for the movement command.
         """
         if len(positions) != 7:
             raise ValueError(f"positions should be of length 7 (got {len(positions)} instead)!")
@@ -596,13 +742,29 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         initial_pose: Optional[npt.NDArray[np.float64]] = None,
         frame: str = "robot",
     ) -> npt.NDArray[np.float64]:
-        """Get a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system, translated by x, y, z (in meters)
-        from the initial pose.
-        If no initial_pose has been sent, use the current pose.
+        """Return a 4x4 matrix representing a pose translated by specified x, y, z values.
 
-        Two frames can be used:
-        - robot frame : translation is done in Reachy's coordinate system
-        - gripper frame : translation is done in the gripper's coordinate system
+        The translation is performed in either the robot or gripper coordinate system.
+
+        Args:
+            x: Translation along the x-axis in meters (forwards direction) to apply
+                to the pose matrix.
+            y: Translation along the y-axis in meters (left direction) to apply
+                to the pose matrix.
+            z: Translation along the z-axis in meters (upwards direction) to apply
+                to the pose matrix.
+            initial_pose: A 4x4 matrix representing the initial pose of the end-effector in Reachy coordinate system,
+                expressed as a NumPy array of type `np.float64`.
+                If not provided, the current pose of the arm is used. Defaults to `None`.
+            frame: The coordinate system in which the translation should be performed.
+                Can be either "robot" or "gripper". Defaults to "robot".
+
+        Returns:
+            A 4x4 pose matrix, expressed in Reachy coordinate system,
+            translated by the specified x, y, z values from the initial pose.
+
+        Raises:
+            ValueError: If the `frame` is not "robot" or "gripper".
         """
         if frame not in ["robot", "gripper"]:
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
@@ -630,12 +792,33 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         frame: str = "robot",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Create a goto to translate the arm's end effector from the last goto sent on the part.
-        If no goto has been sent, use the current position.
+        """Create a translation movement for the arm's end effector.
 
-        Two frames can be used:
-        - robot frame : translation is done in Reachy's coordinate system
-        - gripper frame : translation is done in the gripper's coordinate system
+        The movement is based on the last sent position or the current position.
+
+        Args:
+            x: Translation along the x-axis in meters (forwards direction) to apply
+                to the pose matrix.
+            y: Translation along the y-axis in meters (left direction) to apply
+                to the pose matrix.
+            z: Translation along the z-axis in meters (vertical direction) to apply
+                to the pose matrix.
+            duration: Time duration in seconds for the translation movement to be completed.
+                Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program waits for the movement to complete before continuing
+                execution. Defaults to `False`.
+            frame: The coordinate system in which the translation should be performed.
+                Can be "robot" or "gripper". Defaults to "robot".
+            interpolation_mode: The type of interpolation to be used when moving the arm's
+                joints. Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+
+        Returns:
+            The GoToId of the movement command, created using the `goto_from_matrix` method with the
+            translated pose computed in the specified frame.
+
+        Raises:
+            ValueError: If the `frame` is not "robot" or "gripper".
         """
         try:
             goto = self.get_goto_queue()[-1]
@@ -664,12 +847,31 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         degrees: bool = True,
         frame: str = "robot",
     ) -> npt.NDArray[np.float64]:
-        """Get a pose 4x4 matrix (as a numpy array) expressed in Reachy coordinate system, rotated by roll, pitch, yaw
-        from the initial pose.
+        """Calculate a new pose matrix by rotating an initial pose matrix by specified roll, pitch, and yaw angles.
 
-        Two frames can be used:
-        - robot frame : rotation is done around Reachy's coordinate system axis
-        - gripper frame : rotation is done in the gripper's coordinate system
+        The rotation is performed in either the robot or gripper coordinate system.
+
+        Args:
+            roll: Rotation around the x-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            pitch: Rotation around the y-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            yaw: Rotation around the z-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            initial_pose: A 4x4 matrix representing the initial
+                pose of the end-effector, expressed as a NumPy array of type `np.float64`. If not provided,
+                the current pose of the arm is used. Defaults to `None`.
+            degrees: Specifies whether the rotation angles are provided in degrees. If set to
+                `True`, the angles are interpreted as degrees. Defaults to `True`.
+            frame: The coordinate system in which the rotation should be performed. Can be
+                "robot" or "gripper". Defaults to "robot".
+
+        Returns:
+            A 4x4 pose matrix, expressed in the Reachy coordinate system, rotated
+            by the specified roll, pitch, and yaw angles from the initial pose, in the specified frame.
+
+        Raises:
+            ValueError: If the `frame` is not "robot" or "gripper".
         """
         if frame not in ["robot", "gripper"]:
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
@@ -702,12 +904,35 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         frame: str = "robot",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Create a goto to rotate the arm's end effector from the last goto sent on the part.
-        If no goto has been sent, use the current position.
+        """Create a rotation movement for the arm's end effector based on the specified roll, pitch, and yaw angles.
 
-        Two frames can be used:
-        - robot frame : rotation is done around Reachy's coordinate system axis
-        - gripper frame : rotation is done in the gripper's coordinate system
+        The rotation is performed in either the robot or gripper frame.
+
+        Args:
+            roll: Rotation around the x-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            pitch: Rotation around the y-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            yaw: Rotation around the z-axis in the Euler angles representation, specified
+                in radians or degrees (based on the `degrees` parameter).
+            duration: Time duration in seconds for the rotation movement to be completed.
+                Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program waits for the movement to complete before continuing
+                execution. Defaults to `False`.
+            degrees: Specifies whether the rotation angles are provided in degrees. If set to
+                `True`, the angles are interpreted as degrees. Defaults to `True`.
+            frame: The coordinate system in which the rotation should be performed. Can be
+                "robot" or "gripper". Defaults to "robot".
+            interpolation_mode: The type of interpolation to be used when moving the arm's
+                joints. Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+
+        Returns:
+            The GoToId of the movement command, created by calling the `goto_from_matrix` method with
+            the rotated pose computed in the specified frame.
+
+        Raises:
+            ValueError: If the `frame` is not "robot" or "gripper".
         """
         if frame not in ["robot", "gripper"]:
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'gripper'")
@@ -739,6 +964,27 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
     ) -> GoToId:
+        """Move a single joint of the arm to a specified position.
+
+        The function allows for optional parameters for duration, interpolation mode, and waiting for completion.
+
+        Args:
+            arm_joint: The specific joint of the arm to move, identified by an integer value.
+            goal_position: The target position for the specified arm joint, given as a float.
+                The value can be in radians or degrees, depending on the `degrees` parameter.
+            duration: The time duration in seconds for the joint to reach the specified goal
+                position. Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program waits for the movement to complete before continuing
+                execution. Defaults to `False`.
+            interpolation_mode: The type of interpolation to use when moving the arm's joint.
+                Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+            degrees: Specifies whether the joint positions are in degrees. If set to `True`,
+                the goal position is interpreted as degrees. Defaults to `True`.
+
+        Returns:
+            A unique GoToId identifier corresponding to this specific goto movement.
+        """
         if degrees:
             goal_position = np.deg2rad(goal_position)
         request = GoToRequest(
@@ -761,7 +1007,22 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return response
 
     def get_joints_positions(self, degrees: bool = True, round: Optional[int] = None) -> List[float]:
-        """Return the current joints positions of the arm, by default in degrees"""
+        """Return the current joint positions of the arm, either in degrees or radians.
+
+        The function also provides an option to round the values.
+
+        Args:
+            degrees: Specifies whether the joint positions should be returned in degrees.
+                If set to `True`, the positions are returned in degrees; otherwise, they are returned in radians.
+                Defaults to `True`.
+            round: The number of decimal places to round the joint positions to before
+                returning them. If `None`, no rounding is applied.
+
+        Returns:
+            A list of float values representing the current joint positions of the arm in the
+            following order: [shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch,
+            wrist_yaw].
+        """
         response = self._stub.GetJointPosition(self._part_id)
         positions: List[float] = arm_position_to_list(response, degrees)
         if round is not None:
@@ -781,6 +1042,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     #     return temperatures
 
     def send_goal_positions(self) -> None:
+        """Send goal positions to the gripper and actuators if the parts are on.
+
+        The function checks if the gripper and actuators are active before sending the goal positions.
+        """
         if self._gripper is not None:
             self._gripper.send_goal_positions()
         if self.is_off():
@@ -797,11 +1062,24 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Send all joints to standard positions in specified duration.
+        """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode.
 
-        common_posture can be 'default' or 'elbow_90'.
-        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
-        Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
+        Args:
+            common_posture: The standard positions to which all joints will be sent.
+                It can be 'default' or 'elbow_90'. Defaults to 'default'.
+            duration: The time duration in seconds for the robot to move to the specified posture.
+                Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program waits for the movement to complete before continuing
+                execution. Defaults to `False`.
+            wait_for_goto_end: Specifies whether commands will be sent to a part immediately or
+                only after all previous commands in the queue have been executed. If set to `False`, the program
+                will cancel all executing moves and queues. Defaults to `True`.
+            interpolation_mode: The type of interpolation used when moving the arm's joints.
+                Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+
+        Returns:
+            A unique GoToId identifier for this specific movement.
         """
         joints = self.get_default_posture_joints(common_posture=common_posture)
         if common_posture == "default":
@@ -816,12 +1094,23 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return GoToId(id=-1)
 
     def _update_with(self, new_state: ArmState) -> None:
-        """Update the arm with a newly received (partial) state received from the gRPC server."""
+        """Update the arm with a newly received (partial) state from the gRPC server.
+
+        Updating the shoulder, elbow, and wrist states accordingly.
+
+        Args:
+            new_state: current state of the arm, including the states of the shoulder, elbow, and wrist.
+        """
         self.shoulder._update_with(new_state.shoulder_state)
         self.elbow._update_with(new_state.elbow_state)
         self.wrist._update_with(new_state.wrist_state)
 
     def _update_audit_status(self, new_status: ArmStatus) -> None:
+        """Update the audit status of different components based on a new overall status.
+
+        Args:
+            new_status: new status of the shoulder, elbow, and  wrist.
+        """
         self.shoulder._update_audit_status(new_status.shoulder_status)
         self.elbow._update_audit_status(new_status.elbow_status)
         self.wrist._update_audit_status(new_status.wrist_status)
