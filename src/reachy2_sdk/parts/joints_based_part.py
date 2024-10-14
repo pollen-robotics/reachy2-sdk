@@ -30,9 +30,9 @@ class JointsBasedPart(Part):
 
     def __init__(
         self,
-        proto_msg: Arm_proto | Head_proto | MobileBase_proto,
+        proto_msg: Arm_proto | Head_proto,
         grpc_channel: grpc.Channel,
-        stub: ArmServiceStub | HeadServiceStub | MobileBaseUtilityServiceStub,
+        stub: ArmServiceStub | HeadServiceStub,
     ) -> None:
         """Initialize the JointsBasedPart with its common attributes.
 
@@ -41,10 +41,10 @@ class JointsBasedPart(Part):
 
         Args:
             proto_msg: A protocol message representing the part's configuration. It can be an
-                Arm_proto, Head_proto, or MobileBase_proto object.
+                Arm_proto or Head_proto object.
             grpc_channel: The gRPC channel used to communicate with the corresponding service.
-            stub: The service stub for the gRPC communication, which can be an ArmServiceStub,
-                HeadServiceStub, or MobileBaseUtilityServiceStub, depending on the part type.
+            stub: The service stub for the gRPC communication, which can be an ArmServiceStub or
+                HeadServiceStub, depending on the part type.
         """
         super().__init__(proto_msg, grpc_channel, stub)
 

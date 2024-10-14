@@ -14,10 +14,10 @@ class ReachyInfo:
     """The ReachyInfo class saves information of the global robot.
 
     The ReachyInfo class gives access to informations that won't be modified during the session:
-        - the robot's hardware version
-        - the robot's core software version
-        - the robot's configuration
-        - the robot's serial_number
+        the robot's hardware version
+        the robot's core software version
+        the robot's configuration
+        the robot's serial_number
     But also to the battery voltage.
     """
 

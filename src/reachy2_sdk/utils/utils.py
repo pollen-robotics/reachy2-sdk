@@ -100,7 +100,7 @@ def arm_position_to_list(arm_pos: ArmPosition, degrees: bool = True) -> List[flo
 
     Returns:
         A list of joint positions based on the ArmPosition, returned in the following order:
-        [shoulder.pitch, shoulder.yaw, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].
+        [shoulder.pitch, shoulder.yaw, elbow.yaw, elbow.pitch, wrist.roll, wrist.pitch, wrist.yaw].
     """
     positions = []
 

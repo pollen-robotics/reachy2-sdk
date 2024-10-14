@@ -86,7 +86,7 @@ class Camera:
     ) -> Optional[
         Tuple[int, int, str, npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]
     ]:
-        """Retrieve camera parameters including intrinsic and extrinsic matrices.
+        """Retrieve camera parameters including intrinsic matrix.
 
         Args:
             view: The camera view for which parameters should be retrieved. Default is CameraView.LEFT.
@@ -128,8 +128,8 @@ class Camera:
         """Convert pixel coordinates to XYZ coordinate in Reachy coordinate system.
 
         Args:
-            u: The x-coordinate (pixel) in the camera view.
-            v: The y-coordinate (pixel) in the camera view.
+            u: The x-coordinate (pixel) in the camera view (horizontal axis, left-to-right).
+            v: The y-coordinate (pixel) in the camera view (vertical axis, top-to-bottom).
             z_c: The depth value in meters at the given pixel. Default is 1.0.
             view: The camera view to use for the conversion. Default is CameraView.LEFT.
 

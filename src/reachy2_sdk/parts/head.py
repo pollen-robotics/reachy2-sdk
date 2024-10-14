@@ -135,7 +135,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             x: The x-coordinate of the target point.
             y: The y-coordinate of the target point.
             z: The z-coordinate of the target point.
-            duration: The time in seconds for the neck to reach the target point. Defaults to 2.0.
+            duration: The time in seconds for the head to look at the point. Defaults to 2.0.
             wait: Whether to wait for the movement to complete before returning. Defaults to False.
             interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
                 Defaults to "minimum_jerk".

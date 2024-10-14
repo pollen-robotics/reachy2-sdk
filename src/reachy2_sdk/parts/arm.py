@@ -751,7 +751,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 to the pose matrix.
             y: Translation along the y-axis in meters (left direction) to apply
                 to the pose matrix.
-            z: Translation along the z-axis in meters (vertical direction) to apply
+            z: Translation along the z-axis in meters (upwards direction) to apply
                 to the pose matrix.
             initial_pose: A 4x4 matrix representing the initial pose of the end-effector in Reachy coordinate system,
                 expressed as a NumPy array of type `np.float64`.
