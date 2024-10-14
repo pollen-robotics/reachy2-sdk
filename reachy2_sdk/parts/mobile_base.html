@@ -1002,8 +1002,11 @@ users to access essential information such as battery voltage and odometry, as w
 to move the base to specified positions or velocities. The class supports different drive modes and
 control modes, and provides methods for resetting the base's odometry.</p>
 
-<p>Attributes:
-    lidar: Lidar object for handling safety features.</p>
+<h6 id="attributes">Attributes:</h6>
+
+<ul>
+<li><strong>lidar:</strong>  Lidar object for handling safety features.</li>
+</ul>
 </div>
 
 
@@ -1058,10 +1061,13 @@ control modes, and provides methods for resetting the base's odometry.</p>
 mobile base, initializes the drive and control modes.
 It also sets up the LIDAR safety monitoring.</p>
 
-<p>Args:
-    mb_msg: A MobileBase_proto message containing the configuration details for the mobile base.
-    initial_state: The initial state of the mobile base, as a MobileBaseState object.
-    grpc_channel: The gRPC channel used to communicate with the mobile base service.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>mb_msg:</strong>  A MobileBase_proto message containing the configuration details for the mobile base.</li>
+<li><strong>initial_state:</strong>  The initial state of the mobile base, as a MobileBaseState object.</li>
+<li><strong>grpc_channel:</strong>  The gRPC channel used to communicate with the mobile base service.</li>
+</ul>
 </div>
 
 
@@ -1108,8 +1114,11 @@ It also sets up the LIDAR safety monitoring.</p>
 <p>The battery should be recharged if the voltage reaches 24.5V or below. If the battery level is low,
 a warning message is logged.</p>
 
-<p>Returns:
-    The current battery voltage as a float, rounded to one decimal place.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The current battery voltage as a float, rounded to one decimal place.</p>
+</blockquote>
 </div>
 
 
@@ -1152,9 +1161,12 @@ a warning message is logged.</p>
 <p>The odometry includes the x and y positions in meters and theta in degrees, along with the
 velocities in the x, y directions in meters per degrees and the angular velocity in degrees per second.</p>
 
-<p>Returns:
-    A dictionary containing the current odometry with keys 'x', 'y', 'theta', 'vx', 'vy', and 'vtheta',
-    each rounded to three decimal places.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A dictionary containing the current odometry with keys 'x', 'y', 'theta', 'vx', 'vy', and 'vtheta',
+  each rounded to three decimal places.</p>
+</blockquote>
 </div>
 
 
@@ -1192,9 +1204,12 @@ velocities in the x, y directions in meters per degrees and the angular velocity
 
 <p>The velocity includes the x and y components in meters per second and the theta component in degrees per second.</p>
 
-<p>Returns:
-    A dictionary containing the last command velocity with keys 'x', 'y', and 'theta',
-    each rounded to three decimal places.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A dictionary containing the last command velocity with keys 'x', 'y', and 'theta',
+  each rounded to three decimal places.</p>
+</blockquote>
 </div>
 
 
@@ -1281,13 +1296,19 @@ velocities in the x, y directions in meters per degrees and the angular velocity
 <p>The x and y velocities are specified in meters per second, while the rotational velocity is in degrees per second.
 The speed is applied for a duration of 200ms, predefined at the ROS level.</p>
 
-<p>Args:
-    x_vel: The target velocity along the x-axis in meters per second.
-    y_vel: The target velocity along the y-axis in meters per second.
-    rot_vel: The target rotational velocity in degrees per second.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Raises:
-    ValueError: If any of the velocities exceed their maximum allowed values.</p>
+<ul>
+<li><strong>x_vel:</strong>  The target velocity along the x-axis in meters per second.</li>
+<li><strong>y_vel:</strong>  The target velocity along the y-axis in meters per second.</li>
+<li><strong>rot_vel:</strong>  The target rotational velocity in degrees per second.</li>
+</ul>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If any of the velocities exceed their maximum allowed values.</li>
+</ul>
 </div>
 
 
@@ -1328,10 +1349,13 @@ The speed is applied for a duration of 200ms, predefined at the ROS level.</p>
 
 <p>The (x, y) coordinates specify the desired translation in the mobile base's Cartesian space.</p>
 
-<p>Args:
-    x: The desired translation along the x-axis in meters.
-    y: The desired translation along the y-axis in meters.
-    timeout: An optional timeout for reaching the target position, in seconds.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>x:</strong>  The desired translation along the x-axis in meters.</li>
+<li><strong>y:</strong>  The desired translation along the y-axis in meters.</li>
+<li><strong>timeout:</strong>  An optional timeout for reaching the target position, in seconds.</li>
+</ul>
 </div>
 
 
@@ -1368,9 +1392,12 @@ The speed is applied for a duration of 200ms, predefined at the ROS level.</p>
 
 <p>The theta parameter defines the desired rotation in degrees.</p>
 
-<p>Args:
-    theta: The desired rotation in degrees, relative to the current orientation.
-    timeout: An optional timeout for completing the rotation, in seconds.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>theta:</strong>  The desired rotation in degrees, relative to the current orientation.</li>
+<li><strong>timeout:</strong>  An optional timeout for completing the rotation, in seconds.</li>
+</ul>
 </div>
 
 
@@ -1451,16 +1478,22 @@ The zero position is set when the mobile base is started or when the <code><a hr
 can be provided to avoid the mobile base getting stuck. The tolerance values define the acceptable margins for
 reaching the target position.</p>
 
-<p>Args:
-    x: The target x-coordinate in meters.
-    y: The target y-coordinate in meters.
-    theta: The target orientation in degrees.
-    timeout: Optional; the maximum time allowed to reach the target, in seconds.
-    tolerance: A dictionary specifying the tolerances for x, y, theta, and overall distance to
-        consider the target reached. Defaults to {"delta_x": 0.05, "delta_y": 0.05, "delta_theta": 5, "distance": 0.05}.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Raises:
-    ValueError: If the target is not reached and the mobile base is stopped due to an obstacle.</p>
+<ul>
+<li><strong>x:</strong>  The target x-coordinate in meters.</li>
+<li><strong>y:</strong>  The target y-coordinate in meters.</li>
+<li><strong>theta:</strong>  The target orientation in degrees.</li>
+<li><strong>timeout:</strong>  Optional; the maximum time allowed to reach the target, in seconds.</li>
+<li><strong>tolerance:</strong>  A dictionary specifying the tolerances for x, y, theta, and overall distance to
+consider the target reached. Defaults to {"delta_x": 0.05, "delta_y": 0.05, "delta_theta": 5, "distance": 0.05}.</li>
+</ul>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the target is not reached and the mobile base is stopped due to an obstacle.</li>
+</ul>
 </div>
 
 
@@ -1488,8 +1521,11 @@ reaching the target position.</p>
 
             <div class="docstring"><p>Check if the mobile base is currently stiff (not in free-wheel mode).</p>
 
-<p>Returns:
-    <code>True</code> if the mobile base is not compliant (stiff), <code>False</code> otherwise.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p><code>True</code> if the mobile base is not compliant (stiff), <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 
@@ -1519,8 +1555,11 @@ reaching the target position.</p>
 
             <div class="docstring"><p>Check if the mobile base is currently compliant (in free-wheel mode).</p>
 
-<p>Returns:
-    True if the mobile base is compliant (in free-wheel mode), <code>False</code> otherwise.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>True if the mobile base is compliant (in free-wheel mode), <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 

@@ -654,12 +654,15 @@ to world coordinates.</p>
 <p>This constructor sets up a camera instance by storing the camera's
 information and gRPC video stub for accessing camera-related services.</p>
 
-<p>Args:
-    cam_info: An instance of <code>CameraFeatures</code> containing the camera's
-        details, such as its name, capabilities, and settings.
-    video_stub: A <code>VideoServiceStub</code> for making gRPC calls to the video
-        service, enabling access to camera frames, parameters, and other
-        camera-related functionality.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>cam_info:</strong>  An instance of <code>CameraFeatures</code> containing the camera's
+details, such as its name, capabilities, and settings.</li>
+<li><strong>video_stub:</strong>  A <code>VideoServiceStub</code> for making gRPC calls to the video
+service, enabling access to camera frames, parameters, and other
+camera-related functionality.</li>
+</ul>
 </div>
 
 
@@ -697,12 +700,18 @@ information and gRPC video stub for accessing camera-related services.</p>
 
             <div class="docstring"><p>Retrieve an RGB frame from the camera.</p>
 
-<p>Args:
-    view: The camera view to retrieve the frame from. Default is <a href="#CameraView.LEFT">CameraView.LEFT</a>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A tuple containing the frame as a NumPy array in OpenCV format and the timestamp in nanoseconds.
-    Returns None if no frame is retrieved.</p>
+<ul>
+<li><strong>view:</strong>  The camera view to retrieve the frame from. Default is <a href="#CameraView.LEFT">CameraView.LEFT</a>.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A tuple containing the frame as a NumPy array in OpenCV format and the timestamp in nanoseconds.
+  Returns None if no frame is retrieved.</p>
+</blockquote>
 </div>
 
 
@@ -748,12 +757,18 @@ information and gRPC video stub for accessing camera-related services.</p>
 
             <div class="docstring"><p>Retrieve camera parameters including intrinsic matrix.</p>
 
-<p>Args:
-    view: The camera view for which parameters should be retrieved. Default is <a href="#CameraView.LEFT">CameraView.LEFT</a>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A tuple containing height, width, distortion model, distortion coefficients, intrinsic matrix,
-    rotation matrix, and projection matrix. Returns None if no parameters are retrieved.</p>
+<ul>
+<li><strong>view:</strong>  The camera view for which parameters should be retrieved. Default is <a href="#CameraView.LEFT">CameraView.LEFT</a>.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A tuple containing height, width, distortion model, distortion coefficients, intrinsic matrix,
+  rotation matrix, and projection matrix. Returns None if no parameters are retrieved.</p>
+</blockquote>
 </div>
 
 
@@ -788,11 +803,17 @@ information and gRPC video stub for accessing camera-related services.</p>
 
             <div class="docstring"><p>Retrieve the 4x4 extrinsic matrix of the camera.</p>
 
-<p>Args:
-    view: The camera view for which the extrinsic matrix should be retrieved. Default is <a href="#CameraView.LEFT">CameraView.LEFT</a>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    The extrinsic matrix as a NumPy array. Returns None if no matrix is retrieved.</p>
+<ul>
+<li><strong>view:</strong>  The camera view for which the extrinsic matrix should be retrieved. Default is <a href="#CameraView.LEFT">CameraView.LEFT</a>.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The extrinsic matrix as a NumPy array. Returns None if no matrix is retrieved.</p>
+</blockquote>
 </div>
 
 
@@ -854,14 +875,20 @@ information and gRPC video stub for accessing camera-related services.</p>
 
             <div class="docstring"><p>Convert pixel coordinates to XYZ coordinate in Reachy coordinate system.</p>
 
-<p>Args:
-    u: The x-coordinate (pixel) in the camera view (horizontal axis, left-to-right).
-    v: The y-coordinate (pixel) in the camera view (vertical axis, top-to-bottom).
-    z_c: The depth value in meters at the given pixel. Default is 1.0.
-    view: The camera view to use for the conversion. Default is <a href="#CameraView.LEFT">CameraView.LEFT</a>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A NumPy array containing the [X, Y, Z] world coordinates in meters. Returns None if the conversion fails.</p>
+<ul>
+<li><strong>u:</strong>  The x-coordinate (pixel) in the camera view (horizontal axis, left-to-right).</li>
+<li><strong>v:</strong>  The y-coordinate (pixel) in the camera view (vertical axis, top-to-bottom).</li>
+<li><strong>z_c:</strong>  The depth value in meters at the given pixel. Default is 1.0.</li>
+<li><strong>view:</strong>  The camera view to use for the conversion. Default is <a href="#CameraView.LEFT">CameraView.LEFT</a>.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A NumPy array containing the [X, Y, Z] world coordinates in meters. Returns None if the conversion fails.</p>
+</blockquote>
 </div>
 
 
@@ -953,12 +980,18 @@ of the Camera class, allowing users to retrieve depth information.</p>
 
             <div class="docstring"><p>Retrieve a depth frame from the camera.</p>
 
-<p>Args:
-    view: The camera view to retrieve the depth frame from. Default is <a href="#CameraView.DEPTH">CameraView.DEPTH</a>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A tuple containing the depth frame as a NumPy array in 16-bit format and the timestamp in nanoseconds.
-    Returns None if no frame is retrieved.</p>
+<ul>
+<li><strong>view:</strong>  The camera view to retrieve the depth frame from. Default is <a href="#CameraView.DEPTH">CameraView.DEPTH</a>.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A tuple containing the depth frame as a NumPy array in 16-bit format and the timestamp in nanoseconds.
+  Returns None if no frame is retrieved.</p>
+</blockquote>
 </div>
 
 

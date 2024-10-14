@@ -675,11 +675,17 @@
 
             <div class="docstring"><p>Convert a list of angles from degrees to radians.</p>
 
-<p>Args:
-    angles_list: A list of angles in degrees to convert to radians.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A list of angles converted to radians.</p>
+<ul>
+<li><strong>angles_list:</strong>  A list of angles in degrees to convert to radians.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A list of angles converted to radians.</p>
+</blockquote>
 </div>
 
 
@@ -713,11 +719,17 @@
 
             <div class="docstring"><p>Convert a list of angles from radians to degrees.</p>
 
-<p>Args:
-    angles_list: A list of angles in radians to convert to degrees.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A list of angles converted to degrees.</p>
+<ul>
+<li><strong>angles_list:</strong>  A list of angles in radians to convert to degrees.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A list of angles converted to degrees.</p>
+</blockquote>
 </div>
 
 
@@ -772,15 +784,21 @@
 
             <div class="docstring"><p>Convert a list of joint positions to an ArmPosition message, considering whether the positions are in degrees or radians.</p>
 
-<p>Args:
-    positions: A list of float values representing joint positions. The list should contain 7 values
-        in the following order: [shoulder.pitch, shoulder.yaw, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].
-    degrees: A flag indicating whether the input joint positions are in degrees. If set to <code>True</code>,
-        the input positions are in degrees. Defaults to <code>True</code>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    An ArmPosition message containing the shoulder position, elbow position, and wrist position
-    based on the input list of joint positions.</p>
+<ul>
+<li><strong>positions:</strong>  A list of float values representing joint positions. The list should contain 7 values
+in the following order: [shoulder.pitch, shoulder.yaw, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].</li>
+<li><strong>degrees:</strong>  A flag indicating whether the input joint positions are in degrees. If set to <code>True</code>,
+the input positions are in degrees. Defaults to <code>True</code>.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>An ArmPosition message containing the shoulder position, elbow position, and wrist position
+  based on the input list of joint positions.</p>
+</blockquote>
 </div>
 
 
@@ -826,14 +844,20 @@
 
             <div class="docstring"><p>Convert an ArmPosition message to a list of joint positions, with an option to return the result in degrees.</p>
 
-<p>Args:
-    arm_pos: An ArmPosition message containing shoulder, elbow, and wrist positions.
-    degrees: Specifies whether the joint positions should be returned in degrees. If set to <code>True</code>,
-        the positions are converted to degrees. Defaults to <code>True</code>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A list of joint positions based on the ArmPosition, returned in the following order:
-    [shoulder.pitch, shoulder.yaw, elbow.yaw, elbow.pitch, wrist.roll, wrist.pitch, wrist.yaw].</p>
+<ul>
+<li><strong>arm_pos:</strong>  An ArmPosition message containing shoulder, elbow, and wrist positions.</li>
+<li><strong>degrees:</strong>  Specifies whether the joint positions should be returned in degrees. If set to <code>True</code>,
+the positions are converted to degrees. Defaults to <code>True</code>.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A list of joint positions based on the ArmPosition, returned in the following order:
+  [shoulder.pitch, shoulder.yaw, elbow.yaw, elbow.pitch, wrist.roll, wrist.pitch, wrist.yaw].</p>
+</blockquote>
 </div>
 
 
@@ -871,13 +895,19 @@
 
             <div class="docstring"><p>Convert an ExtEulerAngles 3D rotation message to a list of joint positions.</p>
 
-<p>Args:
-    euler_angles: An ExtEulerAngles object representing a 3D rotation message.
-    degrees: Specifies whether the output should be in degrees. If set to <code>True</code>, the function
-        converts the angles to degrees before returning the list. Defaults to <code>True</code>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A list of joint positions representing the Euler angles in the order [roll, pitch, yaw].</p>
+<ul>
+<li><strong>euler_angles:</strong>  An ExtEulerAngles object representing a 3D rotation message.</li>
+<li><strong>degrees:</strong>  Specifies whether the output should be in degrees. If set to <code>True</code>, the function
+converts the angles to degrees before returning the list. Defaults to <code>True</code>.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A list of joint positions representing the Euler angles in the order [roll, pitch, yaw].</p>
+</blockquote>
 </div>
 
 
@@ -920,16 +950,25 @@
 
             <div class="docstring"><p>Convert a given interpolation mode string to a corresponding GoToInterpolation object.</p>
 
-<p>Args:
-    interpolation_mode: A string representing the type of interpolation to be used. It can be either
-        "minimum_jerk" or "linear".</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    An instance of the GoToInterpolation class with the interpolation type set based on the input
-    interpolation_mode string.</p>
+<ul>
+<li><strong>interpolation_mode:</strong>  A string representing the type of interpolation to be used. It can be either
+"minimum_jerk" or "linear".</li>
+</ul>
 
-<p>Raises:
-    ValueError: If the interpolation_mode is not "minimum_jerk" or "linear".</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>An instance of the GoToInterpolation class with the interpolation type set based on the input
+  interpolation_mode string.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the interpolation_mode is not "minimum_jerk" or "linear".</li>
+</ul>
 </div>
 
 
@@ -973,17 +1012,26 @@
 
             <div class="docstring"><p>Convert an interpolation mode enum to a string representation.</p>
 
-<p>Args:
-    interpolation_mode: The interpolation mode given as InterpolationMode. The supported interpolation
-        modes are MINIMUM_JERK and LINEAR.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A string representing the interpolation mode based on the input interpolation_mode. Returns
-    "minimum_jerk" if the mode is InterpolationMode.MINIMUM_JERK, and "linear" if it is
-    InterpolationMode.LINEAR.</p>
+<ul>
+<li><strong>interpolation_mode:</strong>  The interpolation mode given as InterpolationMode. The supported interpolation
+modes are MINIMUM_JERK and LINEAR.</li>
+</ul>
 
-<p>Raises:
-    ValueError: If the interpolation_mode is not InterpolationMode.MINIMUM_JERK or InterpolationMode.LINEAR.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A string representing the interpolation mode based on the input interpolation_mode. Returns
+  "minimum_jerk" if the mode is InterpolationMode.MINIMUM_JERK, and "linear" if it is
+  InterpolationMode.LINEAR.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the interpolation_mode is not InterpolationMode.MINIMUM_JERK or InterpolationMode.LINEAR.</li>
+</ul>
 </div>
 
 
@@ -1021,12 +1069,18 @@
 
             <div class="docstring"><p>Decompose a homogeneous 4x4 matrix into rotation (represented as a quaternion) and translation components.</p>
 
-<p>Args:
-    matrix: A homogeneous 4x4 matrix represented as a NumPy array of type np.float64.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A tuple containing a Quaternion representing the rotation component and a NumPy array
-    representing the translation component of the input matrix.</p>
+<ul>
+<li><strong>matrix:</strong>  A homogeneous 4x4 matrix represented as a NumPy array of type np.float64.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A tuple containing a Quaternion representing the rotation component and a NumPy array
+  representing the translation component of the input matrix.</p>
+</blockquote>
 </div>
 
 
@@ -1062,13 +1116,19 @@
 
             <div class="docstring"><p>Recompose a homogeneous 4x4 matrix from rotation (quaternion) and translation components.</p>
 
-<p>Args:
-    rotation: A 3x3 rotation matrix represented as a NumPy array of type np.float64.
-    translation: A vector representing the displacement in space, containing the x, y, and z
-        components of the translation vector.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A homogeneous 4x4 matrix composed from the provided rotation and translation components.</p>
+<ul>
+<li><strong>rotation:</strong>  A 3x3 rotation matrix represented as a NumPy array of type np.float64.</li>
+<li><strong>translation:</strong>  A vector representing the displacement in space, containing the x, y, and z
+components of the translation vector.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A homogeneous 4x4 matrix composed from the provided rotation and translation components.</p>
+</blockquote>
 </div>
 
 
@@ -1122,15 +1182,21 @@
 
             <div class="docstring"><p>Create a 4x4 homogeneous rotation matrix from roll, pitch, and yaw angles, with an option to input angles in degrees.</p>
 
-<p>Args:
-    roll: The rotation angle around the x-axis in the Euler angles representation.
-    pitch: The rotation angle around the y-axis in the Euler angles representation.
-    yaw: The rotation angle around the z-axis in the Euler angles representation.
-    degrees: Specifies whether the input angles (roll, pitch, yaw) are in degrees. If set to <code>True</code>,
-        the input angles are expected to be in degrees. Defaults to <code>True</code>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A 4x4 homogeneous rotation matrix created from the input roll, pitch, and yaw angles.</p>
+<ul>
+<li><strong>roll:</strong>  The rotation angle around the x-axis in the Euler angles representation.</li>
+<li><strong>pitch:</strong>  The rotation angle around the y-axis in the Euler angles representation.</li>
+<li><strong>yaw:</strong>  The rotation angle around the z-axis in the Euler angles representation.</li>
+<li><strong>degrees:</strong>  Specifies whether the input angles (roll, pitch, yaw) are in degrees. If set to <code>True</code>,
+the input angles are expected to be in degrees. Defaults to <code>True</code>.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A 4x4 homogeneous rotation matrix created from the input roll, pitch, and yaw angles.</p>
+</blockquote>
 </div>
 
 
@@ -1186,21 +1252,30 @@
 
             <div class="docstring"><p>Create a 4x4 pose matrix from a position vector and "roll, pitch, yaw" angles (rotation).</p>
 
-<p>Args:
-    position: A list of size 3 representing the requested position of the end effector in the Reachy coordinate system.
-    rotation: A list of size 3 representing the requested orientation of the end effector in the Reachy coordinate system.
-        The rotation is given as intrinsic angles, executed in roll, pitch, yaw order.
-    degrees: Specifies whether the input angles are in degrees. If set to <code>True</code>, the angles are interpreted as degrees.
-        If set to <code>False</code>, they are interpreted as radians. Defaults to <code>True</code>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    The constructed 4x4 pose matrix.</p>
+<ul>
+<li><strong>position:</strong>  A list of size 3 representing the requested position of the end effector in the Reachy coordinate system.</li>
+<li><strong>rotation:</strong>  A list of size 3 representing the requested orientation of the end effector in the Reachy coordinate system.
+The rotation is given as intrinsic angles, executed in roll, pitch, yaw order.</li>
+<li><strong>degrees:</strong>  Specifies whether the input angles are in degrees. If set to <code>True</code>, the angles are interpreted as degrees.
+If set to <code>False</code>, they are interpreted as radians. Defaults to <code>True</code>.</li>
+</ul>
 
-<p>Raises:
-    TypeError: If <code>position</code> is not a list of floats or integers.
-    TypeError: If <code>rotation</code> is not a list of floats or integers.
-    ValueError: If the length of <code>position</code> is not 3.
-    ValueError: If the length of <code>rotation</code> is not 3.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The constructed 4x4 pose matrix.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>TypeError:</strong>  If <code>position</code> is not a list of floats or integers.</li>
+<li><strong>TypeError:</strong>  If <code>rotation</code> is not a list of floats or integers.</li>
+<li><strong>ValueError:</strong>  If the length of <code>position</code> is not 3.</li>
+<li><strong>ValueError:</strong>  If the length of <code>rotation</code> is not 3.</li>
+</ul>
 </div>
 
 
@@ -1246,15 +1321,21 @@
 
             <div class="docstring"><p>Return a new homogeneous 4x4 pose matrix that is the input matrix rotated in itself.</p>
 
-<p>Args:
-    frame: The input frame, given as a 4x4 homogeneous matrix.
-    rotation: A list of size 3 representing the rotation to be applied. The rotation is given as intrinsic angles,
-        executed in roll, pitch, yaw order.
-    degrees: Specifies whether the input angles are in degrees. If set to <code>True</code>, the angles are interpreted as degrees.
-        If set to <code>False</code>, they are interpreted as radians. Defaults to <code>True</code>.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A new 4x4 homogeneous matrix after applying the specified rotation.</p>
+<ul>
+<li><strong>frame:</strong>  The input frame, given as a 4x4 homogeneous matrix.</li>
+<li><strong>rotation:</strong>  A list of size 3 representing the rotation to be applied. The rotation is given as intrinsic angles,
+executed in roll, pitch, yaw order.</li>
+<li><strong>degrees:</strong>  Specifies whether the input angles are in degrees. If set to <code>True</code>, the angles are interpreted as degrees.
+If set to <code>False</code>, they are interpreted as radians. Defaults to <code>True</code>.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A new 4x4 homogeneous matrix after applying the specified rotation.</p>
+</blockquote>
 </div>
 
 
@@ -1297,12 +1378,18 @@
 
             <div class="docstring"><p>Return a new homogeneous 4x4 pose matrix that is the input frame translated along its own axes.</p>
 
-<p>Args:
-    frame: The input frame, given as a 4x4 homogeneous matrix.
-    translation: A list of size 3 representing the translation to be applied, given as [x, y, z].</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A new homogeneous 4x4 pose matrix after translating the input frame along its own axes.</p>
+<ul>
+<li><strong>frame:</strong>  The input frame, given as a 4x4 homogeneous matrix.</li>
+<li><strong>translation:</strong>  A list of size 3 representing the translation to be applied, given as [x, y, z].</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A new homogeneous 4x4 pose matrix after translating the input frame along its own axes.</p>
+</blockquote>
 </div>
 
 
@@ -1346,14 +1433,23 @@
 
 <p>The function computes the inverse by transposing the rotation component and adjusting the translation component.</p>
 
-<p>Args:
-    matrix: A 4x4 NumPy array representing a homogeneous transformation matrix.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A new 4x4 homogeneous matrix that is the inverse of the input matrix.</p>
+<ul>
+<li><strong>matrix:</strong>  A 4x4 NumPy array representing a homogeneous transformation matrix.</li>
+</ul>
 
-<p>Raises:
-    ValueError: If the input matrix is not 4x4.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A new 4x4 homogeneous matrix that is the inverse of the input matrix.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the input matrix is not 4x4.</li>
+</ul>
 </div>
 
 
@@ -1426,17 +1522,26 @@
 
             <div class="docstring"><p>Calculate a normal vector to a given vector based on a specified direction.</p>
 
-<p>Args:
-    vector: A vector [x, y, z] in 3D space.
-    arc_direction: The desired direction for the normal vector. It can be one of the following options:
-        'above', 'below', 'front', 'back', 'right', or 'left'.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    The normal vector [x, y, z] to the given vector in the specified direction. Returns <code>None</code> if the
-    normal vector cannot be computed or if the vector is in the requested arc_direction.</p>
+<ul>
+<li><strong>vector:</strong>  A vector [x, y, z] in 3D space.</li>
+<li><strong>arc_direction:</strong>  The desired direction for the normal vector. It can be one of the following options:
+'above', 'below', 'front', 'back', 'right', or 'left'.</li>
+</ul>
 
-<p>Raises:
-    ValueError: If the arc_direction is not one of 'above', 'below', 'front', 'back', 'right', or 'left'.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The normal vector [x, y, z] to the given vector in the specified direction. Returns <code>None</code> if the
+  normal vector cannot be computed or if the vector is in the requested arc_direction.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the arc_direction is not one of 'above', 'below', 'front', 'back', 'right', or 'left'.</li>
+</ul>
 </div>
 
 

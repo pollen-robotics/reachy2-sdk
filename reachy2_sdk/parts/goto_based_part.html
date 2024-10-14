@@ -402,9 +402,12 @@ such as the Arm, Head, or potentially the MobileBase in the future.</p>
 associating the part with the interface and setting up the gRPC stub for performing
 goto commands.</p>
 
-<p>Args:
-    part: The robot part that uses this interface, such as an Arm or Head.
-    goto_stub: The gRPC stub used to send goto commands to the robot part.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>part:</strong>  The robot part that uses this interface, such as an Arm or Head.</li>
+<li><strong>goto_stub:</strong>  The gRPC stub used to send goto commands to the robot part.</li>
+</ul>
 </div>
 
 
@@ -490,8 +493,11 @@ goto commands.</p>
 
             <div class="docstring"><p>Request the cancellation of all playing and waiting goto commands for a specific part.</p>
 
-<p>Returns:
-    A GoToAck acknowledging the cancellation of all goto commands.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A GoToAck acknowledging the cancellation of all goto commands.</p>
+</blockquote>
 </div>
 
 

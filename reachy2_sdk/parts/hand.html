@@ -630,10 +630,13 @@
 the hand, setting the goal position, and checking the hand's state. It also manages the hand's
 compliance status (whether it is stiff or free).</p>
 
-<p>Attributes:
-    opening: The opening of the hand as a percentage (0-100), rounded to two decimal places.
-    present_position: The current position of the hand in degrees.
-    goal_position: The target goal position of the hand in degrees.</p>
+<h6 id="attributes">Attributes:</h6>
+
+<ul>
+<li><strong>opening:</strong>  The opening of the hand as a percentage (0-100), rounded to two decimal places.</li>
+<li><strong>present_position:</strong>  The current position of the hand in degrees.</li>
+<li><strong>goal_position:</strong>  The target goal position of the hand in degrees.</li>
+</ul>
 </div>
 
 
@@ -679,10 +682,13 @@ compliance status (whether it is stiff or free).</p>
 <p>Sets up the necessary attributes and configuration for the hand, including the gRPC
 stub and initial state.</p>
 
-<p>Args:
-    hand_msg: The Hand_proto object containing the configuration details for the hand.
-    initial_state: The initial state of the hand, represented as a HandState object.
-    grpc_channel: The gRPC channel used to communicate with the hand's gRPC service.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>hand_msg:</strong>  The Hand_proto object containing the configuration details for the hand.</li>
+<li><strong>initial_state:</strong>  The initial state of the hand, represented as a HandState object.</li>
+<li><strong>grpc_channel:</strong>  The gRPC channel used to communicate with the hand's gRPC service.</li>
+</ul>
 </div>
 
 
@@ -709,8 +715,11 @@ stub and initial state.</p>
 
             <div class="docstring"><p>Get the opening of the hand as a percentage.</p>
 
-<p>Returns:
-    The hand opening as a percentage (0-100), rounded to two decimal places.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The hand opening as a percentage (0-100), rounded to two decimal places.</p>
+</blockquote>
 </div>
 
 
@@ -755,12 +764,18 @@ stub and initial state.</p>
 
             <div class="docstring"><p>Set the opening value for the hand.</p>
 
-<p>Args:
-    percentage: The desired opening percentage of the hand, ranging from 0 to 100.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Raises:
-    ValueError: If the percentage is not between 0 and 100.
-    RuntimeError: If the gripper is off and the opening value cannot be set.</p>
+<ul>
+<li><strong>percentage:</strong>  The desired opening percentage of the hand, ranging from 0 to 100.</li>
+</ul>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the percentage is not between 0 and 100.</li>
+<li><strong>RuntimeError:</strong>  If the gripper is off and the opening value cannot be set.</li>
+</ul>
 </div>
 
 
@@ -787,8 +802,11 @@ stub and initial state.</p>
 
             <div class="docstring"><p>Get the current position of the hand.</p>
 
-<p>Returns:
-    The present position of the hand in degrees.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The present position of the hand in degrees.</p>
+</blockquote>
 </div>
 
 
@@ -815,8 +833,11 @@ stub and initial state.</p>
 
             <div class="docstring"><p>Get the goal position of the hand.</p>
 
-<p>Returns:
-    The goal position of the hand in degrees.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The goal position of the hand in degrees.</p>
+</blockquote>
 </div>
 
 
@@ -889,8 +910,11 @@ If the hand is off, the command is not sent.</p>
 
             <div class="docstring"><p>Open the hand.</p>
 
-<p>Raises:
-    RuntimeError: If the gripper is off and the open request cannot be sent.</p>
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>RuntimeError:</strong>  If the gripper is off and the open request cannot be sent.</li>
+</ul>
 </div>
 
 
@@ -921,8 +945,11 @@ If the hand is off, the command is not sent.</p>
 
             <div class="docstring"><p>Close the hand.</p>
 
-<p>Raises:
-    RuntimeError: If the gripper is off and the close request cannot be sent.</p>
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>RuntimeError:</strong>  If the gripper is off and the close request cannot be sent.</li>
+</ul>
 </div>
 
 
@@ -950,8 +977,11 @@ If the hand is off, the command is not sent.</p>
 
             <div class="docstring"><p>Check if the hand is stiff.</p>
 
-<p>Returns:
-    <code>True</code> if the hand is on (not compliant), <code>False</code> otherwise.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p><code>True</code> if the hand is on (not compliant), <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 
@@ -979,8 +1009,11 @@ If the hand is off, the command is not sent.</p>
 
             <div class="docstring"><p>Check if the hand is compliant.</p>
 
-<p>Returns:
-    <code>True</code> if the hand is off (compliant), <code>False</code> otherwise.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p><code>True</code> if the hand is off (compliant), <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 
@@ -1008,8 +1041,11 @@ If the hand is off, the command is not sent.</p>
 
             <div class="docstring"><p>Check if the hand is currently moving.</p>
 
-<p>Returns:
-    <code>True</code> if the gripper is moving, <code>False</code> otherwise.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p><code>True</code> if the gripper is moving, <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 

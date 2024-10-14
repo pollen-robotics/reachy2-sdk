@@ -458,12 +458,15 @@ types of robot parts.</p>
 configures the part's unique identifier. It provides the foundation for specific parts of the robot
 (Arm, Head, Hand, MobileBase) to be derived from this class.</p>
 
-<p>Args:
-    proto_msg: The protobuf message containing configuration details for the part
-        (Arm, Head, Hand, or MobileBase).
-    grpc_channel: The gRPC channel used to communicate with the service.
-    stub: The service stub for the gRPC communication, which could be for Arm, Head,
-        Hand, or MobileBase.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>proto_msg:</strong>  The protobuf message containing configuration details for the part
+(Arm, Head, Hand, or MobileBase).</li>
+<li><strong>grpc_channel:</strong>  The gRPC channel used to communicate with the service.</li>
+<li><strong>stub:</strong>  The service stub for the gRPC communication, which could be for Arm, Head,
+Hand, or MobileBase.</li>
+</ul>
 </div>
 
 
@@ -556,8 +559,11 @@ to maximum. It waits for a brief period to ensure the operation is complete.</p>
 
             <div class="docstring"><p>Check if all actuators of the part are currently on.</p>
 
-<p>Returns:
-    True if all actuators are on, otherwise False.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>True if all actuators are on, otherwise False.</p>
+</blockquote>
 </div>
 
 
@@ -588,8 +594,11 @@ to maximum. It waits for a brief period to ensure the operation is complete.</p>
 
             <div class="docstring"><p>Check if all actuators of the part are currently off.</p>
 
-<p>Returns:
-    True if all actuators are off, otherwise False.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>True if all actuators are off, otherwise False.</p>
+</blockquote>
 </div>
 
 
@@ -627,10 +636,13 @@ to maximum. It waits for a brief period to ensure the operation is complete.</p>
 
             <div class="docstring"><p>Get the audit status of all actuators of the part.</p>
 
-<p>Returns:
-    A dictionary where each key is the name of an actuator and the value is its audit status.
-    If an error is detected in any actuator, a warning is logged. Otherwise, an informational
-    message indicating no errors is logged.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A dictionary where each key is the name of an actuator and the value is its audit status.
+  If an error is detected in any actuator, a warning is logged. Otherwise, an informational
+  message indicating no errors is logged.</p>
+</blockquote>
 </div>
 
 

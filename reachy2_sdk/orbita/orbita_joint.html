@@ -386,13 +386,16 @@
 <p>This sets up the joint by assigning its actuator, axis type, and position order within
 the part, and updates its state based on the provided initial values.</p>
 
-<p>Args:
-    initial_state: A dictionary containing the initial state of the joint, with
-        each entry representing a specific parameter of the joint (e.g., present position).
-    axis_type: The type of axis for the joint (e.g., roll, pitch, yaw).
-    actuator: The actuator to which this joint belongs.
-    position_order_in_part: The position order of this joint in the overall part's
-        list of joints.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>initial_state:</strong>  A dictionary containing the initial state of the joint, with
+each entry representing a specific parameter of the joint (e.g., present position).</li>
+<li><strong>axis_type:</strong>  The type of axis for the joint (e.g., roll, pitch, yaw).</li>
+<li><strong>actuator:</strong>  The actuator to which this joint belongs.</li>
+<li><strong>position_order_in_part:</strong>  The position order of this joint in the overall part's
+list of joints.</li>
+</ul>
 </div>
 
 
@@ -489,17 +492,23 @@ the part, and updates its state based on the provided initial values.</p>
 
 <p>Acts like a "goto" movement on the part, where "goto" movements for joints are queued on the part they belong to.</p>
 
-<p>Args:
-    goal_position: The target position to move the joint to.
-    duration: The time in seconds for the joint to reach the goal position. Defaults to 2.
-    wait: Whether to wait for the movement to finish before continuing. Defaults to False.
-    interpolation_mode: The type of interpolation to use for the movement, either "minimum_jerk" or "linear".
-        Defaults to "minimum_jerk".
-    degrees: Whether the goal position is specified in degrees. If True, the position is interpreted as degrees.
-        Defaults to True.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    The GoToId associated with the movement command.</p>
+<ul>
+<li><strong>goal_position:</strong>  The target position to move the joint to.</li>
+<li><strong>duration:</strong>  The time in seconds for the joint to reach the goal position. Defaults to 2.</li>
+<li><strong>wait:</strong>  Whether to wait for the movement to finish before continuing. Defaults to False.</li>
+<li><strong>interpolation_mode:</strong>  The type of interpolation to use for the movement, either "minimum_jerk" or "linear".
+Defaults to "minimum_jerk".</li>
+<li><strong>degrees:</strong>  Whether the goal position is specified in degrees. If True, the position is interpreted as degrees.
+Defaults to True.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The GoToId associated with the movement command.</p>
+</blockquote>
 </div>
 
 

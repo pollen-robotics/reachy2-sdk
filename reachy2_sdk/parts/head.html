@@ -835,8 +835,11 @@
 of the head, such as moving to a specific posture or looking at a Cartesian point in Reachy's
 coordinate system.</p>
 
-<p>Attributes:
-    neck: An instance of <code>Orbita3d</code> representing the neck actuator of the head.</p>
+<h6 id="attributes">Attributes:</h6>
+
+<ul>
+<li><strong>neck:</strong>  An instance of <code>Orbita3d</code> representing the neck actuator of the head.</li>
+</ul>
 </div>
 
 
@@ -883,11 +886,14 @@ coordinate system.</p>
 <p>Sets up the necessary attributes and configuration for the head, including the gRPC
 stubs and initial state.</p>
 
-<p>Args:
-    head_msg: The Head_proto object containing the configuration details for the head.
-    initial_state: The initial state of the head, represented as a HeadState object.
-    grpc_channel: The gRPC channel used to communicate with the head's gRPC service.
-    goto_stub: The GoToServiceStub used to handle goto-based movements for the head.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>head_msg:</strong>  The Head_proto object containing the configuration details for the head.</li>
+<li><strong>initial_state:</strong>  The initial state of the head, represented as a HeadState object.</li>
+<li><strong>grpc_channel:</strong>  The gRPC channel used to communicate with the head's gRPC service.</li>
+<li><strong>goto_stub:</strong>  The GoToServiceStub used to handle goto-based movements for the head.</li>
+</ul>
 </div>
 
 
@@ -937,8 +943,11 @@ stubs and initial state.</p>
 
             <div class="docstring"><p>Get the current orientation of the head.</p>
 
-<p>Returns:
-    The orientation of the head as a quaternion (w, x, y, z).</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The orientation of the head as a quaternion (w, x, y, z).</p>
+</blockquote>
 </div>
 
 
@@ -969,8 +978,11 @@ stubs and initial state.</p>
 
             <div class="docstring"><p>Return the current joint positions of the neck.</p>
 
-<p>Returns:
-    A list of the current neck joint positions in the order [roll, pitch, yaw].</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A list of the current neck joint positions in the order [roll, pitch, yaw].</p>
+</blockquote>
 </div>
 
 
@@ -1037,20 +1049,29 @@ stubs and initial state.</p>
 
 <p>The (x, y, z) coordinates are expressed in meters, where x is forward, y is left, and z is upward.</p>
 
-<p>Args:
-    x: The x-coordinate of the target point.
-    y: The y-coordinate of the target point.
-    z: The z-coordinate of the target point.
-    duration: The time in seconds for the head to look at the point. Defaults to 2.0.
-    wait: Whether to wait for the movement to complete before returning. Defaults to False.
-    interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
-        Defaults to "minimum_jerk".</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    The unique GoToId associated with the movement command.</p>
+<ul>
+<li><strong>x:</strong>  The x-coordinate of the target point.</li>
+<li><strong>y:</strong>  The y-coordinate of the target point.</li>
+<li><strong>z:</strong>  The z-coordinate of the target point.</li>
+<li><strong>duration:</strong>  The time in seconds for the head to look at the point. Defaults to 2.0.</li>
+<li><strong>wait:</strong>  Whether to wait for the movement to complete before returning. Defaults to False.</li>
+<li><strong>interpolation_mode:</strong>  The interpolation mode for the movement, either "minimum_jerk" or "linear".
+Defaults to "minimum_jerk".</li>
+</ul>
 
-<p>Raises:
-    ValueError: If the duration is set to 0.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The unique GoToId associated with the movement command.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the duration is set to 0.</li>
+</ul>
 </div>
 
 
@@ -1132,20 +1153,29 @@ stubs and initial state.</p>
 
 <p>The rotation is applied in the order: roll, pitch, yaw.</p>
 
-<p>Args:
-    positions: A list of three float values representing the target roll, pitch, and yaw angles.
-    duration: The time in seconds for the neck to reach the target position. Defaults to 2.0.
-    wait: Whether to wait for the movement to complete before returning. Defaults to False.
-    interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
-        Defaults to "minimum_jerk".
-    degrees: Whether the provided positions are in degrees. If True, positions will be converted to radians.
-        Defaults to True.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    The unique GoToId associated with the movement command.</p>
+<ul>
+<li><strong>positions:</strong>  A list of three float values representing the target roll, pitch, and yaw angles.</li>
+<li><strong>duration:</strong>  The time in seconds for the neck to reach the target position. Defaults to 2.0.</li>
+<li><strong>wait:</strong>  Whether to wait for the movement to complete before returning. Defaults to False.</li>
+<li><strong>interpolation_mode:</strong>  The interpolation mode for the movement, either "minimum_jerk" or "linear".
+Defaults to "minimum_jerk".</li>
+<li><strong>degrees:</strong>  Whether the provided positions are in degrees. If True, positions will be converted to radians.
+Defaults to True.</li>
+</ul>
 
-<p>Raises:
-    ValueError: If the duration is set to 0.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The unique GoToId associated with the movement command.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the duration is set to 0.</li>
+</ul>
 </div>
 
 
@@ -1206,18 +1236,27 @@ stubs and initial state.</p>
 
             <div class="docstring"><p>Send the neck to the orientation specified by a quaternion.</p>
 
-<p>Args:
-    q: The target orientation as a quaternion (w, x, y, z).
-    duration: The time in seconds for the neck to reach the target orientation. Defaults to 2.0.
-    wait: Whether to wait for the movement to complete before returning. Defaults to False.
-    interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
-        Defaults to "minimum_jerk".</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    The GoToId associated with the movement command.</p>
+<ul>
+<li><strong>q:</strong>  The target orientation as a quaternion (w, x, y, z).</li>
+<li><strong>duration:</strong>  The time in seconds for the neck to reach the target orientation. Defaults to 2.0.</li>
+<li><strong>wait:</strong>  Whether to wait for the movement to complete before returning. Defaults to False.</li>
+<li><strong>interpolation_mode:</strong>  The interpolation mode for the movement, either "minimum_jerk" or "linear".
+Defaults to "minimum_jerk".</li>
+</ul>
 
-<p>Raises:
-    ValueError: If the duration is set to 0.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The GoToId associated with the movement command.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the duration is set to 0.</li>
+</ul>
 </div>
 
 
@@ -1303,19 +1342,28 @@ stubs and initial state.</p>
 
 <p>The default posture sets the neck joints to [0, -10, 0] (roll, pitch, yaw).</p>
 
-<p>Args:
-    duration: The time in seconds for the neck to reach the target posture. Defaults to 2.
-    wait: Whether to wait for the movement to complete before returning. Defaults to False.
-    wait_for_goto_end: Whether to wait for all previous goto commands to finish before executing
-        the current command. If False, it cancels all ongoing commands. Defaults to True.
-    interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
-        Defaults to "minimum_jerk".</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    The unique GoToId associated with the movement command.</p>
+<ul>
+<li><strong>duration:</strong>  The time in seconds for the neck to reach the target posture. Defaults to 2.</li>
+<li><strong>wait:</strong>  Whether to wait for the movement to complete before returning. Defaults to False.</li>
+<li><strong>wait_for_goto_end:</strong>  Whether to wait for all previous goto commands to finish before executing
+the current command. If False, it cancels all ongoing commands. Defaults to True.</li>
+<li><strong>interpolation_mode:</strong>  The interpolation mode for the movement, either "minimum_jerk" or "linear".
+Defaults to "minimum_jerk".</li>
+</ul>
 
-<p>Raises:
-    ValueError: If the neck is off and the command cannot be sent.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The unique GoToId associated with the movement command.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the neck is off and the command cannot be sent.</li>
+</ul>
 </div>
 
 

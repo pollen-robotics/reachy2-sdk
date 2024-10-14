@@ -784,14 +784,17 @@ And apply speed, torque, pid and compliancy to all motors of the actuator.</p>
 
             <div class="docstring"><p>Initialize the Orbita actuator with its common attributes.</p>
 
-<p>Args:
-    uid: The unique identifier for the actuator.
-    name: The name of the actuator.
-    orbita_type: Specifies the type of Orbita, either "2d" or "3d".
-    stub: The gRPC stub used for communicating with the actuator, which can be an
-        instance of either <code>Orbita2dServiceStub</code> or <code>Orbita3dServiceStub</code>.
-    part: The parent part to which the Orbita belongs, used for referencing the
-        part's attributes.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>uid:</strong>  The unique identifier for the actuator.</li>
+<li><strong>name:</strong>  The name of the actuator.</li>
+<li><strong>orbita_type:</strong>  Specifies the type of Orbita, either "2d" or "3d".</li>
+<li><strong>stub:</strong>  The gRPC stub used for communicating with the actuator, which can be an
+instance of either <code>Orbita2dServiceStub</code> or <code>Orbita3dServiceStub</code>.</li>
+<li><strong>part:</strong>  The parent part to which the Orbita belongs, used for referencing the
+part's attributes.</li>
+</ul>
 </div>
 
 
@@ -834,12 +837,18 @@ And apply speed, torque, pid and compliancy to all motors of the actuator.</p>
 <p>This method defines the maximum speed for the joints, specified as a percentage
 of the maximum speed capability.</p>
 
-<p>Args:
-    speed_limit: The desired speed limit as a percentage (0-100).</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Raises:
-    ValueError: If the provided speed_limit is not a float or int.
-    ValueError: If the provided speed_limit is outside the range [0, 100].</p>
+<ul>
+<li><strong>speed_limit:</strong>  The desired speed limit as a percentage (0-100).</li>
+</ul>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the provided speed_limit is not a float or int.</li>
+<li><strong>ValueError:</strong>  If the provided speed_limit is outside the range [0, 100].</li>
+</ul>
 </div>
 
 
@@ -882,12 +891,18 @@ of the maximum speed capability.</p>
 <p>This method defines the maximum torque for the joints, specified as a percentage
 of the maximum torque capability.</p>
 
-<p>Args:
-    torque_limit: The desired torque limit as a percentage (0-100).</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Raises:
-    ValueError: If the provided torque_limit is not a float or int.
-    ValueError: If the provided torque_limit is outside the range [0, 100].</p>
+<ul>
+<li><strong>torque_limit:</strong>  The desired torque limit as a percentage (0-100).</li>
+</ul>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  If the provided torque_limit is not a float or int.</li>
+<li><strong>ValueError:</strong>  If the provided torque_limit is outside the range [0, 100].</li>
+</ul>
 </div>
 
 
@@ -920,9 +935,12 @@ of the maximum torque capability.</p>
 
 <p>The speed limits are expressed as percentages of the maximum speed for each motor.</p>
 
-<p>Returns:
-    A dictionary where each key is the motor name and the value is the speed limit
-    percentage (0-100) for that motor. Motor names are of format "motor_{n}".</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A dictionary where each key is the motor name and the value is the speed limit
+  percentage (0-100) for that motor. Motor names are of format "motor_{n}".</p>
+</blockquote>
 </div>
 
 
@@ -955,9 +973,12 @@ of the maximum torque capability.</p>
 
 <p>The torque limits are expressed as percentages of the maximum torque for each motor.</p>
 
-<p>Returns:
-    A dictionary where each key is the motor name and the value is the torque limit
-    percentage (0-100) for that motor. Motor names are of format "motor_{n}".</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A dictionary where each key is the motor name and the value is the torque limit
+  percentage (0-100) for that motor. Motor names are of format "motor_{n}".</p>
+</blockquote>
 </div>
 
 
@@ -990,9 +1011,12 @@ of the maximum torque capability.</p>
 
 <p>Each motor's PID controller parameters (Proportional, Integral, Derivative) are returned.</p>
 
-<p>Returns:
-    A dictionary where each key is the motor name and the value is a tuple containing
-    the PID values (P, I, D) for that motor. Motor names are of format "motor_{n}".</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A dictionary where each key is the motor name and the value is a tuple containing
+  the PID values (P, I, D) for that motor. Motor names are of format "motor_{n}".</p>
+</blockquote>
 </div>
 
 
@@ -1064,8 +1088,11 @@ of the maximum torque capability.</p>
 
             <div class="docstring"><p>Check if the actuator is currently stiff.</p>
 
-<p>Returns:
-    <code>True</code> if the actuator is stiff (not compliant), <code>False</code> otherwise.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p><code>True</code> if the actuator is stiff (not compliant), <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 
@@ -1093,9 +1120,12 @@ of the maximum torque capability.</p>
 
             <div class="docstring"><p>Get the current temperatures of all the motors in the actuator.</p>
 
-<p>Returns:
-    A dictionary where each key is the motor name and the value is the
-    current temperature of the motor in degrees Celsius. Motor names are of format "motor_{n}".</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A dictionary where each key is the motor name and the value is the
+  current temperature of the motor in degrees Celsius. Motor names are of format "motor_{n}".</p>
+</blockquote>
 </div>
 
 
@@ -1154,9 +1184,12 @@ send the specified goal positions to the actuator's joints.</p>
 
             <div class="docstring"><p>Get the current audit status of the actuator.</p>
 
-<p>Returns:
-    The audit status as a string, representing the latest error or status
-    message, or <code>None</code> if there is no error.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>The audit status as a string, representing the latest error or status
+  message, or <code>None</code> if there is no error.</p>
+</blockquote>
 </div>
 
 

@@ -1849,11 +1849,14 @@ and performing movements.</li>
 
             <div class="docstring"><p>Initialize a connection to the robot.</p>
 
-<p>Args:
-    host: The IP address or hostname of the robot.
-    sdk_port: The gRPC port for the SDK. Default is 50051.
-    audio_port: The gRPC port for audio services. Default is 50063.
-    video_port: The gRPC port for video services. Default is 50065.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>host:</strong>  The IP address or hostname of the robot.</li>
+<li><strong>sdk_port:</strong>  The gRPC port for the SDK. Default is 50051.</li>
+<li><strong>audio_port:</strong>  The gRPC port for audio services. Default is 50063.</li>
+<li><strong>video_port:</strong>  The gRPC port for video services. Default is 50065.</li>
+</ul>
 </div>
 
 
@@ -1946,8 +1949,11 @@ and performing movements.</li>
 
             <div class="docstring"><p>Disconnect the SDK from the robot's server.</p>
 
-<p>Args:
-    lost_connection: If <code>True</code>, indicates that the connection was lost unexpectedly.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>lost_connection:</strong>  If <code>True</code>, indicates that the connection was lost unexpectedly.</li>
+</ul>
 </div>
 
 
@@ -2141,8 +2147,11 @@ and performing movements.</li>
 
             <div class="docstring"><p>Check if the SDK is connected to the robot.</p>
 
-<p>Returns:
-    <code>True</code> if connected, <code>False</code> otherwise.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p><code>True</code> if connected, <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 
@@ -2236,8 +2245,11 @@ and performing movements.</li>
 
             <div class="docstring"><p>Activate all motors of the robot's parts.</p>
 
-<p>Returns:
-    <code>True</code> if successful, <code>False</code> otherwise.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p><code>True</code> if successful, <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 
@@ -2379,8 +2391,11 @@ and performing movements.</li>
 
             <div class="docstring"><p>Check if all actuators of Reachy parts are on (stiff).</p>
 
-<p>Returns:
-    <code>True</code> if all are stiff, <code>False</code> otherwise.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p><code>True</code> if all are stiff, <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 
@@ -2417,8 +2432,11 @@ and performing movements.</li>
 
             <div class="docstring"><p>Check if all actuators of Reachy parts are off (compliant).</p>
 
-<p>Returns:
-    <code>True</code> if all are compliant, <code>False</code> otherwise.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p><code>True</code> if all are compliant, <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 
@@ -2535,21 +2553,27 @@ and performing movements.</li>
 
             <div class="docstring"><p>Move the robot to a predefined posture.</p>
 
-<p>Args:
-    common_posture: The name of the posture. It can be 'default' or 'elbow_90'. Defaults to 'default'.
-    wait: Determines whether the program should wait for the movement to finish before
-        returning. If set to <code>True</code>, the program waits for the movement to complete before continuing
-        execution. Defaults to <code>False</code>.
-    wait_for_goto_end: Specifies whether commands will be sent to a part immediately or
-        only after all previous commands in the queue have been executed. If set to <code>False</code>, the program
-        will cancel all executing moves and queues. Defaults to <code>True</code>.
-    duration: The time duration in seconds for the robot to move to the specified posture.
-        Defaults to 2.
-    interpolation_mode: The type of interpolation used when moving the arm's joints.
-        Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A GoToHomeId containing movement GoToIds for each part.</p>
+<ul>
+<li><strong>common_posture:</strong>  The name of the posture. It can be 'default' or 'elbow_90'. Defaults to 'default'.</li>
+<li><strong>wait:</strong>  Determines whether the program should wait for the movement to finish before
+returning. If set to <code>True</code>, the program waits for the movement to complete before continuing
+execution. Defaults to <code>False</code>.</li>
+<li><strong>wait_for_goto_end:</strong>  Specifies whether commands will be sent to a part immediately or
+only after all previous commands in the queue have been executed. If set to <code>False</code>, the program
+will cancel all executing moves and queues. Defaults to <code>True</code>.</li>
+<li><strong>duration:</strong>  The time duration in seconds for the robot to move to the specified posture.
+Defaults to 2.</li>
+<li><strong>interpolation_mode:</strong>  The type of interpolation used when moving the arm's joints.
+Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A GoToHomeId containing movement GoToIds for each part.</p>
+</blockquote>
 </div>
 
 
@@ -2624,11 +2648,17 @@ and performing movements.</li>
 
             <div class="docstring"><p>Check if a goto command has completed.</p>
 
-<p>Args:
-    goto_id: The unique GoToId of the goto command.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    <code>True</code> if the command is complete, <code>False</code> otherwise.</p>
+<ul>
+<li><strong>goto_id:</strong>  The unique GoToId of the goto command.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p><code>True</code> if the command is complete, <code>False</code> otherwise.</p>
+</blockquote>
 </div>
 
 
@@ -2660,8 +2690,11 @@ and performing movements.</li>
 
             <div class="docstring"><p>Cancel all active goto commands.</p>
 
-<p>Returns:
-     A <code>GoToAck</code> object indicating whether the cancellation was acknowledged.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A <code>GoToAck</code> object indicating whether the cancellation was acknowledged.</p>
+</blockquote>
 </div>
 
 
@@ -2705,15 +2738,24 @@ and performing movements.</li>
 
             <div class="docstring"><p>Request the cancellation of a specific goto command based on its GoToId.</p>
 
-<p>Args:
-    goto_id: The ID of the goto command to cancel.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A <code>GoToAck</code> object indicating whether the cancellation was acknowledged.
-    If the robot is not connected, returns None.</p>
+<ul>
+<li><strong>goto_id:</strong>  The ID of the goto command to cancel.</li>
+</ul>
 
-<p>Raises:
-    TypeError: If <code>goto_id</code> is not an instance of <code>GoToId</code>.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A <code>GoToAck</code> object indicating whether the cancellation was acknowledged.
+  If the robot is not connected, returns None.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>TypeError:</strong>  If <code>goto_id</code> is not an instance of <code>GoToId</code>.</li>
+</ul>
 </div>
 
 
@@ -2778,17 +2820,26 @@ and performing movements.</li>
 
             <div class="docstring"><p>Retrieve the details of a goto command based on its GoToId.</p>
 
-<p>Args:
-    goto_id: The ID of the goto command for which details are requested.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    A <code>SimplifiedRequest</code> object containing the part name, joint goal positions
-    (in degrees), movement duration, and interpolation mode.
-    Returns <code>None</code> if the robot is not connected or if the <code>goto_id</code> is invalid.</p>
+<ul>
+<li><strong>goto_id:</strong>  The ID of the goto command for which details are requested.</li>
+</ul>
 
-<p>Raises:
-    TypeError: If <code>goto_id</code> is not an instance of <code>GoToId</code>.
-    ValueError: If <code>goto_id</code> is -1, indicating an invalid command.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A <code>SimplifiedRequest</code> object containing the part name, joint goal positions
+  (in degrees), movement duration, and interpolation mode.
+  Returns <code>None</code> if the robot is not connected or if the <code>goto_id</code> is invalid.</p>
+</blockquote>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>TypeError:</strong>  If <code>goto_id</code> is not an instance of <code>GoToId</code>.</li>
+<li><strong>ValueError:</strong>  If <code>goto_id</code> is -1, indicating an invalid command.</li>
+</ul>
 </div>
 
 

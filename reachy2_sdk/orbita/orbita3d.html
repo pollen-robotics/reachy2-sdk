@@ -607,16 +607,19 @@ Lower properties that are read-only but acessible at actuator level:</li>
 
             <div class="docstring"><p>Initialize the Orbita3d actuator with its joints, motors, and axes.</p>
 
-<p>Args:
-    uid: The unique identifier for the actuator.
-    name: The name of the actuator.
-    initial_state: The initial state of the Orbita3d actuator, containing the states
-        of the joints, motors, and axes.
-    grpc_channel: The gRPC communication channel used for interfacing with the
-        Orbita3d actuator.
-    part: The robot part that this actuator belongs to.
-    joints_position_order: A list defining the order of the joint positions in the
-        containing part, used to map the actuator's joint positions correctly.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>uid:</strong>  The unique identifier for the actuator.</li>
+<li><strong>name:</strong>  The name of the actuator.</li>
+<li><strong>initial_state:</strong>  The initial state of the Orbita3d actuator, containing the states
+of the joints, motors, and axes.</li>
+<li><strong>grpc_channel:</strong>  The gRPC communication channel used for interfacing with the
+Orbita3d actuator.</li>
+<li><strong>part:</strong>  The robot part that this actuator belongs to.</li>
+<li><strong>joints_position_order:</strong>  A list defining the order of the joint positions in the
+containing part, used to map the actuator's joint positions correctly.</li>
+</ul>
 </div>
 
 
@@ -766,9 +769,12 @@ Lower properties that are read-only but acessible at actuator level:</li>
 
             <div class="docstring"><p>Set the speed limit as a percentage of the maximum speed for all motors of the actuator.</p>
 
-<p>Args:
-    speed_limit: The desired speed limit as a percentage (0-100) of the maximum speed. Can be
-        specified as a float or int.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>speed_limit:</strong>  The desired speed limit as a percentage (0-100) of the maximum speed. Can be
+specified as a float or int.</li>
+</ul>
 </div>
 
 
@@ -811,9 +817,12 @@ Lower properties that are read-only but acessible at actuator level:</li>
 
             <div class="docstring"><p>Set the torque limit as a percentage of the maximum torque for all motors of the actuator.</p>
 
-<p>Args:
-    torque_limit: The desired torque limit as a percentage (0-100) of the maximum torque. Can be
-        specified as a float or int.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>torque_limit:</strong>  The desired torque limit as a percentage (0-100) of the maximum torque. Can be
+specified as a float or int.</li>
+</ul>
 </div>
 
 

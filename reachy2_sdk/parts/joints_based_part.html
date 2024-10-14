@@ -363,12 +363,15 @@ and torque limits, and managing joint positions.</p>
 <p>Sets up the gRPC communication channel and service stub for controlling the joint-based
 part of the robot, such as an arm or head.</p>
 
-<p>Args:
-    proto_msg: A protocol message representing the part's configuration. It can be an
-        Arm_proto or Head_proto object.
-    grpc_channel: The gRPC channel used to communicate with the corresponding service.
-    stub: The service stub for the gRPC communication, which can be an ArmServiceStub or
-        HeadServiceStub, depending on the part type.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>proto_msg:</strong>  A protocol message representing the part's configuration. It can be an
+Arm_proto or Head_proto object.</li>
+<li><strong>grpc_channel:</strong>  The gRPC channel used to communicate with the corresponding service.</li>
+<li><strong>stub:</strong>  The service stub for the gRPC communication, which can be an ArmServiceStub or
+HeadServiceStub, depending on the part type.</li>
+</ul>
 </div>
 
 
@@ -399,8 +402,11 @@ part of the robot, such as an arm or head.</p>
 
             <div class="docstring"><p>Get all the arm's joints.</p>
 
-<p>Returns:
-    A dictionary of all the arm's joints, with joint names as keys and joint objects as values.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A dictionary of all the arm's joints, with joint names as keys and joint objects as values.</p>
+</blockquote>
 </div>
 
 
@@ -430,8 +436,11 @@ part of the robot, such as an arm or head.</p>
 
             <div class="docstring"><p>Get the current positions of all joints.</p>
 
-<p>Returns:
-    A list of float values representing the present positions in degrees of the arm's joints.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>A list of float values representing the present positions in degrees of the arm's joints.</p>
+</blockquote>
 </div>
 
 
@@ -497,9 +506,12 @@ part of the robot, such as an arm or head.</p>
 
             <div class="docstring"><p>Set the torque limit as a percentage of the maximum torque for all motors of the part.</p>
 
-<p>Args:
-    torque_limit: The desired torque limit as a percentage (0-100) of the maximum torque. Can be
-        specified as a float or int.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>torque_limit:</strong>  The desired torque limit as a percentage (0-100) of the maximum torque. Can be
+specified as a float or int.</li>
+</ul>
 </div>
 
 
@@ -536,9 +548,12 @@ part of the robot, such as an arm or head.</p>
 
             <div class="docstring"><p>Set the speed limit as a percentage of the maximum speed for all motors of the part.</p>
 
-<p>Args:
-    speed_limit: The desired speed limit as a percentage (0-100) of the maximum speed. Can be
-        specified as a float or int.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>speed_limit:</strong>  The desired speed limit as a percentage (0-100) of the maximum speed. Can be
+specified as a float or int.</li>
+</ul>
 </div>
 
 
