@@ -28,7 +28,9 @@ Documentation is generated via pdoc, and it's available at [https://pollen-robot
 
 It can be generated locally with:
 ```console
-pdoc reachy2_sdk --output-dir docs --logo "https://www.pollen-robotics.com/img/company/logo/pollen_logo_square_black.svg"
+pdoc reachy2_sdk --output-dir docs --logo "https://pollen-robotics.github.io/reachy2-sdk/pollen_logo.png" --logo-link "https://www.pollen-robotics.com" --docformat google
+
+
 ```
 
 ## Unit tests
