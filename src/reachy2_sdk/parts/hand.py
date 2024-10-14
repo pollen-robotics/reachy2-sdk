@@ -178,7 +178,8 @@ class Hand(Part):
     def get_current_opening(self) -> float:
         """Get the current opening of the hand.
 
-        Returns: The current opening of the hand as a percentage (0-100).
+        Returns:
+            The current opening of the hand as a percentage (0-100).
         """
         return self.opening
 

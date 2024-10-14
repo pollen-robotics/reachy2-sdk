@@ -211,17 +211,17 @@ class MobileBase(Part):
         """Get the current odometry of the mobile base in its reference frame.
 
         Args:
-            degrees (bool, optional): Whether to return the orientation (`theta` and `vtheta`) in degrees. 
+            degrees (bool, optional): Whether to return the orientation (`theta` and `vtheta`) in degrees.
                                     Defaults to True.
-        
+
         Returns:
             Dict[str, float]: A dictionary containing the current odometry of the mobile base with:
-                - 'x': Position along the x-axis (in meters).
-                - 'y': Position along the y-axis (in meters).
-                - 'theta': Orientation (in degrees by default, radians if `degrees=False`).
-                - 'vx': Linear velocity along the x-axis (in meters per second).
-                - 'vy': Linear velocity along the y-axis (in meters per second).
-                - 'vtheta': Angular velocity (in degrees per second by default, radians if `degrees=False`).
+            - 'x': Position along the x-axis (in meters).
+            - 'y': Position along the y-axis (in meters).
+            - 'theta': Orientation (in degrees by default, radians if `degrees=False`).
+            - 'vx': Linear velocity along the x-axis (in meters per second).
+            - 'vy': Linear velocity along the y-axis (in meters per second).
+            - 'vtheta': Angular velocity (in degrees per second by default, radians if `degrees=False`).
         """
         current_state = self.odometry.copy()
         if not degrees:
@@ -414,7 +414,7 @@ class MobileBase(Part):
     def set_goal_speed(self, x: float | int = 0, y: float | int = 0, theta: float | int = 0) -> None:
         """Set the goal speed for the mobile base.
 
-        This method sets the target velocities for the mobile base's movement along the x and y axes, as well as 
+        This method sets the target velocities for the mobile base's movement along the x and y axes, as well as
         its rotational speed. The actual movement is executed after calling `send_speed_command`.
 
         Args:
@@ -440,7 +440,7 @@ class MobileBase(Part):
     def send_speed_command(self) -> None:
         """Send the speed command to the mobile base, based on previously set goal speeds.
 
-        This method sends the velocity commands for the mobile base that were set with `set_goal_speed`. 
+        This method sends the velocity commands for the mobile base that were set with `set_goal_speed`.
         The command will be executed for a duration of 200ms, which is predefined at the ROS level of the mobile base code.
 
         Raises:

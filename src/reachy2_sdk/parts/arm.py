@@ -252,14 +252,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     def get_current_positions(self, degrees: bool = True) -> List[float]:
         """Return the current joint positions of the arm, either in degrees or radians.
 
-        The function also provides an option to round the values.
-
         Args:
             degrees: Specifies whether the joint positions should be returned in degrees.
                 If set to `True`, the positions are returned in degrees; otherwise, they are returned in radians.
                 Defaults to `True`.
-            round: The number of decimal places to round the joint positions to before
-                returning them. If `None`, no rounding is applied.
 
         Returns:
             A list of float values representing the current joint positions of the arm in the
@@ -411,20 +407,20 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         - A list of 7 joint positions, or
         - A 4x4 pose matrix representing the desired end-effector position.
 
-        The function also supports an optional initial configuration `q0` for 
+        The function also supports an optional initial configuration `q0` for
         computing the inverse kinematics solution when the target is in Cartesian space.
 
         Args:
             target: The target position. It can either be a list of 7 joint values (for joint space)
                     or a 4x4 NumPy array (for Cartesian space).
             duration: The time in seconds for the movement to be completed. Defaults to 2.
-            wait: If True, the function waits until the movement is completed before returning. 
+            wait: If True, the function waits until the movement is completed before returning.
                     Defaults to False.
-            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk" 
+            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk"
                     or "linear". Defaults to "minimum_jerk".
-            degrees: If True, the joint values in the `target` argument are treated as degrees. 
+            degrees: If True, the joint values in the `target` argument are treated as degrees.
                     Defaults to True.
-            q0: An optional list of 7 joint values representing the initial configuration 
+            q0: An optional list of 7 joint values representing the initial configuration
                     for inverse kinematics. Defaults to None.
 
         Returns:
@@ -493,7 +489,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     ) -> GoToId:
         """Handle movement to a Cartesian target using a 4x4 transformation matrix.
 
-        This function computes and sends a command to move the arm to a Cartesian target specified by a 
+        This function computes and sends a command to move the arm to a Cartesian target specified by a
         4x4 homogeneous transformation matrix. Optionally, an initial joint configuration (`q0`) can be provided
         for the inverse kinematics calculation.
 

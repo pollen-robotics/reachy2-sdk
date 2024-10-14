@@ -159,20 +159,20 @@ class Head(JointsBasedPart, IGoToBasedPart):
         """Send the neck to a specified orientation.
 
         This method moves the neck either to a given roll-pitch-yaw (RPY) position or to a quaternion orientation.
-        
+
         Args:
             target (Any): The desired orientation for the neck. Can either be:
                 - A list of three floats [roll, pitch, yaw] representing the RPY orientation (in degrees if `degrees=True`).
                 - A pyQuat object representing a quaternion.
             duration (float, optional): Time in seconds for the movement. Defaults to 2.0.
             wait (bool, optional): Whether to wait for the movement to complete before returning. Defaults to False.
-            interpolation_mode (str, optional): The type of interpolation to be used for the movement. 
+            interpolation_mode (str, optional): The type of interpolation to be used for the movement.
                                                 Can be "minimum_jerk" or other modes. Defaults to "minimum_jerk".
             degrees (bool, optional): Specifies if the RPY values in `target` are in degrees. Defaults to True.
-        
+
         Raises:
             ValueError: If the `duration` is set to 0, or if the input type for `target` is invalid.
-        
+
         Returns:
             GoToId: The unique identifier for the movement command.
         """

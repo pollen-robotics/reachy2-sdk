@@ -582,7 +582,7 @@ class ReachySDK:
         if self._mobile_base is not None and self._mobile_base.is_on():
             return False
         return True
-    
+
     def reset_default_limits(self) -> None:
         """Set back speed and torque limits of all parts to maximum value (100)."""
         if not self.info:
