@@ -1,3 +1,5 @@
+"""Example of setting Reachy to zero pose using Reachy SDK."""
+
 import logging
 import time
 

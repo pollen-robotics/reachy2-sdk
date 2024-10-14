@@ -1,8 +1,6 @@
 """Reachy Head module.
 
-Handles all specific method to an Head:
-- the inverse kinematics
-- look_at function
+Handles all specific methods to a Head.
 """
 
 from typing import Any, List, overload
@@ -39,11 +37,14 @@ from .joints_based_part import JointsBasedPart
 
 
 class Head(JointsBasedPart, IGoToBasedPart):
-    """Head class.
+    """Head class for controlling the head of Reachy.
 
-    It exposes the neck orbita actuator at the base of the head.
-    It provides look_at utility function to directly orient the head so it looks at a cartesian point
-    expressed in Reachy's coordinate system.
+    The `Head` class manages the neck actuator and provides utilities for controlling the orientation
+    of the head, such as moving to a specific posture or looking at a Cartesian point in Reachy's
+    coordinate system.
+
+    Attributes:
+        neck: An instance of `Orbita3d` representing the neck actuator of the head.
     """
 
     def __init__(
@@ -53,7 +54,17 @@ class Head(JointsBasedPart, IGoToBasedPart):
         grpc_channel: grpc.Channel,
         goto_stub: GoToServiceStub,
     ) -> None:
-        """Initialize the head with its actuators."""
+        """Initialize the Head component with its actuators.
+
+        Sets up the necessary attributes and configuration for the head, including the gRPC
+        stubs and initial state.
+
+        Args:
+            head_msg: The Head_proto object containing the configuration details for the head.
+            initial_state: The initial state of the head, represented as a HeadState object.
+            grpc_channel: The gRPC channel used to communicate with the head's gRPC service.
+            goto_stub: The GoToServiceStub used to handle goto-based movements for the head.
+        """
         JointsBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel))
         IGoToBasedPart.__init__(self, self, goto_stub)
 
@@ -65,7 +76,11 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
         """Set up the head with its actuators.
 
-        It will create the actuators neck and antennas and set their initial state.
+        This method initializes the neck and antenna actuators for the head and sets their initial state.
+
+        Args:
+            head: A Head_proto object containing the configuration details for the head.
+            initial_state: A HeadState object representing the initial state of the head's actuators.
         """
         description = head.description
         self._neck = Orbita3d(
@@ -86,17 +101,23 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
     @property
     def neck(self) -> Orbita3d:
+        """Get the neck actuator of the head."""
         return self._neck
 
     def get_current_orientation(self) -> pyQuat:
-        """Return the current orientation of the head, as a quaternion."""
+        """Get the current orientation of the head.
+
+        Returns:
+            The orientation of the head as a quaternion (w, x, y, z).
+        """
         quat = self._stub.GetOrientation(self._part_id).q
         return pyQuat(w=quat.w, x=quat.x, y=quat.y, z=quat.z)
 
     def get_current_positions(self, degrees: bool = True) -> List[float]:
-        """Return the current joint positions of the head.
+        """Return the current joint positions of the neck.
 
-        It will return the List[roll, pitch, yaw] in degrees or in radians.
+        Returns:
+            A list of the current neck joint positions in the order [roll, pitch, yaw].
         """
         roll = self.neck._joints["roll"].present_position
         pitch = self.neck._joints["pitch"].present_position
@@ -135,10 +156,25 @@ class Head(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
     ) -> GoToId:
-        """Send neck to the orientation.
+        """Send the neck to a specified orientation.
 
-        If the input is a List[roll, pitch, yaw], it will send the neck to this RPY position.
-        If the input is a pyQuat, it will send the neck to the given quaternion orientation.
+        This method moves the neck either to a given roll-pitch-yaw (RPY) position or to a quaternion orientation.
+        
+        Args:
+            target (Any): The desired orientation for the neck. Can either be:
+                - A list of three floats [roll, pitch, yaw] representing the RPY orientation (in degrees if `degrees=True`).
+                - A pyQuat object representing a quaternion.
+            duration (float, optional): Time in seconds for the movement. Defaults to 2.0.
+            wait (bool, optional): Whether to wait for the movement to complete before returning. Defaults to False.
+            interpolation_mode (str, optional): The type of interpolation to be used for the movement. 
+                                                Can be "minimum_jerk" or other modes. Defaults to "minimum_jerk".
+            degrees (bool, optional): Specifies if the RPY values in `target` are in degrees. Defaults to True.
+        
+        Raises:
+            ValueError: If the `duration` is set to 0, or if the input type for `target` is invalid.
+        
+        Returns:
+            GoToId: The unique identifier for the movement command.
         """
 
         if duration == 0:
@@ -196,6 +232,26 @@ class Head(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
     ) -> GoToId:
+        """Move a single joint of the neck to a specified goal position.
+
+        Args:
+            neck_joint: The index of the neck joint to move (0 for roll, 1 for pitch, 2 for yaw).
+            goal_position: The target position for the joint.
+            duration: The time in seconds for the joint to reach the goal position. Defaults to 2.
+            wait: Whether to wait for the movement to complete before returning. Defaults to False.
+            interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
+                Defaults to "minimum_jerk".
+            degrees: Whether the goal position is provided in degrees. If True, the position will be converted to radians.
+                Defaults to True.
+
+        Returns:
+            The GoToId associated with the movement command.
+
+        Raises:
+            ValueError: If the duration is set to 0.
+        """
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
         if degrees:
             goal_position = np.deg2rad(goal_position)
         request = GoToRequest(
@@ -219,9 +275,24 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def look_at(
         self, x: float, y: float, z: float, duration: float = 2.0, wait: bool = False, interpolation_mode: str = "minimum_jerk"
     ) -> GoToId:
-        """Compute and send neck rpy position to look at the (x, y, z) point in Reachy cartesian space (torso frame).
+        """Compute and send a neck position to look at a specified point in Reachy's Cartesian space (torso frame).
 
-        X is forward, Y is left and Z is upward. They all expressed in meters.
+        The (x, y, z) coordinates are expressed in meters, where x is forward, y is left, and z is upward.
+
+        Args:
+            x: The x-coordinate of the target point.
+            y: The y-coordinate of the target point.
+            z: The z-coordinate of the target point.
+            duration: The time in seconds for the head to look at the point. Defaults to 2.0.
+            wait: Whether to wait for the movement to complete before returning. Defaults to False.
+            interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
+                Defaults to "minimum_jerk".
+
+        Returns:
+            The unique GoToId associated with the movement command.
+
+        Raises:
+            ValueError: If the duration is set to 0.
         """
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
@@ -245,7 +316,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._logger.error(f"Position {x}, {y}, {z} was not reachable. No command sent.")
         elif wait:
             self._wait_goto(response)
-
         return response
 
     def goto_posture(
@@ -256,10 +326,23 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Send all joints to standard positions in specified duration.
+        """Send all neck joints to standard positions within the specified duration.
 
-        Setting wait_for_goto_end to False will cancel all gotos on all parts and immediately send the commands.
-        Otherwise, the commands will be sent to a part when all gotos of its queue has been played.
+        The default posture sets the neck joints to [0, -10, 0] (roll, pitch, yaw).
+
+        Args:
+            duration: The time in seconds for the neck to reach the target posture. Defaults to 2.
+            wait: Whether to wait for the movement to complete before returning. Defaults to False.
+            wait_for_goto_end: Whether to wait for all previous goto commands to finish before executing
+                the current command. If False, it cancels all ongoing commands. Defaults to True.
+            interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
+                Defaults to "minimum_jerk".
+
+        Returns:
+            The unique GoToId associated with the movement command.
+
+        Raises:
+            ValueError: If the neck is off and the command cannot be sent.
         """
         if not wait_for_goto_end:
             self.cancel_all_goto()
@@ -270,6 +353,10 @@ class Head(JointsBasedPart, IGoToBasedPart):
         return GoToId(id=-1)
 
     def send_goal_positions(self) -> None:
+        """Send goal positions to the head's joints.
+
+        If goal positions have been specified for any joint of the head, sends them to the robot.
+        """
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
             return
@@ -277,8 +364,17 @@ class Head(JointsBasedPart, IGoToBasedPart):
             actuator.send_goal_positions()
 
     def _update_with(self, new_state: HeadState) -> None:
-        """Update the head with a newly received (partial) state received from the gRPC server."""
+        """Update the head with a newly received (partial) state from the gRPC server.
+
+        Args:
+            new_state: A HeadState object representing the new state of the head's actuators.
+        """
         self.neck._update_with(new_state.neck_state)
 
     def _update_audit_status(self, new_status: HeadStatus) -> None:
+        """Update the audit status of the neck with the new status from the gRPC server.
+
+        Args:
+            new_status: A HeadStatus object representing the new status of the neck.
+        """
         self.neck._update_audit_status(new_status.neck_status)

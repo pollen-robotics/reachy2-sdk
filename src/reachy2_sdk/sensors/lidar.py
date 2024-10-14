@@ -1,11 +1,8 @@
-"""LIDAR module for mobile base SDK.
+"""Reachy Lidar module.
 
-Handles the LIDAR features:
-    - get the map of the environment
-    - set the safety distance
-    - set the critical distance
-    - enable/disable the safety feature
+Handles all specific methods to the Lidar sensor.
 """
+
 import logging
 from typing import Optional
 
@@ -44,7 +41,12 @@ class Lidar:
         return f"""<Lidar safety_enabled={self.safety_enabled}>"""
 
     def get_map(self) -> Optional[npt.NDArray[np.uint8]]:
-        """Get the current map of the environment."""
+        """Retrieve the current map of the environment using lidar data.
+
+        Returns:
+            The current map of the environment as an image (NumPy array) if the lidar map is successfully
+            retrieved. Returns `None` if no lidar map is retrieved.
+        """
         compressed_map = self._stub.GetLidarMap(self._part._part_id)
         if compressed_map.data == b"":
             self._logger.error("No lidar map retrieved")
@@ -55,15 +57,21 @@ class Lidar:
 
     @property
     def safety_slowdown_distance(self) -> float:
-        """Safety distance in meters of the mobile base from obstacles.
+        """Get the safety distance from obstacles in meters for the mobile base.
 
         The mobile base's speed is slowed down if the direction of speed matches the direction of
-        at least 1 LIDAR point in the safety_distance range.
+        at least one LIDAR point within the safety distance range.
         """
         return float(self._safety_distance)
 
     @safety_slowdown_distance.setter
     def safety_slowdown_distance(self, value: float) -> None:
+        """Set the safety distance for a Lidar sensor.
+
+        Args:
+            value: The safety distance to set for the LidarSafety object. This value specifies
+                the distance at which a safety slowdown should be initiated.
+        """
         self._stub.SetZuuuSafety(
             LidarSafety(
                 safety_distance=FloatValue(value=value),
@@ -72,17 +80,25 @@ class Lidar:
 
     @property
     def safety_critical_distance(self) -> float:
-        """Critical distance in meters of the mobile base from obstacles.
+        """Get the critical distance in meters of the mobile base from obstacles.
 
-        The mobile base's speed is changed to 0 if the direction of speed matches the direction of
-        at least 1 LIDAR point in the critical_distance range.
-        If at least 1 point is in the critical distance, then even motions that move away from the obstacles are
-        slowed down to the "safety_zone" speed.
+        The mobile base's speed is reduced to zero if the direction of speed matches the direction
+        of at least one LIDAR point within the critical distance range. If at least one point is
+        within the critical distance, even movements that move away from the obstacles are slowed
+        down to the "safety_zone" speed.
         """
         return float(self._critical_distance)
 
     @safety_critical_distance.setter
     def safety_critical_distance(self, value: float) -> None:
+        """Set the critical distance for a Lidar safety feature.
+
+        Args:
+            value: The critical distance in meters for safety. This value specifies the distance
+                at which the mobile base should stop if moving in the direction of an obstacle.
+                If at least one point is within the critical distance, even movements that move
+                away from the obstacles are slowed down to the "safety_zone" speed.
+        """
         self._stub.SetZuuuSafety(
             LidarSafety(
                 critical_distance=FloatValue(value=value),
@@ -91,11 +107,21 @@ class Lidar:
 
     @property
     def safety_enabled(self) -> bool:
-        """Enable or disable the safety feature."""
+        """Get the current status of the safety feature.
+
+        Returns:
+            A boolean indicating whether the safety feature is enabled. If `True`, the safety feature is enabled.
+        """
         return self._safety_enabled
 
     @safety_enabled.setter
     def safety_enabled(self, value: bool) -> None:
+        """Set the safety status for the Lidar device.
+
+        Args:
+            value: A boolean indicating whether the safety features are enabled or disabled. If `True`, the safety feature
+                is enabled.
+        """
         self._stub.SetZuuuSafety(
             LidarSafety(
                 safety_on=BoolValue(value=value),
@@ -104,23 +130,29 @@ class Lidar:
 
     @property
     def obstacle_detection_status(self) -> LidarObstacleDetectionStatus:
-        """Get status of the lidar obstacle detection.
+        """Get the status of the lidar obstacle detection.
 
-        Can be either NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP or DETECTION_ERROR.
+        Returns:
+            The status of the lidar obstacle detection, which can be one of the following values:
+            NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP, or DETECTION_ERROR.
         """
         return self._obstacle_detection_status
 
     def reset_safety_default_values(self) -> None:
-        """Reset default distances values for safety detection.
+        """Reset default distance values for safety detection.
 
-        Reset values are:
+        The reset values include:
         - safety_critical_distance
         - safety_slowdown_distance.
         """
         self._stub.ResetDefaultValues(self._part._part_id)
 
     def _update_with(self, new_lidar_state: LidarSafety) -> None:
-        """Update the lidar info with a new state received from the gRPC server."""
+        """Update lidar information with a new state received from a gRPC server.
+
+        Args:
+            new_lidar_state: Contains information about the lidar state received from the gRPC server.
+        """
         self._safety_enabled = new_lidar_state.safety_on.value
         self._safety_distance = new_lidar_state.safety_distance.value
         self._critical_distance = new_lidar_state.critical_distance.value

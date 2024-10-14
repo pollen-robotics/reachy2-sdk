@@ -4,7 +4,7 @@
 # Image
 *.jpg lfs
 *.jpeg lfs
-*.png lfs
+#*.png lfs
 *.apng lfs
 *.atsc lfs
 *.gif lfs
@@ -39,3 +39,4 @@
 *.vis lfs
 *.db lfs
 *.ply lfs
+
