@@ -1,6 +1,10 @@
-name: Generate Python Documentation
+name: Documentation
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   check-docstrings:
@@ -36,10 +40,27 @@ jobs:
         pip install .[dev]
 
     - name: Generate Documentation
-      run: pdoc reachy2_sdk --output-dir docs --logo "https://www.pollen-robotics.com/img/company/logo/pollen_logo_square_black.svg"
+      run: pdoc reachy2_sdk --output-dir docs --logo "https://pollen-robotics.github.io/reachy2-sdk/pollen_logo.png" --logo-link "https://www.pollen-robotics.com" --docformat google
 
     - name: Archive Documentation
       uses: actions/upload-artifact@v4
       with:
         name: documentation
         path: docs/
+
+  publish-docs:
+    needs: build-docs
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download Documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation
+          path: docs/
+            
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
