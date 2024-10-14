@@ -1,3 +1,5 @@
+"""Example script to display live frames from the teleoperation and depth cameras."""
+
 import argparse
 import logging
 
@@ -8,6 +10,15 @@ from reachy2_sdk.media.camera import CameraView
 
 
 def display_teleop_cam() -> None:
+    """Display live frames from the teleoperation camera.
+
+    This function retrieves and displays frames from the left and right
+    views of the teleoperation camera. The function terminates
+    upon a keyboard interrupt.
+
+    Raises:
+        SystemExit: If the teleop camera is not available.
+    """
     if reachy.cameras.teleop is None:
         exit("There is no teleop camera.")
 
@@ -29,6 +40,15 @@ def display_teleop_cam() -> None:
 
 
 def display_depth_cam() -> None:
+    """Display live frames from the depth camera.
+
+    This function retrieves and displays RGB and depth frames from the depth camera.
+    It normalizes the depth map for visualization and shows the RGB frame and normalized depth
+    frame side by side. The function exits upon a keyboard interrupt.
+
+    Raises:
+        SystemExit: If the depth camera is not available.
+    """
     if reachy.cameras.depth is None:
         exit("There is no depth camera.")
 
