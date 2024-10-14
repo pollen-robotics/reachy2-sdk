@@ -22,11 +22,6 @@
             <input type="search" placeholder="Search..." role="searchbox" aria-label="search"
                    pattern=".+" required>
 
-            <h2>Contents</h2>
-            <ul>
-  <li><a href="#reachysdk-package">ReachySDK package.</a></li>
-</ul>
-
 
             <h2>Submodules</h2>
             <ul>
@@ -57,7 +52,7 @@
                     <h1 class="modulename">
 reachy2_sdk    </h1>
 
-                        <div class="docstring"><h1 id="reachysdk-package">ReachySDK package.</h1>
+                        <div class="docstring"><p>ReachySDK package.</p>
 
 <p>This package provides remote access (via socket) to a Reachy robot.
 It automatically handles the synchronization with the robot.
@@ -81,29 +76,28 @@ You can also send joint commands, compute forward or inverse kinematics.</p>
 
                         <label class="view-source-button" for="mod-reachy2_sdk-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="sd"># ReachySDK package.</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">This package provides remote access (via socket) to a Reachy robot.</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">It automatically handles the synchronization with the robot.</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="sd">In particular, you can easily get an always up-to-date robot state (joint positions, sensors value).</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">You can also send joint commands, compute forward or inverse kinematics.</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">Simply do</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">```python</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">from reachy2_sdk.reachy_sdk import ReachySDK</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">reachy = ReachySDK(host=&quot;ip_address&quot;)</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">```</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">And you&#39;re ready to use Reachy!</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">*Examples and tutorials are available [here](../src/examples/)!*</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="kn">from</span> <span class="nn">.reachy_sdk</span> <span class="kn">import</span> <span class="n">ReachySDK</span>  <span class="c1"># noqa: F401</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;1.0.5&quot;</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="sd">&quot;&quot;&quot;ReachySDK package.</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="sd">This package provides remote access (via socket) to a Reachy robot.</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">It automatically handles the synchronization with the robot.</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">In particular, you can easily get an always up-to-date robot state (joint positions, sensors value).</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="sd">You can also send joint commands, compute forward or inverse kinematics.</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">Simply do</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">```python</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">from reachy2_sdk.reachy_sdk import ReachySDK</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">reachy = ReachySDK(host=&quot;ip_address&quot;)</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">```</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">And you&#39;re ready to use Reachy!</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">*Examples and tutorials are available [here](../src/examples/)!*</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="kn">from</span> <span class="nn">.reachy_sdk</span> <span class="kn">import</span> <span class="n">ReachySDK</span>  <span class="c1"># noqa: F401</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;1.0.5&quot;</span>
 </span></pre></div>
 
 

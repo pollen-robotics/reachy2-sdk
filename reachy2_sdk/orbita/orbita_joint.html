@@ -65,92 +65,143 @@
                     <h1 class="modulename">
 <a href="./../../reachy2_sdk.html">reachy2_sdk</a><wbr>.<a href="./../orbita.html">orbita</a><wbr>.orbita_joint    </h1>
 
-                        <div class="docstring"><p>This module describes Orbita2d and Orbita3d joints.</p>
+                        <div class="docstring"><p>Reachy OrbitaJoint module.</p>
+
+<p>Handles all specific methods to OrbitaJoint.</p>
 </div>
 
                         <input id="mod-orbita_joint-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-orbita_joint-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="sd">&quot;&quot;&quot;This module describes Orbita2d and Orbita3d joints.&quot;&quot;&quot;</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span> <span class="nn">google.protobuf.wrappers_pb2</span> <span class="kn">import</span> <span class="n">FloatValue</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.goto_pb2</span> <span class="kn">import</span> <span class="n">GoToId</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">to_internal_position</span><span class="p">,</span> <span class="n">to_position</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="k">class</span> <span class="nc">OrbitaJoint</span><span class="p">:</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The OrbitaJoint class represents any Orbita2d or Orbita 3d joint.</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">    The OrbitaJoint class is used to store the up-to-date state of the joint, especially:</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">        - its present_position (RO)</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">        - its goal_position (RW)</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>        <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">],</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>        <span class="n">axis_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>        <span class="n">actuator</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>        <span class="n">position_order_in_part</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span> <span class="o">=</span> <span class="n">actuator</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span> <span class="o">=</span> <span class="n">axis_type</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span> <span class="o">=</span> <span class="n">position_order_in_part</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>        <span class="n">repr_template</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>            <span class="s1">&#39;&lt;OrbitaJoint axis_type=&quot;</span><span class="si">{axis_type}</span><span class="s1">&quot; present_position=</span><span class="si">{present_position}</span><span class="s1"> goal_position=</span><span class="si">{goal_position}</span><span class="s1"> &gt;&#39;</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>        <span class="p">)</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>        <span class="k">return</span> <span class="n">repr_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>            <span class="n">axis_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span><span class="p">,</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>            <span class="n">present_position</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">present_position</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>            <span class="n">goal_position</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_position</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>        <span class="p">)</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>    <span class="nd">@property</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>    <span class="k">def</span> <span class="nf">present_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_position</span><span class="p">)</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>    <span class="nd">@property</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>    <span class="k">def</span> <span class="nf">goal_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_goal_position</span><span class="p">)</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>    <span class="nd">@goal_position</span><span class="o">.</span><span class="n">setter</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>    <span class="k">def</span> <span class="nf">goal_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="o">|</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span><span class="o">.</span><span class="n">_set_outgoing_goal_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span><span class="p">,</span> <span class="n">to_internal_position</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;goal_position must be a float or int&quot;</span><span class="p">)</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>    <span class="k">def</span> <span class="nf">goto</span><span class="p">(</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>        <span class="n">goal_position</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>        <span class="n">duration</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>        <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>        <span class="n">interpolation_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;minimum_jerk&quot;</span><span class="p">,</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>        <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GoToId</span><span class="p">:</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send the joint to the goal position in duration.</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">        Acts like a goto movements on the part, goto on joints are stacked on the part they belong to.</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_goto_single_joint</span><span class="p">(</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span><span class="p">,</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>            <span class="n">goal_position</span><span class="o">=</span><span class="n">goal_position</span><span class="p">,</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>            <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>            <span class="n">wait</span><span class="o">=</span><span class="n">wait</span><span class="p">,</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>            <span class="n">interpolation_mode</span><span class="o">=</span><span class="n">interpolation_mode</span><span class="p">,</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>            <span class="n">degrees</span><span class="o">=</span><span class="n">degrees</span><span class="p">,</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>        <span class="p">)</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_position</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_goal_position</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;goal_position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="sd">&quot;&quot;&quot;Reachy OrbitaJoint module.</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="sd">Handles all specific methods to OrbitaJoint.</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="kn">from</span> <span class="nn">google.protobuf.wrappers_pb2</span> <span class="kn">import</span> <span class="n">FloatValue</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.goto_pb2</span> <span class="kn">import</span> <span class="n">GoToId</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">to_internal_position</span><span class="p">,</span> <span class="n">to_position</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a><span class="k">class</span> <span class="nc">OrbitaJoint</span><span class="p">:</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The OrbitaJoint class represents any Orbita2d or Orbita3d joint.</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a><span class="sd">    The OrbitaJoint class is used to store the up-to-date state of the joint, especially:</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="sd">        - its present_position (RO)</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a><span class="sd">        - its goal_position (RW)</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a>        <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">],</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a>        <span class="n">axis_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a>        <span class="n">actuator</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a>        <span class="n">position_order_in_part</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the OrbitaJoint with its initial state and configuration.</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">        This sets up the joint by assigning its actuator, axis type, and position order within</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a><span class="sd">        the part, and updates its state based on the provided initial values.</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a><span class="sd">        Args:</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a><span class="sd">            initial_state: A dictionary containing the initial state of the joint, with</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a><span class="sd">                each entry representing a specific parameter of the joint (e.g., present position).</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a><span class="sd">            axis_type: The type of axis for the joint (e.g., roll, pitch, yaw).</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a><span class="sd">            actuator: The actuator to which this joint belongs.</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a><span class="sd">            position_order_in_part: The position order of this joint in the overall part&#39;s</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a><span class="sd">                list of joints.</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span> <span class="o">=</span> <span class="n">actuator</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span> <span class="o">=</span> <span class="n">axis_type</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span> <span class="o">=</span> <span class="n">position_order_in_part</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Clean representation of the OrbitaJoint.&quot;&quot;&quot;</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>        <span class="n">repr_template</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a>            <span class="s1">&#39;&lt;OrbitaJoint axis_type=&quot;</span><span class="si">{axis_type}</span><span class="s1">&quot; present_position=</span><span class="si">{present_position}</span><span class="s1"> goal_position=</span><span class="si">{goal_position}</span><span class="s1"> &gt;&#39;</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>        <span class="p">)</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>        <span class="k">return</span> <span class="n">repr_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>            <span class="n">axis_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span><span class="p">,</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>            <span class="n">present_position</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">present_position</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>            <span class="n">goal_position</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_position</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>        <span class="p">)</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>    <span class="nd">@property</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>    <span class="k">def</span> <span class="nf">present_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the present position of the joint in degrees.&quot;&quot;&quot;</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_position</span><span class="p">)</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>    <span class="nd">@property</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>    <span class="k">def</span> <span class="nf">goal_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the goal position of the joint in degrees.&quot;&quot;&quot;</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_goal_position</span><span class="p">)</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>    <span class="nd">@goal_position</span><span class="o">.</span><span class="n">setter</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>    <span class="k">def</span> <span class="nf">goal_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the goal position of the joint in degrees.</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a><span class="sd">        The goal position is not send to the joint immediately, it is stored locally until the `send_goal_positions` method</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a><span class="sd">        is called.</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a><span class="sd">        Args:</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a><span class="sd">            value: The goal position to set, specified as a float or int.</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a><span class="sd">        Raises:</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a><span class="sd">            TypeError: If the provided value is not a float or int.</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="o">|</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span><span class="o">.</span><span class="n">_set_outgoing_goal_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span><span class="p">,</span> <span class="n">to_internal_position</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;goal_position must be a float or int&quot;</span><span class="p">)</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>    <span class="k">def</span> <span class="nf">goto</span><span class="p">(</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>        <span class="n">goal_position</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>        <span class="n">duration</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>        <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>        <span class="n">interpolation_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;minimum_jerk&quot;</span><span class="p">,</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>        <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GoToId</span><span class="p">:</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send the joint to the specified goal position within a given duration.</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a><span class="sd">        Acts like a &quot;goto&quot; movement on the part, where &quot;goto&quot; movements for joints are queued on the part they belong to.</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a><span class="sd">        Args:</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a><span class="sd">            goal_position: The target position to move the joint to.</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a><span class="sd">            duration: The time in seconds for the joint to reach the goal position. Defaults to 2.</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a><span class="sd">            wait: Whether to wait for the movement to finish before continuing. Defaults to False.</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a><span class="sd">            interpolation_mode: The type of interpolation to use for the movement, either &quot;minimum_jerk&quot; or &quot;linear&quot;.</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a><span class="sd">                Defaults to &quot;minimum_jerk&quot;.</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a><span class="sd">            degrees: Whether the goal position is specified in degrees. If True, the position is interpreted as degrees.</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a><span class="sd">                Defaults to True.</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a><span class="sd">        Returns:</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a><span class="sd">            The GoToId associated with the movement command.</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_goto_single_joint</span><span class="p">(</span>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span><span class="p">,</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>            <span class="n">goal_position</span><span class="o">=</span><span class="n">goal_position</span><span class="p">,</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>            <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>            <span class="n">wait</span><span class="o">=</span><span class="n">wait</span><span class="p">,</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>            <span class="n">interpolation_mode</span><span class="o">=</span><span class="n">interpolation_mode</span><span class="p">,</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>            <span class="n">degrees</span><span class="o">=</span><span class="n">degrees</span><span class="p">,</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>        <span class="p">)</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the present and goal positions of the joint with new state values.</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a><span class="sd">        Args:</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a><span class="sd">            new_state: A dictionary containing the new state values for the joint. The keys should include</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a><span class="sd">                &quot;present_position&quot; and &quot;goal_position&quot;, with corresponding FloatValue objects as values.</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_position</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_goal_position</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;goal_position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
 </span></pre></div>
 
 
@@ -166,80 +217,125 @@
 
     </div>
     <a class="headerlink" href="#OrbitaJoint"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaJoint-11"><a href="#OrbitaJoint-11"><span class="linenos">11</span></a><span class="k">class</span> <span class="nc">OrbitaJoint</span><span class="p">:</span>
-</span><span id="OrbitaJoint-12"><a href="#OrbitaJoint-12"><span class="linenos">12</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The OrbitaJoint class represents any Orbita2d or Orbita 3d joint.</span>
-</span><span id="OrbitaJoint-13"><a href="#OrbitaJoint-13"><span class="linenos">13</span></a>
-</span><span id="OrbitaJoint-14"><a href="#OrbitaJoint-14"><span class="linenos">14</span></a><span class="sd">    The OrbitaJoint class is used to store the up-to-date state of the joint, especially:</span>
-</span><span id="OrbitaJoint-15"><a href="#OrbitaJoint-15"><span class="linenos">15</span></a><span class="sd">        - its present_position (RO)</span>
-</span><span id="OrbitaJoint-16"><a href="#OrbitaJoint-16"><span class="linenos">16</span></a><span class="sd">        - its goal_position (RW)</span>
-</span><span id="OrbitaJoint-17"><a href="#OrbitaJoint-17"><span class="linenos">17</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="OrbitaJoint-18"><a href="#OrbitaJoint-18"><span class="linenos">18</span></a>
-</span><span id="OrbitaJoint-19"><a href="#OrbitaJoint-19"><span class="linenos">19</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-</span><span id="OrbitaJoint-20"><a href="#OrbitaJoint-20"><span class="linenos">20</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="OrbitaJoint-21"><a href="#OrbitaJoint-21"><span class="linenos">21</span></a>        <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">],</span>
-</span><span id="OrbitaJoint-22"><a href="#OrbitaJoint-22"><span class="linenos">22</span></a>        <span class="n">axis_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="OrbitaJoint-23"><a href="#OrbitaJoint-23"><span class="linenos">23</span></a>        <span class="n">actuator</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-</span><span id="OrbitaJoint-24"><a href="#OrbitaJoint-24"><span class="linenos">24</span></a>        <span class="n">position_order_in_part</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="OrbitaJoint-25"><a href="#OrbitaJoint-25"><span class="linenos">25</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="OrbitaJoint-26"><a href="#OrbitaJoint-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span> <span class="o">=</span> <span class="n">actuator</span>
-</span><span id="OrbitaJoint-27"><a href="#OrbitaJoint-27"><span class="linenos">27</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span> <span class="o">=</span> <span class="n">axis_type</span>
-</span><span id="OrbitaJoint-28"><a href="#OrbitaJoint-28"><span class="linenos">28</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span> <span class="o">=</span> <span class="n">position_order_in_part</span>
-</span><span id="OrbitaJoint-29"><a href="#OrbitaJoint-29"><span class="linenos">29</span></a>
-</span><span id="OrbitaJoint-30"><a href="#OrbitaJoint-30"><span class="linenos">30</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
-</span><span id="OrbitaJoint-31"><a href="#OrbitaJoint-31"><span class="linenos">31</span></a>
-</span><span id="OrbitaJoint-32"><a href="#OrbitaJoint-32"><span class="linenos">32</span></a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="OrbitaJoint-33"><a href="#OrbitaJoint-33"><span class="linenos">33</span></a>        <span class="n">repr_template</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="OrbitaJoint-34"><a href="#OrbitaJoint-34"><span class="linenos">34</span></a>            <span class="s1">&#39;&lt;OrbitaJoint axis_type=&quot;</span><span class="si">{axis_type}</span><span class="s1">&quot; present_position=</span><span class="si">{present_position}</span><span class="s1"> goal_position=</span><span class="si">{goal_position}</span><span class="s1"> &gt;&#39;</span>
-</span><span id="OrbitaJoint-35"><a href="#OrbitaJoint-35"><span class="linenos">35</span></a>        <span class="p">)</span>
-</span><span id="OrbitaJoint-36"><a href="#OrbitaJoint-36"><span class="linenos">36</span></a>        <span class="k">return</span> <span class="n">repr_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-</span><span id="OrbitaJoint-37"><a href="#OrbitaJoint-37"><span class="linenos">37</span></a>            <span class="n">axis_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span><span class="p">,</span>
-</span><span id="OrbitaJoint-38"><a href="#OrbitaJoint-38"><span class="linenos">38</span></a>            <span class="n">present_position</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">present_position</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
-</span><span id="OrbitaJoint-39"><a href="#OrbitaJoint-39"><span class="linenos">39</span></a>            <span class="n">goal_position</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_position</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
-</span><span id="OrbitaJoint-40"><a href="#OrbitaJoint-40"><span class="linenos">40</span></a>        <span class="p">)</span>
-</span><span id="OrbitaJoint-41"><a href="#OrbitaJoint-41"><span class="linenos">41</span></a>
-</span><span id="OrbitaJoint-42"><a href="#OrbitaJoint-42"><span class="linenos">42</span></a>    <span class="nd">@property</span>
-</span><span id="OrbitaJoint-43"><a href="#OrbitaJoint-43"><span class="linenos">43</span></a>    <span class="k">def</span> <span class="nf">present_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="OrbitaJoint-44"><a href="#OrbitaJoint-44"><span class="linenos">44</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_position</span><span class="p">)</span>
-</span><span id="OrbitaJoint-45"><a href="#OrbitaJoint-45"><span class="linenos">45</span></a>
-</span><span id="OrbitaJoint-46"><a href="#OrbitaJoint-46"><span class="linenos">46</span></a>    <span class="nd">@property</span>
-</span><span id="OrbitaJoint-47"><a href="#OrbitaJoint-47"><span class="linenos">47</span></a>    <span class="k">def</span> <span class="nf">goal_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="OrbitaJoint-48"><a href="#OrbitaJoint-48"><span class="linenos">48</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_goal_position</span><span class="p">)</span>
-</span><span id="OrbitaJoint-49"><a href="#OrbitaJoint-49"><span class="linenos">49</span></a>
-</span><span id="OrbitaJoint-50"><a href="#OrbitaJoint-50"><span class="linenos">50</span></a>    <span class="nd">@goal_position</span><span class="o">.</span><span class="n">setter</span>
-</span><span id="OrbitaJoint-51"><a href="#OrbitaJoint-51"><span class="linenos">51</span></a>    <span class="k">def</span> <span class="nf">goal_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="OrbitaJoint-52"><a href="#OrbitaJoint-52"><span class="linenos">52</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="o">|</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-</span><span id="OrbitaJoint-53"><a href="#OrbitaJoint-53"><span class="linenos">53</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span><span class="o">.</span><span class="n">_set_outgoing_goal_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span><span class="p">,</span> <span class="n">to_internal_position</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
-</span><span id="OrbitaJoint-54"><a href="#OrbitaJoint-54"><span class="linenos">54</span></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="OrbitaJoint-55"><a href="#OrbitaJoint-55"><span class="linenos">55</span></a>            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;goal_position must be a float or int&quot;</span><span class="p">)</span>
-</span><span id="OrbitaJoint-56"><a href="#OrbitaJoint-56"><span class="linenos">56</span></a>
-</span><span id="OrbitaJoint-57"><a href="#OrbitaJoint-57"><span class="linenos">57</span></a>    <span class="k">def</span> <span class="nf">goto</span><span class="p">(</span>
-</span><span id="OrbitaJoint-58"><a href="#OrbitaJoint-58"><span class="linenos">58</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="OrbitaJoint-59"><a href="#OrbitaJoint-59"><span class="linenos">59</span></a>        <span class="n">goal_position</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span id="OrbitaJoint-60"><a href="#OrbitaJoint-60"><span class="linenos">60</span></a>        <span class="n">duration</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-</span><span id="OrbitaJoint-61"><a href="#OrbitaJoint-61"><span class="linenos">61</span></a>        <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="OrbitaJoint-62"><a href="#OrbitaJoint-62"><span class="linenos">62</span></a>        <span class="n">interpolation_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;minimum_jerk&quot;</span><span class="p">,</span>
-</span><span id="OrbitaJoint-63"><a href="#OrbitaJoint-63"><span class="linenos">63</span></a>        <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-</span><span id="OrbitaJoint-64"><a href="#OrbitaJoint-64"><span class="linenos">64</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GoToId</span><span class="p">:</span>
-</span><span id="OrbitaJoint-65"><a href="#OrbitaJoint-65"><span class="linenos">65</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send the joint to the goal position in duration.</span>
-</span><span id="OrbitaJoint-66"><a href="#OrbitaJoint-66"><span class="linenos">66</span></a>
-</span><span id="OrbitaJoint-67"><a href="#OrbitaJoint-67"><span class="linenos">67</span></a><span class="sd">        Acts like a goto movements on the part, goto on joints are stacked on the part they belong to.</span>
-</span><span id="OrbitaJoint-68"><a href="#OrbitaJoint-68"><span class="linenos">68</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="OrbitaJoint-69"><a href="#OrbitaJoint-69"><span class="linenos">69</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_goto_single_joint</span><span class="p">(</span>
-</span><span id="OrbitaJoint-70"><a href="#OrbitaJoint-70"><span class="linenos">70</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span><span class="p">,</span>
-</span><span id="OrbitaJoint-71"><a href="#OrbitaJoint-71"><span class="linenos">71</span></a>            <span class="n">goal_position</span><span class="o">=</span><span class="n">goal_position</span><span class="p">,</span>
-</span><span id="OrbitaJoint-72"><a href="#OrbitaJoint-72"><span class="linenos">72</span></a>            <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
-</span><span id="OrbitaJoint-73"><a href="#OrbitaJoint-73"><span class="linenos">73</span></a>            <span class="n">wait</span><span class="o">=</span><span class="n">wait</span><span class="p">,</span>
-</span><span id="OrbitaJoint-74"><a href="#OrbitaJoint-74"><span class="linenos">74</span></a>            <span class="n">interpolation_mode</span><span class="o">=</span><span class="n">interpolation_mode</span><span class="p">,</span>
-</span><span id="OrbitaJoint-75"><a href="#OrbitaJoint-75"><span class="linenos">75</span></a>            <span class="n">degrees</span><span class="o">=</span><span class="n">degrees</span><span class="p">,</span>
-</span><span id="OrbitaJoint-76"><a href="#OrbitaJoint-76"><span class="linenos">76</span></a>        <span class="p">)</span>
-</span><span id="OrbitaJoint-77"><a href="#OrbitaJoint-77"><span class="linenos">77</span></a>
-</span><span id="OrbitaJoint-78"><a href="#OrbitaJoint-78"><span class="linenos">78</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="OrbitaJoint-79"><a href="#OrbitaJoint-79"><span class="linenos">79</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_position</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
-</span><span id="OrbitaJoint-80"><a href="#OrbitaJoint-80"><span class="linenos">80</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_goal_position</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;goal_position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaJoint-15"><a href="#OrbitaJoint-15"><span class="linenos"> 15</span></a><span class="k">class</span> <span class="nc">OrbitaJoint</span><span class="p">:</span>
+</span><span id="OrbitaJoint-16"><a href="#OrbitaJoint-16"><span class="linenos"> 16</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The OrbitaJoint class represents any Orbita2d or Orbita3d joint.</span>
+</span><span id="OrbitaJoint-17"><a href="#OrbitaJoint-17"><span class="linenos"> 17</span></a>
+</span><span id="OrbitaJoint-18"><a href="#OrbitaJoint-18"><span class="linenos"> 18</span></a><span class="sd">    The OrbitaJoint class is used to store the up-to-date state of the joint, especially:</span>
+</span><span id="OrbitaJoint-19"><a href="#OrbitaJoint-19"><span class="linenos"> 19</span></a><span class="sd">        - its present_position (RO)</span>
+</span><span id="OrbitaJoint-20"><a href="#OrbitaJoint-20"><span class="linenos"> 20</span></a><span class="sd">        - its goal_position (RW)</span>
+</span><span id="OrbitaJoint-21"><a href="#OrbitaJoint-21"><span class="linenos"> 21</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint-22"><a href="#OrbitaJoint-22"><span class="linenos"> 22</span></a>
+</span><span id="OrbitaJoint-23"><a href="#OrbitaJoint-23"><span class="linenos"> 23</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+</span><span id="OrbitaJoint-24"><a href="#OrbitaJoint-24"><span class="linenos"> 24</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="OrbitaJoint-25"><a href="#OrbitaJoint-25"><span class="linenos"> 25</span></a>        <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">],</span>
+</span><span id="OrbitaJoint-26"><a href="#OrbitaJoint-26"><span class="linenos"> 26</span></a>        <span class="n">axis_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="OrbitaJoint-27"><a href="#OrbitaJoint-27"><span class="linenos"> 27</span></a>        <span class="n">actuator</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+</span><span id="OrbitaJoint-28"><a href="#OrbitaJoint-28"><span class="linenos"> 28</span></a>        <span class="n">position_order_in_part</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="OrbitaJoint-29"><a href="#OrbitaJoint-29"><span class="linenos"> 29</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="OrbitaJoint-30"><a href="#OrbitaJoint-30"><span class="linenos"> 30</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the OrbitaJoint with its initial state and configuration.</span>
+</span><span id="OrbitaJoint-31"><a href="#OrbitaJoint-31"><span class="linenos"> 31</span></a>
+</span><span id="OrbitaJoint-32"><a href="#OrbitaJoint-32"><span class="linenos"> 32</span></a><span class="sd">        This sets up the joint by assigning its actuator, axis type, and position order within</span>
+</span><span id="OrbitaJoint-33"><a href="#OrbitaJoint-33"><span class="linenos"> 33</span></a><span class="sd">        the part, and updates its state based on the provided initial values.</span>
+</span><span id="OrbitaJoint-34"><a href="#OrbitaJoint-34"><span class="linenos"> 34</span></a>
+</span><span id="OrbitaJoint-35"><a href="#OrbitaJoint-35"><span class="linenos"> 35</span></a><span class="sd">        Args:</span>
+</span><span id="OrbitaJoint-36"><a href="#OrbitaJoint-36"><span class="linenos"> 36</span></a><span class="sd">            initial_state: A dictionary containing the initial state of the joint, with</span>
+</span><span id="OrbitaJoint-37"><a href="#OrbitaJoint-37"><span class="linenos"> 37</span></a><span class="sd">                each entry representing a specific parameter of the joint (e.g., present position).</span>
+</span><span id="OrbitaJoint-38"><a href="#OrbitaJoint-38"><span class="linenos"> 38</span></a><span class="sd">            axis_type: The type of axis for the joint (e.g., roll, pitch, yaw).</span>
+</span><span id="OrbitaJoint-39"><a href="#OrbitaJoint-39"><span class="linenos"> 39</span></a><span class="sd">            actuator: The actuator to which this joint belongs.</span>
+</span><span id="OrbitaJoint-40"><a href="#OrbitaJoint-40"><span class="linenos"> 40</span></a><span class="sd">            position_order_in_part: The position order of this joint in the overall part&#39;s</span>
+</span><span id="OrbitaJoint-41"><a href="#OrbitaJoint-41"><span class="linenos"> 41</span></a><span class="sd">                list of joints.</span>
+</span><span id="OrbitaJoint-42"><a href="#OrbitaJoint-42"><span class="linenos"> 42</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint-43"><a href="#OrbitaJoint-43"><span class="linenos"> 43</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span> <span class="o">=</span> <span class="n">actuator</span>
+</span><span id="OrbitaJoint-44"><a href="#OrbitaJoint-44"><span class="linenos"> 44</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span> <span class="o">=</span> <span class="n">axis_type</span>
+</span><span id="OrbitaJoint-45"><a href="#OrbitaJoint-45"><span class="linenos"> 45</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span> <span class="o">=</span> <span class="n">position_order_in_part</span>
+</span><span id="OrbitaJoint-46"><a href="#OrbitaJoint-46"><span class="linenos"> 46</span></a>
+</span><span id="OrbitaJoint-47"><a href="#OrbitaJoint-47"><span class="linenos"> 47</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
+</span><span id="OrbitaJoint-48"><a href="#OrbitaJoint-48"><span class="linenos"> 48</span></a>
+</span><span id="OrbitaJoint-49"><a href="#OrbitaJoint-49"><span class="linenos"> 49</span></a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="OrbitaJoint-50"><a href="#OrbitaJoint-50"><span class="linenos"> 50</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Clean representation of the OrbitaJoint.&quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint-51"><a href="#OrbitaJoint-51"><span class="linenos"> 51</span></a>        <span class="n">repr_template</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="OrbitaJoint-52"><a href="#OrbitaJoint-52"><span class="linenos"> 52</span></a>            <span class="s1">&#39;&lt;OrbitaJoint axis_type=&quot;</span><span class="si">{axis_type}</span><span class="s1">&quot; present_position=</span><span class="si">{present_position}</span><span class="s1"> goal_position=</span><span class="si">{goal_position}</span><span class="s1"> &gt;&#39;</span>
+</span><span id="OrbitaJoint-53"><a href="#OrbitaJoint-53"><span class="linenos"> 53</span></a>        <span class="p">)</span>
+</span><span id="OrbitaJoint-54"><a href="#OrbitaJoint-54"><span class="linenos"> 54</span></a>        <span class="k">return</span> <span class="n">repr_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span id="OrbitaJoint-55"><a href="#OrbitaJoint-55"><span class="linenos"> 55</span></a>            <span class="n">axis_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span><span class="p">,</span>
+</span><span id="OrbitaJoint-56"><a href="#OrbitaJoint-56"><span class="linenos"> 56</span></a>            <span class="n">present_position</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">present_position</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+</span><span id="OrbitaJoint-57"><a href="#OrbitaJoint-57"><span class="linenos"> 57</span></a>            <span class="n">goal_position</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goal_position</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+</span><span id="OrbitaJoint-58"><a href="#OrbitaJoint-58"><span class="linenos"> 58</span></a>        <span class="p">)</span>
+</span><span id="OrbitaJoint-59"><a href="#OrbitaJoint-59"><span class="linenos"> 59</span></a>
+</span><span id="OrbitaJoint-60"><a href="#OrbitaJoint-60"><span class="linenos"> 60</span></a>    <span class="nd">@property</span>
+</span><span id="OrbitaJoint-61"><a href="#OrbitaJoint-61"><span class="linenos"> 61</span></a>    <span class="k">def</span> <span class="nf">present_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="OrbitaJoint-62"><a href="#OrbitaJoint-62"><span class="linenos"> 62</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the present position of the joint in degrees.&quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint-63"><a href="#OrbitaJoint-63"><span class="linenos"> 63</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_position</span><span class="p">)</span>
+</span><span id="OrbitaJoint-64"><a href="#OrbitaJoint-64"><span class="linenos"> 64</span></a>
+</span><span id="OrbitaJoint-65"><a href="#OrbitaJoint-65"><span class="linenos"> 65</span></a>    <span class="nd">@property</span>
+</span><span id="OrbitaJoint-66"><a href="#OrbitaJoint-66"><span class="linenos"> 66</span></a>    <span class="k">def</span> <span class="nf">goal_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="OrbitaJoint-67"><a href="#OrbitaJoint-67"><span class="linenos"> 67</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the goal position of the joint in degrees.&quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint-68"><a href="#OrbitaJoint-68"><span class="linenos"> 68</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_goal_position</span><span class="p">)</span>
+</span><span id="OrbitaJoint-69"><a href="#OrbitaJoint-69"><span class="linenos"> 69</span></a>
+</span><span id="OrbitaJoint-70"><a href="#OrbitaJoint-70"><span class="linenos"> 70</span></a>    <span class="nd">@goal_position</span><span class="o">.</span><span class="n">setter</span>
+</span><span id="OrbitaJoint-71"><a href="#OrbitaJoint-71"><span class="linenos"> 71</span></a>    <span class="k">def</span> <span class="nf">goal_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="OrbitaJoint-72"><a href="#OrbitaJoint-72"><span class="linenos"> 72</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the goal position of the joint in degrees.</span>
+</span><span id="OrbitaJoint-73"><a href="#OrbitaJoint-73"><span class="linenos"> 73</span></a>
+</span><span id="OrbitaJoint-74"><a href="#OrbitaJoint-74"><span class="linenos"> 74</span></a><span class="sd">        The goal position is not send to the joint immediately, it is stored locally until the `send_goal_positions` method</span>
+</span><span id="OrbitaJoint-75"><a href="#OrbitaJoint-75"><span class="linenos"> 75</span></a><span class="sd">        is called.</span>
+</span><span id="OrbitaJoint-76"><a href="#OrbitaJoint-76"><span class="linenos"> 76</span></a>
+</span><span id="OrbitaJoint-77"><a href="#OrbitaJoint-77"><span class="linenos"> 77</span></a><span class="sd">        Args:</span>
+</span><span id="OrbitaJoint-78"><a href="#OrbitaJoint-78"><span class="linenos"> 78</span></a><span class="sd">            value: The goal position to set, specified as a float or int.</span>
+</span><span id="OrbitaJoint-79"><a href="#OrbitaJoint-79"><span class="linenos"> 79</span></a>
+</span><span id="OrbitaJoint-80"><a href="#OrbitaJoint-80"><span class="linenos"> 80</span></a><span class="sd">        Raises:</span>
+</span><span id="OrbitaJoint-81"><a href="#OrbitaJoint-81"><span class="linenos"> 81</span></a><span class="sd">            TypeError: If the provided value is not a float or int.</span>
+</span><span id="OrbitaJoint-82"><a href="#OrbitaJoint-82"><span class="linenos"> 82</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint-83"><a href="#OrbitaJoint-83"><span class="linenos"> 83</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="o">|</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+</span><span id="OrbitaJoint-84"><a href="#OrbitaJoint-84"><span class="linenos"> 84</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span><span class="o">.</span><span class="n">_set_outgoing_goal_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span><span class="p">,</span> <span class="n">to_internal_position</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+</span><span id="OrbitaJoint-85"><a href="#OrbitaJoint-85"><span class="linenos"> 85</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="OrbitaJoint-86"><a href="#OrbitaJoint-86"><span class="linenos"> 86</span></a>            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;goal_position must be a float or int&quot;</span><span class="p">)</span>
+</span><span id="OrbitaJoint-87"><a href="#OrbitaJoint-87"><span class="linenos"> 87</span></a>
+</span><span id="OrbitaJoint-88"><a href="#OrbitaJoint-88"><span class="linenos"> 88</span></a>    <span class="k">def</span> <span class="nf">goto</span><span class="p">(</span>
+</span><span id="OrbitaJoint-89"><a href="#OrbitaJoint-89"><span class="linenos"> 89</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="OrbitaJoint-90"><a href="#OrbitaJoint-90"><span class="linenos"> 90</span></a>        <span class="n">goal_position</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span id="OrbitaJoint-91"><a href="#OrbitaJoint-91"><span class="linenos"> 91</span></a>        <span class="n">duration</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+</span><span id="OrbitaJoint-92"><a href="#OrbitaJoint-92"><span class="linenos"> 92</span></a>        <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="OrbitaJoint-93"><a href="#OrbitaJoint-93"><span class="linenos"> 93</span></a>        <span class="n">interpolation_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;minimum_jerk&quot;</span><span class="p">,</span>
+</span><span id="OrbitaJoint-94"><a href="#OrbitaJoint-94"><span class="linenos"> 94</span></a>        <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="OrbitaJoint-95"><a href="#OrbitaJoint-95"><span class="linenos"> 95</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GoToId</span><span class="p">:</span>
+</span><span id="OrbitaJoint-96"><a href="#OrbitaJoint-96"><span class="linenos"> 96</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send the joint to the specified goal position within a given duration.</span>
+</span><span id="OrbitaJoint-97"><a href="#OrbitaJoint-97"><span class="linenos"> 97</span></a>
+</span><span id="OrbitaJoint-98"><a href="#OrbitaJoint-98"><span class="linenos"> 98</span></a><span class="sd">        Acts like a &quot;goto&quot; movement on the part, where &quot;goto&quot; movements for joints are queued on the part they belong to.</span>
+</span><span id="OrbitaJoint-99"><a href="#OrbitaJoint-99"><span class="linenos"> 99</span></a>
+</span><span id="OrbitaJoint-100"><a href="#OrbitaJoint-100"><span class="linenos">100</span></a><span class="sd">        Args:</span>
+</span><span id="OrbitaJoint-101"><a href="#OrbitaJoint-101"><span class="linenos">101</span></a><span class="sd">            goal_position: The target position to move the joint to.</span>
+</span><span id="OrbitaJoint-102"><a href="#OrbitaJoint-102"><span class="linenos">102</span></a><span class="sd">            duration: The time in seconds for the joint to reach the goal position. Defaults to 2.</span>
+</span><span id="OrbitaJoint-103"><a href="#OrbitaJoint-103"><span class="linenos">103</span></a><span class="sd">            wait: Whether to wait for the movement to finish before continuing. Defaults to False.</span>
+</span><span id="OrbitaJoint-104"><a href="#OrbitaJoint-104"><span class="linenos">104</span></a><span class="sd">            interpolation_mode: The type of interpolation to use for the movement, either &quot;minimum_jerk&quot; or &quot;linear&quot;.</span>
+</span><span id="OrbitaJoint-105"><a href="#OrbitaJoint-105"><span class="linenos">105</span></a><span class="sd">                Defaults to &quot;minimum_jerk&quot;.</span>
+</span><span id="OrbitaJoint-106"><a href="#OrbitaJoint-106"><span class="linenos">106</span></a><span class="sd">            degrees: Whether the goal position is specified in degrees. If True, the position is interpreted as degrees.</span>
+</span><span id="OrbitaJoint-107"><a href="#OrbitaJoint-107"><span class="linenos">107</span></a><span class="sd">                Defaults to True.</span>
+</span><span id="OrbitaJoint-108"><a href="#OrbitaJoint-108"><span class="linenos">108</span></a>
+</span><span id="OrbitaJoint-109"><a href="#OrbitaJoint-109"><span class="linenos">109</span></a><span class="sd">        Returns:</span>
+</span><span id="OrbitaJoint-110"><a href="#OrbitaJoint-110"><span class="linenos">110</span></a><span class="sd">            The GoToId associated with the movement command.</span>
+</span><span id="OrbitaJoint-111"><a href="#OrbitaJoint-111"><span class="linenos">111</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint-112"><a href="#OrbitaJoint-112"><span class="linenos">112</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_goto_single_joint</span><span class="p">(</span>
+</span><span id="OrbitaJoint-113"><a href="#OrbitaJoint-113"><span class="linenos">113</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span><span class="p">,</span>
+</span><span id="OrbitaJoint-114"><a href="#OrbitaJoint-114"><span class="linenos">114</span></a>            <span class="n">goal_position</span><span class="o">=</span><span class="n">goal_position</span><span class="p">,</span>
+</span><span id="OrbitaJoint-115"><a href="#OrbitaJoint-115"><span class="linenos">115</span></a>            <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
+</span><span id="OrbitaJoint-116"><a href="#OrbitaJoint-116"><span class="linenos">116</span></a>            <span class="n">wait</span><span class="o">=</span><span class="n">wait</span><span class="p">,</span>
+</span><span id="OrbitaJoint-117"><a href="#OrbitaJoint-117"><span class="linenos">117</span></a>            <span class="n">interpolation_mode</span><span class="o">=</span><span class="n">interpolation_mode</span><span class="p">,</span>
+</span><span id="OrbitaJoint-118"><a href="#OrbitaJoint-118"><span class="linenos">118</span></a>            <span class="n">degrees</span><span class="o">=</span><span class="n">degrees</span><span class="p">,</span>
+</span><span id="OrbitaJoint-119"><a href="#OrbitaJoint-119"><span class="linenos">119</span></a>        <span class="p">)</span>
+</span><span id="OrbitaJoint-120"><a href="#OrbitaJoint-120"><span class="linenos">120</span></a>
+</span><span id="OrbitaJoint-121"><a href="#OrbitaJoint-121"><span class="linenos">121</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="OrbitaJoint-122"><a href="#OrbitaJoint-122"><span class="linenos">122</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the present and goal positions of the joint with new state values.</span>
+</span><span id="OrbitaJoint-123"><a href="#OrbitaJoint-123"><span class="linenos">123</span></a>
+</span><span id="OrbitaJoint-124"><a href="#OrbitaJoint-124"><span class="linenos">124</span></a><span class="sd">        Args:</span>
+</span><span id="OrbitaJoint-125"><a href="#OrbitaJoint-125"><span class="linenos">125</span></a><span class="sd">            new_state: A dictionary containing the new state values for the joint. The keys should include</span>
+</span><span id="OrbitaJoint-126"><a href="#OrbitaJoint-126"><span class="linenos">126</span></a><span class="sd">                &quot;present_position&quot; and &quot;goal_position&quot;, with corresponding FloatValue objects as values.</span>
+</span><span id="OrbitaJoint-127"><a href="#OrbitaJoint-127"><span class="linenos">127</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint-128"><a href="#OrbitaJoint-128"><span class="linenos">128</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_position</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+</span><span id="OrbitaJoint-129"><a href="#OrbitaJoint-129"><span class="linenos">129</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_goal_position</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;goal_position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>The OrbitaJoint class represents any Orbita2d or Orbita 3d joint.</p>
+            <div class="docstring"><p>The OrbitaJoint class represents any Orbita2d or Orbita3d joint.</p>
 
 <p>The OrbitaJoint class is used to store the up-to-date state of the joint, especially:
     - its present_position (RO)
@@ -257,22 +353,48 @@
 
     </div>
     <a class="headerlink" href="#OrbitaJoint.__init__"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaJoint.__init__-19"><a href="#OrbitaJoint.__init__-19"><span class="linenos">19</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-</span><span id="OrbitaJoint.__init__-20"><a href="#OrbitaJoint.__init__-20"><span class="linenos">20</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="OrbitaJoint.__init__-21"><a href="#OrbitaJoint.__init__-21"><span class="linenos">21</span></a>        <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">],</span>
-</span><span id="OrbitaJoint.__init__-22"><a href="#OrbitaJoint.__init__-22"><span class="linenos">22</span></a>        <span class="n">axis_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="OrbitaJoint.__init__-23"><a href="#OrbitaJoint.__init__-23"><span class="linenos">23</span></a>        <span class="n">actuator</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-</span><span id="OrbitaJoint.__init__-24"><a href="#OrbitaJoint.__init__-24"><span class="linenos">24</span></a>        <span class="n">position_order_in_part</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="OrbitaJoint.__init__-25"><a href="#OrbitaJoint.__init__-25"><span class="linenos">25</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="OrbitaJoint.__init__-26"><a href="#OrbitaJoint.__init__-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span> <span class="o">=</span> <span class="n">actuator</span>
-</span><span id="OrbitaJoint.__init__-27"><a href="#OrbitaJoint.__init__-27"><span class="linenos">27</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span> <span class="o">=</span> <span class="n">axis_type</span>
-</span><span id="OrbitaJoint.__init__-28"><a href="#OrbitaJoint.__init__-28"><span class="linenos">28</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span> <span class="o">=</span> <span class="n">position_order_in_part</span>
-</span><span id="OrbitaJoint.__init__-29"><a href="#OrbitaJoint.__init__-29"><span class="linenos">29</span></a>
-</span><span id="OrbitaJoint.__init__-30"><a href="#OrbitaJoint.__init__-30"><span class="linenos">30</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaJoint.__init__-23"><a href="#OrbitaJoint.__init__-23"><span class="linenos">23</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+</span><span id="OrbitaJoint.__init__-24"><a href="#OrbitaJoint.__init__-24"><span class="linenos">24</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="OrbitaJoint.__init__-25"><a href="#OrbitaJoint.__init__-25"><span class="linenos">25</span></a>        <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">],</span>
+</span><span id="OrbitaJoint.__init__-26"><a href="#OrbitaJoint.__init__-26"><span class="linenos">26</span></a>        <span class="n">axis_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="OrbitaJoint.__init__-27"><a href="#OrbitaJoint.__init__-27"><span class="linenos">27</span></a>        <span class="n">actuator</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+</span><span id="OrbitaJoint.__init__-28"><a href="#OrbitaJoint.__init__-28"><span class="linenos">28</span></a>        <span class="n">position_order_in_part</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="OrbitaJoint.__init__-29"><a href="#OrbitaJoint.__init__-29"><span class="linenos">29</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="OrbitaJoint.__init__-30"><a href="#OrbitaJoint.__init__-30"><span class="linenos">30</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the OrbitaJoint with its initial state and configuration.</span>
+</span><span id="OrbitaJoint.__init__-31"><a href="#OrbitaJoint.__init__-31"><span class="linenos">31</span></a>
+</span><span id="OrbitaJoint.__init__-32"><a href="#OrbitaJoint.__init__-32"><span class="linenos">32</span></a><span class="sd">        This sets up the joint by assigning its actuator, axis type, and position order within</span>
+</span><span id="OrbitaJoint.__init__-33"><a href="#OrbitaJoint.__init__-33"><span class="linenos">33</span></a><span class="sd">        the part, and updates its state based on the provided initial values.</span>
+</span><span id="OrbitaJoint.__init__-34"><a href="#OrbitaJoint.__init__-34"><span class="linenos">34</span></a>
+</span><span id="OrbitaJoint.__init__-35"><a href="#OrbitaJoint.__init__-35"><span class="linenos">35</span></a><span class="sd">        Args:</span>
+</span><span id="OrbitaJoint.__init__-36"><a href="#OrbitaJoint.__init__-36"><span class="linenos">36</span></a><span class="sd">            initial_state: A dictionary containing the initial state of the joint, with</span>
+</span><span id="OrbitaJoint.__init__-37"><a href="#OrbitaJoint.__init__-37"><span class="linenos">37</span></a><span class="sd">                each entry representing a specific parameter of the joint (e.g., present position).</span>
+</span><span id="OrbitaJoint.__init__-38"><a href="#OrbitaJoint.__init__-38"><span class="linenos">38</span></a><span class="sd">            axis_type: The type of axis for the joint (e.g., roll, pitch, yaw).</span>
+</span><span id="OrbitaJoint.__init__-39"><a href="#OrbitaJoint.__init__-39"><span class="linenos">39</span></a><span class="sd">            actuator: The actuator to which this joint belongs.</span>
+</span><span id="OrbitaJoint.__init__-40"><a href="#OrbitaJoint.__init__-40"><span class="linenos">40</span></a><span class="sd">            position_order_in_part: The position order of this joint in the overall part&#39;s</span>
+</span><span id="OrbitaJoint.__init__-41"><a href="#OrbitaJoint.__init__-41"><span class="linenos">41</span></a><span class="sd">                list of joints.</span>
+</span><span id="OrbitaJoint.__init__-42"><a href="#OrbitaJoint.__init__-42"><span class="linenos">42</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint.__init__-43"><a href="#OrbitaJoint.__init__-43"><span class="linenos">43</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span> <span class="o">=</span> <span class="n">actuator</span>
+</span><span id="OrbitaJoint.__init__-44"><a href="#OrbitaJoint.__init__-44"><span class="linenos">44</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_axis_type</span> <span class="o">=</span> <span class="n">axis_type</span>
+</span><span id="OrbitaJoint.__init__-45"><a href="#OrbitaJoint.__init__-45"><span class="linenos">45</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span> <span class="o">=</span> <span class="n">position_order_in_part</span>
+</span><span id="OrbitaJoint.__init__-46"><a href="#OrbitaJoint.__init__-46"><span class="linenos">46</span></a>
+</span><span id="OrbitaJoint.__init__-47"><a href="#OrbitaJoint.__init__-47"><span class="linenos">47</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Initialize the OrbitaJoint with its initial state and configuration.</p>
+
+<p>This sets up the joint by assigning its actuator, axis type, and position order within
+the part, and updates its state based on the provided initial values.</p>
+
+<p>Args:
+    initial_state: A dictionary containing the initial state of the joint, with
+        each entry representing a specific parameter of the joint (e.g., present position).
+    axis_type: The type of axis for the joint (e.g., roll, pitch, yaw).
+    actuator: The actuator to which this joint belongs.
+    position_order_in_part: The position order of this joint in the overall part's
+        list of joints.</p>
+</div>
+
 
                             </div>
                             <div id="OrbitaJoint.present_position" class="classattr">
@@ -284,13 +406,16 @@
 
     </div>
     <a class="headerlink" href="#OrbitaJoint.present_position"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaJoint.present_position-42"><a href="#OrbitaJoint.present_position-42"><span class="linenos">42</span></a>    <span class="nd">@property</span>
-</span><span id="OrbitaJoint.present_position-43"><a href="#OrbitaJoint.present_position-43"><span class="linenos">43</span></a>    <span class="k">def</span> <span class="nf">present_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="OrbitaJoint.present_position-44"><a href="#OrbitaJoint.present_position-44"><span class="linenos">44</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_position</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaJoint.present_position-60"><a href="#OrbitaJoint.present_position-60"><span class="linenos">60</span></a>    <span class="nd">@property</span>
+</span><span id="OrbitaJoint.present_position-61"><a href="#OrbitaJoint.present_position-61"><span class="linenos">61</span></a>    <span class="k">def</span> <span class="nf">present_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="OrbitaJoint.present_position-62"><a href="#OrbitaJoint.present_position-62"><span class="linenos">62</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the present position of the joint in degrees.&quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint.present_position-63"><a href="#OrbitaJoint.present_position-63"><span class="linenos">63</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_position</span><span class="p">)</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Get the present position of the joint in degrees.</p>
+</div>
+
 
                             </div>
                             <div id="OrbitaJoint.goal_position" class="classattr">
@@ -302,13 +427,16 @@
 
     </div>
     <a class="headerlink" href="#OrbitaJoint.goal_position"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaJoint.goal_position-46"><a href="#OrbitaJoint.goal_position-46"><span class="linenos">46</span></a>    <span class="nd">@property</span>
-</span><span id="OrbitaJoint.goal_position-47"><a href="#OrbitaJoint.goal_position-47"><span class="linenos">47</span></a>    <span class="k">def</span> <span class="nf">goal_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="OrbitaJoint.goal_position-48"><a href="#OrbitaJoint.goal_position-48"><span class="linenos">48</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_goal_position</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaJoint.goal_position-65"><a href="#OrbitaJoint.goal_position-65"><span class="linenos">65</span></a>    <span class="nd">@property</span>
+</span><span id="OrbitaJoint.goal_position-66"><a href="#OrbitaJoint.goal_position-66"><span class="linenos">66</span></a>    <span class="k">def</span> <span class="nf">goal_position</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="OrbitaJoint.goal_position-67"><a href="#OrbitaJoint.goal_position-67"><span class="linenos">67</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the goal position of the joint in degrees.&quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint.goal_position-68"><a href="#OrbitaJoint.goal_position-68"><span class="linenos">68</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_goal_position</span><span class="p">)</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Get the goal position of the joint in degrees.</p>
+</div>
+
 
                             </div>
                             <div id="OrbitaJoint.goto" class="classattr">
@@ -322,32 +450,56 @@
 
     </div>
     <a class="headerlink" href="#OrbitaJoint.goto"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaJoint.goto-57"><a href="#OrbitaJoint.goto-57"><span class="linenos">57</span></a>    <span class="k">def</span> <span class="nf">goto</span><span class="p">(</span>
-</span><span id="OrbitaJoint.goto-58"><a href="#OrbitaJoint.goto-58"><span class="linenos">58</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-59"><a href="#OrbitaJoint.goto-59"><span class="linenos">59</span></a>        <span class="n">goal_position</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-60"><a href="#OrbitaJoint.goto-60"><span class="linenos">60</span></a>        <span class="n">duration</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-61"><a href="#OrbitaJoint.goto-61"><span class="linenos">61</span></a>        <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-62"><a href="#OrbitaJoint.goto-62"><span class="linenos">62</span></a>        <span class="n">interpolation_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;minimum_jerk&quot;</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-63"><a href="#OrbitaJoint.goto-63"><span class="linenos">63</span></a>        <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-64"><a href="#OrbitaJoint.goto-64"><span class="linenos">64</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GoToId</span><span class="p">:</span>
-</span><span id="OrbitaJoint.goto-65"><a href="#OrbitaJoint.goto-65"><span class="linenos">65</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send the joint to the goal position in duration.</span>
-</span><span id="OrbitaJoint.goto-66"><a href="#OrbitaJoint.goto-66"><span class="linenos">66</span></a>
-</span><span id="OrbitaJoint.goto-67"><a href="#OrbitaJoint.goto-67"><span class="linenos">67</span></a><span class="sd">        Acts like a goto movements on the part, goto on joints are stacked on the part they belong to.</span>
-</span><span id="OrbitaJoint.goto-68"><a href="#OrbitaJoint.goto-68"><span class="linenos">68</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="OrbitaJoint.goto-69"><a href="#OrbitaJoint.goto-69"><span class="linenos">69</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_goto_single_joint</span><span class="p">(</span>
-</span><span id="OrbitaJoint.goto-70"><a href="#OrbitaJoint.goto-70"><span class="linenos">70</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-71"><a href="#OrbitaJoint.goto-71"><span class="linenos">71</span></a>            <span class="n">goal_position</span><span class="o">=</span><span class="n">goal_position</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-72"><a href="#OrbitaJoint.goto-72"><span class="linenos">72</span></a>            <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-73"><a href="#OrbitaJoint.goto-73"><span class="linenos">73</span></a>            <span class="n">wait</span><span class="o">=</span><span class="n">wait</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-74"><a href="#OrbitaJoint.goto-74"><span class="linenos">74</span></a>            <span class="n">interpolation_mode</span><span class="o">=</span><span class="n">interpolation_mode</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-75"><a href="#OrbitaJoint.goto-75"><span class="linenos">75</span></a>            <span class="n">degrees</span><span class="o">=</span><span class="n">degrees</span><span class="p">,</span>
-</span><span id="OrbitaJoint.goto-76"><a href="#OrbitaJoint.goto-76"><span class="linenos">76</span></a>        <span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaJoint.goto-88"><a href="#OrbitaJoint.goto-88"><span class="linenos"> 88</span></a>    <span class="k">def</span> <span class="nf">goto</span><span class="p">(</span>
+</span><span id="OrbitaJoint.goto-89"><a href="#OrbitaJoint.goto-89"><span class="linenos"> 89</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-90"><a href="#OrbitaJoint.goto-90"><span class="linenos"> 90</span></a>        <span class="n">goal_position</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-91"><a href="#OrbitaJoint.goto-91"><span class="linenos"> 91</span></a>        <span class="n">duration</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-92"><a href="#OrbitaJoint.goto-92"><span class="linenos"> 92</span></a>        <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-93"><a href="#OrbitaJoint.goto-93"><span class="linenos"> 93</span></a>        <span class="n">interpolation_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;minimum_jerk&quot;</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-94"><a href="#OrbitaJoint.goto-94"><span class="linenos"> 94</span></a>        <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-95"><a href="#OrbitaJoint.goto-95"><span class="linenos"> 95</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GoToId</span><span class="p">:</span>
+</span><span id="OrbitaJoint.goto-96"><a href="#OrbitaJoint.goto-96"><span class="linenos"> 96</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send the joint to the specified goal position within a given duration.</span>
+</span><span id="OrbitaJoint.goto-97"><a href="#OrbitaJoint.goto-97"><span class="linenos"> 97</span></a>
+</span><span id="OrbitaJoint.goto-98"><a href="#OrbitaJoint.goto-98"><span class="linenos"> 98</span></a><span class="sd">        Acts like a &quot;goto&quot; movement on the part, where &quot;goto&quot; movements for joints are queued on the part they belong to.</span>
+</span><span id="OrbitaJoint.goto-99"><a href="#OrbitaJoint.goto-99"><span class="linenos"> 99</span></a>
+</span><span id="OrbitaJoint.goto-100"><a href="#OrbitaJoint.goto-100"><span class="linenos">100</span></a><span class="sd">        Args:</span>
+</span><span id="OrbitaJoint.goto-101"><a href="#OrbitaJoint.goto-101"><span class="linenos">101</span></a><span class="sd">            goal_position: The target position to move the joint to.</span>
+</span><span id="OrbitaJoint.goto-102"><a href="#OrbitaJoint.goto-102"><span class="linenos">102</span></a><span class="sd">            duration: The time in seconds for the joint to reach the goal position. Defaults to 2.</span>
+</span><span id="OrbitaJoint.goto-103"><a href="#OrbitaJoint.goto-103"><span class="linenos">103</span></a><span class="sd">            wait: Whether to wait for the movement to finish before continuing. Defaults to False.</span>
+</span><span id="OrbitaJoint.goto-104"><a href="#OrbitaJoint.goto-104"><span class="linenos">104</span></a><span class="sd">            interpolation_mode: The type of interpolation to use for the movement, either &quot;minimum_jerk&quot; or &quot;linear&quot;.</span>
+</span><span id="OrbitaJoint.goto-105"><a href="#OrbitaJoint.goto-105"><span class="linenos">105</span></a><span class="sd">                Defaults to &quot;minimum_jerk&quot;.</span>
+</span><span id="OrbitaJoint.goto-106"><a href="#OrbitaJoint.goto-106"><span class="linenos">106</span></a><span class="sd">            degrees: Whether the goal position is specified in degrees. If True, the position is interpreted as degrees.</span>
+</span><span id="OrbitaJoint.goto-107"><a href="#OrbitaJoint.goto-107"><span class="linenos">107</span></a><span class="sd">                Defaults to True.</span>
+</span><span id="OrbitaJoint.goto-108"><a href="#OrbitaJoint.goto-108"><span class="linenos">108</span></a>
+</span><span id="OrbitaJoint.goto-109"><a href="#OrbitaJoint.goto-109"><span class="linenos">109</span></a><span class="sd">        Returns:</span>
+</span><span id="OrbitaJoint.goto-110"><a href="#OrbitaJoint.goto-110"><span class="linenos">110</span></a><span class="sd">            The GoToId associated with the movement command.</span>
+</span><span id="OrbitaJoint.goto-111"><a href="#OrbitaJoint.goto-111"><span class="linenos">111</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="OrbitaJoint.goto-112"><a href="#OrbitaJoint.goto-112"><span class="linenos">112</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuator</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_goto_single_joint</span><span class="p">(</span>
+</span><span id="OrbitaJoint.goto-113"><a href="#OrbitaJoint.goto-113"><span class="linenos">113</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_position_order_in_part</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-114"><a href="#OrbitaJoint.goto-114"><span class="linenos">114</span></a>            <span class="n">goal_position</span><span class="o">=</span><span class="n">goal_position</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-115"><a href="#OrbitaJoint.goto-115"><span class="linenos">115</span></a>            <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-116"><a href="#OrbitaJoint.goto-116"><span class="linenos">116</span></a>            <span class="n">wait</span><span class="o">=</span><span class="n">wait</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-117"><a href="#OrbitaJoint.goto-117"><span class="linenos">117</span></a>            <span class="n">interpolation_mode</span><span class="o">=</span><span class="n">interpolation_mode</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-118"><a href="#OrbitaJoint.goto-118"><span class="linenos">118</span></a>            <span class="n">degrees</span><span class="o">=</span><span class="n">degrees</span><span class="p">,</span>
+</span><span id="OrbitaJoint.goto-119"><a href="#OrbitaJoint.goto-119"><span class="linenos">119</span></a>        <span class="p">)</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Send the joint to the goal position in duration.</p>
+            <div class="docstring"><p>Send the joint to the specified goal position within a given duration.</p>
 
-<p>Acts like a goto movements on the part, goto on joints are stacked on the part they belong to.</p>
+<p>Acts like a "goto" movement on the part, where "goto" movements for joints are queued on the part they belong to.</p>
+
+<p>Args:
+    goal_position: The target position to move the joint to.
+    duration: The time in seconds for the joint to reach the goal position. Defaults to 2.
+    wait: Whether to wait for the movement to finish before continuing. Defaults to False.
+    interpolation_mode: The type of interpolation to use for the movement, either "minimum_jerk" or "linear".
+        Defaults to "minimum_jerk".
+    degrees: Whether the goal position is specified in degrees. If True, the position is interpreted as degrees.
+        Defaults to True.</p>
+
+<p>Returns:
+    The GoToId associated with the movement command.</p>
 </div>
 
 

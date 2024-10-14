@@ -62,45 +62,63 @@
                     <h1 class="modulename">
 <a href="./../../reachy2_sdk.html">reachy2_sdk</a><wbr>.<a href="./../orbita.html">orbita</a><wbr>.orbita_axis    </h1>
 
-                        <div class="docstring"><p>This module describes Orbita axes.</p>
+                        <div class="docstring"><p>Reachy OrbitaAxis module.</p>
+
+<p>Handles all specific methods to OrbitaAxis.</p>
 </div>
 
                         <input id="mod-orbita_axis-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-orbita_axis-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="sd">&quot;&quot;&quot;This module describes Orbita axes.&quot;&quot;&quot;</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span> <span class="nn">google.protobuf.wrappers_pb2</span> <span class="kn">import</span> <span class="n">FloatValue</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="sd">&quot;&quot;&quot;Reachy OrbitaAxis module.</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="sd">Handles all specific methods to OrbitaAxis.</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">to_position</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="k">class</span> <span class="nc">OrbitaAxis</span><span class="p">:</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The OrbitaAxis class represents any Orbita3d or Orbita2d axis.</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span> <span class="nn">google.protobuf.wrappers_pb2</span> <span class="kn">import</span> <span class="n">FloatValue</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">to_position</span>
 </span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">    The OrbitaAxis class is used to store the up-to-date state of the axis, especially:</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">        - its present speed (RO)</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">        - its present load (RO)</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the axis with its initial state.&quot;&quot;&quot;</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="nd">@property</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>    <span class="k">def</span> <span class="nf">present_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_speed</span><span class="p">)</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>    <span class="nd">@property</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>    <span class="k">def</span> <span class="nf">present_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_load</span><span class="p">)</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="k">class</span> <span class="nc">OrbitaAxis</span><span class="p">:</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The OrbitaAxis class represents any Orbita3d or Orbita2d axis.</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">    The OrbitaAxis class is used to store the up-to-date state of the axis, especially:</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">        - its present speed (RO)</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">        - its present load (RO)</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the axis with its initial state.</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">        Args:</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">            initial_state: A dictionary containing the initial state values for the axis. The keys should include</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">                &quot;present_speed&quot; and &quot;present_load&quot;, with corresponding FloatValue objects as values.</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
 </span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_speed</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_speed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_load</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_load&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="nd">@property</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="k">def</span> <span class="nf">present_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the present speed of the axis in radians per second.&quot;&quot;&quot;</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_speed</span><span class="p">)</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>    <span class="nd">@property</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>    <span class="k">def</span> <span class="nf">present_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the present load of the axis in Newtons.&quot;&quot;&quot;</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_load</span><span class="p">)</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the present speed and load of the axis with new state values.</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">        Args:</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">            new_state: A dictionary containing the new state values for the axis. The keys should include</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">                &quot;present_speed&quot; and &quot;present_load&quot;, with corresponding FloatValue objects as values.</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_speed</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_speed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_load</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_load&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
 </span></pre></div>
 
 
@@ -116,30 +134,42 @@
 
     </div>
     <a class="headerlink" href="#OrbitaAxis"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaAxis-10"><a href="#OrbitaAxis-10"><span class="linenos">10</span></a><span class="k">class</span> <span class="nc">OrbitaAxis</span><span class="p">:</span>
-</span><span id="OrbitaAxis-11"><a href="#OrbitaAxis-11"><span class="linenos">11</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The OrbitaAxis class represents any Orbita3d or Orbita2d axis.</span>
-</span><span id="OrbitaAxis-12"><a href="#OrbitaAxis-12"><span class="linenos">12</span></a>
-</span><span id="OrbitaAxis-13"><a href="#OrbitaAxis-13"><span class="linenos">13</span></a><span class="sd">    The OrbitaAxis class is used to store the up-to-date state of the axis, especially:</span>
-</span><span id="OrbitaAxis-14"><a href="#OrbitaAxis-14"><span class="linenos">14</span></a><span class="sd">        - its present speed (RO)</span>
-</span><span id="OrbitaAxis-15"><a href="#OrbitaAxis-15"><span class="linenos">15</span></a><span class="sd">        - its present load (RO)</span>
-</span><span id="OrbitaAxis-16"><a href="#OrbitaAxis-16"><span class="linenos">16</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="OrbitaAxis-17"><a href="#OrbitaAxis-17"><span class="linenos">17</span></a>
-</span><span id="OrbitaAxis-18"><a href="#OrbitaAxis-18"><span class="linenos">18</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="OrbitaAxis-19"><a href="#OrbitaAxis-19"><span class="linenos">19</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the axis with its initial state.&quot;&quot;&quot;</span>
-</span><span id="OrbitaAxis-20"><a href="#OrbitaAxis-20"><span class="linenos">20</span></a>
-</span><span id="OrbitaAxis-21"><a href="#OrbitaAxis-21"><span class="linenos">21</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
-</span><span id="OrbitaAxis-22"><a href="#OrbitaAxis-22"><span class="linenos">22</span></a>
-</span><span id="OrbitaAxis-23"><a href="#OrbitaAxis-23"><span class="linenos">23</span></a>    <span class="nd">@property</span>
-</span><span id="OrbitaAxis-24"><a href="#OrbitaAxis-24"><span class="linenos">24</span></a>    <span class="k">def</span> <span class="nf">present_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="OrbitaAxis-25"><a href="#OrbitaAxis-25"><span class="linenos">25</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_speed</span><span class="p">)</span>
-</span><span id="OrbitaAxis-26"><a href="#OrbitaAxis-26"><span class="linenos">26</span></a>
-</span><span id="OrbitaAxis-27"><a href="#OrbitaAxis-27"><span class="linenos">27</span></a>    <span class="nd">@property</span>
-</span><span id="OrbitaAxis-28"><a href="#OrbitaAxis-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="nf">present_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="OrbitaAxis-29"><a href="#OrbitaAxis-29"><span class="linenos">29</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_load</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaAxis-14"><a href="#OrbitaAxis-14"><span class="linenos">14</span></a><span class="k">class</span> <span class="nc">OrbitaAxis</span><span class="p">:</span>
+</span><span id="OrbitaAxis-15"><a href="#OrbitaAxis-15"><span class="linenos">15</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The OrbitaAxis class represents any Orbita3d or Orbita2d axis.</span>
+</span><span id="OrbitaAxis-16"><a href="#OrbitaAxis-16"><span class="linenos">16</span></a>
+</span><span id="OrbitaAxis-17"><a href="#OrbitaAxis-17"><span class="linenos">17</span></a><span class="sd">    The OrbitaAxis class is used to store the up-to-date state of the axis, especially:</span>
+</span><span id="OrbitaAxis-18"><a href="#OrbitaAxis-18"><span class="linenos">18</span></a><span class="sd">        - its present speed (RO)</span>
+</span><span id="OrbitaAxis-19"><a href="#OrbitaAxis-19"><span class="linenos">19</span></a><span class="sd">        - its present load (RO)</span>
+</span><span id="OrbitaAxis-20"><a href="#OrbitaAxis-20"><span class="linenos">20</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="OrbitaAxis-21"><a href="#OrbitaAxis-21"><span class="linenos">21</span></a>
+</span><span id="OrbitaAxis-22"><a href="#OrbitaAxis-22"><span class="linenos">22</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="OrbitaAxis-23"><a href="#OrbitaAxis-23"><span class="linenos">23</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the axis with its initial state.</span>
+</span><span id="OrbitaAxis-24"><a href="#OrbitaAxis-24"><span class="linenos">24</span></a>
+</span><span id="OrbitaAxis-25"><a href="#OrbitaAxis-25"><span class="linenos">25</span></a><span class="sd">        Args:</span>
+</span><span id="OrbitaAxis-26"><a href="#OrbitaAxis-26"><span class="linenos">26</span></a><span class="sd">            initial_state: A dictionary containing the initial state values for the axis. The keys should include</span>
+</span><span id="OrbitaAxis-27"><a href="#OrbitaAxis-27"><span class="linenos">27</span></a><span class="sd">                &quot;present_speed&quot; and &quot;present_load&quot;, with corresponding FloatValue objects as values.</span>
+</span><span id="OrbitaAxis-28"><a href="#OrbitaAxis-28"><span class="linenos">28</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="OrbitaAxis-29"><a href="#OrbitaAxis-29"><span class="linenos">29</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
 </span><span id="OrbitaAxis-30"><a href="#OrbitaAxis-30"><span class="linenos">30</span></a>
-</span><span id="OrbitaAxis-31"><a href="#OrbitaAxis-31"><span class="linenos">31</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="OrbitaAxis-32"><a href="#OrbitaAxis-32"><span class="linenos">32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_speed</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_speed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
-</span><span id="OrbitaAxis-33"><a href="#OrbitaAxis-33"><span class="linenos">33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_load</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_load&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+</span><span id="OrbitaAxis-31"><a href="#OrbitaAxis-31"><span class="linenos">31</span></a>    <span class="nd">@property</span>
+</span><span id="OrbitaAxis-32"><a href="#OrbitaAxis-32"><span class="linenos">32</span></a>    <span class="k">def</span> <span class="nf">present_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="OrbitaAxis-33"><a href="#OrbitaAxis-33"><span class="linenos">33</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the present speed of the axis in radians per second.&quot;&quot;&quot;</span>
+</span><span id="OrbitaAxis-34"><a href="#OrbitaAxis-34"><span class="linenos">34</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_speed</span><span class="p">)</span>
+</span><span id="OrbitaAxis-35"><a href="#OrbitaAxis-35"><span class="linenos">35</span></a>
+</span><span id="OrbitaAxis-36"><a href="#OrbitaAxis-36"><span class="linenos">36</span></a>    <span class="nd">@property</span>
+</span><span id="OrbitaAxis-37"><a href="#OrbitaAxis-37"><span class="linenos">37</span></a>    <span class="k">def</span> <span class="nf">present_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="OrbitaAxis-38"><a href="#OrbitaAxis-38"><span class="linenos">38</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the present load of the axis in Newtons.&quot;&quot;&quot;</span>
+</span><span id="OrbitaAxis-39"><a href="#OrbitaAxis-39"><span class="linenos">39</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_load</span><span class="p">)</span>
+</span><span id="OrbitaAxis-40"><a href="#OrbitaAxis-40"><span class="linenos">40</span></a>
+</span><span id="OrbitaAxis-41"><a href="#OrbitaAxis-41"><span class="linenos">41</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="OrbitaAxis-42"><a href="#OrbitaAxis-42"><span class="linenos">42</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the present speed and load of the axis with new state values.</span>
+</span><span id="OrbitaAxis-43"><a href="#OrbitaAxis-43"><span class="linenos">43</span></a>
+</span><span id="OrbitaAxis-44"><a href="#OrbitaAxis-44"><span class="linenos">44</span></a><span class="sd">        Args:</span>
+</span><span id="OrbitaAxis-45"><a href="#OrbitaAxis-45"><span class="linenos">45</span></a><span class="sd">            new_state: A dictionary containing the new state values for the axis. The keys should include</span>
+</span><span id="OrbitaAxis-46"><a href="#OrbitaAxis-46"><span class="linenos">46</span></a><span class="sd">                &quot;present_speed&quot; and &quot;present_load&quot;, with corresponding FloatValue objects as values.</span>
+</span><span id="OrbitaAxis-47"><a href="#OrbitaAxis-47"><span class="linenos">47</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="OrbitaAxis-48"><a href="#OrbitaAxis-48"><span class="linenos">48</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_speed</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_speed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+</span><span id="OrbitaAxis-49"><a href="#OrbitaAxis-49"><span class="linenos">49</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_present_load</span> <span class="o">=</span> <span class="n">new_state</span><span class="p">[</span><span class="s2">&quot;present_load&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
 </span></pre></div>
 
 
@@ -161,14 +191,22 @@
 
     </div>
     <a class="headerlink" href="#OrbitaAxis.__init__"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaAxis.__init__-18"><a href="#OrbitaAxis.__init__-18"><span class="linenos">18</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="OrbitaAxis.__init__-19"><a href="#OrbitaAxis.__init__-19"><span class="linenos">19</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the axis with its initial state.&quot;&quot;&quot;</span>
-</span><span id="OrbitaAxis.__init__-20"><a href="#OrbitaAxis.__init__-20"><span class="linenos">20</span></a>
-</span><span id="OrbitaAxis.__init__-21"><a href="#OrbitaAxis.__init__-21"><span class="linenos">21</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaAxis.__init__-22"><a href="#OrbitaAxis.__init__-22"><span class="linenos">22</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="OrbitaAxis.__init__-23"><a href="#OrbitaAxis.__init__-23"><span class="linenos">23</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the axis with its initial state.</span>
+</span><span id="OrbitaAxis.__init__-24"><a href="#OrbitaAxis.__init__-24"><span class="linenos">24</span></a>
+</span><span id="OrbitaAxis.__init__-25"><a href="#OrbitaAxis.__init__-25"><span class="linenos">25</span></a><span class="sd">        Args:</span>
+</span><span id="OrbitaAxis.__init__-26"><a href="#OrbitaAxis.__init__-26"><span class="linenos">26</span></a><span class="sd">            initial_state: A dictionary containing the initial state values for the axis. The keys should include</span>
+</span><span id="OrbitaAxis.__init__-27"><a href="#OrbitaAxis.__init__-27"><span class="linenos">27</span></a><span class="sd">                &quot;present_speed&quot; and &quot;present_load&quot;, with corresponding FloatValue objects as values.</span>
+</span><span id="OrbitaAxis.__init__-28"><a href="#OrbitaAxis.__init__-28"><span class="linenos">28</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="OrbitaAxis.__init__-29"><a href="#OrbitaAxis.__init__-29"><span class="linenos">29</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
 </span></pre></div>
 
 
             <div class="docstring"><p>Initialize the axis with its initial state.</p>
+
+<p>Args:
+    initial_state: A dictionary containing the initial state values for the axis. The keys should include
+        "present_speed" and "present_load", with corresponding FloatValue objects as values.</p>
 </div>
 
 
@@ -182,13 +220,16 @@
 
     </div>
     <a class="headerlink" href="#OrbitaAxis.present_speed"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaAxis.present_speed-23"><a href="#OrbitaAxis.present_speed-23"><span class="linenos">23</span></a>    <span class="nd">@property</span>
-</span><span id="OrbitaAxis.present_speed-24"><a href="#OrbitaAxis.present_speed-24"><span class="linenos">24</span></a>    <span class="k">def</span> <span class="nf">present_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="OrbitaAxis.present_speed-25"><a href="#OrbitaAxis.present_speed-25"><span class="linenos">25</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_speed</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaAxis.present_speed-31"><a href="#OrbitaAxis.present_speed-31"><span class="linenos">31</span></a>    <span class="nd">@property</span>
+</span><span id="OrbitaAxis.present_speed-32"><a href="#OrbitaAxis.present_speed-32"><span class="linenos">32</span></a>    <span class="k">def</span> <span class="nf">present_speed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="OrbitaAxis.present_speed-33"><a href="#OrbitaAxis.present_speed-33"><span class="linenos">33</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the present speed of the axis in radians per second.&quot;&quot;&quot;</span>
+</span><span id="OrbitaAxis.present_speed-34"><a href="#OrbitaAxis.present_speed-34"><span class="linenos">34</span></a>        <span class="k">return</span> <span class="n">to_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_speed</span><span class="p">)</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Get the present speed of the axis in radians per second.</p>
+</div>
+
 
                             </div>
                             <div id="OrbitaAxis.present_load" class="classattr">
@@ -200,13 +241,16 @@
 
     </div>
     <a class="headerlink" href="#OrbitaAxis.present_load"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaAxis.present_load-27"><a href="#OrbitaAxis.present_load-27"><span class="linenos">27</span></a>    <span class="nd">@property</span>
-</span><span id="OrbitaAxis.present_load-28"><a href="#OrbitaAxis.present_load-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="nf">present_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="OrbitaAxis.present_load-29"><a href="#OrbitaAxis.present_load-29"><span class="linenos">29</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_load</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="OrbitaAxis.present_load-36"><a href="#OrbitaAxis.present_load-36"><span class="linenos">36</span></a>    <span class="nd">@property</span>
+</span><span id="OrbitaAxis.present_load-37"><a href="#OrbitaAxis.present_load-37"><span class="linenos">37</span></a>    <span class="k">def</span> <span class="nf">present_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="OrbitaAxis.present_load-38"><a href="#OrbitaAxis.present_load-38"><span class="linenos">38</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the present load of the axis in Newtons.&quot;&quot;&quot;</span>
+</span><span id="OrbitaAxis.present_load-39"><a href="#OrbitaAxis.present_load-39"><span class="linenos">39</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_load</span><span class="p">)</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Get the present load of the axis in Newtons.</p>
+</div>
+
 
                             </div>
                 </section>

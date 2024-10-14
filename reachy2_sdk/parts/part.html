@@ -71,106 +71,182 @@
                     <h1 class="modulename">
 <a href="./../../reachy2_sdk.html">reachy2_sdk</a><wbr>.<a href="./../parts.html">parts</a><wbr>.part    </h1>
 
-                
+                        <div class="docstring"><p>Reachy Part module.</p>
+
+<p>Handles all specific methods commmon to all Reachy parts (Arm, Head, Hand or MobileBase).</p>
+</div>
+
                         <input id="mod-part-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-part-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">import</span> <span class="nn">logging</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="kn">import</span> <span class="nn">time</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">import</span> <span class="nn">grpc</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.arm_pb2</span> <span class="kn">import</span> <span class="n">Arm</span> <span class="k">as</span> <span class="n">Arm_proto</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.arm_pb2</span> <span class="kn">import</span> <span class="n">ArmState</span><span class="p">,</span> <span class="n">ArmStatus</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.arm_pb2_grpc</span> <span class="kn">import</span> <span class="n">ArmServiceStub</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.hand_pb2</span> <span class="kn">import</span> <span class="n">Hand</span> <span class="k">as</span> <span class="n">Hand_proto</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.hand_pb2</span> <span class="kn">import</span> <span class="n">HandState</span><span class="p">,</span> <span class="n">HandStatus</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.hand_pb2_grpc</span> <span class="kn">import</span> <span class="n">HandServiceStub</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.head_pb2</span> <span class="kn">import</span> <span class="n">Head</span> <span class="k">as</span> <span class="n">Head_proto</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.head_pb2</span> <span class="kn">import</span> <span class="n">HeadState</span><span class="p">,</span> <span class="n">HeadStatus</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.head_pb2_grpc</span> <span class="kn">import</span> <span class="n">HeadServiceStub</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.mobile_base_utility_pb2</span> <span class="kn">import</span> <span class="n">MobileBase</span> <span class="k">as</span> <span class="n">MobileBase_proto</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.mobile_base_utility_pb2</span> <span class="kn">import</span> <span class="n">MobileBaseState</span><span class="p">,</span> <span class="n">MobileBaseStatus</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.mobile_base_utility_pb2_grpc</span> <span class="kn">import</span> <span class="n">MobileBaseUtilityServiceStub</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.part_pb2</span> <span class="kn">import</span> <span class="n">PartId</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="k">class</span> <span class="nc">Part</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The Part class is an abstract class to represent any part of the robot.</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">    This class is meant to be derived by any part of the robot : Arm, Hand, Head, MobileBase</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>        <span class="n">proto_msg</span><span class="p">:</span> <span class="n">Arm_proto</span> <span class="o">|</span> <span class="n">Head_proto</span> <span class="o">|</span> <span class="n">Hand_proto</span> <span class="o">|</span> <span class="n">MobileBase_proto</span><span class="p">,</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>        <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>        <span class="n">stub</span><span class="p">:</span> <span class="n">ArmServiceStub</span> <span class="o">|</span> <span class="n">HeadServiceStub</span> <span class="o">|</span> <span class="n">HandServiceStub</span> <span class="o">|</span> <span class="n">MobileBaseUtilityServiceStub</span><span class="p">,</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the common attributes.&quot;&quot;&quot;</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_grpc_channel</span> <span class="o">=</span> <span class="n">grpc_channel</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">stub</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span> <span class="o">=</span> <span class="n">PartId</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>    <span class="k">def</span> <span class="nf">turn_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_on</span><span class="p">()</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>    <span class="k">def</span> <span class="nf">turn_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_off</span><span class="p">()</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>    <span class="k">def</span> <span class="nf">_turn_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">TurnOn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>    <span class="k">def</span> <span class="nf">_turn_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">TurnOff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>    <span class="k">def</span> <span class="nf">is_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>                <span class="k">return</span> <span class="kc">False</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a>        <span class="k">return</span> <span class="kc">True</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a>    <span class="k">def</span> <span class="nf">is_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>                <span class="k">return</span> <span class="kc">False</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>        <span class="k">return</span> <span class="kc">True</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ArmState</span> <span class="o">|</span> <span class="n">HeadState</span> <span class="o">|</span> <span class="n">HandState</span> <span class="o">|</span> <span class="n">MobileBaseState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>        <span class="k">pass</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>    <span class="k">def</span> <span class="nf">_update_audit_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ArmStatus</span> <span class="o">|</span> <span class="n">HeadStatus</span> <span class="o">|</span> <span class="n">HandStatus</span> <span class="o">|</span> <span class="n">MobileBaseStatus</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>        <span class="k">pass</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>
-</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>    <span class="k">def</span> <span class="nf">_set_speed_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a>        <span class="k">pass</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a>
-</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a>    <span class="nd">@property</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a>    <span class="k">def</span> <span class="nf">audit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a>        <span class="n">error_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a>        <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a>        <span class="k">for</span> <span class="n">act_name</span><span class="p">,</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span id="L-89"><a href="#L-89"><span class="linenos">89</span></a>            <span class="n">error_dict</span><span class="p">[</span><span class="n">act_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span>
-</span><span id="L-90"><a href="#L-90"><span class="linenos">90</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span> <span class="o">!=</span> <span class="s2">&quot;Ok&quot;</span><span class="p">:</span>
-</span><span id="L-91"><a href="#L-91"><span class="linenos">91</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">act_name</span><span class="si">}</span><span class="s1">: &quot;</span><span class="si">{</span><span class="n">actuator</span><span class="o">.</span><span class="n">audit</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
-</span><span id="L-92"><a href="#L-92"><span class="linenos">92</span></a>                <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="L-93"><a href="#L-93"><span class="linenos">93</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">error_detected</span><span class="p">:</span>
-</span><span id="L-94"><a href="#L-94"><span class="linenos">94</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="L-95"><a href="#L-95"><span class="linenos">95</span></a>        <span class="k">return</span> <span class="n">error_dict</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="sd">&quot;&quot;&quot;Reachy Part module.</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="sd">Handles all specific methods commmon to all Reachy parts (Arm, Head, Hand or MobileBase).</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="kn">import</span> <span class="nn">logging</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="kn">import</span> <span class="nn">time</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="kn">import</span> <span class="nn">grpc</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.arm_pb2</span> <span class="kn">import</span> <span class="n">Arm</span> <span class="k">as</span> <span class="n">Arm_proto</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.arm_pb2</span> <span class="kn">import</span> <span class="n">ArmState</span><span class="p">,</span> <span class="n">ArmStatus</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.arm_pb2_grpc</span> <span class="kn">import</span> <span class="n">ArmServiceStub</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.hand_pb2</span> <span class="kn">import</span> <span class="n">Hand</span> <span class="k">as</span> <span class="n">Hand_proto</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.hand_pb2</span> <span class="kn">import</span> <span class="n">HandState</span><span class="p">,</span> <span class="n">HandStatus</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.hand_pb2_grpc</span> <span class="kn">import</span> <span class="n">HandServiceStub</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.head_pb2</span> <span class="kn">import</span> <span class="n">Head</span> <span class="k">as</span> <span class="n">Head_proto</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.head_pb2</span> <span class="kn">import</span> <span class="n">HeadState</span><span class="p">,</span> <span class="n">HeadStatus</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.head_pb2_grpc</span> <span class="kn">import</span> <span class="n">HeadServiceStub</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.mobile_base_utility_pb2</span> <span class="kn">import</span> <span class="n">MobileBase</span> <span class="k">as</span> <span class="n">MobileBase_proto</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.mobile_base_utility_pb2</span> <span class="kn">import</span> <span class="n">MobileBaseState</span><span class="p">,</span> <span class="n">MobileBaseStatus</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.mobile_base_utility_pb2_grpc</span> <span class="kn">import</span> <span class="n">MobileBaseUtilityServiceStub</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.part_pb2</span> <span class="kn">import</span> <span class="n">PartId</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a>
+</span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="k">class</span> <span class="nc">Part</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The Part class serves as an abstract base class representing parts of a robot, such as Arm, Hand, Head, or MobileBase.</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a><span class="sd">    This class provides a common interface for managing robot components, including turning them on or off, checking their</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">    status, and updating their states. The class is intended to be subclassed to implement specific behaviors for different</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a><span class="sd">    types of robot parts.</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a>        <span class="n">proto_msg</span><span class="p">:</span> <span class="n">Arm_proto</span> <span class="o">|</span> <span class="n">Head_proto</span> <span class="o">|</span> <span class="n">Hand_proto</span> <span class="o">|</span> <span class="n">MobileBase_proto</span><span class="p">,</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a>        <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>        <span class="n">stub</span><span class="p">:</span> <span class="n">ArmServiceStub</span> <span class="o">|</span> <span class="n">HeadServiceStub</span> <span class="o">|</span> <span class="n">HandServiceStub</span> <span class="o">|</span> <span class="n">MobileBaseUtilityServiceStub</span><span class="p">,</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the Part with common attributes for gRPC communication.</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a><span class="sd">        This sets up the communication channel and service stubs for the specified part,</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a><span class="sd">        configures the part&#39;s unique identifier. It provides the foundation for specific parts of the robot</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a><span class="sd">        (Arm, Head, Hand, MobileBase) to be derived from this class.</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a><span class="sd">        Args:</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a><span class="sd">            proto_msg: The protobuf message containing configuration details for the part</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a><span class="sd">                (Arm, Head, Hand, or MobileBase).</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a><span class="sd">            grpc_channel: The gRPC channel used to communicate with the service.</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a><span class="sd">            stub: The service stub for the gRPC communication, which could be for Arm, Head,</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a><span class="sd">                Hand, or MobileBase.</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_grpc_channel</span> <span class="o">=</span> <span class="n">grpc_channel</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">stub</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span> <span class="o">=</span> <span class="n">PartId</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>    <span class="k">def</span> <span class="nf">turn_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn on the part.</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a><span class="sd">        This method sets the speed limits to a low value, turns on all motors of the part, and then restores the speed limits</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a><span class="sd">        to maximum. It waits for a brief period to ensure the operation is complete.</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_on</span><span class="p">()</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>    <span class="k">def</span> <span class="nf">turn_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn off the part.</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a><span class="sd">        This method turns off all motors of the part and waits for a brief period to ensure the operation is complete.</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_off</span><span class="p">()</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>    <span class="k">def</span> <span class="nf">_turn_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send a command to turn on immediately the part.&quot;&quot;&quot;</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">TurnOn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>    <span class="k">def</span> <span class="nf">_turn_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send a command to turn off immediately the part.&quot;&quot;&quot;</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">TurnOff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>    <span class="k">def</span> <span class="nf">is_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if all actuators of the part are currently on.</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a><span class="sd">        Returns:</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a><span class="sd">            True if all actuators are on, otherwise False.</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>                <span class="k">return</span> <span class="kc">False</span>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>        <span class="k">return</span> <span class="kc">True</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>    <span class="k">def</span> <span class="nf">is_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if all actuators of the part are currently off.</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a><span class="sd">        Returns:</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a><span class="sd">            True if all actuators are off, otherwise False.</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>                <span class="k">return</span> <span class="kc">False</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>        <span class="k">return</span> <span class="kc">True</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ArmState</span> <span class="o">|</span> <span class="n">HeadState</span> <span class="o">|</span> <span class="n">HandState</span> <span class="o">|</span> <span class="n">MobileBaseState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the part&#39;s state with newly received data.</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a><span class="sd">        This method must be implemented by subclasses to update the state of the part based on</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a><span class="sd">        specific state data types such as ArmState, HeadState, HandState, or MobileBaseState.</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a><span class="sd">        Args:</span>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a><span class="sd">            state: The state data used to update the part, which can be an ArmState, HeadState,</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="sd">                HandState, or MobileBaseState.</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>        <span class="k">pass</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>    <span class="k">def</span> <span class="nf">_update_audit_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ArmStatus</span> <span class="o">|</span> <span class="n">HeadStatus</span> <span class="o">|</span> <span class="n">HandStatus</span> <span class="o">|</span> <span class="n">MobileBaseStatus</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the audit status of the part.</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a><span class="sd">        This method must be implemented by subclasses to update the audit status of the part based on</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a><span class="sd">        specific status data types such as ArmStatus, HeadStatus, HandStatus, or MobileBaseStatus.</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a><span class="sd">        Args:</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a><span class="sd">            state: The status data used to update the audit status, which can be an ArmStatus,</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a><span class="sd">                HeadStatus, HandStatus, or MobileBaseStatus.</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>        <span class="k">pass</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>    <span class="k">def</span> <span class="nf">_set_speed_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the speed limits for the part.</span>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a><span class="sd">        This method must be implemented by subclasses to set speed limits.</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a><span class="sd">        Args:</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a><span class="sd">            value: The speed limit value to be set, as a percentage of the maximum speed allowed (0-100).</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a>        <span class="k">pass</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a>    <span class="nd">@property</span>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a>    <span class="k">def</span> <span class="nf">audit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the audit status of all actuators of the part.</span>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a><span class="sd">        Returns:</span>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a><span class="sd">            A dictionary where each key is the name of an actuator and the value is its audit status.</span>
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a><span class="sd">            If an error is detected in any actuator, a warning is logged. Otherwise, an informational</span>
+</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a><span class="sd">            message indicating no errors is logged.</span>
+</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a>        <span class="n">error_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a>        <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a>        <span class="k">for</span> <span class="n">act_name</span><span class="p">,</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a>            <span class="n">error_dict</span><span class="p">[</span><span class="n">act_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span>
+</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span> <span class="o">!=</span> <span class="s2">&quot;Ok&quot;</span><span class="p">:</span>
+</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">act_name</span><span class="si">}</span><span class="s1">: &quot;</span><span class="si">{</span><span class="n">actuator</span><span class="o">.</span><span class="n">audit</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>                <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">error_detected</span><span class="p">:</span>
+</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>        <span class="k">return</span> <span class="n">error_dict</span>
 </span></pre></div>
 
 
@@ -186,86 +262,155 @@
 
     </div>
     <a class="headerlink" href="#Part"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Part-23"><a href="#Part-23"><span class="linenos">23</span></a><span class="k">class</span> <span class="nc">Part</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-</span><span id="Part-24"><a href="#Part-24"><span class="linenos">24</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The Part class is an abstract class to represent any part of the robot.</span>
-</span><span id="Part-25"><a href="#Part-25"><span class="linenos">25</span></a>
-</span><span id="Part-26"><a href="#Part-26"><span class="linenos">26</span></a><span class="sd">    This class is meant to be derived by any part of the robot : Arm, Hand, Head, MobileBase</span>
-</span><span id="Part-27"><a href="#Part-27"><span class="linenos">27</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="Part-28"><a href="#Part-28"><span class="linenos">28</span></a>
-</span><span id="Part-29"><a href="#Part-29"><span class="linenos">29</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-</span><span id="Part-30"><a href="#Part-30"><span class="linenos">30</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="Part-31"><a href="#Part-31"><span class="linenos">31</span></a>        <span class="n">proto_msg</span><span class="p">:</span> <span class="n">Arm_proto</span> <span class="o">|</span> <span class="n">Head_proto</span> <span class="o">|</span> <span class="n">Hand_proto</span> <span class="o">|</span> <span class="n">MobileBase_proto</span><span class="p">,</span>
-</span><span id="Part-32"><a href="#Part-32"><span class="linenos">32</span></a>        <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span>
-</span><span id="Part-33"><a href="#Part-33"><span class="linenos">33</span></a>        <span class="n">stub</span><span class="p">:</span> <span class="n">ArmServiceStub</span> <span class="o">|</span> <span class="n">HeadServiceStub</span> <span class="o">|</span> <span class="n">HandServiceStub</span> <span class="o">|</span> <span class="n">MobileBaseUtilityServiceStub</span><span class="p">,</span>
-</span><span id="Part-34"><a href="#Part-34"><span class="linenos">34</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part-35"><a href="#Part-35"><span class="linenos">35</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the common attributes.&quot;&quot;&quot;</span>
-</span><span id="Part-36"><a href="#Part-36"><span class="linenos">36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_grpc_channel</span> <span class="o">=</span> <span class="n">grpc_channel</span>
-</span><span id="Part-37"><a href="#Part-37"><span class="linenos">37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">stub</span>
-</span><span id="Part-38"><a href="#Part-38"><span class="linenos">38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span> <span class="o">=</span> <span class="n">PartId</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-</span><span id="Part-39"><a href="#Part-39"><span class="linenos">39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span id="Part-40"><a href="#Part-40"><span class="linenos">40</span></a>
-</span><span id="Part-41"><a href="#Part-41"><span class="linenos">41</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span id="Part-42"><a href="#Part-42"><span class="linenos">42</span></a>
-</span><span id="Part-43"><a href="#Part-43"><span class="linenos">43</span></a>    <span class="k">def</span> <span class="nf">turn_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part-44"><a href="#Part-44"><span class="linenos">44</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span id="Part-45"><a href="#Part-45"><span class="linenos">45</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
-</span><span id="Part-46"><a href="#Part-46"><span class="linenos">46</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_on</span><span class="p">()</span>
-</span><span id="Part-47"><a href="#Part-47"><span class="linenos">47</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
-</span><span id="Part-48"><a href="#Part-48"><span class="linenos">48</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
-</span><span id="Part-49"><a href="#Part-49"><span class="linenos">49</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
-</span><span id="Part-50"><a href="#Part-50"><span class="linenos">50</span></a>
-</span><span id="Part-51"><a href="#Part-51"><span class="linenos">51</span></a>    <span class="k">def</span> <span class="nf">turn_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part-52"><a href="#Part-52"><span class="linenos">52</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_off</span><span class="p">()</span>
-</span><span id="Part-53"><a href="#Part-53"><span class="linenos">53</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
-</span><span id="Part-54"><a href="#Part-54"><span class="linenos">54</span></a>
-</span><span id="Part-55"><a href="#Part-55"><span class="linenos">55</span></a>    <span class="k">def</span> <span class="nf">_turn_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part-56"><a href="#Part-56"><span class="linenos">56</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">TurnOn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
-</span><span id="Part-57"><a href="#Part-57"><span class="linenos">57</span></a>
-</span><span id="Part-58"><a href="#Part-58"><span class="linenos">58</span></a>    <span class="k">def</span> <span class="nf">_turn_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part-59"><a href="#Part-59"><span class="linenos">59</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">TurnOff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
-</span><span id="Part-60"><a href="#Part-60"><span class="linenos">60</span></a>
-</span><span id="Part-61"><a href="#Part-61"><span class="linenos">61</span></a>    <span class="k">def</span> <span class="nf">is_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="Part-62"><a href="#Part-62"><span class="linenos">62</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-</span><span id="Part-63"><a href="#Part-63"><span class="linenos">63</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
-</span><span id="Part-64"><a href="#Part-64"><span class="linenos">64</span></a>                <span class="k">return</span> <span class="kc">False</span>
-</span><span id="Part-65"><a href="#Part-65"><span class="linenos">65</span></a>        <span class="k">return</span> <span class="kc">True</span>
-</span><span id="Part-66"><a href="#Part-66"><span class="linenos">66</span></a>
-</span><span id="Part-67"><a href="#Part-67"><span class="linenos">67</span></a>    <span class="k">def</span> <span class="nf">is_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="Part-68"><a href="#Part-68"><span class="linenos">68</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-</span><span id="Part-69"><a href="#Part-69"><span class="linenos">69</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
-</span><span id="Part-70"><a href="#Part-70"><span class="linenos">70</span></a>                <span class="k">return</span> <span class="kc">False</span>
-</span><span id="Part-71"><a href="#Part-71"><span class="linenos">71</span></a>        <span class="k">return</span> <span class="kc">True</span>
-</span><span id="Part-72"><a href="#Part-72"><span class="linenos">72</span></a>
-</span><span id="Part-73"><a href="#Part-73"><span class="linenos">73</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="Part-74"><a href="#Part-74"><span class="linenos">74</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ArmState</span> <span class="o">|</span> <span class="n">HeadState</span> <span class="o">|</span> <span class="n">HandState</span> <span class="o">|</span> <span class="n">MobileBaseState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part-75"><a href="#Part-75"><span class="linenos">75</span></a>        <span class="k">pass</span>
-</span><span id="Part-76"><a href="#Part-76"><span class="linenos">76</span></a>
-</span><span id="Part-77"><a href="#Part-77"><span class="linenos">77</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="Part-78"><a href="#Part-78"><span class="linenos">78</span></a>    <span class="k">def</span> <span class="nf">_update_audit_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ArmStatus</span> <span class="o">|</span> <span class="n">HeadStatus</span> <span class="o">|</span> <span class="n">HandStatus</span> <span class="o">|</span> <span class="n">MobileBaseStatus</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part-79"><a href="#Part-79"><span class="linenos">79</span></a>        <span class="k">pass</span>
-</span><span id="Part-80"><a href="#Part-80"><span class="linenos">80</span></a>
-</span><span id="Part-81"><a href="#Part-81"><span class="linenos">81</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="Part-82"><a href="#Part-82"><span class="linenos">82</span></a>    <span class="k">def</span> <span class="nf">_set_speed_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part-83"><a href="#Part-83"><span class="linenos">83</span></a>        <span class="k">pass</span>
-</span><span id="Part-84"><a href="#Part-84"><span class="linenos">84</span></a>
-</span><span id="Part-85"><a href="#Part-85"><span class="linenos">85</span></a>    <span class="nd">@property</span>
-</span><span id="Part-86"><a href="#Part-86"><span class="linenos">86</span></a>    <span class="k">def</span> <span class="nf">audit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-</span><span id="Part-87"><a href="#Part-87"><span class="linenos">87</span></a>        <span class="n">error_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span id="Part-88"><a href="#Part-88"><span class="linenos">88</span></a>        <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="Part-89"><a href="#Part-89"><span class="linenos">89</span></a>        <span class="k">for</span> <span class="n">act_name</span><span class="p">,</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span id="Part-90"><a href="#Part-90"><span class="linenos">90</span></a>            <span class="n">error_dict</span><span class="p">[</span><span class="n">act_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span>
-</span><span id="Part-91"><a href="#Part-91"><span class="linenos">91</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span> <span class="o">!=</span> <span class="s2">&quot;Ok&quot;</span><span class="p">:</span>
-</span><span id="Part-92"><a href="#Part-92"><span class="linenos">92</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">act_name</span><span class="si">}</span><span class="s1">: &quot;</span><span class="si">{</span><span class="n">actuator</span><span class="o">.</span><span class="n">audit</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
-</span><span id="Part-93"><a href="#Part-93"><span class="linenos">93</span></a>                <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="Part-94"><a href="#Part-94"><span class="linenos">94</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">error_detected</span><span class="p">:</span>
-</span><span id="Part-95"><a href="#Part-95"><span class="linenos">95</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="Part-96"><a href="#Part-96"><span class="linenos">96</span></a>        <span class="k">return</span> <span class="n">error_dict</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Part-28"><a href="#Part-28"><span class="linenos"> 28</span></a><span class="k">class</span> <span class="nc">Part</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+</span><span id="Part-29"><a href="#Part-29"><span class="linenos"> 29</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The Part class serves as an abstract base class representing parts of a robot, such as Arm, Hand, Head, or MobileBase.</span>
+</span><span id="Part-30"><a href="#Part-30"><span class="linenos"> 30</span></a>
+</span><span id="Part-31"><a href="#Part-31"><span class="linenos"> 31</span></a><span class="sd">    This class provides a common interface for managing robot components, including turning them on or off, checking their</span>
+</span><span id="Part-32"><a href="#Part-32"><span class="linenos"> 32</span></a><span class="sd">    status, and updating their states. The class is intended to be subclassed to implement specific behaviors for different</span>
+</span><span id="Part-33"><a href="#Part-33"><span class="linenos"> 33</span></a><span class="sd">    types of robot parts.</span>
+</span><span id="Part-34"><a href="#Part-34"><span class="linenos"> 34</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="Part-35"><a href="#Part-35"><span class="linenos"> 35</span></a>
+</span><span id="Part-36"><a href="#Part-36"><span class="linenos"> 36</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+</span><span id="Part-37"><a href="#Part-37"><span class="linenos"> 37</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="Part-38"><a href="#Part-38"><span class="linenos"> 38</span></a>        <span class="n">proto_msg</span><span class="p">:</span> <span class="n">Arm_proto</span> <span class="o">|</span> <span class="n">Head_proto</span> <span class="o">|</span> <span class="n">Hand_proto</span> <span class="o">|</span> <span class="n">MobileBase_proto</span><span class="p">,</span>
+</span><span id="Part-39"><a href="#Part-39"><span class="linenos"> 39</span></a>        <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span>
+</span><span id="Part-40"><a href="#Part-40"><span class="linenos"> 40</span></a>        <span class="n">stub</span><span class="p">:</span> <span class="n">ArmServiceStub</span> <span class="o">|</span> <span class="n">HeadServiceStub</span> <span class="o">|</span> <span class="n">HandServiceStub</span> <span class="o">|</span> <span class="n">MobileBaseUtilityServiceStub</span><span class="p">,</span>
+</span><span id="Part-41"><a href="#Part-41"><span class="linenos"> 41</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part-42"><a href="#Part-42"><span class="linenos"> 42</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the Part with common attributes for gRPC communication.</span>
+</span><span id="Part-43"><a href="#Part-43"><span class="linenos"> 43</span></a>
+</span><span id="Part-44"><a href="#Part-44"><span class="linenos"> 44</span></a><span class="sd">        This sets up the communication channel and service stubs for the specified part,</span>
+</span><span id="Part-45"><a href="#Part-45"><span class="linenos"> 45</span></a><span class="sd">        configures the part&#39;s unique identifier. It provides the foundation for specific parts of the robot</span>
+</span><span id="Part-46"><a href="#Part-46"><span class="linenos"> 46</span></a><span class="sd">        (Arm, Head, Hand, MobileBase) to be derived from this class.</span>
+</span><span id="Part-47"><a href="#Part-47"><span class="linenos"> 47</span></a>
+</span><span id="Part-48"><a href="#Part-48"><span class="linenos"> 48</span></a><span class="sd">        Args:</span>
+</span><span id="Part-49"><a href="#Part-49"><span class="linenos"> 49</span></a><span class="sd">            proto_msg: The protobuf message containing configuration details for the part</span>
+</span><span id="Part-50"><a href="#Part-50"><span class="linenos"> 50</span></a><span class="sd">                (Arm, Head, Hand, or MobileBase).</span>
+</span><span id="Part-51"><a href="#Part-51"><span class="linenos"> 51</span></a><span class="sd">            grpc_channel: The gRPC channel used to communicate with the service.</span>
+</span><span id="Part-52"><a href="#Part-52"><span class="linenos"> 52</span></a><span class="sd">            stub: The service stub for the gRPC communication, which could be for Arm, Head,</span>
+</span><span id="Part-53"><a href="#Part-53"><span class="linenos"> 53</span></a><span class="sd">                Hand, or MobileBase.</span>
+</span><span id="Part-54"><a href="#Part-54"><span class="linenos"> 54</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part-55"><a href="#Part-55"><span class="linenos"> 55</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_grpc_channel</span> <span class="o">=</span> <span class="n">grpc_channel</span>
+</span><span id="Part-56"><a href="#Part-56"><span class="linenos"> 56</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">stub</span>
+</span><span id="Part-57"><a href="#Part-57"><span class="linenos"> 57</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span> <span class="o">=</span> <span class="n">PartId</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span id="Part-58"><a href="#Part-58"><span class="linenos"> 58</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="Part-59"><a href="#Part-59"><span class="linenos"> 59</span></a>
+</span><span id="Part-60"><a href="#Part-60"><span class="linenos"> 60</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="Part-61"><a href="#Part-61"><span class="linenos"> 61</span></a>
+</span><span id="Part-62"><a href="#Part-62"><span class="linenos"> 62</span></a>    <span class="k">def</span> <span class="nf">turn_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part-63"><a href="#Part-63"><span class="linenos"> 63</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn on the part.</span>
+</span><span id="Part-64"><a href="#Part-64"><span class="linenos"> 64</span></a>
+</span><span id="Part-65"><a href="#Part-65"><span class="linenos"> 65</span></a><span class="sd">        This method sets the speed limits to a low value, turns on all motors of the part, and then restores the speed limits</span>
+</span><span id="Part-66"><a href="#Part-66"><span class="linenos"> 66</span></a><span class="sd">        to maximum. It waits for a brief period to ensure the operation is complete.</span>
+</span><span id="Part-67"><a href="#Part-67"><span class="linenos"> 67</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part-68"><a href="#Part-68"><span class="linenos"> 68</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="Part-69"><a href="#Part-69"><span class="linenos"> 69</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+</span><span id="Part-70"><a href="#Part-70"><span class="linenos"> 70</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_on</span><span class="p">()</span>
+</span><span id="Part-71"><a href="#Part-71"><span class="linenos"> 71</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+</span><span id="Part-72"><a href="#Part-72"><span class="linenos"> 72</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span><span id="Part-73"><a href="#Part-73"><span class="linenos"> 73</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
+</span><span id="Part-74"><a href="#Part-74"><span class="linenos"> 74</span></a>
+</span><span id="Part-75"><a href="#Part-75"><span class="linenos"> 75</span></a>    <span class="k">def</span> <span class="nf">turn_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part-76"><a href="#Part-76"><span class="linenos"> 76</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn off the part.</span>
+</span><span id="Part-77"><a href="#Part-77"><span class="linenos"> 77</span></a>
+</span><span id="Part-78"><a href="#Part-78"><span class="linenos"> 78</span></a><span class="sd">        This method turns off all motors of the part and waits for a brief period to ensure the operation is complete.</span>
+</span><span id="Part-79"><a href="#Part-79"><span class="linenos"> 79</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part-80"><a href="#Part-80"><span class="linenos"> 80</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_off</span><span class="p">()</span>
+</span><span id="Part-81"><a href="#Part-81"><span class="linenos"> 81</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</span><span id="Part-82"><a href="#Part-82"><span class="linenos"> 82</span></a>
+</span><span id="Part-83"><a href="#Part-83"><span class="linenos"> 83</span></a>    <span class="k">def</span> <span class="nf">_turn_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part-84"><a href="#Part-84"><span class="linenos"> 84</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send a command to turn on immediately the part.&quot;&quot;&quot;</span>
+</span><span id="Part-85"><a href="#Part-85"><span class="linenos"> 85</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">TurnOn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
+</span><span id="Part-86"><a href="#Part-86"><span class="linenos"> 86</span></a>
+</span><span id="Part-87"><a href="#Part-87"><span class="linenos"> 87</span></a>    <span class="k">def</span> <span class="nf">_turn_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part-88"><a href="#Part-88"><span class="linenos"> 88</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send a command to turn off immediately the part.&quot;&quot;&quot;</span>
+</span><span id="Part-89"><a href="#Part-89"><span class="linenos"> 89</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">TurnOff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
+</span><span id="Part-90"><a href="#Part-90"><span class="linenos"> 90</span></a>
+</span><span id="Part-91"><a href="#Part-91"><span class="linenos"> 91</span></a>    <span class="k">def</span> <span class="nf">is_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="Part-92"><a href="#Part-92"><span class="linenos"> 92</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if all actuators of the part are currently on.</span>
+</span><span id="Part-93"><a href="#Part-93"><span class="linenos"> 93</span></a>
+</span><span id="Part-94"><a href="#Part-94"><span class="linenos"> 94</span></a><span class="sd">        Returns:</span>
+</span><span id="Part-95"><a href="#Part-95"><span class="linenos"> 95</span></a><span class="sd">            True if all actuators are on, otherwise False.</span>
+</span><span id="Part-96"><a href="#Part-96"><span class="linenos"> 96</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part-97"><a href="#Part-97"><span class="linenos"> 97</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+</span><span id="Part-98"><a href="#Part-98"><span class="linenos"> 98</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
+</span><span id="Part-99"><a href="#Part-99"><span class="linenos"> 99</span></a>                <span class="k">return</span> <span class="kc">False</span>
+</span><span id="Part-100"><a href="#Part-100"><span class="linenos">100</span></a>        <span class="k">return</span> <span class="kc">True</span>
+</span><span id="Part-101"><a href="#Part-101"><span class="linenos">101</span></a>
+</span><span id="Part-102"><a href="#Part-102"><span class="linenos">102</span></a>    <span class="k">def</span> <span class="nf">is_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="Part-103"><a href="#Part-103"><span class="linenos">103</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if all actuators of the part are currently off.</span>
+</span><span id="Part-104"><a href="#Part-104"><span class="linenos">104</span></a>
+</span><span id="Part-105"><a href="#Part-105"><span class="linenos">105</span></a><span class="sd">        Returns:</span>
+</span><span id="Part-106"><a href="#Part-106"><span class="linenos">106</span></a><span class="sd">            True if all actuators are off, otherwise False.</span>
+</span><span id="Part-107"><a href="#Part-107"><span class="linenos">107</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part-108"><a href="#Part-108"><span class="linenos">108</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+</span><span id="Part-109"><a href="#Part-109"><span class="linenos">109</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
+</span><span id="Part-110"><a href="#Part-110"><span class="linenos">110</span></a>                <span class="k">return</span> <span class="kc">False</span>
+</span><span id="Part-111"><a href="#Part-111"><span class="linenos">111</span></a>        <span class="k">return</span> <span class="kc">True</span>
+</span><span id="Part-112"><a href="#Part-112"><span class="linenos">112</span></a>
+</span><span id="Part-113"><a href="#Part-113"><span class="linenos">113</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="Part-114"><a href="#Part-114"><span class="linenos">114</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ArmState</span> <span class="o">|</span> <span class="n">HeadState</span> <span class="o">|</span> <span class="n">HandState</span> <span class="o">|</span> <span class="n">MobileBaseState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part-115"><a href="#Part-115"><span class="linenos">115</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the part&#39;s state with newly received data.</span>
+</span><span id="Part-116"><a href="#Part-116"><span class="linenos">116</span></a>
+</span><span id="Part-117"><a href="#Part-117"><span class="linenos">117</span></a><span class="sd">        This method must be implemented by subclasses to update the state of the part based on</span>
+</span><span id="Part-118"><a href="#Part-118"><span class="linenos">118</span></a><span class="sd">        specific state data types such as ArmState, HeadState, HandState, or MobileBaseState.</span>
+</span><span id="Part-119"><a href="#Part-119"><span class="linenos">119</span></a>
+</span><span id="Part-120"><a href="#Part-120"><span class="linenos">120</span></a><span class="sd">        Args:</span>
+</span><span id="Part-121"><a href="#Part-121"><span class="linenos">121</span></a><span class="sd">            state: The state data used to update the part, which can be an ArmState, HeadState,</span>
+</span><span id="Part-122"><a href="#Part-122"><span class="linenos">122</span></a><span class="sd">                HandState, or MobileBaseState.</span>
+</span><span id="Part-123"><a href="#Part-123"><span class="linenos">123</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part-124"><a href="#Part-124"><span class="linenos">124</span></a>        <span class="k">pass</span>
+</span><span id="Part-125"><a href="#Part-125"><span class="linenos">125</span></a>
+</span><span id="Part-126"><a href="#Part-126"><span class="linenos">126</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="Part-127"><a href="#Part-127"><span class="linenos">127</span></a>    <span class="k">def</span> <span class="nf">_update_audit_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ArmStatus</span> <span class="o">|</span> <span class="n">HeadStatus</span> <span class="o">|</span> <span class="n">HandStatus</span> <span class="o">|</span> <span class="n">MobileBaseStatus</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part-128"><a href="#Part-128"><span class="linenos">128</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the audit status of the part.</span>
+</span><span id="Part-129"><a href="#Part-129"><span class="linenos">129</span></a>
+</span><span id="Part-130"><a href="#Part-130"><span class="linenos">130</span></a><span class="sd">        This method must be implemented by subclasses to update the audit status of the part based on</span>
+</span><span id="Part-131"><a href="#Part-131"><span class="linenos">131</span></a><span class="sd">        specific status data types such as ArmStatus, HeadStatus, HandStatus, or MobileBaseStatus.</span>
+</span><span id="Part-132"><a href="#Part-132"><span class="linenos">132</span></a>
+</span><span id="Part-133"><a href="#Part-133"><span class="linenos">133</span></a><span class="sd">        Args:</span>
+</span><span id="Part-134"><a href="#Part-134"><span class="linenos">134</span></a><span class="sd">            state: The status data used to update the audit status, which can be an ArmStatus,</span>
+</span><span id="Part-135"><a href="#Part-135"><span class="linenos">135</span></a><span class="sd">                HeadStatus, HandStatus, or MobileBaseStatus.</span>
+</span><span id="Part-136"><a href="#Part-136"><span class="linenos">136</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part-137"><a href="#Part-137"><span class="linenos">137</span></a>        <span class="k">pass</span>
+</span><span id="Part-138"><a href="#Part-138"><span class="linenos">138</span></a>
+</span><span id="Part-139"><a href="#Part-139"><span class="linenos">139</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="Part-140"><a href="#Part-140"><span class="linenos">140</span></a>    <span class="k">def</span> <span class="nf">_set_speed_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part-141"><a href="#Part-141"><span class="linenos">141</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the speed limits for the part.</span>
+</span><span id="Part-142"><a href="#Part-142"><span class="linenos">142</span></a>
+</span><span id="Part-143"><a href="#Part-143"><span class="linenos">143</span></a><span class="sd">        This method must be implemented by subclasses to set speed limits.</span>
+</span><span id="Part-144"><a href="#Part-144"><span class="linenos">144</span></a>
+</span><span id="Part-145"><a href="#Part-145"><span class="linenos">145</span></a><span class="sd">        Args:</span>
+</span><span id="Part-146"><a href="#Part-146"><span class="linenos">146</span></a><span class="sd">            value: The speed limit value to be set, as a percentage of the maximum speed allowed (0-100).</span>
+</span><span id="Part-147"><a href="#Part-147"><span class="linenos">147</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part-148"><a href="#Part-148"><span class="linenos">148</span></a>        <span class="k">pass</span>
+</span><span id="Part-149"><a href="#Part-149"><span class="linenos">149</span></a>
+</span><span id="Part-150"><a href="#Part-150"><span class="linenos">150</span></a>    <span class="nd">@property</span>
+</span><span id="Part-151"><a href="#Part-151"><span class="linenos">151</span></a>    <span class="k">def</span> <span class="nf">audit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span id="Part-152"><a href="#Part-152"><span class="linenos">152</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the audit status of all actuators of the part.</span>
+</span><span id="Part-153"><a href="#Part-153"><span class="linenos">153</span></a>
+</span><span id="Part-154"><a href="#Part-154"><span class="linenos">154</span></a><span class="sd">        Returns:</span>
+</span><span id="Part-155"><a href="#Part-155"><span class="linenos">155</span></a><span class="sd">            A dictionary where each key is the name of an actuator and the value is its audit status.</span>
+</span><span id="Part-156"><a href="#Part-156"><span class="linenos">156</span></a><span class="sd">            If an error is detected in any actuator, a warning is logged. Otherwise, an informational</span>
+</span><span id="Part-157"><a href="#Part-157"><span class="linenos">157</span></a><span class="sd">            message indicating no errors is logged.</span>
+</span><span id="Part-158"><a href="#Part-158"><span class="linenos">158</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part-159"><a href="#Part-159"><span class="linenos">159</span></a>        <span class="n">error_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="Part-160"><a href="#Part-160"><span class="linenos">160</span></a>        <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="Part-161"><a href="#Part-161"><span class="linenos">161</span></a>        <span class="k">for</span> <span class="n">act_name</span><span class="p">,</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="Part-162"><a href="#Part-162"><span class="linenos">162</span></a>            <span class="n">error_dict</span><span class="p">[</span><span class="n">act_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span>
+</span><span id="Part-163"><a href="#Part-163"><span class="linenos">163</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span> <span class="o">!=</span> <span class="s2">&quot;Ok&quot;</span><span class="p">:</span>
+</span><span id="Part-164"><a href="#Part-164"><span class="linenos">164</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">act_name</span><span class="si">}</span><span class="s1">: &quot;</span><span class="si">{</span><span class="n">actuator</span><span class="o">.</span><span class="n">audit</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+</span><span id="Part-165"><a href="#Part-165"><span class="linenos">165</span></a>                <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="Part-166"><a href="#Part-166"><span class="linenos">166</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">error_detected</span><span class="p">:</span>
+</span><span id="Part-167"><a href="#Part-167"><span class="linenos">167</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="Part-168"><a href="#Part-168"><span class="linenos">168</span></a>        <span class="k">return</span> <span class="n">error_dict</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>The Part class is an abstract class to represent any part of the robot.</p>
+            <div class="docstring"><p>The Part class serves as an abstract base class representing parts of a robot, such as Arm, Hand, Head, or MobileBase.</p>
 
-<p>This class is meant to be derived by any part of the robot : Arm, Hand, Head, MobileBase</p>
+<p>This class provides a common interface for managing robot components, including turning them on or off, checking their
+status, and updating their states. The class is intended to be subclassed to implement specific behaviors for different
+types of robot parts.</p>
 </div>
 
 
@@ -279,23 +424,46 @@
 
     </div>
     <a class="headerlink" href="#Part.__init__"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.__init__-29"><a href="#Part.__init__-29"><span class="linenos">29</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-</span><span id="Part.__init__-30"><a href="#Part.__init__-30"><span class="linenos">30</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="Part.__init__-31"><a href="#Part.__init__-31"><span class="linenos">31</span></a>        <span class="n">proto_msg</span><span class="p">:</span> <span class="n">Arm_proto</span> <span class="o">|</span> <span class="n">Head_proto</span> <span class="o">|</span> <span class="n">Hand_proto</span> <span class="o">|</span> <span class="n">MobileBase_proto</span><span class="p">,</span>
-</span><span id="Part.__init__-32"><a href="#Part.__init__-32"><span class="linenos">32</span></a>        <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span>
-</span><span id="Part.__init__-33"><a href="#Part.__init__-33"><span class="linenos">33</span></a>        <span class="n">stub</span><span class="p">:</span> <span class="n">ArmServiceStub</span> <span class="o">|</span> <span class="n">HeadServiceStub</span> <span class="o">|</span> <span class="n">HandServiceStub</span> <span class="o">|</span> <span class="n">MobileBaseUtilityServiceStub</span><span class="p">,</span>
-</span><span id="Part.__init__-34"><a href="#Part.__init__-34"><span class="linenos">34</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part.__init__-35"><a href="#Part.__init__-35"><span class="linenos">35</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the common attributes.&quot;&quot;&quot;</span>
-</span><span id="Part.__init__-36"><a href="#Part.__init__-36"><span class="linenos">36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_grpc_channel</span> <span class="o">=</span> <span class="n">grpc_channel</span>
-</span><span id="Part.__init__-37"><a href="#Part.__init__-37"><span class="linenos">37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">stub</span>
-</span><span id="Part.__init__-38"><a href="#Part.__init__-38"><span class="linenos">38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span> <span class="o">=</span> <span class="n">PartId</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-</span><span id="Part.__init__-39"><a href="#Part.__init__-39"><span class="linenos">39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span id="Part.__init__-40"><a href="#Part.__init__-40"><span class="linenos">40</span></a>
-</span><span id="Part.__init__-41"><a href="#Part.__init__-41"><span class="linenos">41</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.__init__-36"><a href="#Part.__init__-36"><span class="linenos">36</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+</span><span id="Part.__init__-37"><a href="#Part.__init__-37"><span class="linenos">37</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="Part.__init__-38"><a href="#Part.__init__-38"><span class="linenos">38</span></a>        <span class="n">proto_msg</span><span class="p">:</span> <span class="n">Arm_proto</span> <span class="o">|</span> <span class="n">Head_proto</span> <span class="o">|</span> <span class="n">Hand_proto</span> <span class="o">|</span> <span class="n">MobileBase_proto</span><span class="p">,</span>
+</span><span id="Part.__init__-39"><a href="#Part.__init__-39"><span class="linenos">39</span></a>        <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span>
+</span><span id="Part.__init__-40"><a href="#Part.__init__-40"><span class="linenos">40</span></a>        <span class="n">stub</span><span class="p">:</span> <span class="n">ArmServiceStub</span> <span class="o">|</span> <span class="n">HeadServiceStub</span> <span class="o">|</span> <span class="n">HandServiceStub</span> <span class="o">|</span> <span class="n">MobileBaseUtilityServiceStub</span><span class="p">,</span>
+</span><span id="Part.__init__-41"><a href="#Part.__init__-41"><span class="linenos">41</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part.__init__-42"><a href="#Part.__init__-42"><span class="linenos">42</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the Part with common attributes for gRPC communication.</span>
+</span><span id="Part.__init__-43"><a href="#Part.__init__-43"><span class="linenos">43</span></a>
+</span><span id="Part.__init__-44"><a href="#Part.__init__-44"><span class="linenos">44</span></a><span class="sd">        This sets up the communication channel and service stubs for the specified part,</span>
+</span><span id="Part.__init__-45"><a href="#Part.__init__-45"><span class="linenos">45</span></a><span class="sd">        configures the part&#39;s unique identifier. It provides the foundation for specific parts of the robot</span>
+</span><span id="Part.__init__-46"><a href="#Part.__init__-46"><span class="linenos">46</span></a><span class="sd">        (Arm, Head, Hand, MobileBase) to be derived from this class.</span>
+</span><span id="Part.__init__-47"><a href="#Part.__init__-47"><span class="linenos">47</span></a>
+</span><span id="Part.__init__-48"><a href="#Part.__init__-48"><span class="linenos">48</span></a><span class="sd">        Args:</span>
+</span><span id="Part.__init__-49"><a href="#Part.__init__-49"><span class="linenos">49</span></a><span class="sd">            proto_msg: The protobuf message containing configuration details for the part</span>
+</span><span id="Part.__init__-50"><a href="#Part.__init__-50"><span class="linenos">50</span></a><span class="sd">                (Arm, Head, Hand, or MobileBase).</span>
+</span><span id="Part.__init__-51"><a href="#Part.__init__-51"><span class="linenos">51</span></a><span class="sd">            grpc_channel: The gRPC channel used to communicate with the service.</span>
+</span><span id="Part.__init__-52"><a href="#Part.__init__-52"><span class="linenos">52</span></a><span class="sd">            stub: The service stub for the gRPC communication, which could be for Arm, Head,</span>
+</span><span id="Part.__init__-53"><a href="#Part.__init__-53"><span class="linenos">53</span></a><span class="sd">                Hand, or MobileBase.</span>
+</span><span id="Part.__init__-54"><a href="#Part.__init__-54"><span class="linenos">54</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part.__init__-55"><a href="#Part.__init__-55"><span class="linenos">55</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_grpc_channel</span> <span class="o">=</span> <span class="n">grpc_channel</span>
+</span><span id="Part.__init__-56"><a href="#Part.__init__-56"><span class="linenos">56</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">stub</span>
+</span><span id="Part.__init__-57"><a href="#Part.__init__-57"><span class="linenos">57</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span> <span class="o">=</span> <span class="n">PartId</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">proto_msg</span><span class="o">.</span><span class="n">part_id</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span id="Part.__init__-58"><a href="#Part.__init__-58"><span class="linenos">58</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="Part.__init__-59"><a href="#Part.__init__-59"><span class="linenos">59</span></a>
+</span><span id="Part.__init__-60"><a href="#Part.__init__-60"><span class="linenos">60</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Initialize the common attributes.</p>
+            <div class="docstring"><p>Initialize the Part with common attributes for gRPC communication.</p>
+
+<p>This sets up the communication channel and service stubs for the specified part,
+configures the part's unique identifier. It provides the foundation for specific parts of the robot
+(Arm, Head, Hand, MobileBase) to be derived from this class.</p>
+
+<p>Args:
+    proto_msg: The protobuf message containing configuration details for the part
+        (Arm, Head, Hand, or MobileBase).
+    grpc_channel: The gRPC channel used to communicate with the service.
+    stub: The service stub for the gRPC communication, which could be for Arm, Head,
+        Hand, or MobileBase.</p>
 </div>
 
 
@@ -311,17 +479,27 @@
 
     </div>
     <a class="headerlink" href="#Part.turn_on"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.turn_on-43"><a href="#Part.turn_on-43"><span class="linenos">43</span></a>    <span class="k">def</span> <span class="nf">turn_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part.turn_on-44"><a href="#Part.turn_on-44"><span class="linenos">44</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span id="Part.turn_on-45"><a href="#Part.turn_on-45"><span class="linenos">45</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
-</span><span id="Part.turn_on-46"><a href="#Part.turn_on-46"><span class="linenos">46</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_on</span><span class="p">()</span>
-</span><span id="Part.turn_on-47"><a href="#Part.turn_on-47"><span class="linenos">47</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
-</span><span id="Part.turn_on-48"><a href="#Part.turn_on-48"><span class="linenos">48</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
-</span><span id="Part.turn_on-49"><a href="#Part.turn_on-49"><span class="linenos">49</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.turn_on-62"><a href="#Part.turn_on-62"><span class="linenos">62</span></a>    <span class="k">def</span> <span class="nf">turn_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part.turn_on-63"><a href="#Part.turn_on-63"><span class="linenos">63</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn on the part.</span>
+</span><span id="Part.turn_on-64"><a href="#Part.turn_on-64"><span class="linenos">64</span></a>
+</span><span id="Part.turn_on-65"><a href="#Part.turn_on-65"><span class="linenos">65</span></a><span class="sd">        This method sets the speed limits to a low value, turns on all motors of the part, and then restores the speed limits</span>
+</span><span id="Part.turn_on-66"><a href="#Part.turn_on-66"><span class="linenos">66</span></a><span class="sd">        to maximum. It waits for a brief period to ensure the operation is complete.</span>
+</span><span id="Part.turn_on-67"><a href="#Part.turn_on-67"><span class="linenos">67</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part.turn_on-68"><a href="#Part.turn_on-68"><span class="linenos">68</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="Part.turn_on-69"><a href="#Part.turn_on-69"><span class="linenos">69</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+</span><span id="Part.turn_on-70"><a href="#Part.turn_on-70"><span class="linenos">70</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_on</span><span class="p">()</span>
+</span><span id="Part.turn_on-71"><a href="#Part.turn_on-71"><span class="linenos">71</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+</span><span id="Part.turn_on-72"><a href="#Part.turn_on-72"><span class="linenos">72</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_set_speed_limits</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span><span id="Part.turn_on-73"><a href="#Part.turn_on-73"><span class="linenos">73</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Turn on the part.</p>
+
+<p>This method sets the speed limits to a low value, turns on all motors of the part, and then restores the speed limits
+to maximum. It waits for a brief period to ensure the operation is complete.</p>
+</div>
+
 
                             </div>
                             <div id="Part.turn_off" class="classattr">
@@ -335,13 +513,21 @@
 
     </div>
     <a class="headerlink" href="#Part.turn_off"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.turn_off-51"><a href="#Part.turn_off-51"><span class="linenos">51</span></a>    <span class="k">def</span> <span class="nf">turn_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Part.turn_off-52"><a href="#Part.turn_off-52"><span class="linenos">52</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_off</span><span class="p">()</span>
-</span><span id="Part.turn_off-53"><a href="#Part.turn_off-53"><span class="linenos">53</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.turn_off-75"><a href="#Part.turn_off-75"><span class="linenos">75</span></a>    <span class="k">def</span> <span class="nf">turn_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Part.turn_off-76"><a href="#Part.turn_off-76"><span class="linenos">76</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn off the part.</span>
+</span><span id="Part.turn_off-77"><a href="#Part.turn_off-77"><span class="linenos">77</span></a>
+</span><span id="Part.turn_off-78"><a href="#Part.turn_off-78"><span class="linenos">78</span></a><span class="sd">        This method turns off all motors of the part and waits for a brief period to ensure the operation is complete.</span>
+</span><span id="Part.turn_off-79"><a href="#Part.turn_off-79"><span class="linenos">79</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part.turn_off-80"><a href="#Part.turn_off-80"><span class="linenos">80</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_turn_off</span><span class="p">()</span>
+</span><span id="Part.turn_off-81"><a href="#Part.turn_off-81"><span class="linenos">81</span></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Turn off the part.</p>
+
+<p>This method turns off all motors of the part and waits for a brief period to ensure the operation is complete.</p>
+</div>
+
 
                             </div>
                             <div id="Part.is_on" class="classattr">
@@ -355,15 +541,25 @@
 
     </div>
     <a class="headerlink" href="#Part.is_on"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.is_on-61"><a href="#Part.is_on-61"><span class="linenos">61</span></a>    <span class="k">def</span> <span class="nf">is_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="Part.is_on-62"><a href="#Part.is_on-62"><span class="linenos">62</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-</span><span id="Part.is_on-63"><a href="#Part.is_on-63"><span class="linenos">63</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
-</span><span id="Part.is_on-64"><a href="#Part.is_on-64"><span class="linenos">64</span></a>                <span class="k">return</span> <span class="kc">False</span>
-</span><span id="Part.is_on-65"><a href="#Part.is_on-65"><span class="linenos">65</span></a>        <span class="k">return</span> <span class="kc">True</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.is_on-91"><a href="#Part.is_on-91"><span class="linenos"> 91</span></a>    <span class="k">def</span> <span class="nf">is_on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="Part.is_on-92"><a href="#Part.is_on-92"><span class="linenos"> 92</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if all actuators of the part are currently on.</span>
+</span><span id="Part.is_on-93"><a href="#Part.is_on-93"><span class="linenos"> 93</span></a>
+</span><span id="Part.is_on-94"><a href="#Part.is_on-94"><span class="linenos"> 94</span></a><span class="sd">        Returns:</span>
+</span><span id="Part.is_on-95"><a href="#Part.is_on-95"><span class="linenos"> 95</span></a><span class="sd">            True if all actuators are on, otherwise False.</span>
+</span><span id="Part.is_on-96"><a href="#Part.is_on-96"><span class="linenos"> 96</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part.is_on-97"><a href="#Part.is_on-97"><span class="linenos"> 97</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+</span><span id="Part.is_on-98"><a href="#Part.is_on-98"><span class="linenos"> 98</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
+</span><span id="Part.is_on-99"><a href="#Part.is_on-99"><span class="linenos"> 99</span></a>                <span class="k">return</span> <span class="kc">False</span>
+</span><span id="Part.is_on-100"><a href="#Part.is_on-100"><span class="linenos">100</span></a>        <span class="k">return</span> <span class="kc">True</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Check if all actuators of the part are currently on.</p>
+
+<p>Returns:
+    True if all actuators are on, otherwise False.</p>
+</div>
+
 
                             </div>
                             <div id="Part.is_off" class="classattr">
@@ -377,15 +573,25 @@
 
     </div>
     <a class="headerlink" href="#Part.is_off"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.is_off-67"><a href="#Part.is_off-67"><span class="linenos">67</span></a>    <span class="k">def</span> <span class="nf">is_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="Part.is_off-68"><a href="#Part.is_off-68"><span class="linenos">68</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-</span><span id="Part.is_off-69"><a href="#Part.is_off-69"><span class="linenos">69</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
-</span><span id="Part.is_off-70"><a href="#Part.is_off-70"><span class="linenos">70</span></a>                <span class="k">return</span> <span class="kc">False</span>
-</span><span id="Part.is_off-71"><a href="#Part.is_off-71"><span class="linenos">71</span></a>        <span class="k">return</span> <span class="kc">True</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.is_off-102"><a href="#Part.is_off-102"><span class="linenos">102</span></a>    <span class="k">def</span> <span class="nf">is_off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="Part.is_off-103"><a href="#Part.is_off-103"><span class="linenos">103</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if all actuators of the part are currently off.</span>
+</span><span id="Part.is_off-104"><a href="#Part.is_off-104"><span class="linenos">104</span></a>
+</span><span id="Part.is_off-105"><a href="#Part.is_off-105"><span class="linenos">105</span></a><span class="sd">        Returns:</span>
+</span><span id="Part.is_off-106"><a href="#Part.is_off-106"><span class="linenos">106</span></a><span class="sd">            True if all actuators are off, otherwise False.</span>
+</span><span id="Part.is_off-107"><a href="#Part.is_off-107"><span class="linenos">107</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part.is_off-108"><a href="#Part.is_off-108"><span class="linenos">108</span></a>        <span class="k">for</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+</span><span id="Part.is_off-109"><a href="#Part.is_off-109"><span class="linenos">109</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">is_on</span><span class="p">():</span>
+</span><span id="Part.is_off-110"><a href="#Part.is_off-110"><span class="linenos">110</span></a>                <span class="k">return</span> <span class="kc">False</span>
+</span><span id="Part.is_off-111"><a href="#Part.is_off-111"><span class="linenos">111</span></a>        <span class="k">return</span> <span class="kc">True</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Check if all actuators of the part are currently off.</p>
+
+<p>Returns:
+    True if all actuators are off, otherwise False.</p>
+</div>
+
 
                             </div>
                             <div id="Part.audit" class="classattr">
@@ -397,22 +603,36 @@
 
     </div>
     <a class="headerlink" href="#Part.audit"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.audit-85"><a href="#Part.audit-85"><span class="linenos">85</span></a>    <span class="nd">@property</span>
-</span><span id="Part.audit-86"><a href="#Part.audit-86"><span class="linenos">86</span></a>    <span class="k">def</span> <span class="nf">audit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-</span><span id="Part.audit-87"><a href="#Part.audit-87"><span class="linenos">87</span></a>        <span class="n">error_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span id="Part.audit-88"><a href="#Part.audit-88"><span class="linenos">88</span></a>        <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="Part.audit-89"><a href="#Part.audit-89"><span class="linenos">89</span></a>        <span class="k">for</span> <span class="n">act_name</span><span class="p">,</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span id="Part.audit-90"><a href="#Part.audit-90"><span class="linenos">90</span></a>            <span class="n">error_dict</span><span class="p">[</span><span class="n">act_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span>
-</span><span id="Part.audit-91"><a href="#Part.audit-91"><span class="linenos">91</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span> <span class="o">!=</span> <span class="s2">&quot;Ok&quot;</span><span class="p">:</span>
-</span><span id="Part.audit-92"><a href="#Part.audit-92"><span class="linenos">92</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">act_name</span><span class="si">}</span><span class="s1">: &quot;</span><span class="si">{</span><span class="n">actuator</span><span class="o">.</span><span class="n">audit</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
-</span><span id="Part.audit-93"><a href="#Part.audit-93"><span class="linenos">93</span></a>                <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="Part.audit-94"><a href="#Part.audit-94"><span class="linenos">94</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">error_detected</span><span class="p">:</span>
-</span><span id="Part.audit-95"><a href="#Part.audit-95"><span class="linenos">95</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="Part.audit-96"><a href="#Part.audit-96"><span class="linenos">96</span></a>        <span class="k">return</span> <span class="n">error_dict</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Part.audit-150"><a href="#Part.audit-150"><span class="linenos">150</span></a>    <span class="nd">@property</span>
+</span><span id="Part.audit-151"><a href="#Part.audit-151"><span class="linenos">151</span></a>    <span class="k">def</span> <span class="nf">audit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span id="Part.audit-152"><a href="#Part.audit-152"><span class="linenos">152</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the audit status of all actuators of the part.</span>
+</span><span id="Part.audit-153"><a href="#Part.audit-153"><span class="linenos">153</span></a>
+</span><span id="Part.audit-154"><a href="#Part.audit-154"><span class="linenos">154</span></a><span class="sd">        Returns:</span>
+</span><span id="Part.audit-155"><a href="#Part.audit-155"><span class="linenos">155</span></a><span class="sd">            A dictionary where each key is the name of an actuator and the value is its audit status.</span>
+</span><span id="Part.audit-156"><a href="#Part.audit-156"><span class="linenos">156</span></a><span class="sd">            If an error is detected in any actuator, a warning is logged. Otherwise, an informational</span>
+</span><span id="Part.audit-157"><a href="#Part.audit-157"><span class="linenos">157</span></a><span class="sd">            message indicating no errors is logged.</span>
+</span><span id="Part.audit-158"><a href="#Part.audit-158"><span class="linenos">158</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Part.audit-159"><a href="#Part.audit-159"><span class="linenos">159</span></a>        <span class="n">error_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="Part.audit-160"><a href="#Part.audit-160"><span class="linenos">160</span></a>        <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="Part.audit-161"><a href="#Part.audit-161"><span class="linenos">161</span></a>        <span class="k">for</span> <span class="n">act_name</span><span class="p">,</span> <span class="n">actuator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actuators</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="Part.audit-162"><a href="#Part.audit-162"><span class="linenos">162</span></a>            <span class="n">error_dict</span><span class="p">[</span><span class="n">act_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span>
+</span><span id="Part.audit-163"><a href="#Part.audit-163"><span class="linenos">163</span></a>            <span class="k">if</span> <span class="n">actuator</span><span class="o">.</span><span class="n">audit</span> <span class="o">!=</span> <span class="s2">&quot;Ok&quot;</span><span class="p">:</span>
+</span><span id="Part.audit-164"><a href="#Part.audit-164"><span class="linenos">164</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">act_name</span><span class="si">}</span><span class="s1">: &quot;</span><span class="si">{</span><span class="n">actuator</span><span class="o">.</span><span class="n">audit</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+</span><span id="Part.audit-165"><a href="#Part.audit-165"><span class="linenos">165</span></a>                <span class="n">error_detected</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="Part.audit-166"><a href="#Part.audit-166"><span class="linenos">166</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">error_detected</span><span class="p">:</span>
+</span><span id="Part.audit-167"><a href="#Part.audit-167"><span class="linenos">167</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No error detected on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_part_id</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="Part.audit-168"><a href="#Part.audit-168"><span class="linenos">168</span></a>        <span class="k">return</span> <span class="n">error_dict</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Get the audit status of all actuators of the part.</p>
+
+<p>Returns:
+    A dictionary where each key is the name of an actuator and the value is its audit status.
+    If an error is detected in any actuator, a warning is logged. Otherwise, an informational
+    message indicating no errors is logged.</p>
+</div>
+
 
                             </div>
                 </section>

@@ -74,147 +74,175 @@
                     <h1 class="modulename">
 <a href="./../../reachy2_sdk.html">reachy2_sdk</a><wbr>.<a href="./../sensors.html">sensors</a><wbr>.lidar    </h1>
 
-                        <div class="docstring"><p>LIDAR module for mobile base SDK.</p>
+                        <div class="docstring"><p>Reachy Lidar module.</p>
 
-<p>Handles the LIDAR features:
-    - get the map of the environment
-    - set the safety distance
-    - set the critical distance
-    - enable/disable the safety feature</p>
+<p>Handles all specific methods to the Lidar sensor.</p>
 </div>
 
                         <input id="mod-lidar-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-lidar-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="sd">&quot;&quot;&quot;LIDAR module for mobile base SDK.</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="sd">&quot;&quot;&quot;Reachy Lidar module.</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a>
-</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="sd">Handles the LIDAR features:</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="sd">    - get the map of the environment</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a><span class="sd">    - set the safety distance</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="sd">    - set the critical distance</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="sd">    - enable/disable the safety feature</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="kn">import</span> <span class="nn">logging</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a>
-</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="kn">import</span> <span class="nn">cv2</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="kn">import</span> <span class="nn">grpc</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a><span class="kn">from</span> <span class="nn">google.protobuf.wrappers_pb2</span> <span class="kn">import</span> <span class="n">BoolValue</span><span class="p">,</span> <span class="n">FloatValue</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.mobile_base_lidar_pb2</span> <span class="kn">import</span> <span class="p">(</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a>    <span class="n">LidarObstacleDetectionEnum</span><span class="p">,</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a>    <span class="n">LidarObstacleDetectionStatus</span><span class="p">,</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a>    <span class="n">LidarSafety</span><span class="p">,</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a><span class="p">)</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.mobile_base_lidar_pb2_grpc</span> <span class="kn">import</span> <span class="n">MobileBaseLidarServiceStub</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="sd">Handles all specific methods to the Lidar sensor.</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="kn">import</span> <span class="nn">logging</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="kn">import</span> <span class="nn">cv2</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="kn">import</span> <span class="nn">grpc</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="kn">from</span> <span class="nn">google.protobuf.wrappers_pb2</span> <span class="kn">import</span> <span class="n">BoolValue</span><span class="p">,</span> <span class="n">FloatValue</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.mobile_base_lidar_pb2</span> <span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a>    <span class="n">LidarObstacleDetectionEnum</span><span class="p">,</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a>    <span class="n">LidarObstacleDetectionStatus</span><span class="p">,</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a>    <span class="n">LidarSafety</span><span class="p">,</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="p">)</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.mobile_base_lidar_pb2_grpc</span> <span class="kn">import</span> <span class="n">MobileBaseLidarServiceStub</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a><span class="kn">from</span> <span class="nn">..parts.part</span> <span class="kn">import</span> <span class="n">Part</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a>
 </span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a>
-</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="kn">from</span> <span class="nn">..parts.part</span> <span class="kn">import</span> <span class="n">Part</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="k">class</span> <span class="nc">Lidar</span><span class="p">:</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;LIDAR class for mobile base SDK.&quot;&quot;&quot;</span>
 </span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a>
-</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="k">class</span> <span class="nc">Lidar</span><span class="p">:</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;LIDAR class for mobile base SDK.&quot;&quot;&quot;</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a>
-</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">LidarSafety</span><span class="p">,</span> <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span> <span class="n">part</span><span class="p">:</span> <span class="n">Part</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the LIDAR class.&quot;&quot;&quot;</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">MobileBaseLidarServiceStub</span><span class="p">(</span><span class="n">grpc_channel</span><span class="p">)</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part</span> <span class="o">=</span> <span class="n">part</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a>
-</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_on</span><span class="o">.</span><span class="n">value</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_distance</span><span class="o">.</span><span class="n">value</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">critical_distance</span><span class="o">.</span><span class="n">value</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>
-</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">LidarObstacleDetectionEnum</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">initial_state</span><span class="o">.</span><span class="n">obstacle_detection_status</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a>
-</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Clean representation of a Reachy.&quot;&quot;&quot;</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;Lidar safety_enabled=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">safety_enabled</span><span class="si">}</span><span class="s2">&gt;&quot;&quot;&quot;</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">LidarSafety</span><span class="p">,</span> <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span> <span class="n">part</span><span class="p">:</span> <span class="n">Part</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the LIDAR class.&quot;&quot;&quot;</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">MobileBaseLidarServiceStub</span><span class="p">(</span><span class="n">grpc_channel</span><span class="p">)</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part</span> <span class="o">=</span> <span class="n">part</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_on</span><span class="o">.</span><span class="n">value</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_distance</span><span class="o">.</span><span class="n">value</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">critical_distance</span><span class="o">.</span><span class="n">value</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">LidarObstacleDetectionEnum</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">initial_state</span><span class="o">.</span><span class="n">obstacle_detection_status</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Clean representation of a Reachy.&quot;&quot;&quot;</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;Lidar safety_enabled=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">safety_enabled</span><span class="si">}</span><span class="s2">&gt;&quot;&quot;&quot;</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a>    <span class="k">def</span> <span class="nf">get_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]]:</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the current map of the environment using lidar data.</span>
 </span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>
-</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>    <span class="k">def</span> <span class="nf">get_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]]:</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current map of the environment.&quot;&quot;&quot;</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>        <span class="n">compressed_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">GetLidarMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>        <span class="k">if</span> <span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No lidar map retrieved&quot;</span><span class="p">)</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a>            <span class="k">return</span> <span class="kc">None</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>        <span class="n">np_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>        <span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imdecode</span><span class="p">(</span><span class="n">np_data</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">IMREAD_COLOR</span><span class="p">)</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>        <span class="k">return</span> <span class="n">img</span>  <span class="c1"># type: ignore[no-any-return]</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>
-</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>    <span class="nd">@property</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>    <span class="k">def</span> <span class="nf">safety_slowdown_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Safety distance in meters of the mobile base from obstacles.</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>
-</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a><span class="sd">        The mobile base&#39;s speed is slowed down if the direction of speed matches the direction of</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a><span class="sd">        at least 1 LIDAR point in the safety_distance range.</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">)</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>
-</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>    <span class="nd">@safety_slowdown_distance</span><span class="o">.</span><span class="n">setter</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>    <span class="k">def</span> <span class="nf">safety_slowdown_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>                <span class="n">safety_distance</span><span class="o">=</span><span class="n">FloatValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>            <span class="p">)</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>        <span class="p">)</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>
-</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>    <span class="nd">@property</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>    <span class="k">def</span> <span class="nf">safety_critical_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Critical distance in meters of the mobile base from obstacles.</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>
-</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a><span class="sd">        The mobile base&#39;s speed is changed to 0 if the direction of speed matches the direction of</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a><span class="sd">        at least 1 LIDAR point in the critical_distance range.</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a><span class="sd">        If at least 1 point is in the critical distance, then even motions that move away from the obstacles are</span>
-</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a><span class="sd">        slowed down to the &quot;safety_zone&quot; speed.</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">)</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>
-</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>    <span class="nd">@safety_critical_distance</span><span class="o">.</span><span class="n">setter</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>    <span class="k">def</span> <span class="nf">safety_critical_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>                <span class="n">critical_distance</span><span class="o">=</span><span class="n">FloatValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
-</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>            <span class="p">)</span>
-</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>        <span class="p">)</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a><span class="sd">        Returns:</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a><span class="sd">            The current map of the environment as an image (NumPy array) if the lidar map is successfully</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a><span class="sd">            retrieved. Returns `None` if no lidar map is retrieved.</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>        <span class="n">compressed_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">GetLidarMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a>        <span class="k">if</span> <span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No lidar map retrieved&quot;</span><span class="p">)</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>        <span class="n">np_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>        <span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imdecode</span><span class="p">(</span><span class="n">np_data</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">IMREAD_COLOR</span><span class="p">)</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>        <span class="k">return</span> <span class="n">img</span>  <span class="c1"># type: ignore[no-any-return]</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>    <span class="nd">@property</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>    <span class="k">def</span> <span class="nf">safety_slowdown_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the safety distance from obstacles in meters for the mobile base.</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a><span class="sd">        The mobile base&#39;s speed is slowed down if the direction of speed matches the direction of</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a><span class="sd">        at least one LIDAR point within the safety distance range.</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">)</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>    <span class="nd">@safety_slowdown_distance</span><span class="o">.</span><span class="n">setter</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>    <span class="k">def</span> <span class="nf">safety_slowdown_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the safety distance for a Lidar sensor.</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a><span class="sd">        Args:</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a><span class="sd">            value: The safety distance to set for the LidarSafety object. This value specifies</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a><span class="sd">                the distance at which a safety slowdown should be initiated.</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a>                <span class="n">safety_distance</span><span class="o">=</span><span class="n">FloatValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>            <span class="p">)</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>        <span class="p">)</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>    <span class="nd">@property</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>    <span class="k">def</span> <span class="nf">safety_critical_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the critical distance in meters of the mobile base from obstacles.</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a><span class="sd">        The mobile base&#39;s speed is reduced to zero if the direction of speed matches the direction</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a><span class="sd">        of at least one LIDAR point within the critical distance range. If at least one point is</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a><span class="sd">        within the critical distance, even movements that move away from the obstacles are slowed</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a><span class="sd">        down to the &quot;safety_zone&quot; speed.</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">)</span>
 </span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>
-</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>    <span class="nd">@property</span>
-</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>    <span class="k">def</span> <span class="nf">safety_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Enable or disable the safety feature.&quot;&quot;&quot;</span>
-</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span>
-</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>
-</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>    <span class="nd">@safety_enabled</span><span class="o">.</span><span class="n">setter</span>
-</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>    <span class="k">def</span> <span class="nf">safety_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
-</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
-</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>                <span class="n">safety_on</span><span class="o">=</span><span class="n">BoolValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
-</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>            <span class="p">)</span>
-</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>        <span class="p">)</span>
-</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>
-</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>    <span class="nd">@property</span>
-</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>    <span class="k">def</span> <span class="nf">obstacle_detection_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LidarObstacleDetectionStatus</span><span class="p">:</span>
-</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get status of the lidar obstacle detection.</span>
-</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>
-</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a><span class="sd">        Can be either NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP or DETECTION_ERROR.</span>
-</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span>
-</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>
-</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>    <span class="k">def</span> <span class="nf">reset_safety_default_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset default distances values for safety detection.</span>
-</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>
-</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a><span class="sd">        Reset values are:</span>
-</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a><span class="sd">        - safety_critical_distance</span>
-</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a><span class="sd">        - safety_slowdown_distance.</span>
-</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">ResetDefaultValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
-</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>
-</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_lidar_state</span><span class="p">:</span> <span class="n">LidarSafety</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the lidar info with a new state received from the gRPC server.&quot;&quot;&quot;</span>
-</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">safety_on</span><span class="o">.</span><span class="n">value</span>
-</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">safety_distance</span><span class="o">.</span><span class="n">value</span>
-</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">critical_distance</span><span class="o">.</span><span class="n">value</span>
-</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>
-</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span> <span class="o">=</span> <span class="n">LidarObstacleDetectionEnum</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">new_lidar_state</span><span class="o">.</span><span class="n">obstacle_detection_status</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>    <span class="nd">@safety_critical_distance</span><span class="o">.</span><span class="n">setter</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>    <span class="k">def</span> <span class="nf">safety_critical_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the critical distance for a Lidar safety feature.</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a><span class="sd">        Args:</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a><span class="sd">            value: The critical distance in meters for safety. This value specifies the distance</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a><span class="sd">                at which the mobile base should stop if moving in the direction of an obstacle.</span>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a><span class="sd">                If at least one point is within the critical distance, even movements that move</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a><span class="sd">                away from the obstacles are slowed down to the &quot;safety_zone&quot; speed.</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>                <span class="n">critical_distance</span><span class="o">=</span><span class="n">FloatValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>            <span class="p">)</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>        <span class="p">)</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>    <span class="nd">@property</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>    <span class="k">def</span> <span class="nf">safety_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current status of the safety feature.</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a><span class="sd">        Returns:</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a><span class="sd">            A boolean indicating whether the safety feature is enabled. If `True`, the safety feature is enabled.</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>    <span class="nd">@safety_enabled</span><span class="o">.</span><span class="n">setter</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>    <span class="k">def</span> <span class="nf">safety_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the safety status for the Lidar device.</span>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="sd">        Args:</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a><span class="sd">            value: A boolean indicating whether the safety features are enabled or disabled. If `True`, the safety feature</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a><span class="sd">                is enabled.</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>                <span class="n">safety_on</span><span class="o">=</span><span class="n">BoolValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>            <span class="p">)</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>        <span class="p">)</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>    <span class="nd">@property</span>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a>    <span class="k">def</span> <span class="nf">obstacle_detection_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LidarObstacleDetectionStatus</span><span class="p">:</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the status of the lidar obstacle detection.</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a><span class="sd">        Returns:</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a><span class="sd">            The status of the lidar obstacle detection, which can be one of the following values:</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a><span class="sd">            NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP, or DETECTION_ERROR.</span>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>    <span class="k">def</span> <span class="nf">reset_safety_default_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset default distance values for safety detection.</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a><span class="sd">        The reset values include:</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a><span class="sd">        - safety_critical_distance</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a><span class="sd">        - safety_slowdown_distance.</span>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">ResetDefaultValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_lidar_state</span><span class="p">:</span> <span class="n">LidarSafety</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update lidar information with a new state received from a gRPC server.</span>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a><span class="sd">        Args:</span>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a><span class="sd">            new_lidar_state: Contains information about the lidar state received from the gRPC server.</span>
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">safety_on</span><span class="o">.</span><span class="n">value</span>
+</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">safety_distance</span><span class="o">.</span><span class="n">value</span>
+</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">critical_distance</span><span class="o">.</span><span class="n">value</span>
+</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a>
+</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span> <span class="o">=</span> <span class="n">LidarObstacleDetectionEnum</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">new_lidar_state</span><span class="o">.</span><span class="n">obstacle_detection_status</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -230,108 +258,143 @@
 
     </div>
     <a class="headerlink" href="#Lidar"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar-28"><a href="#Lidar-28"><span class="linenos"> 28</span></a><span class="k">class</span> <span class="nc">Lidar</span><span class="p">:</span>
-</span><span id="Lidar-29"><a href="#Lidar-29"><span class="linenos"> 29</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;LIDAR class for mobile base SDK.&quot;&quot;&quot;</span>
-</span><span id="Lidar-30"><a href="#Lidar-30"><span class="linenos"> 30</span></a>
-</span><span id="Lidar-31"><a href="#Lidar-31"><span class="linenos"> 31</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">LidarSafety</span><span class="p">,</span> <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span> <span class="n">part</span><span class="p">:</span> <span class="n">Part</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Lidar-32"><a href="#Lidar-32"><span class="linenos"> 32</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the LIDAR class.&quot;&quot;&quot;</span>
-</span><span id="Lidar-33"><a href="#Lidar-33"><span class="linenos"> 33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span id="Lidar-34"><a href="#Lidar-34"><span class="linenos"> 34</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">MobileBaseLidarServiceStub</span><span class="p">(</span><span class="n">grpc_channel</span><span class="p">)</span>
-</span><span id="Lidar-35"><a href="#Lidar-35"><span class="linenos"> 35</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part</span> <span class="o">=</span> <span class="n">part</span>
-</span><span id="Lidar-36"><a href="#Lidar-36"><span class="linenos"> 36</span></a>
-</span><span id="Lidar-37"><a href="#Lidar-37"><span class="linenos"> 37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_on</span><span class="o">.</span><span class="n">value</span>
-</span><span id="Lidar-38"><a href="#Lidar-38"><span class="linenos"> 38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_distance</span><span class="o">.</span><span class="n">value</span>
-</span><span id="Lidar-39"><a href="#Lidar-39"><span class="linenos"> 39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">critical_distance</span><span class="o">.</span><span class="n">value</span>
-</span><span id="Lidar-40"><a href="#Lidar-40"><span class="linenos"> 40</span></a>
-</span><span id="Lidar-41"><a href="#Lidar-41"><span class="linenos"> 41</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">LidarObstacleDetectionEnum</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">initial_state</span><span class="o">.</span><span class="n">obstacle_detection_status</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
-</span><span id="Lidar-42"><a href="#Lidar-42"><span class="linenos"> 42</span></a>
-</span><span id="Lidar-43"><a href="#Lidar-43"><span class="linenos"> 43</span></a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="Lidar-44"><a href="#Lidar-44"><span class="linenos"> 44</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Clean representation of a Reachy.&quot;&quot;&quot;</span>
-</span><span id="Lidar-45"><a href="#Lidar-45"><span class="linenos"> 45</span></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;Lidar safety_enabled=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">safety_enabled</span><span class="si">}</span><span class="s2">&gt;&quot;&quot;&quot;</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar-25"><a href="#Lidar-25"><span class="linenos"> 25</span></a><span class="k">class</span> <span class="nc">Lidar</span><span class="p">:</span>
+</span><span id="Lidar-26"><a href="#Lidar-26"><span class="linenos"> 26</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;LIDAR class for mobile base SDK.&quot;&quot;&quot;</span>
+</span><span id="Lidar-27"><a href="#Lidar-27"><span class="linenos"> 27</span></a>
+</span><span id="Lidar-28"><a href="#Lidar-28"><span class="linenos"> 28</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">LidarSafety</span><span class="p">,</span> <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span> <span class="n">part</span><span class="p">:</span> <span class="n">Part</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Lidar-29"><a href="#Lidar-29"><span class="linenos"> 29</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the LIDAR class.&quot;&quot;&quot;</span>
+</span><span id="Lidar-30"><a href="#Lidar-30"><span class="linenos"> 30</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="Lidar-31"><a href="#Lidar-31"><span class="linenos"> 31</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">MobileBaseLidarServiceStub</span><span class="p">(</span><span class="n">grpc_channel</span><span class="p">)</span>
+</span><span id="Lidar-32"><a href="#Lidar-32"><span class="linenos"> 32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part</span> <span class="o">=</span> <span class="n">part</span>
+</span><span id="Lidar-33"><a href="#Lidar-33"><span class="linenos"> 33</span></a>
+</span><span id="Lidar-34"><a href="#Lidar-34"><span class="linenos"> 34</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_on</span><span class="o">.</span><span class="n">value</span>
+</span><span id="Lidar-35"><a href="#Lidar-35"><span class="linenos"> 35</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_distance</span><span class="o">.</span><span class="n">value</span>
+</span><span id="Lidar-36"><a href="#Lidar-36"><span class="linenos"> 36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">critical_distance</span><span class="o">.</span><span class="n">value</span>
+</span><span id="Lidar-37"><a href="#Lidar-37"><span class="linenos"> 37</span></a>
+</span><span id="Lidar-38"><a href="#Lidar-38"><span class="linenos"> 38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">LidarObstacleDetectionEnum</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">initial_state</span><span class="o">.</span><span class="n">obstacle_detection_status</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+</span><span id="Lidar-39"><a href="#Lidar-39"><span class="linenos"> 39</span></a>
+</span><span id="Lidar-40"><a href="#Lidar-40"><span class="linenos"> 40</span></a>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="Lidar-41"><a href="#Lidar-41"><span class="linenos"> 41</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Clean representation of a Reachy.&quot;&quot;&quot;</span>
+</span><span id="Lidar-42"><a href="#Lidar-42"><span class="linenos"> 42</span></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;Lidar safety_enabled=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">safety_enabled</span><span class="si">}</span><span class="s2">&gt;&quot;&quot;&quot;</span>
+</span><span id="Lidar-43"><a href="#Lidar-43"><span class="linenos"> 43</span></a>
+</span><span id="Lidar-44"><a href="#Lidar-44"><span class="linenos"> 44</span></a>    <span class="k">def</span> <span class="nf">get_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]]:</span>
+</span><span id="Lidar-45"><a href="#Lidar-45"><span class="linenos"> 45</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the current map of the environment using lidar data.</span>
 </span><span id="Lidar-46"><a href="#Lidar-46"><span class="linenos"> 46</span></a>
-</span><span id="Lidar-47"><a href="#Lidar-47"><span class="linenos"> 47</span></a>    <span class="k">def</span> <span class="nf">get_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]]:</span>
-</span><span id="Lidar-48"><a href="#Lidar-48"><span class="linenos"> 48</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current map of the environment.&quot;&quot;&quot;</span>
-</span><span id="Lidar-49"><a href="#Lidar-49"><span class="linenos"> 49</span></a>        <span class="n">compressed_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">GetLidarMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
-</span><span id="Lidar-50"><a href="#Lidar-50"><span class="linenos"> 50</span></a>        <span class="k">if</span> <span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
-</span><span id="Lidar-51"><a href="#Lidar-51"><span class="linenos"> 51</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No lidar map retrieved&quot;</span><span class="p">)</span>
-</span><span id="Lidar-52"><a href="#Lidar-52"><span class="linenos"> 52</span></a>            <span class="k">return</span> <span class="kc">None</span>
-</span><span id="Lidar-53"><a href="#Lidar-53"><span class="linenos"> 53</span></a>        <span class="n">np_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
-</span><span id="Lidar-54"><a href="#Lidar-54"><span class="linenos"> 54</span></a>        <span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imdecode</span><span class="p">(</span><span class="n">np_data</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">IMREAD_COLOR</span><span class="p">)</span>
-</span><span id="Lidar-55"><a href="#Lidar-55"><span class="linenos"> 55</span></a>        <span class="k">return</span> <span class="n">img</span>  <span class="c1"># type: ignore[no-any-return]</span>
-</span><span id="Lidar-56"><a href="#Lidar-56"><span class="linenos"> 56</span></a>
-</span><span id="Lidar-57"><a href="#Lidar-57"><span class="linenos"> 57</span></a>    <span class="nd">@property</span>
-</span><span id="Lidar-58"><a href="#Lidar-58"><span class="linenos"> 58</span></a>    <span class="k">def</span> <span class="nf">safety_slowdown_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="Lidar-59"><a href="#Lidar-59"><span class="linenos"> 59</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Safety distance in meters of the mobile base from obstacles.</span>
-</span><span id="Lidar-60"><a href="#Lidar-60"><span class="linenos"> 60</span></a>
-</span><span id="Lidar-61"><a href="#Lidar-61"><span class="linenos"> 61</span></a><span class="sd">        The mobile base&#39;s speed is slowed down if the direction of speed matches the direction of</span>
-</span><span id="Lidar-62"><a href="#Lidar-62"><span class="linenos"> 62</span></a><span class="sd">        at least 1 LIDAR point in the safety_distance range.</span>
-</span><span id="Lidar-63"><a href="#Lidar-63"><span class="linenos"> 63</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Lidar-64"><a href="#Lidar-64"><span class="linenos"> 64</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">)</span>
-</span><span id="Lidar-65"><a href="#Lidar-65"><span class="linenos"> 65</span></a>
-</span><span id="Lidar-66"><a href="#Lidar-66"><span class="linenos"> 66</span></a>    <span class="nd">@safety_slowdown_distance</span><span class="o">.</span><span class="n">setter</span>
-</span><span id="Lidar-67"><a href="#Lidar-67"><span class="linenos"> 67</span></a>    <span class="k">def</span> <span class="nf">safety_slowdown_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Lidar-68"><a href="#Lidar-68"><span class="linenos"> 68</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
-</span><span id="Lidar-69"><a href="#Lidar-69"><span class="linenos"> 69</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
-</span><span id="Lidar-70"><a href="#Lidar-70"><span class="linenos"> 70</span></a>                <span class="n">safety_distance</span><span class="o">=</span><span class="n">FloatValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
-</span><span id="Lidar-71"><a href="#Lidar-71"><span class="linenos"> 71</span></a>            <span class="p">)</span>
-</span><span id="Lidar-72"><a href="#Lidar-72"><span class="linenos"> 72</span></a>        <span class="p">)</span>
-</span><span id="Lidar-73"><a href="#Lidar-73"><span class="linenos"> 73</span></a>
-</span><span id="Lidar-74"><a href="#Lidar-74"><span class="linenos"> 74</span></a>    <span class="nd">@property</span>
-</span><span id="Lidar-75"><a href="#Lidar-75"><span class="linenos"> 75</span></a>    <span class="k">def</span> <span class="nf">safety_critical_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="Lidar-76"><a href="#Lidar-76"><span class="linenos"> 76</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Critical distance in meters of the mobile base from obstacles.</span>
-</span><span id="Lidar-77"><a href="#Lidar-77"><span class="linenos"> 77</span></a>
-</span><span id="Lidar-78"><a href="#Lidar-78"><span class="linenos"> 78</span></a><span class="sd">        The mobile base&#39;s speed is changed to 0 if the direction of speed matches the direction of</span>
-</span><span id="Lidar-79"><a href="#Lidar-79"><span class="linenos"> 79</span></a><span class="sd">        at least 1 LIDAR point in the critical_distance range.</span>
-</span><span id="Lidar-80"><a href="#Lidar-80"><span class="linenos"> 80</span></a><span class="sd">        If at least 1 point is in the critical distance, then even motions that move away from the obstacles are</span>
-</span><span id="Lidar-81"><a href="#Lidar-81"><span class="linenos"> 81</span></a><span class="sd">        slowed down to the &quot;safety_zone&quot; speed.</span>
-</span><span id="Lidar-82"><a href="#Lidar-82"><span class="linenos"> 82</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Lidar-83"><a href="#Lidar-83"><span class="linenos"> 83</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">)</span>
-</span><span id="Lidar-84"><a href="#Lidar-84"><span class="linenos"> 84</span></a>
-</span><span id="Lidar-85"><a href="#Lidar-85"><span class="linenos"> 85</span></a>    <span class="nd">@safety_critical_distance</span><span class="o">.</span><span class="n">setter</span>
-</span><span id="Lidar-86"><a href="#Lidar-86"><span class="linenos"> 86</span></a>    <span class="k">def</span> <span class="nf">safety_critical_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Lidar-87"><a href="#Lidar-87"><span class="linenos"> 87</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
-</span><span id="Lidar-88"><a href="#Lidar-88"><span class="linenos"> 88</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
-</span><span id="Lidar-89"><a href="#Lidar-89"><span class="linenos"> 89</span></a>                <span class="n">critical_distance</span><span class="o">=</span><span class="n">FloatValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
-</span><span id="Lidar-90"><a href="#Lidar-90"><span class="linenos"> 90</span></a>            <span class="p">)</span>
-</span><span id="Lidar-91"><a href="#Lidar-91"><span class="linenos"> 91</span></a>        <span class="p">)</span>
+</span><span id="Lidar-47"><a href="#Lidar-47"><span class="linenos"> 47</span></a><span class="sd">        Returns:</span>
+</span><span id="Lidar-48"><a href="#Lidar-48"><span class="linenos"> 48</span></a><span class="sd">            The current map of the environment as an image (NumPy array) if the lidar map is successfully</span>
+</span><span id="Lidar-49"><a href="#Lidar-49"><span class="linenos"> 49</span></a><span class="sd">            retrieved. Returns `None` if no lidar map is retrieved.</span>
+</span><span id="Lidar-50"><a href="#Lidar-50"><span class="linenos"> 50</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar-51"><a href="#Lidar-51"><span class="linenos"> 51</span></a>        <span class="n">compressed_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">GetLidarMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
+</span><span id="Lidar-52"><a href="#Lidar-52"><span class="linenos"> 52</span></a>        <span class="k">if</span> <span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
+</span><span id="Lidar-53"><a href="#Lidar-53"><span class="linenos"> 53</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No lidar map retrieved&quot;</span><span class="p">)</span>
+</span><span id="Lidar-54"><a href="#Lidar-54"><span class="linenos"> 54</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="Lidar-55"><a href="#Lidar-55"><span class="linenos"> 55</span></a>        <span class="n">np_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+</span><span id="Lidar-56"><a href="#Lidar-56"><span class="linenos"> 56</span></a>        <span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imdecode</span><span class="p">(</span><span class="n">np_data</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">IMREAD_COLOR</span><span class="p">)</span>
+</span><span id="Lidar-57"><a href="#Lidar-57"><span class="linenos"> 57</span></a>        <span class="k">return</span> <span class="n">img</span>  <span class="c1"># type: ignore[no-any-return]</span>
+</span><span id="Lidar-58"><a href="#Lidar-58"><span class="linenos"> 58</span></a>
+</span><span id="Lidar-59"><a href="#Lidar-59"><span class="linenos"> 59</span></a>    <span class="nd">@property</span>
+</span><span id="Lidar-60"><a href="#Lidar-60"><span class="linenos"> 60</span></a>    <span class="k">def</span> <span class="nf">safety_slowdown_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="Lidar-61"><a href="#Lidar-61"><span class="linenos"> 61</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the safety distance from obstacles in meters for the mobile base.</span>
+</span><span id="Lidar-62"><a href="#Lidar-62"><span class="linenos"> 62</span></a>
+</span><span id="Lidar-63"><a href="#Lidar-63"><span class="linenos"> 63</span></a><span class="sd">        The mobile base&#39;s speed is slowed down if the direction of speed matches the direction of</span>
+</span><span id="Lidar-64"><a href="#Lidar-64"><span class="linenos"> 64</span></a><span class="sd">        at least one LIDAR point within the safety distance range.</span>
+</span><span id="Lidar-65"><a href="#Lidar-65"><span class="linenos"> 65</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar-66"><a href="#Lidar-66"><span class="linenos"> 66</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">)</span>
+</span><span id="Lidar-67"><a href="#Lidar-67"><span class="linenos"> 67</span></a>
+</span><span id="Lidar-68"><a href="#Lidar-68"><span class="linenos"> 68</span></a>    <span class="nd">@safety_slowdown_distance</span><span class="o">.</span><span class="n">setter</span>
+</span><span id="Lidar-69"><a href="#Lidar-69"><span class="linenos"> 69</span></a>    <span class="k">def</span> <span class="nf">safety_slowdown_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Lidar-70"><a href="#Lidar-70"><span class="linenos"> 70</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the safety distance for a Lidar sensor.</span>
+</span><span id="Lidar-71"><a href="#Lidar-71"><span class="linenos"> 71</span></a>
+</span><span id="Lidar-72"><a href="#Lidar-72"><span class="linenos"> 72</span></a><span class="sd">        Args:</span>
+</span><span id="Lidar-73"><a href="#Lidar-73"><span class="linenos"> 73</span></a><span class="sd">            value: The safety distance to set for the LidarSafety object. This value specifies</span>
+</span><span id="Lidar-74"><a href="#Lidar-74"><span class="linenos"> 74</span></a><span class="sd">                the distance at which a safety slowdown should be initiated.</span>
+</span><span id="Lidar-75"><a href="#Lidar-75"><span class="linenos"> 75</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar-76"><a href="#Lidar-76"><span class="linenos"> 76</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
+</span><span id="Lidar-77"><a href="#Lidar-77"><span class="linenos"> 77</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
+</span><span id="Lidar-78"><a href="#Lidar-78"><span class="linenos"> 78</span></a>                <span class="n">safety_distance</span><span class="o">=</span><span class="n">FloatValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
+</span><span id="Lidar-79"><a href="#Lidar-79"><span class="linenos"> 79</span></a>            <span class="p">)</span>
+</span><span id="Lidar-80"><a href="#Lidar-80"><span class="linenos"> 80</span></a>        <span class="p">)</span>
+</span><span id="Lidar-81"><a href="#Lidar-81"><span class="linenos"> 81</span></a>
+</span><span id="Lidar-82"><a href="#Lidar-82"><span class="linenos"> 82</span></a>    <span class="nd">@property</span>
+</span><span id="Lidar-83"><a href="#Lidar-83"><span class="linenos"> 83</span></a>    <span class="k">def</span> <span class="nf">safety_critical_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="Lidar-84"><a href="#Lidar-84"><span class="linenos"> 84</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the critical distance in meters of the mobile base from obstacles.</span>
+</span><span id="Lidar-85"><a href="#Lidar-85"><span class="linenos"> 85</span></a>
+</span><span id="Lidar-86"><a href="#Lidar-86"><span class="linenos"> 86</span></a><span class="sd">        The mobile base&#39;s speed is reduced to zero if the direction of speed matches the direction</span>
+</span><span id="Lidar-87"><a href="#Lidar-87"><span class="linenos"> 87</span></a><span class="sd">        of at least one LIDAR point within the critical distance range. If at least one point is</span>
+</span><span id="Lidar-88"><a href="#Lidar-88"><span class="linenos"> 88</span></a><span class="sd">        within the critical distance, even movements that move away from the obstacles are slowed</span>
+</span><span id="Lidar-89"><a href="#Lidar-89"><span class="linenos"> 89</span></a><span class="sd">        down to the &quot;safety_zone&quot; speed.</span>
+</span><span id="Lidar-90"><a href="#Lidar-90"><span class="linenos"> 90</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar-91"><a href="#Lidar-91"><span class="linenos"> 91</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">)</span>
 </span><span id="Lidar-92"><a href="#Lidar-92"><span class="linenos"> 92</span></a>
-</span><span id="Lidar-93"><a href="#Lidar-93"><span class="linenos"> 93</span></a>    <span class="nd">@property</span>
-</span><span id="Lidar-94"><a href="#Lidar-94"><span class="linenos"> 94</span></a>    <span class="k">def</span> <span class="nf">safety_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="Lidar-95"><a href="#Lidar-95"><span class="linenos"> 95</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Enable or disable the safety feature.&quot;&quot;&quot;</span>
-</span><span id="Lidar-96"><a href="#Lidar-96"><span class="linenos"> 96</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span>
-</span><span id="Lidar-97"><a href="#Lidar-97"><span class="linenos"> 97</span></a>
-</span><span id="Lidar-98"><a href="#Lidar-98"><span class="linenos"> 98</span></a>    <span class="nd">@safety_enabled</span><span class="o">.</span><span class="n">setter</span>
-</span><span id="Lidar-99"><a href="#Lidar-99"><span class="linenos"> 99</span></a>    <span class="k">def</span> <span class="nf">safety_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Lidar-100"><a href="#Lidar-100"><span class="linenos">100</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
-</span><span id="Lidar-101"><a href="#Lidar-101"><span class="linenos">101</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
-</span><span id="Lidar-102"><a href="#Lidar-102"><span class="linenos">102</span></a>                <span class="n">safety_on</span><span class="o">=</span><span class="n">BoolValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
-</span><span id="Lidar-103"><a href="#Lidar-103"><span class="linenos">103</span></a>            <span class="p">)</span>
-</span><span id="Lidar-104"><a href="#Lidar-104"><span class="linenos">104</span></a>        <span class="p">)</span>
-</span><span id="Lidar-105"><a href="#Lidar-105"><span class="linenos">105</span></a>
-</span><span id="Lidar-106"><a href="#Lidar-106"><span class="linenos">106</span></a>    <span class="nd">@property</span>
-</span><span id="Lidar-107"><a href="#Lidar-107"><span class="linenos">107</span></a>    <span class="k">def</span> <span class="nf">obstacle_detection_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LidarObstacleDetectionStatus</span><span class="p">:</span>
-</span><span id="Lidar-108"><a href="#Lidar-108"><span class="linenos">108</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get status of the lidar obstacle detection.</span>
-</span><span id="Lidar-109"><a href="#Lidar-109"><span class="linenos">109</span></a>
-</span><span id="Lidar-110"><a href="#Lidar-110"><span class="linenos">110</span></a><span class="sd">        Can be either NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP or DETECTION_ERROR.</span>
-</span><span id="Lidar-111"><a href="#Lidar-111"><span class="linenos">111</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Lidar-112"><a href="#Lidar-112"><span class="linenos">112</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span>
-</span><span id="Lidar-113"><a href="#Lidar-113"><span class="linenos">113</span></a>
-</span><span id="Lidar-114"><a href="#Lidar-114"><span class="linenos">114</span></a>    <span class="k">def</span> <span class="nf">reset_safety_default_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Lidar-115"><a href="#Lidar-115"><span class="linenos">115</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset default distances values for safety detection.</span>
-</span><span id="Lidar-116"><a href="#Lidar-116"><span class="linenos">116</span></a>
-</span><span id="Lidar-117"><a href="#Lidar-117"><span class="linenos">117</span></a><span class="sd">        Reset values are:</span>
-</span><span id="Lidar-118"><a href="#Lidar-118"><span class="linenos">118</span></a><span class="sd">        - safety_critical_distance</span>
-</span><span id="Lidar-119"><a href="#Lidar-119"><span class="linenos">119</span></a><span class="sd">        - safety_slowdown_distance.</span>
-</span><span id="Lidar-120"><a href="#Lidar-120"><span class="linenos">120</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Lidar-121"><a href="#Lidar-121"><span class="linenos">121</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">ResetDefaultValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
-</span><span id="Lidar-122"><a href="#Lidar-122"><span class="linenos">122</span></a>
-</span><span id="Lidar-123"><a href="#Lidar-123"><span class="linenos">123</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_lidar_state</span><span class="p">:</span> <span class="n">LidarSafety</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Lidar-124"><a href="#Lidar-124"><span class="linenos">124</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the lidar info with a new state received from the gRPC server.&quot;&quot;&quot;</span>
-</span><span id="Lidar-125"><a href="#Lidar-125"><span class="linenos">125</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">safety_on</span><span class="o">.</span><span class="n">value</span>
-</span><span id="Lidar-126"><a href="#Lidar-126"><span class="linenos">126</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">safety_distance</span><span class="o">.</span><span class="n">value</span>
-</span><span id="Lidar-127"><a href="#Lidar-127"><span class="linenos">127</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">critical_distance</span><span class="o">.</span><span class="n">value</span>
-</span><span id="Lidar-128"><a href="#Lidar-128"><span class="linenos">128</span></a>
-</span><span id="Lidar-129"><a href="#Lidar-129"><span class="linenos">129</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span> <span class="o">=</span> <span class="n">LidarObstacleDetectionEnum</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">new_lidar_state</span><span class="o">.</span><span class="n">obstacle_detection_status</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+</span><span id="Lidar-93"><a href="#Lidar-93"><span class="linenos"> 93</span></a>    <span class="nd">@safety_critical_distance</span><span class="o">.</span><span class="n">setter</span>
+</span><span id="Lidar-94"><a href="#Lidar-94"><span class="linenos"> 94</span></a>    <span class="k">def</span> <span class="nf">safety_critical_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Lidar-95"><a href="#Lidar-95"><span class="linenos"> 95</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the critical distance for a Lidar safety feature.</span>
+</span><span id="Lidar-96"><a href="#Lidar-96"><span class="linenos"> 96</span></a>
+</span><span id="Lidar-97"><a href="#Lidar-97"><span class="linenos"> 97</span></a><span class="sd">        Args:</span>
+</span><span id="Lidar-98"><a href="#Lidar-98"><span class="linenos"> 98</span></a><span class="sd">            value: The critical distance in meters for safety. This value specifies the distance</span>
+</span><span id="Lidar-99"><a href="#Lidar-99"><span class="linenos"> 99</span></a><span class="sd">                at which the mobile base should stop if moving in the direction of an obstacle.</span>
+</span><span id="Lidar-100"><a href="#Lidar-100"><span class="linenos">100</span></a><span class="sd">                If at least one point is within the critical distance, even movements that move</span>
+</span><span id="Lidar-101"><a href="#Lidar-101"><span class="linenos">101</span></a><span class="sd">                away from the obstacles are slowed down to the &quot;safety_zone&quot; speed.</span>
+</span><span id="Lidar-102"><a href="#Lidar-102"><span class="linenos">102</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar-103"><a href="#Lidar-103"><span class="linenos">103</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
+</span><span id="Lidar-104"><a href="#Lidar-104"><span class="linenos">104</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
+</span><span id="Lidar-105"><a href="#Lidar-105"><span class="linenos">105</span></a>                <span class="n">critical_distance</span><span class="o">=</span><span class="n">FloatValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
+</span><span id="Lidar-106"><a href="#Lidar-106"><span class="linenos">106</span></a>            <span class="p">)</span>
+</span><span id="Lidar-107"><a href="#Lidar-107"><span class="linenos">107</span></a>        <span class="p">)</span>
+</span><span id="Lidar-108"><a href="#Lidar-108"><span class="linenos">108</span></a>
+</span><span id="Lidar-109"><a href="#Lidar-109"><span class="linenos">109</span></a>    <span class="nd">@property</span>
+</span><span id="Lidar-110"><a href="#Lidar-110"><span class="linenos">110</span></a>    <span class="k">def</span> <span class="nf">safety_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="Lidar-111"><a href="#Lidar-111"><span class="linenos">111</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current status of the safety feature.</span>
+</span><span id="Lidar-112"><a href="#Lidar-112"><span class="linenos">112</span></a>
+</span><span id="Lidar-113"><a href="#Lidar-113"><span class="linenos">113</span></a><span class="sd">        Returns:</span>
+</span><span id="Lidar-114"><a href="#Lidar-114"><span class="linenos">114</span></a><span class="sd">            A boolean indicating whether the safety feature is enabled. If `True`, the safety feature is enabled.</span>
+</span><span id="Lidar-115"><a href="#Lidar-115"><span class="linenos">115</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar-116"><a href="#Lidar-116"><span class="linenos">116</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span>
+</span><span id="Lidar-117"><a href="#Lidar-117"><span class="linenos">117</span></a>
+</span><span id="Lidar-118"><a href="#Lidar-118"><span class="linenos">118</span></a>    <span class="nd">@safety_enabled</span><span class="o">.</span><span class="n">setter</span>
+</span><span id="Lidar-119"><a href="#Lidar-119"><span class="linenos">119</span></a>    <span class="k">def</span> <span class="nf">safety_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Lidar-120"><a href="#Lidar-120"><span class="linenos">120</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the safety status for the Lidar device.</span>
+</span><span id="Lidar-121"><a href="#Lidar-121"><span class="linenos">121</span></a>
+</span><span id="Lidar-122"><a href="#Lidar-122"><span class="linenos">122</span></a><span class="sd">        Args:</span>
+</span><span id="Lidar-123"><a href="#Lidar-123"><span class="linenos">123</span></a><span class="sd">            value: A boolean indicating whether the safety features are enabled or disabled. If `True`, the safety feature</span>
+</span><span id="Lidar-124"><a href="#Lidar-124"><span class="linenos">124</span></a><span class="sd">                is enabled.</span>
+</span><span id="Lidar-125"><a href="#Lidar-125"><span class="linenos">125</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar-126"><a href="#Lidar-126"><span class="linenos">126</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">SetZuuuSafety</span><span class="p">(</span>
+</span><span id="Lidar-127"><a href="#Lidar-127"><span class="linenos">127</span></a>            <span class="n">LidarSafety</span><span class="p">(</span>
+</span><span id="Lidar-128"><a href="#Lidar-128"><span class="linenos">128</span></a>                <span class="n">safety_on</span><span class="o">=</span><span class="n">BoolValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">),</span>
+</span><span id="Lidar-129"><a href="#Lidar-129"><span class="linenos">129</span></a>            <span class="p">)</span>
+</span><span id="Lidar-130"><a href="#Lidar-130"><span class="linenos">130</span></a>        <span class="p">)</span>
+</span><span id="Lidar-131"><a href="#Lidar-131"><span class="linenos">131</span></a>
+</span><span id="Lidar-132"><a href="#Lidar-132"><span class="linenos">132</span></a>    <span class="nd">@property</span>
+</span><span id="Lidar-133"><a href="#Lidar-133"><span class="linenos">133</span></a>    <span class="k">def</span> <span class="nf">obstacle_detection_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LidarObstacleDetectionStatus</span><span class="p">:</span>
+</span><span id="Lidar-134"><a href="#Lidar-134"><span class="linenos">134</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the status of the lidar obstacle detection.</span>
+</span><span id="Lidar-135"><a href="#Lidar-135"><span class="linenos">135</span></a>
+</span><span id="Lidar-136"><a href="#Lidar-136"><span class="linenos">136</span></a><span class="sd">        Returns:</span>
+</span><span id="Lidar-137"><a href="#Lidar-137"><span class="linenos">137</span></a><span class="sd">            The status of the lidar obstacle detection, which can be one of the following values:</span>
+</span><span id="Lidar-138"><a href="#Lidar-138"><span class="linenos">138</span></a><span class="sd">            NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP, or DETECTION_ERROR.</span>
+</span><span id="Lidar-139"><a href="#Lidar-139"><span class="linenos">139</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar-140"><a href="#Lidar-140"><span class="linenos">140</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span>
+</span><span id="Lidar-141"><a href="#Lidar-141"><span class="linenos">141</span></a>
+</span><span id="Lidar-142"><a href="#Lidar-142"><span class="linenos">142</span></a>    <span class="k">def</span> <span class="nf">reset_safety_default_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Lidar-143"><a href="#Lidar-143"><span class="linenos">143</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset default distance values for safety detection.</span>
+</span><span id="Lidar-144"><a href="#Lidar-144"><span class="linenos">144</span></a>
+</span><span id="Lidar-145"><a href="#Lidar-145"><span class="linenos">145</span></a><span class="sd">        The reset values include:</span>
+</span><span id="Lidar-146"><a href="#Lidar-146"><span class="linenos">146</span></a><span class="sd">        - safety_critical_distance</span>
+</span><span id="Lidar-147"><a href="#Lidar-147"><span class="linenos">147</span></a><span class="sd">        - safety_slowdown_distance.</span>
+</span><span id="Lidar-148"><a href="#Lidar-148"><span class="linenos">148</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar-149"><a href="#Lidar-149"><span class="linenos">149</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">ResetDefaultValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
+</span><span id="Lidar-150"><a href="#Lidar-150"><span class="linenos">150</span></a>
+</span><span id="Lidar-151"><a href="#Lidar-151"><span class="linenos">151</span></a>    <span class="k">def</span> <span class="nf">_update_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_lidar_state</span><span class="p">:</span> <span class="n">LidarSafety</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Lidar-152"><a href="#Lidar-152"><span class="linenos">152</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Update lidar information with a new state received from a gRPC server.</span>
+</span><span id="Lidar-153"><a href="#Lidar-153"><span class="linenos">153</span></a>
+</span><span id="Lidar-154"><a href="#Lidar-154"><span class="linenos">154</span></a><span class="sd">        Args:</span>
+</span><span id="Lidar-155"><a href="#Lidar-155"><span class="linenos">155</span></a><span class="sd">            new_lidar_state: Contains information about the lidar state received from the gRPC server.</span>
+</span><span id="Lidar-156"><a href="#Lidar-156"><span class="linenos">156</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar-157"><a href="#Lidar-157"><span class="linenos">157</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">safety_on</span><span class="o">.</span><span class="n">value</span>
+</span><span id="Lidar-158"><a href="#Lidar-158"><span class="linenos">158</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">safety_distance</span><span class="o">.</span><span class="n">value</span>
+</span><span id="Lidar-159"><a href="#Lidar-159"><span class="linenos">159</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span> <span class="o">=</span> <span class="n">new_lidar_state</span><span class="o">.</span><span class="n">critical_distance</span><span class="o">.</span><span class="n">value</span>
+</span><span id="Lidar-160"><a href="#Lidar-160"><span class="linenos">160</span></a>
+</span><span id="Lidar-161"><a href="#Lidar-161"><span class="linenos">161</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span> <span class="o">=</span> <span class="n">LidarObstacleDetectionEnum</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">new_lidar_state</span><span class="o">.</span><span class="n">obstacle_detection_status</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -349,17 +412,17 @@
 
     </div>
     <a class="headerlink" href="#Lidar.__init__"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.__init__-31"><a href="#Lidar.__init__-31"><span class="linenos">31</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">LidarSafety</span><span class="p">,</span> <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span> <span class="n">part</span><span class="p">:</span> <span class="n">Part</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Lidar.__init__-32"><a href="#Lidar.__init__-32"><span class="linenos">32</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the LIDAR class.&quot;&quot;&quot;</span>
-</span><span id="Lidar.__init__-33"><a href="#Lidar.__init__-33"><span class="linenos">33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span id="Lidar.__init__-34"><a href="#Lidar.__init__-34"><span class="linenos">34</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">MobileBaseLidarServiceStub</span><span class="p">(</span><span class="n">grpc_channel</span><span class="p">)</span>
-</span><span id="Lidar.__init__-35"><a href="#Lidar.__init__-35"><span class="linenos">35</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part</span> <span class="o">=</span> <span class="n">part</span>
-</span><span id="Lidar.__init__-36"><a href="#Lidar.__init__-36"><span class="linenos">36</span></a>
-</span><span id="Lidar.__init__-37"><a href="#Lidar.__init__-37"><span class="linenos">37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_on</span><span class="o">.</span><span class="n">value</span>
-</span><span id="Lidar.__init__-38"><a href="#Lidar.__init__-38"><span class="linenos">38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_distance</span><span class="o">.</span><span class="n">value</span>
-</span><span id="Lidar.__init__-39"><a href="#Lidar.__init__-39"><span class="linenos">39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">critical_distance</span><span class="o">.</span><span class="n">value</span>
-</span><span id="Lidar.__init__-40"><a href="#Lidar.__init__-40"><span class="linenos">40</span></a>
-</span><span id="Lidar.__init__-41"><a href="#Lidar.__init__-41"><span class="linenos">41</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">LidarObstacleDetectionEnum</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">initial_state</span><span class="o">.</span><span class="n">obstacle_detection_status</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.__init__-28"><a href="#Lidar.__init__-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">:</span> <span class="n">LidarSafety</span><span class="p">,</span> <span class="n">grpc_channel</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">,</span> <span class="n">part</span><span class="p">:</span> <span class="n">Part</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Lidar.__init__-29"><a href="#Lidar.__init__-29"><span class="linenos">29</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the LIDAR class.&quot;&quot;&quot;</span>
+</span><span id="Lidar.__init__-30"><a href="#Lidar.__init__-30"><span class="linenos">30</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="Lidar.__init__-31"><a href="#Lidar.__init__-31"><span class="linenos">31</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span> <span class="o">=</span> <span class="n">MobileBaseLidarServiceStub</span><span class="p">(</span><span class="n">grpc_channel</span><span class="p">)</span>
+</span><span id="Lidar.__init__-32"><a href="#Lidar.__init__-32"><span class="linenos">32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_part</span> <span class="o">=</span> <span class="n">part</span>
+</span><span id="Lidar.__init__-33"><a href="#Lidar.__init__-33"><span class="linenos">33</span></a>
+</span><span id="Lidar.__init__-34"><a href="#Lidar.__init__-34"><span class="linenos">34</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_on</span><span class="o">.</span><span class="n">value</span>
+</span><span id="Lidar.__init__-35"><a href="#Lidar.__init__-35"><span class="linenos">35</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">safety_distance</span><span class="o">.</span><span class="n">value</span>
+</span><span id="Lidar.__init__-36"><a href="#Lidar.__init__-36"><span class="linenos">36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_state</span><span class="o">.</span><span class="n">critical_distance</span><span class="o">.</span><span class="n">value</span>
+</span><span id="Lidar.__init__-37"><a href="#Lidar.__init__-37"><span class="linenos">37</span></a>
+</span><span id="Lidar.__init__-38"><a href="#Lidar.__init__-38"><span class="linenos">38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">LidarObstacleDetectionEnum</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">initial_state</span><span class="o">.</span><span class="n">obstacle_detection_status</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -379,19 +442,28 @@
 
     </div>
     <a class="headerlink" href="#Lidar.get_map"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.get_map-47"><a href="#Lidar.get_map-47"><span class="linenos">47</span></a>    <span class="k">def</span> <span class="nf">get_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]]:</span>
-</span><span id="Lidar.get_map-48"><a href="#Lidar.get_map-48"><span class="linenos">48</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current map of the environment.&quot;&quot;&quot;</span>
-</span><span id="Lidar.get_map-49"><a href="#Lidar.get_map-49"><span class="linenos">49</span></a>        <span class="n">compressed_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">GetLidarMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
-</span><span id="Lidar.get_map-50"><a href="#Lidar.get_map-50"><span class="linenos">50</span></a>        <span class="k">if</span> <span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
-</span><span id="Lidar.get_map-51"><a href="#Lidar.get_map-51"><span class="linenos">51</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No lidar map retrieved&quot;</span><span class="p">)</span>
-</span><span id="Lidar.get_map-52"><a href="#Lidar.get_map-52"><span class="linenos">52</span></a>            <span class="k">return</span> <span class="kc">None</span>
-</span><span id="Lidar.get_map-53"><a href="#Lidar.get_map-53"><span class="linenos">53</span></a>        <span class="n">np_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
-</span><span id="Lidar.get_map-54"><a href="#Lidar.get_map-54"><span class="linenos">54</span></a>        <span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imdecode</span><span class="p">(</span><span class="n">np_data</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">IMREAD_COLOR</span><span class="p">)</span>
-</span><span id="Lidar.get_map-55"><a href="#Lidar.get_map-55"><span class="linenos">55</span></a>        <span class="k">return</span> <span class="n">img</span>  <span class="c1"># type: ignore[no-any-return]</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.get_map-44"><a href="#Lidar.get_map-44"><span class="linenos">44</span></a>    <span class="k">def</span> <span class="nf">get_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]]:</span>
+</span><span id="Lidar.get_map-45"><a href="#Lidar.get_map-45"><span class="linenos">45</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the current map of the environment using lidar data.</span>
+</span><span id="Lidar.get_map-46"><a href="#Lidar.get_map-46"><span class="linenos">46</span></a>
+</span><span id="Lidar.get_map-47"><a href="#Lidar.get_map-47"><span class="linenos">47</span></a><span class="sd">        Returns:</span>
+</span><span id="Lidar.get_map-48"><a href="#Lidar.get_map-48"><span class="linenos">48</span></a><span class="sd">            The current map of the environment as an image (NumPy array) if the lidar map is successfully</span>
+</span><span id="Lidar.get_map-49"><a href="#Lidar.get_map-49"><span class="linenos">49</span></a><span class="sd">            retrieved. Returns `None` if no lidar map is retrieved.</span>
+</span><span id="Lidar.get_map-50"><a href="#Lidar.get_map-50"><span class="linenos">50</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar.get_map-51"><a href="#Lidar.get_map-51"><span class="linenos">51</span></a>        <span class="n">compressed_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">GetLidarMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
+</span><span id="Lidar.get_map-52"><a href="#Lidar.get_map-52"><span class="linenos">52</span></a>        <span class="k">if</span> <span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
+</span><span id="Lidar.get_map-53"><a href="#Lidar.get_map-53"><span class="linenos">53</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No lidar map retrieved&quot;</span><span class="p">)</span>
+</span><span id="Lidar.get_map-54"><a href="#Lidar.get_map-54"><span class="linenos">54</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="Lidar.get_map-55"><a href="#Lidar.get_map-55"><span class="linenos">55</span></a>        <span class="n">np_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">compressed_map</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+</span><span id="Lidar.get_map-56"><a href="#Lidar.get_map-56"><span class="linenos">56</span></a>        <span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imdecode</span><span class="p">(</span><span class="n">np_data</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">IMREAD_COLOR</span><span class="p">)</span>
+</span><span id="Lidar.get_map-57"><a href="#Lidar.get_map-57"><span class="linenos">57</span></a>        <span class="k">return</span> <span class="n">img</span>  <span class="c1"># type: ignore[no-any-return]</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Get the current map of the environment.</p>
+            <div class="docstring"><p>Retrieve the current map of the environment using lidar data.</p>
+
+<p>Returns:
+    The current map of the environment as an image (NumPy array) if the lidar map is successfully
+    retrieved. Returns <code>None</code> if no lidar map is retrieved.</p>
 </div>
 
 
@@ -405,21 +477,21 @@
 
     </div>
     <a class="headerlink" href="#Lidar.safety_slowdown_distance"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.safety_slowdown_distance-57"><a href="#Lidar.safety_slowdown_distance-57"><span class="linenos">57</span></a>    <span class="nd">@property</span>
-</span><span id="Lidar.safety_slowdown_distance-58"><a href="#Lidar.safety_slowdown_distance-58"><span class="linenos">58</span></a>    <span class="k">def</span> <span class="nf">safety_slowdown_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="Lidar.safety_slowdown_distance-59"><a href="#Lidar.safety_slowdown_distance-59"><span class="linenos">59</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Safety distance in meters of the mobile base from obstacles.</span>
-</span><span id="Lidar.safety_slowdown_distance-60"><a href="#Lidar.safety_slowdown_distance-60"><span class="linenos">60</span></a>
-</span><span id="Lidar.safety_slowdown_distance-61"><a href="#Lidar.safety_slowdown_distance-61"><span class="linenos">61</span></a><span class="sd">        The mobile base&#39;s speed is slowed down if the direction of speed matches the direction of</span>
-</span><span id="Lidar.safety_slowdown_distance-62"><a href="#Lidar.safety_slowdown_distance-62"><span class="linenos">62</span></a><span class="sd">        at least 1 LIDAR point in the safety_distance range.</span>
-</span><span id="Lidar.safety_slowdown_distance-63"><a href="#Lidar.safety_slowdown_distance-63"><span class="linenos">63</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Lidar.safety_slowdown_distance-64"><a href="#Lidar.safety_slowdown_distance-64"><span class="linenos">64</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.safety_slowdown_distance-59"><a href="#Lidar.safety_slowdown_distance-59"><span class="linenos">59</span></a>    <span class="nd">@property</span>
+</span><span id="Lidar.safety_slowdown_distance-60"><a href="#Lidar.safety_slowdown_distance-60"><span class="linenos">60</span></a>    <span class="k">def</span> <span class="nf">safety_slowdown_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="Lidar.safety_slowdown_distance-61"><a href="#Lidar.safety_slowdown_distance-61"><span class="linenos">61</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the safety distance from obstacles in meters for the mobile base.</span>
+</span><span id="Lidar.safety_slowdown_distance-62"><a href="#Lidar.safety_slowdown_distance-62"><span class="linenos">62</span></a>
+</span><span id="Lidar.safety_slowdown_distance-63"><a href="#Lidar.safety_slowdown_distance-63"><span class="linenos">63</span></a><span class="sd">        The mobile base&#39;s speed is slowed down if the direction of speed matches the direction of</span>
+</span><span id="Lidar.safety_slowdown_distance-64"><a href="#Lidar.safety_slowdown_distance-64"><span class="linenos">64</span></a><span class="sd">        at least one LIDAR point within the safety distance range.</span>
+</span><span id="Lidar.safety_slowdown_distance-65"><a href="#Lidar.safety_slowdown_distance-65"><span class="linenos">65</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar.safety_slowdown_distance-66"><a href="#Lidar.safety_slowdown_distance-66"><span class="linenos">66</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_safety_distance</span><span class="p">)</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Safety distance in meters of the mobile base from obstacles.</p>
+            <div class="docstring"><p>Get the safety distance from obstacles in meters for the mobile base.</p>
 
 <p>The mobile base's speed is slowed down if the direction of speed matches the direction of
-at least 1 LIDAR point in the safety_distance range.</p>
+at least one LIDAR point within the safety distance range.</p>
 </div>
 
 
@@ -433,25 +505,25 @@ at least 1 LIDAR point in the safety_distance range.</p>
 
     </div>
     <a class="headerlink" href="#Lidar.safety_critical_distance"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.safety_critical_distance-74"><a href="#Lidar.safety_critical_distance-74"><span class="linenos">74</span></a>    <span class="nd">@property</span>
-</span><span id="Lidar.safety_critical_distance-75"><a href="#Lidar.safety_critical_distance-75"><span class="linenos">75</span></a>    <span class="k">def</span> <span class="nf">safety_critical_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-</span><span id="Lidar.safety_critical_distance-76"><a href="#Lidar.safety_critical_distance-76"><span class="linenos">76</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Critical distance in meters of the mobile base from obstacles.</span>
-</span><span id="Lidar.safety_critical_distance-77"><a href="#Lidar.safety_critical_distance-77"><span class="linenos">77</span></a>
-</span><span id="Lidar.safety_critical_distance-78"><a href="#Lidar.safety_critical_distance-78"><span class="linenos">78</span></a><span class="sd">        The mobile base&#39;s speed is changed to 0 if the direction of speed matches the direction of</span>
-</span><span id="Lidar.safety_critical_distance-79"><a href="#Lidar.safety_critical_distance-79"><span class="linenos">79</span></a><span class="sd">        at least 1 LIDAR point in the critical_distance range.</span>
-</span><span id="Lidar.safety_critical_distance-80"><a href="#Lidar.safety_critical_distance-80"><span class="linenos">80</span></a><span class="sd">        If at least 1 point is in the critical distance, then even motions that move away from the obstacles are</span>
-</span><span id="Lidar.safety_critical_distance-81"><a href="#Lidar.safety_critical_distance-81"><span class="linenos">81</span></a><span class="sd">        slowed down to the &quot;safety_zone&quot; speed.</span>
-</span><span id="Lidar.safety_critical_distance-82"><a href="#Lidar.safety_critical_distance-82"><span class="linenos">82</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Lidar.safety_critical_distance-83"><a href="#Lidar.safety_critical_distance-83"><span class="linenos">83</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.safety_critical_distance-82"><a href="#Lidar.safety_critical_distance-82"><span class="linenos">82</span></a>    <span class="nd">@property</span>
+</span><span id="Lidar.safety_critical_distance-83"><a href="#Lidar.safety_critical_distance-83"><span class="linenos">83</span></a>    <span class="k">def</span> <span class="nf">safety_critical_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="Lidar.safety_critical_distance-84"><a href="#Lidar.safety_critical_distance-84"><span class="linenos">84</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the critical distance in meters of the mobile base from obstacles.</span>
+</span><span id="Lidar.safety_critical_distance-85"><a href="#Lidar.safety_critical_distance-85"><span class="linenos">85</span></a>
+</span><span id="Lidar.safety_critical_distance-86"><a href="#Lidar.safety_critical_distance-86"><span class="linenos">86</span></a><span class="sd">        The mobile base&#39;s speed is reduced to zero if the direction of speed matches the direction</span>
+</span><span id="Lidar.safety_critical_distance-87"><a href="#Lidar.safety_critical_distance-87"><span class="linenos">87</span></a><span class="sd">        of at least one LIDAR point within the critical distance range. If at least one point is</span>
+</span><span id="Lidar.safety_critical_distance-88"><a href="#Lidar.safety_critical_distance-88"><span class="linenos">88</span></a><span class="sd">        within the critical distance, even movements that move away from the obstacles are slowed</span>
+</span><span id="Lidar.safety_critical_distance-89"><a href="#Lidar.safety_critical_distance-89"><span class="linenos">89</span></a><span class="sd">        down to the &quot;safety_zone&quot; speed.</span>
+</span><span id="Lidar.safety_critical_distance-90"><a href="#Lidar.safety_critical_distance-90"><span class="linenos">90</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar.safety_critical_distance-91"><a href="#Lidar.safety_critical_distance-91"><span class="linenos">91</span></a>        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_critical_distance</span><span class="p">)</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Critical distance in meters of the mobile base from obstacles.</p>
+            <div class="docstring"><p>Get the critical distance in meters of the mobile base from obstacles.</p>
 
-<p>The mobile base's speed is changed to 0 if the direction of speed matches the direction of
-at least 1 LIDAR point in the critical_distance range.
-If at least 1 point is in the critical distance, then even motions that move away from the obstacles are
-slowed down to the "safety_zone" speed.</p>
+<p>The mobile base's speed is reduced to zero if the direction of speed matches the direction
+of at least one LIDAR point within the critical distance range. If at least one point is
+within the critical distance, even movements that move away from the obstacles are slowed
+down to the "safety_zone" speed.</p>
 </div>
 
 
@@ -465,14 +537,21 @@ slowed down to the "safety_zone" speed.</p>
 
     </div>
     <a class="headerlink" href="#Lidar.safety_enabled"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.safety_enabled-93"><a href="#Lidar.safety_enabled-93"><span class="linenos">93</span></a>    <span class="nd">@property</span>
-</span><span id="Lidar.safety_enabled-94"><a href="#Lidar.safety_enabled-94"><span class="linenos">94</span></a>    <span class="k">def</span> <span class="nf">safety_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="Lidar.safety_enabled-95"><a href="#Lidar.safety_enabled-95"><span class="linenos">95</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Enable or disable the safety feature.&quot;&quot;&quot;</span>
-</span><span id="Lidar.safety_enabled-96"><a href="#Lidar.safety_enabled-96"><span class="linenos">96</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.safety_enabled-109"><a href="#Lidar.safety_enabled-109"><span class="linenos">109</span></a>    <span class="nd">@property</span>
+</span><span id="Lidar.safety_enabled-110"><a href="#Lidar.safety_enabled-110"><span class="linenos">110</span></a>    <span class="k">def</span> <span class="nf">safety_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="Lidar.safety_enabled-111"><a href="#Lidar.safety_enabled-111"><span class="linenos">111</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current status of the safety feature.</span>
+</span><span id="Lidar.safety_enabled-112"><a href="#Lidar.safety_enabled-112"><span class="linenos">112</span></a>
+</span><span id="Lidar.safety_enabled-113"><a href="#Lidar.safety_enabled-113"><span class="linenos">113</span></a><span class="sd">        Returns:</span>
+</span><span id="Lidar.safety_enabled-114"><a href="#Lidar.safety_enabled-114"><span class="linenos">114</span></a><span class="sd">            A boolean indicating whether the safety feature is enabled. If `True`, the safety feature is enabled.</span>
+</span><span id="Lidar.safety_enabled-115"><a href="#Lidar.safety_enabled-115"><span class="linenos">115</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar.safety_enabled-116"><a href="#Lidar.safety_enabled-116"><span class="linenos">116</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_safety_enabled</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Enable or disable the safety feature.</p>
+            <div class="docstring"><p>Get the current status of the safety feature.</p>
+
+<p>Returns:
+    A boolean indicating whether the safety feature is enabled. If <code>True</code>, the safety feature is enabled.</p>
 </div>
 
 
@@ -486,19 +565,23 @@ slowed down to the "safety_zone" speed.</p>
 
     </div>
     <a class="headerlink" href="#Lidar.obstacle_detection_status"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.obstacle_detection_status-106"><a href="#Lidar.obstacle_detection_status-106"><span class="linenos">106</span></a>    <span class="nd">@property</span>
-</span><span id="Lidar.obstacle_detection_status-107"><a href="#Lidar.obstacle_detection_status-107"><span class="linenos">107</span></a>    <span class="k">def</span> <span class="nf">obstacle_detection_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LidarObstacleDetectionStatus</span><span class="p">:</span>
-</span><span id="Lidar.obstacle_detection_status-108"><a href="#Lidar.obstacle_detection_status-108"><span class="linenos">108</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get status of the lidar obstacle detection.</span>
-</span><span id="Lidar.obstacle_detection_status-109"><a href="#Lidar.obstacle_detection_status-109"><span class="linenos">109</span></a>
-</span><span id="Lidar.obstacle_detection_status-110"><a href="#Lidar.obstacle_detection_status-110"><span class="linenos">110</span></a><span class="sd">        Can be either NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP or DETECTION_ERROR.</span>
-</span><span id="Lidar.obstacle_detection_status-111"><a href="#Lidar.obstacle_detection_status-111"><span class="linenos">111</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Lidar.obstacle_detection_status-112"><a href="#Lidar.obstacle_detection_status-112"><span class="linenos">112</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.obstacle_detection_status-132"><a href="#Lidar.obstacle_detection_status-132"><span class="linenos">132</span></a>    <span class="nd">@property</span>
+</span><span id="Lidar.obstacle_detection_status-133"><a href="#Lidar.obstacle_detection_status-133"><span class="linenos">133</span></a>    <span class="k">def</span> <span class="nf">obstacle_detection_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LidarObstacleDetectionStatus</span><span class="p">:</span>
+</span><span id="Lidar.obstacle_detection_status-134"><a href="#Lidar.obstacle_detection_status-134"><span class="linenos">134</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the status of the lidar obstacle detection.</span>
+</span><span id="Lidar.obstacle_detection_status-135"><a href="#Lidar.obstacle_detection_status-135"><span class="linenos">135</span></a>
+</span><span id="Lidar.obstacle_detection_status-136"><a href="#Lidar.obstacle_detection_status-136"><span class="linenos">136</span></a><span class="sd">        Returns:</span>
+</span><span id="Lidar.obstacle_detection_status-137"><a href="#Lidar.obstacle_detection_status-137"><span class="linenos">137</span></a><span class="sd">            The status of the lidar obstacle detection, which can be one of the following values:</span>
+</span><span id="Lidar.obstacle_detection_status-138"><a href="#Lidar.obstacle_detection_status-138"><span class="linenos">138</span></a><span class="sd">            NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP, or DETECTION_ERROR.</span>
+</span><span id="Lidar.obstacle_detection_status-139"><a href="#Lidar.obstacle_detection_status-139"><span class="linenos">139</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar.obstacle_detection_status-140"><a href="#Lidar.obstacle_detection_status-140"><span class="linenos">140</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obstacle_detection_status</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Get status of the lidar obstacle detection.</p>
+            <div class="docstring"><p>Get the status of the lidar obstacle detection.</p>
 
-<p>Can be either NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP or DETECTION_ERROR.</p>
+<p>Returns:
+    The status of the lidar obstacle detection, which can be one of the following values:
+    NO_OBJECT_DETECTED, OBJECT_DETECTED_SLOWDOWN, OBJECT_DETECTED_STOP, or DETECTION_ERROR.</p>
 </div>
 
 
@@ -514,20 +597,20 @@ slowed down to the "safety_zone" speed.</p>
 
     </div>
     <a class="headerlink" href="#Lidar.reset_safety_default_values"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.reset_safety_default_values-114"><a href="#Lidar.reset_safety_default_values-114"><span class="linenos">114</span></a>    <span class="k">def</span> <span class="nf">reset_safety_default_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Lidar.reset_safety_default_values-115"><a href="#Lidar.reset_safety_default_values-115"><span class="linenos">115</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset default distances values for safety detection.</span>
-</span><span id="Lidar.reset_safety_default_values-116"><a href="#Lidar.reset_safety_default_values-116"><span class="linenos">116</span></a>
-</span><span id="Lidar.reset_safety_default_values-117"><a href="#Lidar.reset_safety_default_values-117"><span class="linenos">117</span></a><span class="sd">        Reset values are:</span>
-</span><span id="Lidar.reset_safety_default_values-118"><a href="#Lidar.reset_safety_default_values-118"><span class="linenos">118</span></a><span class="sd">        - safety_critical_distance</span>
-</span><span id="Lidar.reset_safety_default_values-119"><a href="#Lidar.reset_safety_default_values-119"><span class="linenos">119</span></a><span class="sd">        - safety_slowdown_distance.</span>
-</span><span id="Lidar.reset_safety_default_values-120"><a href="#Lidar.reset_safety_default_values-120"><span class="linenos">120</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Lidar.reset_safety_default_values-121"><a href="#Lidar.reset_safety_default_values-121"><span class="linenos">121</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">ResetDefaultValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Lidar.reset_safety_default_values-142"><a href="#Lidar.reset_safety_default_values-142"><span class="linenos">142</span></a>    <span class="k">def</span> <span class="nf">reset_safety_default_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Lidar.reset_safety_default_values-143"><a href="#Lidar.reset_safety_default_values-143"><span class="linenos">143</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset default distance values for safety detection.</span>
+</span><span id="Lidar.reset_safety_default_values-144"><a href="#Lidar.reset_safety_default_values-144"><span class="linenos">144</span></a>
+</span><span id="Lidar.reset_safety_default_values-145"><a href="#Lidar.reset_safety_default_values-145"><span class="linenos">145</span></a><span class="sd">        The reset values include:</span>
+</span><span id="Lidar.reset_safety_default_values-146"><a href="#Lidar.reset_safety_default_values-146"><span class="linenos">146</span></a><span class="sd">        - safety_critical_distance</span>
+</span><span id="Lidar.reset_safety_default_values-147"><a href="#Lidar.reset_safety_default_values-147"><span class="linenos">147</span></a><span class="sd">        - safety_slowdown_distance.</span>
+</span><span id="Lidar.reset_safety_default_values-148"><a href="#Lidar.reset_safety_default_values-148"><span class="linenos">148</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Lidar.reset_safety_default_values-149"><a href="#Lidar.reset_safety_default_values-149"><span class="linenos">149</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">ResetDefaultValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_part</span><span class="o">.</span><span class="n">_part_id</span><span class="p">)</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Reset default distances values for safety detection.</p>
+            <div class="docstring"><p>Reset default distance values for safety detection.</p>
 
-<p>Reset values are:</p>
+<p>The reset values include:</p>
 
 <ul>
 <li>safety_critical_distance</li>
