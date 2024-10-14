@@ -7,7 +7,6 @@ import numpy as np
 import numpy.typing as npt
 
 from reachy2_sdk import ReachySDK
-from reachy2_sdk.reachy_sdk import GoToHomeId
 
 
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
@@ -55,7 +54,7 @@ def draw_square(reachy: ReachySDK) -> None:
     # Going from A to B
     target_pose = build_pose_matrix(0.4, -0.5, 0)
     ik = reachy.r_arm.inverse_kinematics(target_pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto_joints(ik, duration=2.0, degrees=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose B: ", current_pos)
@@ -63,7 +62,7 @@ def draw_square(reachy: ReachySDK) -> None:
     # Going from B to C
     target_pose = build_pose_matrix(0.4, -0.3, 0)
     ik = reachy.r_arm.inverse_kinematics(target_pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto_joints(ik, duration=2.0, degrees=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose C: ", current_pos)
@@ -71,7 +70,7 @@ def draw_square(reachy: ReachySDK) -> None:
     # Going from C to D
     target_pose = build_pose_matrix(0.4, -0.3, -0.2)
     ik = reachy.r_arm.inverse_kinematics(target_pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto_joints(ik, duration=2.0, degrees=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose D: ", current_pos)
@@ -79,7 +78,7 @@ def draw_square(reachy: ReachySDK) -> None:
     # Going from D to A
     target_pose = build_pose_matrix(0.4, -0.5, -0.2)
     ik = reachy.r_arm.inverse_kinematics(target_pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto_joints(ik, duration=2.0, degrees=True, wait=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose A: ", current_pos)
@@ -99,31 +98,7 @@ def goto_to_point_A(reachy: ReachySDK) -> None:
     # get the position in the joint space
     joints_positions = reachy.r_arm.inverse_kinematics(target_pose)
     # move Reachy's right arm to this point
-    goto_id = reachy.r_arm.goto_joints(joints_positions, duration=2)
-
-    # wait for movement to finish
-    while not reachy.is_goto_finished(goto_id):
-        time.sleep(0.1)
-
-
-def wait_for_pose_to_finish(ids: GoToHomeId) -> None:
-    """Wait for all parts of Reachy to finish their movements.
-
-    This function waits for three separate movements to complete:
-    the head, right arm, and left arm.
-
-    Args:
-        ids: A GoToHomeId object containing the GoToIds for the head,
-             right arm, and left arm movements.
-    """
-    while not reachy.is_goto_finished(ids.head):
-        time.sleep(0.1)
-
-    while not reachy.is_goto_finished(ids.r_arm):
-        time.sleep(0.1)
-
-    while not reachy.is_goto_finished(ids.l_arm):
-        time.sleep(0.1)
+    reachy.r_arm.goto_joints(joints_positions, duration=2, wait=True)
 
 
 if __name__ == "__main__":
@@ -141,8 +116,8 @@ if __name__ == "__main__":
     time.sleep(0.2)
 
     print("Set to Elbow 90 pose ...")
-    goto_ids = reachy.goto_posture("elbow_90")
-    wait_for_pose_to_finish(goto_ids)
+    goto_ids = reachy.goto_posture("elbow_90", wait=True)
+    # wait_for_pose_to_finish(goto_ids)
 
     print("Move to point A")
     goto_to_point_A(reachy)
@@ -151,8 +126,8 @@ if __name__ == "__main__":
     draw_square(reachy)
 
     print("Set to Zero pose ...")
-    goto_ids = reachy.goto_posture("default")
-    wait_for_pose_to_finish(goto_ids)
+    goto_ids = reachy.goto_posture("default", wait=True)
+    # wait_for_pose_to_finish(goto_ids)
 
     print("Turning off Reachy")
     reachy.turn_off()
