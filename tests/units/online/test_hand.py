@@ -63,7 +63,7 @@ def test_gripper_goal_position(reachy_sdk_zeroed: ReachySDK) -> None:
 def test_gripper_off(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.goto_posture("elbow_90")
     reachy_sdk_zeroed.l_arm.gripper.turn_off()
-    reachy_sdk_zeroed.l_arm.goto_joints([15, 15, 0, -60, 0, 0, 0])
+    reachy_sdk_zeroed.l_arm.goto([15, 15, 0, -60, 0, 0, 0])
     time.sleep(3.0)
     assert reachy_sdk_zeroed.l_arm.is_on() == True
     assert np.isclose(reachy_sdk_zeroed.l_arm.elbow.pitch.present_position, -60, 10)

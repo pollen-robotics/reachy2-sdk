@@ -190,22 +190,22 @@ def test_class() -> None:
         arm.inverse_kinematics(target=np.zeros((4, 4)), q0=np.zeros((4, 4)))
 
     with pytest.raises(ValueError):
-        arm.goto_from_matrix(target=np.zeros((3, 3)))
+        arm.goto(target=np.zeros((3, 3)))
 
     with pytest.raises(ValueError):
-        arm.goto_from_matrix(target=np.zeros((4, 4)), q0=[0.0])
+        arm.goto(target=np.zeros((4, 4)), q0=[0.0])
 
     # Arm is off
-    assert arm.goto_from_matrix(target=np.zeros((4, 4)), q0=[0.0, 0, 0, 0, 0, 0, 0]).id == -1
+    assert arm.goto(target=np.zeros((4, 4)), q0=[0.0, 0, 0, 0, 0, 0, 0]).id == -1
 
     with pytest.raises(ValueError):
-        arm.goto_joints(positions=[0.0])
+        arm.goto(target=[0.0])
 
     # Arm is off
-    assert arm.goto_joints(positions=[0.0, 0, 0, 0, 0, 0, 0]).id == -1
+    assert arm.goto(target=[0.0, 0, 0, 0, 0, 0, 0]).id == -1
 
     with pytest.raises(ValueError):
-        arm.goto_joints([0, 0, 0, -90, 0, 0, 0], duration=0)
+        arm.goto([0, 0, 0, -90, 0, 0, 0], duration=0)
 
     with pytest.raises(ValueError):
-        arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), duration=0)
+        arm.goto(build_pose_matrix(0.3, -0.4, -0.3), duration=0)

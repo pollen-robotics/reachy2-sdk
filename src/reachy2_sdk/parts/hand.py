@@ -100,31 +100,6 @@ class Hand(Part):
         """
         return round(self._opening * 100, 2)
 
-    def set_opening(self, percentage: float) -> None:
-        """Set the opening value for the hand.
-
-        Args:
-            percentage: The desired opening percentage of the hand, ranging from 0 to 100.
-
-        Raises:
-            ValueError: If the percentage is not between 0 and 100.
-            RuntimeError: If the gripper is off and the opening value cannot be set.
-        """
-        if not 0.0 <= percentage <= 100.0:
-            raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
-        if self._compliant:
-            raise RuntimeError("Gripper is off. Opening value not sent.")
-
-        self._hand_stub.SetHandPosition(
-            HandPositionRequest(
-                id=self._part_id,
-                position=HandPosition(
-                    parallel_gripper=ParallelGripperPosition(opening_percentage=FloatValue(value=percentage / 100.0))
-                ),
-            )
-        )
-        self._is_moving = True
-
     @property
     def present_position(self) -> float:
         """Get the current position of the hand.
@@ -157,49 +132,6 @@ class Hand(Part):
             self._outgoing_goal_positions = to_internal_position(value)
         else:
             raise TypeError("goal_position must be a float or int")
-
-    def send_goal_positions(self) -> None:
-        """Send the goal position to the hand actuator.
-
-        If any goal position has been specified to the gripper, sends them to the robot.
-        If the hand is off, the command is not sent.
-        """
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
-            return
-        if self._outgoing_goal_positions is not None:
-            self._hand_stub.SetHandPosition(
-                HandPositionRequest(
-                    id=self._part_id,
-                    position=HandPosition(
-                        parallel_gripper=ParallelGripperPosition(position=FloatValue(value=self._outgoing_goal_positions))
-                    ),
-                )
-            )
-            self._outgoing_goal_positions = None
-            self._is_moving = True
-
-    def open(self) -> None:
-        """Open the hand.
-
-        Raises:
-            RuntimeError: If the gripper is off and the open request cannot be sent.
-        """
-        if self._compliant:
-            raise RuntimeError("Gripper is off. Open request not sent.")
-        self._hand_stub.OpenHand(self._part_id)
-        self._is_moving = True
-
-    def close(self) -> None:
-        """Close the hand.
-
-        Raises:
-            RuntimeError: If the gripper is off and the close request cannot be sent.
-        """
-        if self._compliant:
-            raise RuntimeError("Gripper is off. Close request not sent.")
-        self._hand_stub.CloseHand(self._part_id)
-        self._is_moving = True
 
     def is_on(self) -> bool:
         """Check if the hand is stiff.
@@ -242,6 +174,82 @@ class Hand(Part):
             self._is_moving = False
             self._last_present_positions.clear()
         self._last_present_positions.append(present_position)
+
+    def get_current_opening(self) -> float:
+        """Get the current opening of the hand.
+
+        Returns:
+            The current opening of the hand as a percentage (0-100).
+        """
+        return self.opening
+
+    def open(self) -> None:
+        """Open the hand.
+
+        Raises:
+            RuntimeError: If the gripper is off and the open request cannot be sent.
+        """
+        if self._compliant:
+            raise RuntimeError("Gripper is off. Open request not sent.")
+        self._hand_stub.OpenHand(self._part_id)
+        self._is_moving = True
+
+    def close(self) -> None:
+        """Close the hand.
+
+        Raises:
+            RuntimeError: If the gripper is off and the close request cannot be sent.
+        """
+        if self._compliant:
+            raise RuntimeError("Gripper is off. Close request not sent.")
+        self._hand_stub.CloseHand(self._part_id)
+        self._is_moving = True
+
+    def set_opening(self, percentage: float) -> None:
+        """Set the opening value for the hand.
+
+        Args:
+            percentage: The desired opening percentage of the hand, ranging from 0 to 100.
+
+        Raises:
+            ValueError: If the percentage is not between 0 and 100.
+            RuntimeError: If the gripper is off and the opening value cannot be set.
+        """
+        if not 0.0 <= percentage <= 100.0:
+            raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
+        if self._compliant:
+            raise RuntimeError("Gripper is off. Opening value not sent.")
+
+        self._hand_stub.SetHandPosition(
+            HandPositionRequest(
+                id=self._part_id,
+                position=HandPosition(
+                    parallel_gripper=ParallelGripperPosition(opening_percentage=FloatValue(value=percentage / 100.0))
+                ),
+            )
+        )
+        self._is_moving = True
+
+    def send_goal_positions(self) -> None:
+        """Send the goal position to the hand actuator.
+
+        If any goal position has been specified to the gripper, sends them to the robot.
+        If the hand is off, the command is not sent.
+        """
+        if self.is_off():
+            self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
+            return
+        if self._outgoing_goal_positions is not None:
+            self._hand_stub.SetHandPosition(
+                HandPositionRequest(
+                    id=self._part_id,
+                    position=HandPosition(
+                        parallel_gripper=ParallelGripperPosition(position=FloatValue(value=self._outgoing_goal_positions))
+                    ),
+                )
+            )
+            self._outgoing_goal_positions = None
+            self._is_moving = True
 
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state from the gRPC server.

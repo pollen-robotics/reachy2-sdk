@@ -70,11 +70,13 @@ def test_class() -> None:
 
     assert mobile_base.__repr__() != ""
 
+    mobile_base.set_goal_speed(x=0.5, y=0.5, theta=200)
     with pytest.raises(ValueError):
-        mobile_base.set_speed(0.5, 0.5, 200)
+        mobile_base.send_speed_command()
 
+    mobile_base.set_goal_speed(x=1.5, y=1.5, theta=100)
     with pytest.raises(ValueError):
-        mobile_base.set_speed(1.5, 1.5, 100)
+        mobile_base.send_speed_command()
 
     with pytest.raises(ValueError):
         asyncio.run(mobile_base._goto_async(x=1.5, y=1.5, theta=10, timeout=4))
