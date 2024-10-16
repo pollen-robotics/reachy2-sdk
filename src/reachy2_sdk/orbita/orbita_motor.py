@@ -16,11 +16,11 @@ class OrbitaMotor:
     """The OrbitaMotor class represents any Orbita3d or Orbita2d motor.
 
     The OrbitaMotor class is used to store the up-to-date state of the motor, especially:
-        - its temperature (RO)
-        - its compliancy (RO)
-        - its speed limit (RW)
-        - its torque limit (RW)
-        - its pid (RW)
+    - its temperature (RO)
+    - its compliancy (RO)
+    - its speed limit (RW)
+    - its torque limit (RW)
+    - its pid (RW)
     """
 
     def __init__(self, initial_state: Dict[str, Any], actuator: Any) -> None:

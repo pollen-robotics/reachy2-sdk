@@ -84,7 +84,7 @@ def test_orbita2d() -> None:
     orbita2d.temperatures["motor_1"] == temperature.motor_1.value
     orbita2d.temperatures["motor_2"] == temperature.motor_1.value
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         orbita2d.set_speed_limits("wrong value")
 
     with pytest.raises(ValueError):
@@ -93,7 +93,7 @@ def test_orbita2d() -> None:
     with pytest.raises(ValueError):
         orbita2d.set_speed_limits(-10)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         orbita2d.set_torque_limits("wrong value")
 
     with pytest.raises(ValueError):

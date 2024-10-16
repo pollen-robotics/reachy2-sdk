@@ -171,7 +171,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
             degrees (bool, optional): Specifies if the RPY values in `target` are in degrees. Defaults to True.
 
         Raises:
-            ValueError: If the `duration` is set to 0, or if the input type for `target` is invalid.
+            TypeError : If the input type for `target` is invalid
+            ValueError: If the `duration` is set to 0.
 
         Returns:
             GoToId: The unique identifier for the movement command.
@@ -198,7 +199,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         elif isinstance(target, pyQuat):
             joints_goal = NeckOrientation(rotation=Rotation3d(q=Quaternion(w=target.w, x=target.x, y=target.y, z=target.z)))
         else:
-            raise ValueError("Invalid input type for orientation. Must be either a list of 3 floats or a pyQuat.")
+            raise TypeError("Invalid input type for orientation. Must be either a list of 3 floats or a pyQuat.")
 
         request = GoToRequest(
             joints_goal=JointsGoal(

@@ -100,7 +100,7 @@ def test_class() -> None:
     assert len(arm._actuators) == 3
     assert isinstance(arm._actuators, dict)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         arm.set_speed_limits("wrong value")
 
     with pytest.raises(ValueError):
@@ -109,7 +109,7 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         arm.set_speed_limits(-10)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         arm.set_torque_limits("wrong value")
 
     with pytest.raises(ValueError):
@@ -189,7 +189,7 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         arm.inverse_kinematics(target=np.zeros((4, 4)), q0=np.zeros((4, 4)))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         arm.goto(target=np.zeros((3, 3)))
 
     with pytest.raises(ValueError):
@@ -198,7 +198,7 @@ def test_class() -> None:
     # Arm is off
     assert arm.goto(target=np.zeros((4, 4)), q0=[0.0, 0, 0, 0, 0, 0, 0]).id == -1
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         arm.goto(target=[0.0])
 
     # Arm is off
