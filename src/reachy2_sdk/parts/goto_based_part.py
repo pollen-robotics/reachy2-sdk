@@ -119,6 +119,9 @@ class IGoToBasedPart(ABC):
         self._logger_goto.info(f"Waiting for movement with {id}.")
 
         id_playing = self.get_goto_playing()
+        while id_playing.id == -1:
+            time.sleep(0.01)
+            id_playing = self.get_goto_playing()
         info_gotos = [self._get_goto_joints_request(id_playing)]
         ids_queue = self.get_goto_queue()
         for id in ids_queue:
