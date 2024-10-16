@@ -31,10 +31,11 @@ class Orbita(ABC):
     """The Orbita class is an abstract class to represent any Orbita actuator.
 
     The Orbita class is used to store the up-to-date state of the actuator, especially:
-        - its compliancy
-        - its joints state
-        - its motors state
-        - its axis state
+    - its compliancy
+    - its joints state
+    - its motors state
+    - its axis state
+
     And apply speed, torque, pid and compliancy to all motors of the actuator.
 
     This class is meant to be derived by Orbita2d and Orbita3d
@@ -106,11 +107,11 @@ class Orbita(ABC):
             speed_limit: The desired speed limit as a percentage (0-100).
 
         Raises:
-            ValueError: If the provided speed_limit is not a float or int.
+            TypeError: If the provided speed_limit is not a float or int.
             ValueError: If the provided speed_limit is outside the range [0, 100].
         """
         if not isinstance(speed_limit, float | int):
-            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
+            raise TypeError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
         if not (0 <= speed_limit <= 100):
             raise ValueError(f"speed_limit must be in [0, 100], got {speed_limit}.")
 
@@ -125,11 +126,11 @@ class Orbita(ABC):
             torque_limit: The desired torque limit as a percentage (0-100).
 
         Raises:
-            ValueError: If the provided torque_limit is not a float or int.
+            TypeError: If the provided torque_limit is not a float or int.
             ValueError: If the provided torque_limit is outside the range [0, 100].
         """
         if not isinstance(torque_limit, float | int):
-            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
+            raise TypeError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
         if not (0 <= torque_limit <= 100):
             raise ValueError(f"torque_limit must be in [0, 100], got {torque_limit}.")
 

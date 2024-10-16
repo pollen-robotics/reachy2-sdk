@@ -427,12 +427,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             GoToId: The unique GoToId identifier for the movement command.
 
         Raises:
-            ValueError: If the `target` is neither a list of 7 joint values nor a 4x4 pose matrix.
+            TypeError: If the `target` is neither a list of 7 joint values nor a 4x4 pose matrix.
             ValueError: If the `q0` list has a length other than 7.
             ValueError: If the `duration` is set to 0.
         """
         if not ((isinstance(target, list) and len(target) == 7) or (isinstance(target, np.ndarray) and target.shape == (4, 4))):
-            raise ValueError("Invalid target: must be either a list of 7 joint positions or a 4x4 matrix.")
+            raise TypeError("Invalid target: must be either a list of 7 joint positions or a 4x4 matrix.")
 
         if q0 is not None and len(q0) != 7:
             raise ValueError(f"q0 should be of length 7 (got {len(q0)} instead)!")
@@ -915,7 +915,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """
         self.cancel_all_goto()
         if target.shape != (4, 4):
-            raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
+            raise TypeError("target shape should be (4, 4) (got {target.shape} instead)!")
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
         if self.is_off():

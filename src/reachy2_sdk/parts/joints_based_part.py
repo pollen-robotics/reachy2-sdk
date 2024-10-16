@@ -84,7 +84,7 @@ class JointsBasedPart(Part):
                 specified as a float or int.
         """
         if not isinstance(torque_limit, float | int):
-            raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
+            raise TypeError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
         if not (0 <= torque_limit <= 100):
             raise ValueError(f"torque_limit must be in [0, 100], got {torque_limit}.")
         req = TorqueLimitRequest(
@@ -101,7 +101,7 @@ class JointsBasedPart(Part):
                 specified as a float or int.
         """
         if not isinstance(speed_limit, float | int):
-            raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
+            raise TypeError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
         if not (0 <= speed_limit <= 100):
             raise ValueError(f"speed_limit must be in [0, 100], got {speed_limit}.")
         req = SpeedLimitRequest(

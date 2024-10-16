@@ -59,7 +59,7 @@ def list_to_arm_position(positions: List[float], degrees: bool = True) -> ArmPos
 
     Args:
         positions: A list of float values representing joint positions. The list should contain 7 values
-            in the following order: [shoulder.pitch, shoulder.yaw, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].
+            in the following order: [shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch,wrist_yaw].
         degrees: A flag indicating whether the input joint positions are in degrees. If set to `True`,
             the input positions are in degrees. Defaults to `True`.
 
@@ -100,7 +100,7 @@ def arm_position_to_list(arm_pos: ArmPosition, degrees: bool = True) -> List[flo
 
     Returns:
         A list of joint positions based on the ArmPosition, returned in the following order:
-        [shoulder.pitch, shoulder.yaw, elbow.yaw, elbow.pitch, wrist.roll, wrist.pitch, wrist.yaw].
+        [shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch, wrist_yaw].
     """
     positions = []
 

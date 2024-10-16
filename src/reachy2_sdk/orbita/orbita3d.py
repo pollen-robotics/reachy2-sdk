@@ -30,16 +30,17 @@ class Orbita3d(Orbita):
     """The Orbita3d class represents any Orbita3d actuator and its joints, motors and axis.
 
     The Orbita3d class is used to store the up-to-date state of the actuator, especially:
-        - its compliancy
-        - its joints state
-        - its motors state
-        - its axis state
+    - its compliancy
+    - its joints state
+    - its motors state
+    - its axis state
 
     You can access properties of the motors from the actuators with function that act on all the actuator's motors:
     - speed limit (in percentage, for all motors of the actuator)
     - torque limit (in percentage, for all motors of the actuator)
     - pid (for all motors of the actuator)
     - compliancy (for all motors of the actuator)
+
     Lower properties that are read-only but acessible at actuator level:
     - temperatures (temperatures of all motors of the actuator)
     """
