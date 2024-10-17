@@ -3,6 +3,7 @@
 Handles all specific methods commmon to all Orbita2d and Orbita3d.
 """
 
+import asyncio
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -69,6 +70,7 @@ class Orbita(ABC):
 
         self._error_status: Optional[str] = None
 
+        self._check_task: Optional[asyncio.Task[None]] = None
         self._thread_check_position: Optional[Thread] = None
         self._cancel_check = False
 
@@ -243,40 +245,74 @@ class Orbita(ABC):
         """
         pass
 
-    def _post_send_goal_positions(self) -> None:
-        """Start a background thread to check the goal positions after sending them.
-
-        This method stops any ongoing position check thread and starts a new thread
-        to monitor the current positions of the joints relative to their last goal positions.
-        """
-        self._cancel_check = True
-        if self._thread_check_position is not None and self._thread_check_position.is_alive():
-            self._thread_check_position.join()
-        self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
-        self._thread_check_position.start()
-
-    def _check_goal_positions(self) -> None:
+    async def _check_goal_positions(self) -> None:
         """Monitor the joint positions to check if they reach the specified goals.
 
         This method checks the current positions of the joints and compares them to
         the goal positions. If a position is significantly different from the goal after 1 second,
         a warning is logged indicating that the position may be unreachable.
         """
-        self._cancel_check = False
         t1 = time.time()
-        while time.time() - t1 < 1:
-            time.sleep(0.05)
-            if self._cancel_check:
-                # in case of multiple send_goal_positions we'll check the next call
-                return
+        try:
+            while time.time() - t1 < 1:
+                await asyncio.sleep(0.05)  # Non-blocking sleep
+                # Cancellation would raise an exception here, halting the task
+            for joint, orbitajoint in self._joints.items():
+                # Checking if positions match the goals
+                if not np.isclose(orbitajoint.present_position, orbitajoint.goal_position, atol=1):
+                    self._logger.warning(
+                        f"Goal position for {self._name}.{joint} is unreachable."
+                        f" Current position is {orbitajoint.present_position}, goal was {orbitajoint.goal_position}."
+                    )
+        except asyncio.CancelledError:
+            # Handle cancellation if necessary
+            return
 
-        for joint, orbitajoint in self._joints.items():
-            # precision is low we are looking for unreachable positions
-            if not np.isclose(orbitajoint.present_position, orbitajoint.goal_position, atol=1):
-                self._logger.warning(
-                    f"required goal position for {self._name}.{joint} is unreachable."
-                    f" current position is ({orbitajoint.present_position}"
-                )
+    async def _post_send_goal_positions(self) -> None:
+        """Start an async task to check goal positions after sending them."""
+        if self._check_task:
+            self._check_task.cancel()  # Cancel the previous task if it's running
+            try:
+                await self._check_task  # Wait for the task to be cancelled
+            except asyncio.CancelledError:
+                pass  # Ignore cancellation exceptions
+
+        self._check_task = asyncio.create_task(self._check_goal_positions())
+
+    # def _post_send_goal_positions(self) -> None:
+    #     """Start a background thread to check the goal positions after sending them.
+
+    #     This method stops any ongoing position check thread and starts a new thread
+    #     to monitor the current positions of the joints relative to their last goal positions.
+    #     """
+    #     self._cancel_check = True
+    #     if self._thread_check_position is not None and self._thread_check_position.is_alive():
+    #         self._thread_check_position.join()
+    #     self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
+    #     self._thread_check_position.start()
+
+    # def _check_goal_positions(self) -> None:
+    #     """Monitor the joint positions to check if they reach the specified goals.
+
+    #     This method checks the current positions of the joints and compares them to
+    #     the goal positions. If a position is significantly different from the goal after 1 second,
+    #     a warning is logged indicating that the position may be unreachable.
+    #     """
+    #     self._cancel_check = False
+    #     t1 = time.time()
+    #     while time.time() - t1 < 1:
+    #         time.sleep(0.05)
+    #         if self._cancel_check:
+    #             # in case of multiple send_goal_positions we'll check the next call
+    #             return
+
+    #     for joint, orbitajoint in self._joints.items():
+    #         # precision is low we are looking for unreachable positions
+    #         if not np.isclose(orbitajoint.present_position, orbitajoint.goal_position, atol=1):
+    #             self._logger.warning(
+    #                 f"required goal position for {self._name}.{joint} is unreachable."
+    #                 f" current position is ({orbitajoint.present_position}"
+    #             )
 
     def _update_with(self, new_state: Orbita2dState | Orbita3dState) -> None:
         """Update the actuator's state with new data.
