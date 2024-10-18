@@ -29,6 +29,7 @@ from reachy2_sdk_api.head_pb2 import (
 )
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
+from scipy.spatial.transform import Rotation as R
 
 from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import get_grpc_interpolation_mode
@@ -313,6 +314,82 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
         if response.id == -1:
             self._logger.error(f"Position {x}, {y}, {z} was not reachable. No command sent.")
+        elif wait:
+            self._wait_goto(response)
+        return response
+
+    def rotate_by(
+        self,
+        roll: float = 0,
+        pitch: float = 0,
+        yaw: float = 0,
+        duration: float = 2,
+        wait: bool = False,
+        degrees: bool = True,
+        frame: str = "robot",
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        """Rotate the neck by the specified angles.
+
+        Args:
+            roll: The angle in degrees to rotate around the x-axis (roll). Defaults to 0.
+            pitch: The angle in degrees to rotate around the y-axis (pitch). Defaults to 0.
+            yaw: The angle in degrees to rotate around the z-axis (yaw). Defaults to 0.
+            duration: The time in seconds for the neck to reach the target posture. Defaults to 2.
+            wait: Whether to wait for the movement to complete before returning. Defaults to False.
+            degrees: Whether the angles are provided in degrees. If True, the angles will be converted to radians.
+                Defaults to True.
+            frame: The frame of reference for the rotation. Can be either "robot" or "head". Defaults to "robot".
+            interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
+                Defaults to "minimum_jerk".
+        Raises:
+            ValueError: If the frame is not "robot" or "head".
+        """
+        if frame not in ["robot", "head"]:
+            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'head'")
+
+        if not degrees:
+            roll, pitch, yaw = np.rad2deg([roll, pitch, yaw])
+
+        actual_rpy = self.get_current_positions()
+        target_rpy = [actual_rpy[0] + roll, actual_rpy[1] + pitch, actual_rpy[2] + yaw]
+
+        if frame == "head":
+            target_rpy = [actual_rpy[0] + roll, actual_rpy[1] + pitch, actual_rpy[2] + yaw]
+        elif frame == "robot":
+            current_rotation = R.from_euler("XYZ", actual_rpy, degrees=True).as_euler("xyz", degrees=True)
+            new_rotation = current_rotation
+            new_rotation[0] += roll
+            new_rotation[1] += pitch
+            new_rotation[2] += yaw
+            target_rpy = R.from_euler("xyz", new_rotation, degrees=True).as_euler("XYZ", degrees=True)
+
+        target = np.deg2rad(target_rpy).tolist()
+        joints_goal = NeckOrientation(
+            rotation=Rotation3d(
+                rpy=ExtEulerAngles(
+                    roll=FloatValue(value=target[0]),
+                    pitch=FloatValue(value=target[1]),
+                    yaw=FloatValue(value=target[2]),
+                )
+            )
+        )
+
+        request = GoToRequest(
+            joints_goal=JointsGoal(
+                neck_joint_goal=NeckJointGoal(
+                    id=self._part_id,
+                    joints_goal=joints_goal,
+                    duration=FloatValue(value=duration),
+                )
+            ),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+        )
+
+        response = self._goto_stub.GoToJoints(request)
+
+        if response.id == -1:
+            self._logger.error(f"Orientation {target} was not reachable. No command sent.")
         elif wait:
             self._wait_goto(response)
         return response
