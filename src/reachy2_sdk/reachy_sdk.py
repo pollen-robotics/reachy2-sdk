@@ -424,7 +424,7 @@ class ReachySDK:
         All enabled parts' motors will then be stiff.
         """
         speed_limit_high = 50
-        
+
         if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
