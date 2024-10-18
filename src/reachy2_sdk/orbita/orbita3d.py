@@ -3,6 +3,7 @@
 Handles all specific methods to Orbita3d.
 """
 
+import asyncio
 from typing import Dict, List
 
 from google.protobuf.wrappers_pb2 import FloatValue
@@ -175,7 +176,14 @@ class Orbita3d(Orbita):
             )
             self._outgoing_goal_positions = {}
             self._stub.SendCommand(command)
-            self._post_send_goal_positions()
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop and loop.is_running():
+                asyncio.create_task(self._post_send_goal_positions())
+            else:
+                asyncio.run(self._post_send_goal_positions())
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
         """Set the speed limit as a percentage of the maximum speed for all motors of the actuator.

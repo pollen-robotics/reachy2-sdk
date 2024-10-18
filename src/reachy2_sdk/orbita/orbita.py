@@ -271,11 +271,11 @@ class Orbita(ABC):
     async def _post_send_goal_positions(self) -> None:
         """Start an async task to check goal positions after sending them."""
         if self._check_task:
-            self._check_task.cancel()  # Cancel the previous task if it's running
+            self._check_task.cancel()
             try:
-                await self._check_task  # Wait for the task to be cancelled
+                await self._check_task
             except asyncio.CancelledError:
-                pass  # Ignore cancellation exceptions
+                pass
 
         self._check_task = asyncio.create_task(self._check_goal_positions())
 
