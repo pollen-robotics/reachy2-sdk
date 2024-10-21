@@ -134,8 +134,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     @overload
     def goto(
@@ -145,8 +144,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     def goto(
         self,
@@ -341,6 +339,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             frame: The frame of reference for the rotation. Can be either "robot" or "head". Defaults to "robot".
             interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
                 Defaults to "minimum_jerk".
+
         Raises:
             ValueError: If the frame is not "robot" or "head".
             ValueError: If the duration is set to 0.
