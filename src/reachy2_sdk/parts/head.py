@@ -135,8 +135,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     @overload
     def goto(
@@ -146,8 +145,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     def goto(
         self,
@@ -344,7 +342,13 @@ class Head(JointsBasedPart, IGoToBasedPart):
                 Defaults to "minimum_jerk".
         Raises:
             ValueError: If the frame is not "robot" or "head".
+            ValueError: If the duration is set to 0.
+            ValueError: If the interpolation mode is not "minimum_jerk" or "linear".
         """
+        if duration == 0:
+            raise ValueError("duration cannot be set to 0.")
+        if interpolation_mode not in ["minimum_jerk", "linear"]:
+            raise ValueError(f"Unknown interpolation mode {interpolation_mode}! Should be 'minimum_jerk' or 'linear'")
         if frame not in ["robot", "head"]:
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'head'")
 
@@ -352,18 +356,16 @@ class Head(JointsBasedPart, IGoToBasedPart):
             roll, pitch, yaw = np.rad2deg([roll, pitch, yaw])
 
         actual_rpy = self.get_current_positions()
-        target_rpy = [actual_rpy[0] + roll, actual_rpy[1] + pitch, actual_rpy[2] + yaw]
+        current_rotation = R.from_euler("XYZ", actual_rpy, degrees=True)
 
         if frame == "head":
-            target_rpy = [actual_rpy[0] + roll, actual_rpy[1] + pitch, actual_rpy[2] + yaw]
+            additional_rotation = R.from_euler("xyz", [roll, pitch, yaw], degrees=True)
+            new_rotation = current_rotation * additional_rotation
         elif frame == "robot":
-            current_rotation = R.from_euler("XYZ", actual_rpy, degrees=True).as_euler("xyz", degrees=True)
-            new_rotation = current_rotation
-            new_rotation[0] += roll
-            new_rotation[1] += pitch
-            new_rotation[2] += yaw
-            target_rpy = R.from_euler("xyz", new_rotation, degrees=True).as_euler("XYZ", degrees=True)
+            additional_rotation = R.from_euler("XYZ", [roll, pitch, yaw], degrees=True)
+            new_rotation = additional_rotation * current_rotation
 
+        target_rpy = new_rotation.as_euler("XYZ", degrees=True)
         target = np.deg2rad(target_rpy).tolist()
         joints_goal = NeckOrientation(
             rotation=Rotation3d(
