@@ -293,6 +293,34 @@ def get_pose_matrix(position: List[float], rotation: List[float], degrees: bool 
     return pose
 
 
+def quaternion_from_euler(roll: float, pitch: float, yaw: float, degrees: bool = True) -> Quaternion:
+    """Convert Euler angles to a quaternion using the pyquaternion library."""
+    if degrees:
+        roll = np.deg2rad(roll)
+        pitch = np.deg2rad(pitch)
+        yaw = np.deg2rad(yaw)
+
+    qx = Quaternion(axis=[1, 0, 0], angle=roll)
+    qy = Quaternion(axis=[0, 1, 0], angle=pitch)
+    qz = Quaternion(axis=[0, 0, 1], angle=yaw)
+
+    quaternion = qz * qy * qx
+
+    return quaternion
+
+
+def euler_from_quaternion(quaternion: Quaternion, degrees: bool = True) -> Tuple[float, float, float]:
+    """Convert a quaternion back to Euler angles."""
+    yaw, pitch, roll = quaternion.yaw_pitch_roll
+
+    if degrees:
+        roll = np.rad2deg(roll)
+        pitch = np.rad2deg(pitch)
+        yaw = np.rad2deg(yaw)
+
+    return roll, pitch, yaw
+
+
 def rotate_in_self(frame: npt.NDArray[np.float64], rotation: List[float], degrees: bool = True) -> npt.NDArray[np.float64]:
     """Return a new homogeneous 4x4 pose matrix that is the input matrix rotated in itself.
 

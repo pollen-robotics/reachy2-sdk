@@ -29,10 +29,9 @@ from reachy2_sdk_api.head_pb2 import (
 )
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
-from scipy.spatial.transform import Rotation as R
 
 from ..orbita.orbita3d import Orbita3d
-from ..utils.utils import get_grpc_interpolation_mode
+from ..utils.utils import get_grpc_interpolation_mode, quaternion_from_euler
 from .goto_based_part import IGoToBasedPart
 from .joints_based_part import JointsBasedPart
 
@@ -135,7 +134,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
-    ) -> GoToId: ...
+    ) -> GoToId:
+        ...
 
     @overload
     def goto(
@@ -145,7 +145,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
-    ) -> GoToId: ...
+    ) -> GoToId:
+        ...
 
     def goto(
         self,
@@ -355,27 +356,14 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if not degrees:
             roll, pitch, yaw = np.rad2deg([roll, pitch, yaw])
 
-        actual_rpy = self.get_current_positions()
-        current_rotation = R.from_euler("XYZ", actual_rpy, degrees=True)
-
+        current_quaternion = self.get_current_orientation()
+        additional_quaternion = quaternion_from_euler(roll, pitch, yaw, degrees=True)
         if frame == "head":
-            additional_rotation = R.from_euler("xyz", [roll, pitch, yaw], degrees=True)
-            new_rotation = current_rotation * additional_rotation
+            target = current_quaternion * additional_quaternion
         elif frame == "robot":
-            additional_rotation = R.from_euler("XYZ", [roll, pitch, yaw], degrees=True)
-            new_rotation = additional_rotation * current_rotation
+            target = additional_quaternion * current_quaternion
 
-        target_rpy = new_rotation.as_euler("XYZ", degrees=True)
-        target = np.deg2rad(target_rpy).tolist()
-        joints_goal = NeckOrientation(
-            rotation=Rotation3d(
-                rpy=ExtEulerAngles(
-                    roll=FloatValue(value=target[0]),
-                    pitch=FloatValue(value=target[1]),
-                    yaw=FloatValue(value=target[2]),
-                )
-            )
-        )
+        joints_goal = NeckOrientation(rotation=Rotation3d(q=Quaternion(w=target.w, x=target.x, y=target.y, z=target.z)))
 
         request = GoToRequest(
             joints_goal=JointsGoal(
