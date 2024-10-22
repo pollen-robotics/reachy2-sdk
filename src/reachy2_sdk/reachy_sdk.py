@@ -467,6 +467,8 @@ class ReachySDK:
         Returns:
             `True` if successful, `False` otherwise.
         """
+        speed_limit_high = 25
+
         if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
@@ -479,7 +481,7 @@ class ReachySDK:
             self._mobile_base._turn_on()
         time.sleep(0.05)
         for part in self.info._enabled_parts.values():
-            part.set_speed_limits(100)
+            part.set_speed_limits(speed_limit_high)
         time.sleep(0.4)
 
         return True
@@ -508,7 +510,7 @@ class ReachySDK:
         if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
-
+        speed_limit_high = 25
         torque_limit_low = 35
         torque_limit_high = 100
         duration = 3
@@ -521,6 +523,7 @@ class ReachySDK:
         for part in self.info._enabled_parts.values():
             if "arm" in part._part_id.name:
                 part.set_torque_limits(torque_limit_low)
+                part.set_speed_limits(speed_limit_high)
                 part.goto_posture(duration=duration, wait_for_goto_end=False)
                 arms_list.append(part)
             else:
