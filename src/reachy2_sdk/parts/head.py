@@ -225,15 +225,12 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
         Args:
             duration: The time in seconds for the movement to be completed.
-            target: The target position, either a list of joint positions or a 4x4 pose matrix.
-            q0: An optional initial joint configuration for inverse kinematics. Defaults to None.
+            target: The target position, either a list of joint positions or a quaternion.
 
         Raises:
-            TypeError: If the target is not a list or a NumPy matrix.
-            ValueError: If the target list has a length other than 7, or the pose matrix is not of
-                shape (4, 4).
+            TypeError: If the target is not a list or a quaternion.
+            ValueError: If the target list has a length other than 3.
             ValueError: If the duration is set to 0.
-            ValueError: If the length of `q0` is not 7.
         """
         if not (isinstance(target, pyQuat) or isinstance(target, list)):
             raise TypeError(f"Invalid orientation: must be either a list or a quaternion, got {type(target)}.")

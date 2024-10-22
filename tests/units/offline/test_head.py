@@ -1,4 +1,5 @@
 import grpc
+import numpy as np
 import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from pyquaternion import Quaternion
@@ -118,6 +119,13 @@ def test_class() -> None:
 
     assert len(head._actuators) == 1
     assert isinstance(head._actuators, dict)
+
+    with pytest.raises(ValueError):
+        head._check_goto_parameters(duration=0, target=[0, 0, 0])
+    with pytest.raises(ValueError):
+        head._check_goto_parameters(duration=2, target=[0, 0, 0, 0])
+    with pytest.raises(TypeError):
+        head._check_goto_parameters(duration=2, target=np.eye(4))
 
     with pytest.raises(TypeError):
         head.set_speed_limits("wrong value")

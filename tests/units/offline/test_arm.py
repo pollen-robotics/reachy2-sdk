@@ -100,6 +100,19 @@ def test_class() -> None:
     assert len(arm._actuators) == 3
     assert isinstance(arm._actuators, dict)
 
+    with pytest.raises(ValueError):
+        arm._check_goto_parameters(duration=0, target=[0, 0, 0, 0, 0, 0, 0])
+    with pytest.raises(ValueError):
+        arm._check_goto_parameters(duration=2, target=[0, 0, 0, 0])
+    with pytest.raises(TypeError):
+        arm._check_goto_parameters(duration=2, target="default")
+    with pytest.raises(ValueError):
+        arm._check_goto_parameters(duration=2, target=np.eye(3))
+    with pytest.raises(TypeError):
+        arm._check_goto_parameters(duration=2, target=np.eye(4), q0=np.eye(4))
+    with pytest.raises(ValueError):
+        arm._check_goto_parameters(duration=2, target=np.eye(4), q0=[0, 0, 0, 0, 0, 0])
+
     with pytest.raises(TypeError):
         arm.set_speed_limits("wrong value")
 
