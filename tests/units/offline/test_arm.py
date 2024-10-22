@@ -189,7 +189,7 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         arm.inverse_kinematics(target=np.zeros((4, 4)), q0=np.zeros((4, 4)))
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         arm.goto(target=np.zeros((3, 3)))
 
     with pytest.raises(ValueError):
@@ -198,7 +198,7 @@ def test_class() -> None:
     # Arm is off
     assert arm.goto(target=np.zeros((4, 4)), q0=[0.0, 0, 0, 0, 0, 0, 0]).id == -1
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         arm.goto(target=[0.0])
 
     # Arm is off

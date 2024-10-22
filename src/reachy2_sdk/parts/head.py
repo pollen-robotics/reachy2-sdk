@@ -3,7 +3,7 @@
 Handles all specific methods to a Head.
 """
 
-from typing import Any, List, overload
+from typing import Any, List, Optional, overload
 
 import grpc
 import numpy as np
@@ -177,14 +177,13 @@ class Head(JointsBasedPart, IGoToBasedPart):
         Returns:
             GoToId: The unique identifier for the movement command.
         """
-        if duration == 0:
-            raise ValueError("duration cannot be set to 0.")
-
         if not self.neck.is_on():
             self._logger.warning("head.neck is off. No command sent.")
             return GoToId(id=-1)
 
-        if isinstance(target, list) and len(target) == 3:
+        self._check_goto_parameters(duration, target)
+
+        if isinstance(target, list):
             if degrees:
                 target = np.deg2rad(target).tolist()
             joints_goal = NeckOrientation(
@@ -198,8 +197,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
             )
         elif isinstance(target, pyQuat):
             joints_goal = NeckOrientation(rotation=Rotation3d(q=Quaternion(w=target.w, x=target.x, y=target.y, z=target.z)))
-        else:
-            raise TypeError("Invalid input type for orientation. Must be either a list of 3 floats or a pyQuat.")
 
         request = GoToRequest(
             joints_goal=JointsGoal(
@@ -222,6 +219,30 @@ class Head(JointsBasedPart, IGoToBasedPart):
         elif wait:
             self._wait_goto(response)
         return response
+
+    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
+        """Check the validity of the parameters for the `goto` method.
+
+        Args:
+            duration: The time in seconds for the movement to be completed.
+            target: The target position, either a list of joint positions or a 4x4 pose matrix.
+            q0: An optional initial joint configuration for inverse kinematics. Defaults to None.
+
+        Raises:
+            TypeError: If the target is not a list or a NumPy matrix.
+            ValueError: If the target list has a length other than 7, or the pose matrix is not of
+                shape (4, 4).
+            ValueError: If the duration is set to 0.
+            ValueError: If the length of `q0` is not 7.
+        """
+        if not (isinstance(target, pyQuat) or isinstance(target, list)):
+            raise TypeError(f"Invalid orientation: must be either a list or a quaternion, got {type(target)}.")
+
+        elif isinstance(target, list) and len(target) != 3:
+            raise ValueError(f"The joints list should be of length 3, got {len(target)}.")
+
+        elif duration == 0:
+            raise ValueError("duration cannot be set to 0.")
 
     def _goto_single_joint(
         self,

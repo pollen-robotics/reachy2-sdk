@@ -326,7 +326,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         Returns:
             A list of joint angles representing the solution to reach the target pose, in the following order:
-                [shoulder.pitch, shoulder.roll, elbow.pitch, elbow.yaw, wrist.roll, wrist.pitch, wrist.yaw].
+                [shoulder_pitch, shoulder_roll, elbo_yaw, elbow_pitch, wrist.roll, wrist.pitch, wrist.yaw].
 
         Raises:
             ValueError: If the target shape is not (4, 4).
@@ -427,18 +427,14 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             GoToId: The unique GoToId identifier for the movement command.
 
         Raises:
-            TypeError: If the `target` is neither a list of 7 joint values nor a 4x4 pose matrix.
+            TypeError: If the `target` is neither a list nor a pose matrix.
+            TypeError: If the `q0` is not a list.
+            ValueError: If the `target` list has a length other than 7, or the pose matrix is not
+                of shape (4, 4).
             ValueError: If the `q0` list has a length other than 7.
             ValueError: If the `duration` is set to 0.
         """
-        if not ((isinstance(target, list) and len(target) == 7) or (isinstance(target, np.ndarray) and target.shape == (4, 4))):
-            raise TypeError("Invalid target: must be either a list of 7 joint positions or a 4x4 matrix.")
-
-        if q0 is not None and len(q0) != 7:
-            raise ValueError(f"q0 should be of length 7 (got {len(q0)} instead)!")
-
-        if duration == 0:
-            raise ValueError("duration cannot be set to 0.")
+        self._check_goto_parameters(duration, target, q0)
 
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
@@ -504,9 +500,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         Raises:
             ValueError: If the length of `q0` is not 7.
         """
-        if q0 is not None and len(q0) != 7:
-            raise ValueError(f"q0 should be of length 7 (got {len(q0)} instead)!")
-
         goal_pose = Matrix4x4(data=target.flatten().tolist())
         request = GoToRequest(
             cartesian_goal=CartesianGoal(
@@ -520,6 +513,38 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         return self._goto_stub.GoToCartesian(request)
+
+    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
+        """Check the validity of the parameters for the `goto` method.
+
+        Args:
+            duration: The time in seconds for the movement to be completed.
+            target: The target position, either a list of joint positions or a 4x4 pose matrix.
+            q0: An optional initial joint configuration for inverse kinematics. Defaults to None.
+
+        Raises:
+            TypeError: If the target is not a list or a NumPy matrix.
+            ValueError: If the target list has a length other than 7, or the pose matrix is not of
+                shape (4, 4).
+            ValueError: If the duration is set to 0.
+            ValueError: If the length of `q0` is not 7.
+        """
+        if not (isinstance(target, list) or isinstance(target, np.ndarray)):
+            raise TypeError(f"Invalid target: must be either a list or a np matrix, got {type(target)} instead.")
+
+        elif isinstance(target, list) and not (len(target) == 7):
+            raise ValueError(f"The joints list should be of length 7 (got {len(target)} instead).")
+        elif isinstance(target, np.ndarray) and not (target.shape == (4, 4)):
+            raise ValueError(f"The pose matrix should be of shape (4, 4) (got {target.shape} instead).")
+
+        elif q0 is not None:
+            if not isinstance(q0, list):
+                raise TypeError("Invalid q0: must be a list.")
+            elif len(q0) != 7:
+                raise ValueError(f"q0 should be of length 7 (got {len(q0)} instead)!")
+
+        elif duration == 0:
+            raise ValueError("duration cannot be set to 0.")
 
     def _goto_single_joint(
         self,
@@ -912,10 +937,16 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 the current end-effector position and the target position. If the end-effector is
                 further than this distance from the target after the movement, the movement is repeated
                 until the precision is met. Defaults to 0.003.
+        Raises:
+            TypeError: If the target is not a NumPy matrix.
+            ValueError: If the target shape is not (4, 4).
+            ValueError: If the duration is set to 0.
         """
         self.cancel_all_goto()
+        if not isinstance(target, np.ndarray):
+            raise TypeError(f"target should be a NumPy array (got {type(target)} instead)!")
         if target.shape != (4, 4):
-            raise TypeError("target shape should be (4, 4) (got {target.shape} instead)!")
+            raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
         if self.is_off():
