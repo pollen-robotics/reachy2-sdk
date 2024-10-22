@@ -31,7 +31,7 @@ from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
 
 from ..orbita.orbita3d import Orbita3d
-from ..utils.utils import get_grpc_interpolation_mode, quaternion_from_euler
+from ..utils.utils import get_grpc_interpolation_mode, quaternion_from_euler_angles
 from .goto_based_part import IGoToBasedPart
 from .joints_based_part import JointsBasedPart
 
@@ -366,13 +366,13 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if joints_request is not None:
             initial_orientation = joints_request.goal_positions
             initial_orientation[1] += 10
-            initial_quaternion = quaternion_from_euler(
+            initial_quaternion = quaternion_from_euler_angles(
                 initial_orientation[0], initial_orientation[1], initial_orientation[2], degrees=True
             )
         else:
             initial_quaternion = self.get_current_orientation()
 
-        additional_quaternion = quaternion_from_euler(roll, pitch, yaw, degrees=True)
+        additional_quaternion = quaternion_from_euler_angles(roll, pitch, yaw, degrees=True)
 
         if frame == "head":
             target_quaternion = initial_quaternion * additional_quaternion

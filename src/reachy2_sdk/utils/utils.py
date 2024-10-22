@@ -293,7 +293,7 @@ def get_pose_matrix(position: List[float], rotation: List[float], degrees: bool 
     return pose
 
 
-def quaternion_from_euler(roll: float, pitch: float, yaw: float, degrees: bool = True) -> Quaternion:
+def quaternion_from_euler_angles(roll: float, pitch: float, yaw: float, degrees: bool = True) -> Quaternion:
     """Convert Euler angles (intrinsic XYZ order) to a quaternion using the pyquaternion library.
 
     Args:

@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from google.protobuf.wrappers_pb2 import FloatValue
+from pyquaternion import Quaternion
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles
 
 from reachy2_sdk.utils.utils import (
@@ -15,6 +16,7 @@ from reachy2_sdk.utils.utils import (
     invert_affine_transformation_matrix,
     list_to_arm_position,
     matrix_from_euler_angles,
+    quaternion_from_euler_angles,
     rotate_in_self,
     translate_in_self,
 )
@@ -138,6 +140,29 @@ def test_get_pose_matrix() -> None:
         get_pose_matrix([0.1, 0.2, 0.1, 0.1], [0, -90, 0])
     with pytest.raises(ValueError):
         get_pose_matrix([0.1, 0.2, 0.1], [-20, -90, -50, 10])
+
+
+@pytest.mark.offline
+def test_quaternion_from_euler_angles() -> None:
+    q1 = quaternion_from_euler_angles(0, 0, 0)
+    assert q1 == Quaternion(1, 0, 0, 0)
+    q2 = quaternion_from_euler_angles(90, 0, 0)
+    assert q2 == Quaternion(axis=[1, 0, 0], angle=np.pi / 2)
+    q3 = quaternion_from_euler_angles(0, 90, 0)
+    assert q3 == Quaternion(axis=[0, 1, 0], angle=np.pi / 2)
+    q4 = quaternion_from_euler_angles(0, 0, 90)
+    assert q4 == Quaternion(axis=[0, 0, 1], angle=np.pi / 2)
+    q5 = quaternion_from_euler_angles(45, 45, 45).normalised
+    expected_quat = Quaternion(axis=[0.57735027, 0.57735027, 0.57735027], angle=np.pi / 4).normalised
+    dot_product = np.dot(q5.elements, expected_quat.elements)
+    assert np.isclose(dot_product, 1.0, atol=1e-1) or np.isclose(dot_product, -1.0, atol=1e-1)
+
+    q6 = quaternion_from_euler_angles(np.pi / 2, 0, 0, degrees=False)
+    assert q6 == Quaternion(axis=[1, 0, 0], angle=np.pi / 2)
+    q7 = quaternion_from_euler_angles(0, np.pi / 2, 0, degrees=False)
+    assert q7 == Quaternion(axis=[0, 1, 0], angle=np.pi / 2)
+    q8 = quaternion_from_euler_angles(0, 0, np.pi / 2, degrees=False)
+    assert q8 == Quaternion(axis=[0, 0, 1], angle=np.pi / 2)
 
 
 @pytest.mark.offline
