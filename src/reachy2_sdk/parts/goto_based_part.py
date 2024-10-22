@@ -146,5 +146,5 @@ class IGoToBasedPart(ABC):
 
     @abstractmethod
     def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
-        """Check the validity of the parameters for a goto movement"""
+        """Check the validity of the parameters for a goto movement."""
         pass

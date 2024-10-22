@@ -377,8 +377,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     @overload
     def goto(
@@ -389,8 +388,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     def goto(
         self,
@@ -937,6 +935,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 the current end-effector position and the target position. If the end-effector is
                 further than this distance from the target after the movement, the movement is repeated
                 until the precision is met. Defaults to 0.003.
+
         Raises:
             TypeError: If the target is not a NumPy matrix.
             ValueError: If the target shape is not (4, 4).
