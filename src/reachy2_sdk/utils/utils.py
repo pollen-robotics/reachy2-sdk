@@ -294,7 +294,18 @@ def get_pose_matrix(position: List[float], rotation: List[float], degrees: bool 
 
 
 def quaternion_from_euler(roll: float, pitch: float, yaw: float, degrees: bool = True) -> Quaternion:
-    """Convert Euler angles to a quaternion using the pyquaternion library."""
+    """Convert Euler angles (intrinsic XYZ order) to a quaternion using the pyquaternion library.
+
+    Args:
+        roll (float): Rotation angle around the X-axis (roll), in degrees by default.
+        pitch (float): Rotation angle around the Y-axis (pitch), in degrees by default.
+        yaw (float): Rotation angle around the Z-axis (yaw), in degrees by default.
+        degrees (bool): If True, the input angles are interpreted as degrees. If False, they are
+            interpreted as radians. Defaults to True.
+
+    Returns:
+        Quaternion: The quaternion representing the combined rotation in 3D space.
+    """
     if degrees:
         roll = np.deg2rad(roll)
         pitch = np.deg2rad(pitch)
@@ -304,21 +315,9 @@ def quaternion_from_euler(roll: float, pitch: float, yaw: float, degrees: bool =
     qy = Quaternion(axis=[0, 1, 0], angle=pitch)
     qz = Quaternion(axis=[0, 0, 1], angle=yaw)
 
-    quaternion = qz * qy * qx
+    quaternion = qx * qy * qz
 
     return quaternion
-
-
-def euler_from_quaternion(quaternion: Quaternion, degrees: bool = True) -> Tuple[float, float, float]:
-    """Convert a quaternion back to Euler angles."""
-    yaw, pitch, roll = quaternion.yaw_pitch_roll
-
-    if degrees:
-        roll = np.rad2deg(roll)
-        pitch = np.rad2deg(pitch)
-        yaw = np.rad2deg(yaw)
-
-    return roll, pitch, yaw
 
 
 def rotate_in_self(frame: npt.NDArray[np.float64], rotation: List[float], degrees: bool = True) -> npt.NDArray[np.float64]:

@@ -348,43 +348,38 @@ class Head(JointsBasedPart, IGoToBasedPart):
             ValueError: If the duration is set to 0.
             ValueError: If the interpolation mode is not "minimum_jerk" or "linear".
         """
-        if duration == 0:
-            raise ValueError("duration cannot be set to 0.")
-        if interpolation_mode not in ["minimum_jerk", "linear"]:
-            raise ValueError(f"Unknown interpolation mode {interpolation_mode}! Should be 'minimum_jerk' or 'linear'")
         if frame not in ["robot", "head"]:
             raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'head'")
-
         if not degrees:
             roll, pitch, yaw = np.rad2deg([roll, pitch, yaw])
 
-        current_quaternion = self.get_current_orientation()
+        try:
+            goto = self.get_goto_queue()[-1]
+        except IndexError:
+            goto = self.get_goto_playing()
+
+        if goto.id != -1:
+            joints_request = self._get_goto_joints_request(goto)
+        else:
+            joints_request = None
+
+        if joints_request is not None:
+            initial_orientation = joints_request.goal_positions
+            initial_orientation[1] += 10
+            initial_quaternion = quaternion_from_euler(
+                initial_orientation[0], initial_orientation[1], initial_orientation[2], degrees=True
+            )
+        else:
+            initial_quaternion = self.get_current_orientation()
+
         additional_quaternion = quaternion_from_euler(roll, pitch, yaw, degrees=True)
+
         if frame == "head":
-            target = current_quaternion * additional_quaternion
+            target_quaternion = initial_quaternion * additional_quaternion
         elif frame == "robot":
-            target = additional_quaternion * current_quaternion
+            target_quaternion = additional_quaternion * initial_quaternion
 
-        joints_goal = NeckOrientation(rotation=Rotation3d(q=Quaternion(w=target.w, x=target.x, y=target.y, z=target.z)))
-
-        request = GoToRequest(
-            joints_goal=JointsGoal(
-                neck_joint_goal=NeckJointGoal(
-                    id=self._part_id,
-                    joints_goal=joints_goal,
-                    duration=FloatValue(value=duration),
-                )
-            ),
-            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-        )
-
-        response = self._goto_stub.GoToJoints(request)
-
-        if response.id == -1:
-            self._logger.error(f"Orientation {target} was not reachable. No command sent.")
-        elif wait:
-            self._wait_goto(response)
-        return response
+        return self.goto(target_quaternion, duration, wait, interpolation_mode)
 
     def goto_posture(
         self,
