@@ -78,9 +78,9 @@ def test_class() -> None:
     # Head is off
     assert head.look_at(0, 0, 0).id == -1
 
-    assert head.goto_joints([0, 0, 0]).id == -1
+    assert head.goto([0, 0, 0]).id == -1
 
-    assert head.orient(None).id == -1
+    assert head.goto(None).id == -1
 
     # updating values
     compliance = BoolValue(value=False)
@@ -161,7 +161,7 @@ def test_class() -> None:
 
     with pytest.raises(ValueError):
         quat = Quaternion(axis=[1, 0, 0], angle=20.0)
-        head.orient(quat, duration=0)
+        head.goto(quat, duration=0)
 
     with pytest.raises(ValueError):
-        head.goto_joints([20, 30, 10], duration=0)
+        head.goto([20, 30, 10], duration=0)

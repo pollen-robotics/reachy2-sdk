@@ -1,3 +1,5 @@
+"""Example of how to draw a square with Reachy's right arm."""
+
 import logging
 import time
 
@@ -5,10 +7,19 @@ import numpy as np
 import numpy.typing as npt
 
 from reachy2_sdk import ReachySDK
-from reachy2_sdk.reachy_sdk import GoToHomeId
 
 
 def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
+    """Build a 4x4 pose matrix for a given position in 3D space, with the effector at a fixed orientation.
+
+    Args:
+        x: The x-coordinate of the position.
+        y: The y-coordinate of the position.
+        z: The z-coordinate of the position.
+
+    Returns:
+        A 4x4 NumPy array representing the pose matrix.
+    """
     # The effector is always at the same orientation in the world frame
     return np.array(
         [
@@ -21,16 +32,29 @@ def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
 
 
 def draw_square(reachy: ReachySDK) -> None:
-    # In A position, the effector is at (0.4, -0,5, -0.2) in the world frame
-    # In B position, the effector is at (0.4, -0.5, 0) in the world frame
-    # In C position, the effector is at (0.4, -0.3, 0.0) in the world frame
-    # In D position, the effector is at (0.4, -0.3, -0.2) in the world frame
-    # see https://docs.pollen-robotics.com/sdk/first-moves/kinematics/ for Reachy's coordinate system
+    """Draw a square path with Reachy's right arm in 3D space.
 
+    This function commands Reachy's right arm to move in a square pattern
+    using four predefined positions (A, B, C, and D) in the world frame.
+    The square is drawn by moving the arm sequentially through these positions:
+    - A: (0.4, -0.5, -0.2)
+    - B: (0.4, -0.5, 0)
+    - C: (0.4, -0.3, 0)
+    - D: (0.4, -0.3, -0.2)
+
+    see https://docs.pollen-robotics.com/sdk/first-moves/kinematics/ for Reachy's coordinate system
+
+    Each movement uses inverse kinematics to calculate the required joint
+    positions to achieve the target pose and then sends the commands to
+    Reachy's arm to execute the movements.
+
+    Args:
+        reachy: An instance of the ReachySDK used to control the robot.
+    """
     # Going from A to B
     target_pose = build_pose_matrix(0.4, -0.5, 0)
     ik = reachy.r_arm.inverse_kinematics(target_pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, duration=2.0, degrees=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose B: ", current_pos)
@@ -38,7 +62,7 @@ def draw_square(reachy: ReachySDK) -> None:
     # Going from B to C
     target_pose = build_pose_matrix(0.4, -0.3, 0)
     ik = reachy.r_arm.inverse_kinematics(target_pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, duration=2.0, degrees=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose C: ", current_pos)
@@ -46,7 +70,7 @@ def draw_square(reachy: ReachySDK) -> None:
     # Going from C to D
     target_pose = build_pose_matrix(0.4, -0.3, -0.2)
     ik = reachy.r_arm.inverse_kinematics(target_pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, duration=2.0, degrees=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose D: ", current_pos)
@@ -54,36 +78,27 @@ def draw_square(reachy: ReachySDK) -> None:
     # Going from D to A
     target_pose = build_pose_matrix(0.4, -0.5, -0.2)
     ik = reachy.r_arm.inverse_kinematics(target_pose)
-    reachy.r_arm.goto_joints(ik, 2.0, degrees=True)
+    reachy.r_arm.goto(ik, duration=2.0, degrees=True, wait=True)
 
     current_pos = reachy.r_arm.forward_kinematics()
     print("Pose A: ", current_pos)
 
 
-def move_to_point_A(reachy: ReachySDK) -> None:
+def goto_to_point_A(reachy: ReachySDK) -> None:
+    """Move Reachy's right arm to Point A in 3D space.
+
+    This function commands Reachy's right arm to move to a specified target position
+    (Point A) in the world frame, which is located at (0.4, -0.5, -0.2).
+
+    Args:
+        reachy: An instance of the ReachySDK used to control the robot.
+    """
     # position of point A in space
     target_pose = build_pose_matrix(0.4, -0.5, -0.2)
     # get the position in the joint space
     joints_positions = reachy.r_arm.inverse_kinematics(target_pose)
     # move Reachy's right arm to this point
-    move_id = reachy.r_arm.goto_joints(joints_positions, duration=2)
-
-    # wait for movement to finish
-    while not reachy.is_move_finished(move_id):
-        time.sleep(0.1)
-
-
-def wait_for_pose_to_finish(ids: GoToHomeId) -> None:
-    # pose is a special move function that returns 3 move id
-
-    while not reachy.is_move_finished(ids.head):
-        time.sleep(0.1)
-
-    while not reachy.is_move_finished(ids.r_arm):
-        time.sleep(0.1)
-
-    while not reachy.is_move_finished(ids.l_arm):
-        time.sleep(0.1)
+    reachy.r_arm.goto(joints_positions, duration=2, wait=True)
 
 
 if __name__ == "__main__":
@@ -101,18 +116,18 @@ if __name__ == "__main__":
     time.sleep(0.2)
 
     print("Set to Elbow 90 pose ...")
-    move_ids = reachy.set_pose("elbow_90")
-    wait_for_pose_to_finish(move_ids)
+    goto_ids = reachy.goto_posture("elbow_90", wait=True)
+    # wait_for_pose_to_finish(goto_ids)
 
     print("Move to point A")
-    move_to_point_A(reachy)
+    goto_to_point_A(reachy)
 
     print("Draw a square with the right arm ...")
     draw_square(reachy)
 
     print("Set to Zero pose ...")
-    move_ids = reachy.set_pose("default")
-    wait_for_pose_to_finish(move_ids)
+    goto_ids = reachy.goto_posture("default", wait=True)
+    # wait_for_pose_to_finish(goto_ids)
 
     print("Turning off Reachy")
     reachy.turn_off()
