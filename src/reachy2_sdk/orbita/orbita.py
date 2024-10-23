@@ -69,7 +69,6 @@ class Orbita(ABC):
 
         self._error_status: Optional[str] = None
 
-        self._check_task: Optional[Thread] = None
         self._thread_check_position: Optional[Thread] = None
         self._cancel_check = False
 
@@ -275,8 +274,8 @@ class Orbita(ABC):
             # precision is low we are looking for unreachable positions
             if not np.isclose(orbitajoint.present_position, orbitajoint.goal_position, atol=2):
                 self._logger.warning(
-                    f"Required goal position ({round(orbitajoint.goal_position,2)}) for {self._name}.{joint} is unreachable."
-                    f"\nCurrent position is ({round(orbitajoint.present_position,2)})."
+                    f"Required goal position ({round(orbitajoint.goal_position, 2)}) for {self._name}.{joint} is unreachable."
+                    f"\nCurrent position is ({round(orbitajoint.present_position, 2)})."
                 )
 
     def _update_with(self, new_state: Orbita2dState | Orbita3dState) -> None:
