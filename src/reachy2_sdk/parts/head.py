@@ -355,6 +355,10 @@ class Head(JointsBasedPart, IGoToBasedPart):
         """Send goal positions to the head's joints.
 
         If goal positions have been specified for any joint of the head, sends them to the robot.
+
+        Args :
+            check_positions: A boolean indicating whether to check the positions after sending the command.
+                Defaults to True.
         """
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
