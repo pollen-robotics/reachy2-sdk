@@ -153,7 +153,7 @@ class Orbita3d(Orbita):
         """Get the yaw joint of the actuator."""
         return self._yaw
 
-    def send_goal_positions(self) -> None:
+    def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send goal positions to the actuator's joints.
 
         If goal positions have been specified for any joint of this actuator, sends them to the actuator.
@@ -175,15 +175,8 @@ class Orbita3d(Orbita):
             )
             self._outgoing_goal_positions = {}
             self._stub.SendCommand(command)
-            self._post_send_goal_positions()
-            # try:
-            #     loop = asyncio.get_running_loop()
-            # except RuntimeError:
-            #     loop = None
-            # if loop and loop.is_running():
-            #     asyncio.create_task(self._post_send_goal_positions())
-            # else:
-            #     asyncio.run(self._post_send_goal_positions())
+            if check_positions:
+                self._post_send_goal_positions()
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
         """Set the speed limit as a percentage of the maximum speed for all motors of the actuator.

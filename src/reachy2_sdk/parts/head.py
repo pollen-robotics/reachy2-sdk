@@ -351,7 +351,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._logger.warning("Head is off. No command sent.")
         return GoToId(id=-1)
 
-    def send_goal_positions(self) -> None:
+    def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send goal positions to the head's joints.
 
         If goal positions have been specified for any joint of the head, sends them to the robot.
@@ -360,7 +360,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
             return
         for actuator in self._actuators.values():
-            actuator.send_goal_positions()
+            actuator.send_goal_positions(check_positions)
 
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state from the gRPC server.

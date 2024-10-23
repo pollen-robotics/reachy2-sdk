@@ -777,10 +777,14 @@ class ReachySDK:
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
-    def send_goal_positions(self) -> None:
+    def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send the goal positions to the robot.
 
         If goal positions have been specified for any joint of the robot, sends them to the robot.
+
+        Args :
+            check_positions: A boolean indicating whether to check the positions after sending the command.
+                Defaults to True.
         """
         if not self.info:
             self._logger.warning("Reachy is not connected!")
@@ -788,4 +792,4 @@ class ReachySDK:
 
         for part in self.info._enabled_parts.values():
             if issubclass(type(part), JointsBasedPart):
-                part.send_goal_positions()
+                part.send_goal_positions(check_positions)
