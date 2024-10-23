@@ -134,8 +134,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     @overload
     def goto(
@@ -145,8 +144,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     def goto(
         self,
@@ -365,6 +363,9 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
         if joints_request is not None:
             initial_orientation = joints_request.goal_positions
+
+            # as there is a 10° offset between the joint space
+            # and the zero position in cartesian space in Reachy's frame for the yaw joint :
             initial_orientation[1] += 10
             initial_quaternion = quaternion_from_euler_angles(
                 initial_orientation[0], initial_orientation[1], initial_orientation[2], degrees=True

@@ -153,9 +153,10 @@ def test_quaternion_from_euler_angles() -> None:
     q4 = quaternion_from_euler_angles(0, 0, 90)
     assert q4 == Quaternion(axis=[0, 0, 1], angle=np.pi / 2)
     q5 = quaternion_from_euler_angles(45, 45, 45).normalised
-    expected_quat = Quaternion(axis=[0.57735027, 0.57735027, 0.57735027], angle=np.pi / 4).normalised
-    dot_product = np.dot(q5.elements, expected_quat.elements)
-    assert np.isclose(dot_product, 1.0, atol=1e-1) or np.isclose(dot_product, -1.0, atol=1e-1)
+    q5_ref = Quaternion(axis=[0.679, 0.281, 0.679], angle=convert_to_radians(85.8))
+    unit_quat = Quaternion()
+    expected_unit = q5 * q5_ref.inverse
+    assert np.allclose(unit_quat.elements, expected_unit.elements, atol=1e-3)
 
     q6 = quaternion_from_euler_angles(np.pi / 2, 0, 0, degrees=False)
     assert q6 == Quaternion(axis=[1, 0, 0], angle=np.pi / 2)
