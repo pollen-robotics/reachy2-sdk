@@ -81,6 +81,22 @@ class Camera:
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
         return img, frame.timestamp.ToNanoseconds()
 
+    def get_compressed_frame(self, view: CameraView = CameraView.LEFT) -> Optional[Tuple[bytes, int]]:
+        """Retrieve an RGB frame in a JPEG format from the camera.
+
+        Args:
+            view: The camera view to retrieve the frame from. Default is CameraView.LEFT.
+
+        Returns:
+            A bytes array containing the jpeg frame and the timestamp in nanoseconds.
+            Returns None if no frame is retrieved.
+        """
+        frame = self._video_stub.GetFrame(request=ViewRequest(camera_feat=self._cam_info, view=view.value))
+        if frame.data == b"":
+            self._logger.warning("No frame retrieved")
+            return None
+        return frame.data, frame.timestamp.ToNanoseconds()
+
     def get_parameters(
         self, view: CameraView = CameraView.LEFT
     ) -> Optional[
