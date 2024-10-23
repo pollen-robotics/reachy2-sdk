@@ -235,11 +235,17 @@ class Orbita(ABC):
         self._outgoing_goal_positions[axis] = goal_position
 
     @abstractmethod
-    def send_goal_positions(self) -> None:
+    def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send the goal positions to the actuator.
 
         This method is abstract and should be implemented in derived classes to
         send the specified goal positions to the actuator's joints.
+
+        Args:
+            check_positions: A boolean value indicating whether to check the positions of the joints
+                after sending the goal positions. If `True`, a background thread is started to monitor
+                the joint positions relative to their last goal positions.
+                Default is `True`.
         """
         pass
 
@@ -274,8 +280,8 @@ class Orbita(ABC):
             # precision is low we are looking for unreachable positions
             if not np.isclose(orbitajoint.present_position, orbitajoint.goal_position, atol=1):
                 self._logger.warning(
-                    f"required goal position for {self._name}.{joint} is unreachable."
-                    f" current position is ({orbitajoint.present_position}"
+                    f"Required goal position ({round(orbitajoint.goal_position, 2)}) for {self._name}.{joint} is unreachable."
+                    f"\nCurrent position is ({round(orbitajoint.present_position, 2)})."
                 )
 
     def _update_with(self, new_state: Orbita2dState | Orbita3dState) -> None:

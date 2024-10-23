@@ -69,10 +69,14 @@ class JointsBasedPart(Part):
         pass
 
     @abstractmethod
-    def send_goal_positions(self) -> None:
+    def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send goal positions to the part's joints.
 
         If goal positions have been specified for any joint of the part, sends them to the robot.
+
+        Args :
+            check_positions: A boolean indicating whether to check the positions after sending the command.
+                Defaults to True.
         """
         pass
 

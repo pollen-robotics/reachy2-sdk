@@ -173,10 +173,14 @@ class Orbita2d(Orbita):
                 raise AttributeError(f"can't set attribute '{__name}'")
         super().__setattr__(__name, __value)
 
-    def send_goal_positions(self) -> None:
+    def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send goal positions to the actuator's joints.
 
         If goal positions have been specified for any joint of this actuator, sends them to the actuator.
+
+        Args :
+            check_positions: A boolean indicating whether to check the positions after sending the command.
+                Defaults to True.
         """
         if self._outgoing_goal_positions:
             req_pos = {}
@@ -195,7 +199,8 @@ class Orbita2d(Orbita):
             )
             self._outgoing_goal_positions = {}
             self._stub.SendCommand(command)
-            self._post_send_goal_positions()
+            if check_positions:
+                self._post_send_goal_positions()
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
         """Set the speed limit as a percentage of the maximum speed for all motors of the actuator.
