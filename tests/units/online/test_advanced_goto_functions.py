@@ -848,3 +848,45 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
 
     with pytest.raises(ValueError):
         reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_joints_request(req8).goal_positions)
+
+
+@pytest.mark.online
+def test_head_rotation(reachy_sdk_zeroed: ReachySDK) -> None:
+    reachy_sdk_zeroed.head.goto([0, 0, 90], duration=1, wait=True)
+    current_orientation = reachy_sdk_zeroed.head.get_current_positions()
+    assert np.allclose(current_orientation, [0, 0, 90], atol=5)
+
+    reachy_sdk_zeroed.head.rotate_by(roll=30, duration=1, frame="head", wait=True)
+    current_orientation = reachy_sdk_zeroed.head.get_current_positions()
+    assert np.allclose(current_orientation, [0, 30, 90], atol=5)
+
+    reachy_sdk_zeroed.head.rotate_by(roll=-30, duration=1, frame="head", wait=True)
+    current_orientation = reachy_sdk_zeroed.head.get_current_positions()
+    assert np.allclose(current_orientation, [0, 0, 90], atol=5)
+
+    reachy_sdk_zeroed.head.rotate_by(roll=30, duration=1, frame="robot", wait=True)
+    current_orientation = reachy_sdk_zeroed.head.get_current_positions()
+    assert np.allclose(current_orientation, [30, 0, 90], atol=5)
+
+    reachy_sdk_zeroed.head.rotate_by(roll=-30, duration=1, frame="robot", wait=True)
+    reachy_sdk_zeroed.head.rotate_by(pitch=30, duration=1, frame="head", wait=True)
+    current_orientation = reachy_sdk_zeroed.head.get_current_positions()
+    assert np.allclose(current_orientation, [-30, 0, 90], atol=5)
+
+    reachy_sdk_zeroed.head.rotate_by(pitch=-30, duration=1, frame="head", wait=True)
+    reachy_sdk_zeroed.head.rotate_by(pitch=30, duration=1, frame="robot", wait=True)
+    current_orientation = reachy_sdk_zeroed.head.get_current_positions()
+    assert np.allclose(current_orientation, [0, 30, 90], atol=5)
+
+    reachy_sdk_zeroed.head.rotate_by(yaw=30, duration=1, frame="head", wait=True)
+    current_orientation = reachy_sdk_zeroed.head.get_current_positions()
+    assert np.allclose(current_orientation, [0, 30, 120], atol=5)
+
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.head.rotate_by(roll=30, frame="head", duration=0)
+
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.head.rotate_by(roll=30, frame="coucou")
+
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.head.rotate_by(roll=30, interpolation_mode="coucou")

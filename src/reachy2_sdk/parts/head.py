@@ -31,7 +31,7 @@ from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
 
 from ..orbita.orbita3d import Orbita3d
-from ..utils.utils import get_grpc_interpolation_mode
+from ..utils.utils import get_grpc_interpolation_mode, quaternion_from_euler_angles
 from .goto_based_part import IGoToBasedPart
 from .joints_based_part import JointsBasedPart
 
@@ -316,6 +316,73 @@ class Head(JointsBasedPart, IGoToBasedPart):
         elif wait:
             self._wait_goto(response)
         return response
+
+    def rotate_by(
+        self,
+        roll: float = 0,
+        pitch: float = 0,
+        yaw: float = 0,
+        duration: float = 2,
+        wait: bool = False,
+        degrees: bool = True,
+        frame: str = "robot",
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        """Rotate the neck by the specified angles.
+
+        Args:
+            roll: The angle in degrees to rotate around the x-axis (roll). Defaults to 0.
+            pitch: The angle in degrees to rotate around the y-axis (pitch). Defaults to 0.
+            yaw: The angle in degrees to rotate around the z-axis (yaw). Defaults to 0.
+            duration: The time in seconds for the neck to reach the target posture. Defaults to 2.
+            wait: Whether to wait for the movement to complete before returning. Defaults to False.
+            degrees: Whether the angles are provided in degrees. If True, the angles will be converted to radians.
+                Defaults to True.
+            frame: The frame of reference for the rotation. Can be either "robot" or "head". Defaults to "robot".
+            interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
+                Defaults to "minimum_jerk".
+
+
+        Raises:
+            ValueError: If the frame is not "robot" or "head".
+            ValueError: If the duration is set to 0.
+            ValueError: If the interpolation mode is not "minimum_jerk" or "linear".
+        """
+        if frame not in ["robot", "head"]:
+            raise ValueError(f"Unknown frame {frame}! Should be 'robot' or 'head'")
+        if not degrees:
+            roll, pitch, yaw = np.rad2deg([roll, pitch, yaw])
+
+        try:
+            goto = self.get_goto_queue()[-1]
+        except IndexError:
+            goto = self.get_goto_playing()
+
+        if goto.id != -1:
+            joints_request = self._get_goto_joints_request(goto)
+        else:
+            joints_request = None
+
+        if joints_request is not None:
+            initial_orientation = joints_request.goal_positions
+
+            # as there is a 10° offset between the joint space
+            # and the zero position in cartesian space in Reachy's frame for the yaw joint :
+            initial_orientation[1] += 10
+            initial_quaternion = quaternion_from_euler_angles(
+                initial_orientation[0], initial_orientation[1], initial_orientation[2], degrees=True
+            )
+        else:
+            initial_quaternion = self.get_current_orientation()
+
+        additional_quaternion = quaternion_from_euler_angles(roll, pitch, yaw, degrees=True)
+
+        if frame == "head":
+            target_quaternion = initial_quaternion * additional_quaternion
+        elif frame == "robot":
+            target_quaternion = additional_quaternion * initial_quaternion
+
+        return self.goto(target_quaternion, duration, wait, interpolation_mode)
 
     def goto_posture(
         self,
