@@ -5,8 +5,8 @@ Handles common interface for parts performing movement using goto mechanism.
 
 import logging
 import time
-from abc import ABC
-from typing import List, Optional
+from abc import ABC, abstractmethod
+from typing import Any, List, Optional
 
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
@@ -143,3 +143,8 @@ class IGoToBasedPart(ABC):
                 return
 
         self._logger_goto.info(f"Movement with {id} finished.")
+
+    @abstractmethod
+    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
+        """Check the validity of the parameters for a goto movement."""
+        pass
