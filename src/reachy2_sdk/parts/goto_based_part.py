@@ -145,6 +145,6 @@ class IGoToBasedPart(ABC):
         self._logger_goto.info(f"Movement with {id} finished.")
 
     @abstractmethod
-    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
+    def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for a goto movement."""
         pass

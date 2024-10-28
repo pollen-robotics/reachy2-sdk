@@ -514,7 +514,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         )
         return self._goto_stub.GoToCartesian(request)
 
-    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
+    def _check_goto_parameters(self, target: Any, duration: Optional[float] = 0, q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
 
         Args:

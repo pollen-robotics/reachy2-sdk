@@ -8,7 +8,7 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
-from typing import Dict, Optional
+from typing import Dict, Optional, Any, List
 
 import grpc
 import numpy as np
@@ -16,7 +16,6 @@ from google.protobuf.wrappers_pb2 import FloatValue
 from numpy import deg2rad, rad2deg, round
 from reachy2_sdk_api.mobile_base_mobility_pb2 import (
     DirectionVector,
-    GoToVector,
     TargetDirectionCommand,
 )
 from reachy2_sdk_api.mobile_base_mobility_pb2_grpc import MobileBaseMobilityServiceStub
@@ -32,12 +31,19 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
     ZuuuModePossiblities,
 )
 from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseUtilityServiceStub
+from reachy2_sdk_api.goto_pb2 import (
+    GoToId,
+    GoToRequest,
+    OdometryGoal,
+)
+from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 
 from ..sensors.lidar import Lidar
+from .goto_based_part import IGoToBasedPart
 from .part import Part
 
 
-class MobileBase(Part):
+class MobileBase(Part, IGoToBasedPart):
     """MobileBase class for controlling Reachy's mobile base.
 
     This class provides methods to interact with and control the mobile base of a Reachy robot. It allows
@@ -54,6 +60,7 @@ class MobileBase(Part):
         mb_msg: MobileBase_proto,
         initial_state: MobileBaseState,
         grpc_channel: grpc.Channel,
+        goto_stub: GoToServiceStub,
     ) -> None:
         """Initialize the MobileBase with its gRPC communication and configuration.
 
@@ -68,6 +75,7 @@ class MobileBase(Part):
         """
         self._logger = logging.getLogger(__name__)
         super().__init__(mb_msg, grpc_channel, MobileBaseUtilityServiceStub(grpc_channel))
+        IGoToBasedPart.__init__(self, self, goto_stub)
 
         self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
 
@@ -235,9 +243,10 @@ class MobileBase(Part):
         x: float,
         y: float,
         theta: float,
+        distance_tolerance: Optional[float] = None,
+        angle_tolerance: Optional[float] = None,
         timeout: Optional[float] = None,
-        tolerance: Dict[str, float] = {"delta_x": 0.05, "delta_y": 0.05, "delta_theta": 5, "distance": 0.05},
-    ) -> None:
+    ) -> GoToId:
         """Send the mobile base to a specified target position.
 
         The (x, y) coordinates define the position in Cartesian space, and theta specifies the orientation in degrees.
@@ -249,125 +258,53 @@ class MobileBase(Part):
             x: The target x-coordinate in meters.
             y: The target y-coordinate in meters.
             theta: The target orientation in degrees.
+            distance_tolerance: Optional; the maximum distance allowed between the target and the position reached, in meters.
+            angle_tolerance: Optional; the maximum angle allowed between the target and the position reached, in meters.
             timeout: Optional; the maximum time allowed to reach the target, in seconds.
-            tolerance: A dictionary specifying the tolerances for x, y, theta, and overall distance to
-                consider the target reached. Defaults to {"delta_x": 0.05, "delta_y": 0.05, "delta_theta": 5, "distance": 0.05}.
+
+        Returns:
+            GoToId: The unique GoToId identifier for the movement command.
 
         Raises:
-            ValueError: If the target is not reached and the mobile base is stopped due to an obstacle.
+            TypeError: If the target is not reached and the mobile base is stopped due to an obstacle.
         """
         if self.is_off():
             self._logger.warning("Mobile base is off. Goto not sent.")
             return
 
-        exc_queue: Queue[Exception] = Queue()
+        self._check_goto_parameters(target=[x, y, theta])
 
-        if not timeout:
-            # We consider that the max velocity for the mobile base is 0.5 m/s
-            # timeout is 2*_max_xy_goto / max velocity
-            timeout = 2 * self._max_xy_goto / 0.5
-
-        def _wrapped_goto() -> None:
-            try:
-                asyncio.run(
-                    self._goto_async(
-                        x=x,
-                        y=y,
-                        theta=theta,
-                        timeout=timeout,
-                        tolerance=tolerance,
-                    ),
-                )
-            except Exception as e:
-                exc_queue.put(e)
-
-        with ThreadPoolExecutor() as exec:
-            exec.submit(_wrapped_goto)
-        if not exc_queue.empty():
-            raise exc_queue.get()
-
-    async def _goto_async(
-        self,
-        x: float,
-        y: float,
-        theta: float,
-        timeout: float,
-        tolerance: Dict[str, float] = {"delta_x": 0.05, "delta_y": 0.05, "delta_theta": 5, "distance": 0.05},
-    ) -> None:
-        """Async version of the `goto` method.
-
-        This method sends the mobile base to the specified target asynchronously.
-
-        Args:
-            x: The target x-coordinate in meters.
-            y: The target y-coordinate in meters.
-            theta: The target orientation in degrees.
-            timeout: The maximum time allowed to reach the target, in seconds.
-            tolerance: A dictionary specifying the tolerances for x, y, theta, and overall distance to
-                consider the target reached.
-        """
-        for pos, value in {"x": x, "y": y}.items():
-            if abs(value) > self._max_xy_goto:
-                raise ValueError(f"The asbolute value of {pos} should not be more than {self._max_xy_goto}!")
-
-        req = GoToVector(
-            x_goal=FloatValue(value=x),
-            y_goal=FloatValue(value=y),
-            theta_goal=FloatValue(value=deg2rad(theta)),
+        if distance_tolerance is not None:
+            if not (isinstance(distance_tolerance, float) | isinstance(distance_tolerance, int)):
+                raise TypeError(f"distance_tolerance must be a float or int, got {type(distance_tolerance)} instead")
+        if angle_tolerance is not None:
+            if not (isinstance(angle_tolerance, float) | isinstance(angle_tolerance, int)):
+                raise TypeError(f"angle_tolerance must be a float or int, got {type(angle_tolerance)} instead")
+        if timeout is not None:
+            if not (isinstance(timeout, float) | isinstance(timeout, int)):
+                raise TypeError(f"timeout must be a float or int, got {type(timeout)} instead")
+        
+        vector_goal = TargetDirectionCommand(
+            id=self._part_id,
+            direction=DirectionVector(
+                x=x,
+                y=y,
+                theta=theta,
+            )
         )
-        self._mobility_stub.SendGoTo(req)
 
-        arrived = await self._is_arrived_in_given_time(time.time(), timeout, tolerance)
+        odometry_goal=OdometryGoal(
+            odometry_goal=vector_goal,
+            distance_tolerance=FloatValue(value=distance_tolerance),
+            angle_tolerance=FloatValue(value=angle_tolerance),
+            timeout=FloatValue(value=timeout)
+        )
 
-        if not arrived and self.lidar.obstacle_detection_status == "OBJECT_DETECTED_STOP":
-            # Error type must be modified
-            raise ValueError("Target not reached. Mobile base stopped because of obstacle.")
+        request = GoToRequest(
+            odometry_goal=odometry_goal,
+        )
 
-    async def _is_arrived_in_given_time(self, starting_time: float, timeout: float, tolerance: Dict[str, float]) -> bool:
-        """Check if the mobile base arrived at the goal within the given time.
-
-        This method periodically checks the distance to the goal and determines if the mobile base
-        reaches the specified position and orientation within the allowed time and tolerance.
-
-        Args:
-            starting_time: The time when the checking started, in seconds.
-            timeout: The maximum time allowed to reach the target, in seconds.
-            tolerance: A dictionary specifying the tolerances for x, y, theta, and overall distance to
-                consider the target reached.
-
-        Returns:
-            True if the mobile base reaches the target within the time limit, otherwise False.
-        """
-        arrived: bool = False
-        while time.time() - starting_time < timeout:
-            arrived = True
-            distance_to_goal = self._distance_to_goto_goal()
-            for delta_key in tolerance.keys():
-                if tolerance[delta_key] < abs(distance_to_goal[delta_key]):
-                    arrived = False
-                    break
-            await asyncio.sleep(0.1)
-            if arrived:
-                break
-        return arrived
-
-    def _distance_to_goto_goal(self) -> Dict[str, float]:
-        """Get the distance to the current goto goal.
-
-        The distances returned include delta_x, delta_y, delta_theta, and overall distance.
-
-        Returns:
-            A dictionary containing the distance values to the goal, with keys 'delta_x', 'delta_y',
-            'delta_theta', and 'distance', all rounded to three decimal places.
-        """
-        response = self._mobility_stub.DistanceToGoal(self._part_id)
-        distance = {
-            "delta_x": round(response.delta_x.value, 3),
-            "delta_y": round(response.delta_y.value, 3),
-            "delta_theta": round(rad2deg(response.delta_theta.value), 3),
-            "distance": round(response.distance.value, 3),
-        }
-        return distance
+        return self._goto_stub.GoToOdometry(request)
 
     def translate_by(self, x: float, y: float, timeout: Optional[float] = None) -> None:
         """Send a target position relative to the current position of the mobile base.
@@ -506,3 +443,23 @@ class MobileBase(Part):
             value: The speed limit value to be set, as an integer.
         """
         return super()._set_speed_limits(value)
+
+    def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
+        """Check the validity of the parameters for the `goto` method.
+
+        Args:
+            duration: Not required here.
+            target: The target goal, as a list [x, y, theta] in the odometry coordinate system.
+            q0: Not required here. Defaults to None.
+
+        Raises:
+            TypeError: If the x goal is not a float or int.
+            TypeError: If the y goal is not a float or int.
+            TypeError: If the theta goal is not a float or int.
+        """
+        if not (isinstance(target[0], float) | isinstance(target[0], int)):
+            raise TypeError(f"x must be a float or int, got {type(target[0])} instead")
+        if not (isinstance(target[1], float) | isinstance(target[1], int)):
+            raise TypeError(f"y must be a float or int, got {type(target[1])} instead")
+        if not (isinstance(target[2], float) | isinstance(target[2], int)):
+            raise TypeError(f"theta must be a float or int, got {type(target[2])} instead")
