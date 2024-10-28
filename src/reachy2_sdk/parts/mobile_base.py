@@ -243,6 +243,8 @@ class MobileBase(Part, IGoToBasedPart):
         x: float,
         y: float,
         theta: float,
+        wait: bool = False,
+        degrees: bool = True,
         distance_tolerance: Optional[float] = None,
         angle_tolerance: Optional[float] = None,
         timeout: Optional[float] = None,
@@ -258,6 +260,10 @@ class MobileBase(Part, IGoToBasedPart):
             x: The target x-coordinate in meters.
             y: The target y-coordinate in meters.
             theta: The target orientation in degrees.
+            wait: If True, the function waits until the movement is completed before returning.
+                    Defaults to False.
+            degrees: If True, the theta value and angle_tolerance are treated as degrees.
+                    Defaults to True.
             distance_tolerance: Optional; the maximum distance allowed between the target and the position reached, in meters.
             angle_tolerance: Optional; the maximum angle allowed between the target and the position reached, in meters.
             timeout: Optional; the maximum time allowed to reach the target, in seconds.
@@ -284,6 +290,11 @@ class MobileBase(Part, IGoToBasedPart):
             if not (isinstance(timeout, float) | isinstance(timeout, int)):
                 raise TypeError(f"timeout must be a float or int, got {type(timeout)} instead")
         
+        if degrees:
+            theta=deg2rad(theta)
+            if angle_tolerance is not None:
+                angle_tolerance=deg2rad(angle_tolerance)
+        
         vector_goal = TargetDirectionCommand(
             id=self._part_id,
             direction=DirectionVector(
@@ -304,9 +315,16 @@ class MobileBase(Part, IGoToBasedPart):
             odometry_goal=odometry_goal,
         )
 
-        return self._goto_stub.GoToOdometry(request)
+        response = self._goto_stub.GoToOdometry(request)
 
-    def translate_by(self, x: float, y: float, timeout: Optional[float] = None) -> None:
+        if response.id == -1:
+            self._logger.error(f"Unable to go to requested position x={x}, y={y}, theta={theta}. No command sent.")
+        elif wait:
+            self._wait_goto(response)
+
+        return response
+
+    def translate_by(self, x: float, y: float, wait: bool=False, timeout: Optional[float] = None) -> None:
         """Send a target position relative to the current position of the mobile base.
 
         The (x, y) coordinates specify the desired translation in the mobile base's Cartesian space.
@@ -323,9 +341,9 @@ class MobileBase(Part, IGoToBasedPart):
         theta_rad = deg2rad(theta)
         x_goal = x_current + (x * np.cos(theta_rad) - y * np.sin(theta_rad))
         y_goal = y_current + (x * np.sin(theta_rad) + y * np.cos(theta_rad))
-        self.goto(x_goal, y_goal, theta, timeout=timeout)
+        self.goto(x_goal, y_goal, theta, wait=wait, timeout=timeout)
 
-    def rotate_by(self, theta: float, timeout: Optional[float] = None) -> None:
+    def rotate_by(self, theta: float, wait: bool=False, timeout: Optional[float] = None) -> None:
         """Send a target rotation relative to the current rotation of the mobile base.
 
         The theta parameter defines the desired rotation in degrees.
@@ -338,7 +356,7 @@ class MobileBase(Part, IGoToBasedPart):
         x = odometry["x"]
         y = odometry["y"]
         theta = odometry["theta"] + theta
-        self.goto(x, y, theta, timeout=timeout)
+        self.goto(x, y, theta, wait=wait, timeout=timeout)
 
     def reset_odometry(self) -> None:
         """Reset the odometry.
