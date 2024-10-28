@@ -372,7 +372,9 @@ class ReachySDK:
             return None
 
         if self._robot.HasField("mobile_base"):
-            self._mobile_base = MobileBase(self._robot.head, initial_state.mobile_base_state, self._grpc_channel, self._goto_stub)
+            self._mobile_base = MobileBase(
+                self._robot.head, initial_state.mobile_base_state, self._grpc_channel, self._goto_stub
+            )
             self.info._set_mobile_base(self._mobile_base)
 
     def _setup_part_head(self, initial_state: ReachyState) -> None:

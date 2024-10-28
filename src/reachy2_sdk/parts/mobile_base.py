@@ -3,17 +3,16 @@
 Handles all specific methods to a MobileBase.
 """
 
-import asyncio
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor
-from queue import Queue
-from typing import Dict, Optional, Any, List
+from typing import Any, Dict, List, Optional
 
 import grpc
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from numpy import deg2rad, rad2deg, round
+from reachy2_sdk_api.goto_pb2 import GoToId, GoToRequest, OdometryGoal
+from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.mobile_base_mobility_pb2 import (
     DirectionVector,
     TargetDirectionCommand,
@@ -31,12 +30,6 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
     ZuuuModePossiblities,
 )
 from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseUtilityServiceStub
-from reachy2_sdk_api.goto_pb2 import (
-    GoToId,
-    GoToRequest,
-    OdometryGoal,
-)
-from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 
 from ..sensors.lidar import Lidar
 from .goto_based_part import IGoToBasedPart
@@ -281,34 +274,31 @@ class MobileBase(Part, IGoToBasedPart):
         self._check_goto_parameters(target=[x, y, theta])
 
         if distance_tolerance is not None:
-            if not (isinstance(distance_tolerance, float) | isinstance(distance_tolerance, int)):
-                raise TypeError(f"distance_tolerance must be a float or int, got {type(distance_tolerance)} instead")
+            self._check_type_float(distance_tolerance, "distance_tolerance")
         if angle_tolerance is not None:
-            if not (isinstance(angle_tolerance, float) | isinstance(angle_tolerance, int)):
-                raise TypeError(f"angle_tolerance must be a float or int, got {type(angle_tolerance)} instead")
+            self._check_type_float(angle_tolerance, "angle_tolerance")
         if timeout is not None:
-            if not (isinstance(timeout, float) | isinstance(timeout, int)):
-                raise TypeError(f"timeout must be a float or int, got {type(timeout)} instead")
-        
+            self._check_type_float(timeout, "timeout")
+
         if degrees:
-            theta=deg2rad(theta)
+            theta = deg2rad(theta)
             if angle_tolerance is not None:
-                angle_tolerance=deg2rad(angle_tolerance)
-        
+                angle_tolerance = deg2rad(angle_tolerance)
+
         vector_goal = TargetDirectionCommand(
             id=self._part_id,
             direction=DirectionVector(
                 x=x,
                 y=y,
                 theta=theta,
-            )
+            ),
         )
 
-        odometry_goal=OdometryGoal(
+        odometry_goal = OdometryGoal(
             odometry_goal=vector_goal,
             distance_tolerance=FloatValue(value=distance_tolerance),
             angle_tolerance=FloatValue(value=angle_tolerance),
-            timeout=FloatValue(value=timeout)
+            timeout=FloatValue(value=timeout),
         )
 
         request = GoToRequest(
@@ -324,7 +314,14 @@ class MobileBase(Part, IGoToBasedPart):
 
         return response
 
-    def translate_by(self, x: float, y: float, wait: bool=False, timeout: Optional[float] = None) -> None:
+    def translate_by(
+        self,
+        x: float,
+        y: float,
+        wait: bool = False,
+        distance_tolerance: Optional[float] = None,
+        timeout: Optional[float] = None,
+    ) -> None:
         """Send a target position relative to the current position of the mobile base.
 
         The (x, y) coordinates specify the desired translation in the mobile base's Cartesian space.
@@ -341,9 +338,11 @@ class MobileBase(Part, IGoToBasedPart):
         theta_rad = deg2rad(theta)
         x_goal = x_current + (x * np.cos(theta_rad) - y * np.sin(theta_rad))
         y_goal = y_current + (x * np.sin(theta_rad) + y * np.cos(theta_rad))
-        self.goto(x_goal, y_goal, theta, wait=wait, timeout=timeout)
+        self.goto(x_goal, y_goal, theta, wait=wait, distance_tolerance=distance_tolerance, timeout=timeout)
 
-    def rotate_by(self, theta: float, wait: bool=False, timeout: Optional[float] = None) -> None:
+    def rotate_by(
+        self, theta: float, wait: bool = False, angle_tolerance: Optional[float] = None, timeout: Optional[float] = None
+    ) -> None:
         """Send a target rotation relative to the current rotation of the mobile base.
 
         The theta parameter defines the desired rotation in degrees.
@@ -356,7 +355,7 @@ class MobileBase(Part, IGoToBasedPart):
         x = odometry["x"]
         y = odometry["y"]
         theta = odometry["theta"] + theta
-        self.goto(x, y, theta, wait=wait, timeout=timeout)
+        self.goto(x, y, theta, wait=wait, angle_tolerance=angle_tolerance, timeout=timeout)
 
     def reset_odometry(self) -> None:
         """Reset the odometry.
@@ -462,7 +461,7 @@ class MobileBase(Part, IGoToBasedPart):
         """
         return super()._set_speed_limits(value)
 
-    def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
+    def _check_goto_parameters(self, target: Any, duration: Optional[float] = None, q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
 
         Args:
@@ -481,3 +480,15 @@ class MobileBase(Part, IGoToBasedPart):
             raise TypeError(f"y must be a float or int, got {type(target[1])} instead")
         if not (isinstance(target[2], float) | isinstance(target[2], int)):
             raise TypeError(f"theta must be a float or int, got {type(target[2])} instead")
+
+    def _check_type_float(self, value: Any, arg_name: str) -> None:
+        """Check the type of the value parameter.
+
+        Args:
+            value: The value to be checked.
+
+        Raises:
+            TypeError: If the value is not a float or int.
+        """
+        if not (isinstance(value, float) | isinstance(value, int)):
+            raise TypeError(f"{value} must be a float or int, got {type(value)} instead")

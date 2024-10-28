@@ -220,7 +220,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._wait_goto(response)
         return response
 
-    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
+    def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
 
         Args:
