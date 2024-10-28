@@ -114,7 +114,7 @@ class IGoToBasedPart(ABC):
         )
         return result
 
-    def _wait_goto(self, id: GoToId) -> None:
+    def _wait_goto(self, id: GoToId, duration: float) -> None:
         """Wait for a goto to finish. timeout is in seconds."""
         t0 = time.time()
         self._logger_goto.info(f"Waiting for movement with {id}.")
@@ -125,7 +125,7 @@ class IGoToBasedPart(ABC):
             id_playing = self.get_goto_playing()
 
             # manage an id_playing staying at -1
-            if time.time() - t0 > 0.05:
+            if time.time() - t0 > duration:
                 self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
                 return
 
