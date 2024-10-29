@@ -530,8 +530,6 @@ class ReachySDK:
         duration = 3
         arms_list = []
 
-        tic = time.time()
-
         if hasattr(self, "_mobile_base") and self._mobile_base is not None:
             self._mobile_base._turn_off()
         for part in self.info._enabled_parts.values():
@@ -542,8 +540,6 @@ class ReachySDK:
                 arms_list.append(part)
             else:
                 part._turn_off()
-        elapsed_time = time.time() - tic
-        print(f"1 : {elapsed_time}")
 
         countingTime = 0
         while countingTime < duration:
@@ -553,15 +549,9 @@ class ReachySDK:
                 arm_part.set_torque_limits(torque_limit_low)
             countingTime += 1
 
-        elapsed_time = time.time() - tic
-        print(f"2 : {elapsed_time}")
-
         for arm_part in arms_list:
             arm_part._turn_off()
             arm_part.set_torque_limits(torque_limit_high)
-
-        elapsed_time = time.time() - tic
-        print(f"3 : {elapsed_time}")
 
         time.sleep(0.5)
         return True
