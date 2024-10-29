@@ -341,7 +341,7 @@ class MobileBase(Part, IGoToBasedPart):
         self.goto(x_goal, y_goal, theta, wait=wait, distance_tolerance=distance_tolerance, timeout=timeout)
 
     def rotate_by(
-        self, theta: float, wait: bool = False, angle_tolerance: Optional[float] = None, timeout: Optional[float] = None
+        self, theta: float, wait: bool = False, degrees: bool = True, angle_tolerance: Optional[float] = None, timeout: Optional[float] = None
     ) -> None:
         """Send a target rotation relative to the current rotation of the mobile base.
 
@@ -354,8 +354,11 @@ class MobileBase(Part, IGoToBasedPart):
         odometry = self.odometry
         x = odometry["x"]
         y = odometry["y"]
-        theta = odometry["theta"] + theta
-        self.goto(x, y, theta, wait=wait, angle_tolerance=angle_tolerance, timeout=timeout)
+        if degrees:
+            theta = odometry["theta"] + rad2deg(theta)
+        else:
+            theta = deg2rad(odometry["theta"]) + theta
+        self.goto(x, y, theta, wait=wait, degrees=degrees, angle_tolerance=angle_tolerance, timeout=timeout)
 
     def reset_odometry(self) -> None:
         """Reset the odometry.
