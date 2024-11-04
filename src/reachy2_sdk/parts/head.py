@@ -217,7 +217,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             elif isinstance(target, pyQuat):
                 self._logger.error(f"Orientation {target} was not reachable. No command sent.")
         elif wait:
-            self._wait_goto(response)
+            self._wait_goto(response, duration)
         return response
 
     def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
@@ -287,7 +287,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Position {goal_position} was not reachable. No command sent.")
         elif wait:
-            self._wait_goto(response)
+            self._wait_goto(response, duration)
         return response
 
     def look_at(
@@ -333,7 +333,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Position {x}, {y}, {z} was not reachable. No command sent.")
         elif wait:
-            self._wait_goto(response)
+            self._wait_goto(response, duration)
         return response
 
     def rotate_by(

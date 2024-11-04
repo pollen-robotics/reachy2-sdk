@@ -114,18 +114,25 @@ class IGoToBasedPart(ABC):
         )
         return result
 
-    def _wait_goto(self, id: GoToId) -> None:
+    def _wait_goto(self, id: GoToId, duration: float) -> None:
         """Wait for a goto to finish. timeout is in seconds."""
+        t0 = time.time()
         self._logger_goto.info(f"Waiting for movement with {id}.")
 
         id_playing = self.get_goto_playing()
         while id_playing.id == -1:
-            time.sleep(0.01)
+            time.sleep(0.005)
             id_playing = self.get_goto_playing()
-        info_gotos = [self._get_goto_joints_request(id_playing)]
+
+            # manage an id_playing staying at -1
+            if time.time() - t0 > duration:
+                self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
+                return
+
+        info_gotos = [self._get_goto_joints_request(id)]
         ids_queue = self.get_goto_queue()
-        for id in ids_queue:
-            info_gotos.append(self._get_goto_joints_request(id))
+        for goto_id in ids_queue:
+            info_gotos.append(self._get_goto_joints_request(goto_id))
 
         timeout = 1  # adding one more sec
         for igoto in info_gotos:

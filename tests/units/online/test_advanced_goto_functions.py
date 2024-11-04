@@ -890,3 +890,20 @@ def test_head_rotation(reachy_sdk_zeroed: ReachySDK) -> None:
 
     with pytest.raises(ValueError):
         reachy_sdk_zeroed.head.rotate_by(roll=30, interpolation_mode="coucou")
+
+
+@pytest.mark.online
+def test_waiting_goto(reachy_sdk_zeroed: ReachySDK) -> None:
+    reachy_sdk_zeroed.goto_posture("elbow_90", duration=0.5, wait=True)
+    x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
+    reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=1, wait=True)
+    head_joints = reachy_sdk_zeroed.head.get_current_positions()
+    reachy_sdk_zeroed.l_arm.translate_by(x=0.2, y=0.0, z=0.1, duration=0.5, wait=False)
+    reachy_sdk_zeroed.l_arm.translate_by(x=-0.2, y=0.0, z=-0.1, duration=0.5, wait=False)
+    reachy_sdk_zeroed.l_arm.translate_by(x=0.2, y=0.0, z=0.1, duration=0.5, wait=False)
+    last_gotoid = reachy_sdk_zeroed.l_arm.translate_by(x=-0.2, y=0.0, z=-0.1, duration=0.5, wait=False)
+
+    while not reachy_sdk_zeroed.is_goto_finished(last_gotoid):
+        x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
+        reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.005, wait=True)
+    assert np.allclose(reachy_sdk_zeroed.head.get_current_positions(), head_joints, atol=2)
