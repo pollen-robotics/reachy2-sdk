@@ -120,7 +120,7 @@ class ReachyInfo:
     @property
     def mode(self) -> str:
         """Returns the robot's core mode.
-        
+
         Can be either "FAKE", "REAL" or "GAZEBO".
         """
         return ReachyCoreMode.keys()[self._mode]
