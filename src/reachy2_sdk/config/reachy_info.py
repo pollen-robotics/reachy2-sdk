@@ -123,4 +123,4 @@ class ReachyInfo:
 
         Can be either "FAKE", "REAL" or "GAZEBO".
         """
-        return ReachyCoreMode.keys()[self._mode]
+        return str(ReachyCoreMode.keys()[self._mode])
