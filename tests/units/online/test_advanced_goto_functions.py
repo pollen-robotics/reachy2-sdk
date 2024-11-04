@@ -894,22 +894,16 @@ def test_head_rotation(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_waiting_goto(reachy_sdk_zeroed: ReachySDK) -> None:
-    reachy_sdk_zeroed.goto_posture("elbow_90", duration=1, wait=True)
-    for arm in [reachy_sdk_zeroed.l_arm, reachy_sdk_zeroed.r_arm]:
-        x, y, z = arm.forward_kinematics()[:3, 3]
-        reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=1, wait=True)
-        arm.translate_by(x=0.2, y=0.0, z=0.1, wait=False)
-        arm.translate_by(x=-0.2, y=0.0, z=-0.1, wait=False)
-        arm.translate_by(x=0.2, y=0.0, z=0.1, wait=False)
-        last_gotoid = arm.translate_by(x=-0.2, y=0.0, z=-0.1, wait=False)
-        while not reachy_sdk_zeroed.is_goto_finished(last_gotoid):
-            x, y, z = arm.forward_kinematics()[:3, 3]
-            reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.005, wait=True)
+    reachy_sdk_zeroed.goto_posture("elbow_90", duration=0.5, wait=True)
+    x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
+    reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=1, wait=True)
+    head_joints = reachy_sdk_zeroed.head.get_current_positions()
+    reachy_sdk_zeroed.l_arm.translate_by(x=0.2, y=0.0, z=0.1, duration=0.5, wait=False)
+    reachy_sdk_zeroed.l_arm.translate_by(x=-0.2, y=0.0, z=-0.1, duration=0.5, wait=False)
+    reachy_sdk_zeroed.l_arm.translate_by(x=0.2, y=0.0, z=0.1, duration=0.5, wait=False)
+    last_gotoid = reachy_sdk_zeroed.l_arm.translate_by(x=-0.2, y=0.0, z=-0.1, duration=0.5, wait=False)
 
-    reachy_sdk_zeroed.goto_posture("elbow_90", duration=1, wait=True)
-    for i in range(30):
-        reachy_sdk_zeroed.l_arm.translate_by(x=i * 10e-5, y=0.0, z=0, duration=0.005, wait=True)
-        reachy_sdk_zeroed.r_arm.translate_by(x=i * 10e-5, y=0.0, z=0, duration=0.005, wait=True)
-    for i in range(30):
-        reachy_sdk_zeroed.l_arm.translate_by(x=-i * 10e-5, y=0.0, z=0, duration=0.005, wait=True)
-        reachy_sdk_zeroed.r_arm.translate_by(x=-i * 10e-5, y=0.0, z=0, duration=0.005, wait=True)
+    while not reachy_sdk_zeroed.is_goto_finished(last_gotoid):
+        x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
+        reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.005, wait=True)
+    assert np.allclose(reachy_sdk_zeroed.head.get_current_positions(), head_joints, atol=2)
