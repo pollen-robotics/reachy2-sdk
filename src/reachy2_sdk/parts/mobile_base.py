@@ -288,9 +288,9 @@ class MobileBase(Part, IGoToBasedPart):
         vector_goal = TargetDirectionCommand(
             id=self._part_id,
             direction=DirectionVector(
-                x=x,
-                y=y,
-                theta=theta,
+                x=FloatValue(value=x),
+                y=FloatValue(value=y),
+                theta=FloatValue(value=theta),
             ),
         )
 
