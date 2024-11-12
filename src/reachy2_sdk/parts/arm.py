@@ -652,9 +652,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         else:
             elbow_pitch = 0
         if self._part_id.name == "r_arm":
-            return [0, -15, -15, elbow_pitch, 0, 0, 0]
+            return [0, 10, -10, elbow_pitch, 0, 0, 0]
         else:
-            return [0, 15, 15, elbow_pitch, 0, 0, 0]
+            return [0, -10, 10, elbow_pitch, 0, 0, 0]
 
     def get_default_posture_matrix(self, common_posture: str = "default") -> npt.NDArray[np.float64]:
         """Get the 4x4 pose matrix in Reachy coordinate system for a default robot posture.
