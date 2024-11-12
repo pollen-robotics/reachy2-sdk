@@ -17,6 +17,13 @@ def build_pose_matrix(x: float, y: float, z: float):
     )
 
 
+def goto_A(reachy: ReachySDK):
+    jacobian = build_pose_matrix(0.4, -0.5, -0.2)
+    ik = reachy.r_arm.inverse_kinematics(jacobian)
+
+    reachy.r_arm.goto(ik, wait=True)
+
+
 def follow_square(reachy: ReachySDK):
     # In A position, the effector is at (0.4, -0.5, -0.2) in the world frame
     # In B position, the effector is at (0.4, -0.5, 0) in the world frame
@@ -76,28 +83,30 @@ def main_test():
 
     reachy.turn_on()
     print("Putting each joint at 0 degrees angle")
-    time.sleep(0.5)
-    for joint in reachy.joints.values():
-        joint.goal_position = 0
-    reachy.send_goal_positions()
+    reachy.r_arm.goto([0, 0, 0, 0, 0, 0, 0])
+    reachy.l_arm.goto([0, 0, 0, 0, 0, 0, 0])
+    reachy.head.goto([0, 0, 0, 0, 0, 0, 0], wait=True)
 
-    print("Putting the right arm in default pose")
+    print("Putting both arms in default pose")
     time.sleep(1.0)
-    reachy.r_arm.shoulder.roll.goal_position = -10
-    reachy.r_arm.elbow.yaw.goal_position = -15
-    reachy.send_goal_positions()
+    reachy.goto_posture(wait=True)
 
     print("Putting the right elbow pitch at -90 degrees angle")
     time.sleep(1.0)
-    reachy.r_arm.elbow.pitch.goal_position = -90
-    reachy.send_goal_positions()
+    reachy.r_arm.goto_posture("elbow_90", wait=True)
 
     time.sleep(2.0)
 
     print("Putting back the right elbow pitch at 0 degrees angle")
     time.sleep(0.5)
-    reachy.r_arm.elbow.pitch.goal_position = 0
-    reachy.send_goal_positions()
+    reachy.r_arm.goto_posture(wait=True)
+
+    print("Ready to do the square movement")
+    time.sleep(0.5)
+
+    print("Going to first position")
+    time.sleep(0.5)
+    goto_A(reachy)
 
     print("Reproducing the square movement without using goto")
     time.sleep(1.0)
@@ -105,11 +114,7 @@ def main_test():
 
     print("Going back to default position")
     time.sleep(0.5)
-    for joint in reachy.joints.values():
-        joint.goal_position = 0
-    reachy.r_arm.shoulder.roll.goal_position = -10
-    reachy.r_arm.elbow.yaw.goal_position = -15
-    reachy.send_goal_positions()
+    reachy.goto_posture(wait=True)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
