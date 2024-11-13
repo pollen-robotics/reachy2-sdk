@@ -290,10 +290,10 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
 
     reachy_sdk_zeroed.turn_on()
 
-    zero_r_arm = [0, -15, -15, 0, 0, 0, 0]
-    zero_l_arm = [0, 15, 15, 0, 0, 0, 0]
-    elbow_90_r_arm = [0, -15, -15, -90, 0, 0, 0]
-    elbow_90_l_arm = [0, 15, 15, -90, 0, 0, 0]
+    zero_r_arm = [0, 10, -10, 0, 0, 0, 0]
+    zero_l_arm = [0, -10, 10, 0, 0, 0, 0]
+    elbow_90_r_arm = [0, 10, -10, -90, 0, 0, 0]
+    elbow_90_l_arm = [0, -10, 10, -90, 0, 0, 0]
     zero_head = Quaternion(axis=[1, 0, 0], angle=0.0)
 
     # Test waiting for part's gotos to end
