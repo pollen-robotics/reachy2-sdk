@@ -31,50 +31,50 @@ def follow_square(reachy: ReachySDK):
     # In D position, the effector is at (0.4, -0.3, -0.2) in the world frame
 
     # Going from A to B
-    for z in np.arange(-0.2, 0.01, 0.01):
+    for z in np.arange(-0.2, 0.01, 0.005):
         jacobian = build_pose_matrix(0.4, -0.5, z)
         ik = reachy.r_arm.inverse_kinematics(jacobian)
 
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        reachy.send_goal_positions()
-        time.sleep(0.1)
+        reachy.send_goal_positions(check_positions=False)
+        time.sleep(0.05)
 
     # Going from B to C
-    for y in np.arange(-0.5, -0.29, 0.01):
+    for y in np.arange(-0.5, -0.29, 0.005):
         jacobian = build_pose_matrix(0.4, y, 0.0)
         ik = reachy.r_arm.inverse_kinematics(jacobian)
 
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        reachy.send_goal_positions()
-        time.sleep(0.1)
+        reachy.send_goal_positions(check_positions=False)
+        time.sleep(0.05)
 
     # Going from C to D
-    for z in np.arange(0.0, -0.21, -0.01):
+    for z in np.arange(0.0, -0.21, -0.005):
         jacobian = build_pose_matrix(0.4, -0.3, z)
         ik = reachy.r_arm.inverse_kinematics(jacobian)
 
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        reachy.send_goal_positions()
-        time.sleep(0.1)
+        reachy.send_goal_positions(check_positions=False)
+        time.sleep(0.05)
 
     # Going from D to A
-    for y in np.arange(-0.3, -0.51, -0.01):
+    for y in np.arange(-0.3, -0.51, -0.005):
         jacobian = build_pose_matrix(0.4, y, -0.2)
         ik = reachy.r_arm.inverse_kinematics(jacobian)
 
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-        reachy.send_goal_positions()
-        time.sleep(0.1)
+        reachy.send_goal_positions(check_positions=False)
+        time.sleep(0.05)
 
 
 def main_test():
     print("Trying to connect on localhost Reachy...")
     time.sleep(1.0)
-    reachy = ReachySDK(host="localhost")
+    reachy = ReachySDK(host="10.0.0.201")
 
     time.sleep(1.0)
     if not reachy.is_connected():
@@ -85,7 +85,7 @@ def main_test():
     print("Putting each joint at 0 degrees angle")
     reachy.r_arm.goto([0, 0, 0, 0, 0, 0, 0])
     reachy.l_arm.goto([0, 0, 0, 0, 0, 0, 0])
-    reachy.head.goto([0, 0, 0, 0, 0, 0, 0], wait=True)
+    reachy.head.goto([0, 0, 0], wait=True)
 
     print("Putting both arms in default pose")
     time.sleep(1.0)
