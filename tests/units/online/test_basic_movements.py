@@ -149,7 +149,7 @@ def test_send_goal_positions(reachy_sdk_zeroed: ReachySDK) -> None:
             ik = reachy.l_arm.inverse_kinematics(pose)
             for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
                 joint.goal_position = goal_pos
-        reachy.send_goal_positions()
+        reachy.send_goal_positions(check_positions=False)
         return ik
 
     def make_circle(

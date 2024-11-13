@@ -616,9 +616,9 @@ def test_get_rotation_by(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.allclose(pose1 @ rotation2, pose2, atol=1e-03)
     pose2_expected = np.array(
         [
-            [-0.02255843, -0.17266637, -0.98472201, 0.38621925],
-            [0.08418662, 0.98114615, -0.17396794, -0.22321061],
-            [0.99619462, -0.08682486, -0.00759692, -0.27036231],
+            [-0.08682488, -0.0639791, -0.99416705, 0.40057661],
+            [0.49240448, 0.86475723, -0.0986548, -0.35801578],
+            [0.86602498, -0.498098, -0.04357885, -0.19331117],
             [0.0, 0.0, 0.0, 1.0],
         ]
     )
@@ -742,25 +742,25 @@ def test_rotate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
         time.sleep(0.1)
     pose2_expected = np.array(
         [
-            [-2.25584336e-02, 9.52000583e-04, -9.99745073e-01, 3.86219247e-01],
-            [-9.00797470e-02, 9.95930095e-01, 2.98094395e-03, -2.23210614e-01],
-            [9.95679043e-01, 9.01240287e-02, -2.23808670e-02, -2.70362306e-01],
-            [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
+            [-1.51352471e-02, 6.51403207e-04, -9.99885243e-01, 3.84194035e-01],
+            [-8.84590707e-02, 9.96077829e-01, 1.98792631e-03, -2.23785617e-01],
+            [9.95964817e-01, 8.84790072e-02, -1.50182615e-02, -2.73183117e-01],
+            [0.0, 0.0, 0.0, 1.0],
         ]
     )
     pose2 = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(pose2_expected, pose2, atol=1e-03)
 
-    req3 = reachy_sdk_zeroed.r_arm.goto([-10, -15, -15, -100, 0, 0, 0])
-    req4 = reachy_sdk_zeroed.r_arm.goto([-10, -15, 20, -110, 0, 0, 0])
+    req3 = reachy_sdk_zeroed.r_arm.goto([-10, 10, -15, -100, 0, 0, 0])
+    req4 = reachy_sdk_zeroed.r_arm.goto([-10, 10, 20, -110, 0, 0, 0])
     req5 = reachy_sdk_zeroed.r_arm.rotate_by(15, -10, -5, frame="robot")
 
     pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_joints_request(req5).goal_positions)
     expected_pose5 = np.array(
         [
-            [-0.62070504, -0.46037827, -0.63464723, 0.3234347],
-            [-0.31497506, 0.88768136, -0.33587573, -0.01187369],
-            [0.71799441, -0.00858171, -0.69599597, -0.10008219],
+            [-0.62069375, -0.4494677, -0.64243136, 0.32550951],
+            [-0.30411506, 0.89323893, -0.33111666, -0.0165214],
+            [0.72267095, -0.01014899, -0.69111772, -0.10196663],
             [0.0, 0.0, 0.0, 1.0],
         ]
     )
@@ -769,15 +769,15 @@ def test_rotate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req5):
         time.sleep(0.1)
 
-    req6 = reachy_sdk_zeroed.r_arm.goto([-10, -15, 30, -70, 0, 10, 0])
+    req6 = reachy_sdk_zeroed.r_arm.goto([-10, 10, 30, -70, 0, 10, 0])
     req7 = reachy_sdk_zeroed.r_arm.rotate_by(0.15, 0, 0.05)
 
     pose7 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_joints_request(req7).goal_positions)
     expected_pose7 = np.array(
         [
-            [0.20097598, -0.66570574, -0.71864075, 0.3318663],
-            [0.37631531, 0.72978555, -0.5707888, 0.02014244],
-            [0.90443101, -0.15572068, 0.39718462, -0.38076232],
+            [0.20722949, -0.6570895, -0.72476846, 0.33380879],
+            [0.38013816, 0.73671839, -0.5592325, 0.01343369],
+            [0.90141606, -0.15962268, 0.40245457, -0.38287815],
             [0.0, 0.0, 0.0, 1.0],
         ]
     )
@@ -803,25 +803,25 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     assert np.isclose(elapsed_time, 3.0, 1e-01)
     pose2_expected = np.array(
         [
-            [-0.02255924, -0.17266596, -0.98472207, 0.38621924],
-            [0.08418709, 0.98114617, -0.17396761, -0.22321058],
-            [0.99619457, -0.08682546, -0.00759766, -0.27036205],
-            [0.0, 0.0, 0.0, 1.0],
+            [-1.51352471e-02, -1.72986743e-01, -9.84807855e-01, 3.84194035e-01],
+            [8.58322969e-02, 9.81060308e-01, -1.73647600e-01, -2.23785617e-01],
+            [9.96194630e-01, -8.71565195e-02, -7.40616532e-07, -2.73183117e-01],
+            [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
         ]
     )
     pose2 = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(pose2_expected, pose2, atol=1e-03)
 
-    req3 = reachy_sdk_zeroed.r_arm.goto([-10, -15, -15, -100, 0, 0, 0])
-    req4 = reachy_sdk_zeroed.r_arm.goto([-10, -15, 20, -110, 0, 0, 0])
+    req3 = reachy_sdk_zeroed.r_arm.goto([-10, 10, -10, -100, 0, 0, 0])
+    req4 = reachy_sdk_zeroed.r_arm.goto([-10, 10, 10, -110, 0, 0, 0])
     req5 = reachy_sdk_zeroed.r_arm.rotate_by(15, -10, -5, frame="gripper")
 
     pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_joints_request(req5).goal_positions)
     expected_pose5 = np.array(
         [
-            [-0.52724054, -0.71160914, -0.46435961, 0.3234347],
-            [-0.30638228, 0.66893537, -0.677241, -0.01187366],
-            [0.79255745, -0.21479736, -0.57071427, -0.10008221],
+            [-0.58122566, -0.57576842, -0.57503692, 0.35318658],
+            [-0.22426798, 0.79263062, -0.56695729, -0.07168226],
+            [0.78222798, -0.20056775, -0.58982368, -0.09387122],
             [0.0, 0.0, 0.0, 1.0],
         ]
     )
@@ -830,15 +830,15 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req5):
         time.sleep(0.1)
 
-    req6 = reachy_sdk_zeroed.r_arm.goto([-10, -15, 30, -70, 0, 10, 0])
+    req6 = reachy_sdk_zeroed.r_arm.goto([-10, 10, 15, -70, 0, 10, 0])
     req7 = reachy_sdk_zeroed.r_arm.rotate_by(0.15, 0, 0.05, frame="gripper")
 
     pose7 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_joints_request(req7).goal_positions)
     expected_pose7 = np.array(
         [
-            [0.20072378, -0.66712445, -0.71739455, 0.33186631],
-            [0.37914308, 0.728133, -0.57102789, 0.02014245],
-            [0.90330531, -0.1573763, 0.39908923, -0.38076228],
+            [0.27965445, -0.44712639, -0.84963015, 0.38450476],
+            [0.27624796, 0.88498932, -0.37480792, -0.06129458],
+            [0.91950011, -0.12989189, 0.37100895, -0.36945202],
             [0.0, 0.0, 0.0, 1.0],
         ]
     )
