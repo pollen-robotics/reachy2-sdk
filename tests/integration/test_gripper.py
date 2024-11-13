@@ -6,7 +6,7 @@ from reachy2_sdk import ReachySDK
 def main_test() -> None:
     print("Trying to connect on localhost Reachy...")
     time.sleep(1.0)
-    reachy = ReachySDK(host="10.0.0.201")
+    reachy = ReachySDK(host="localhost")
     try:
         time.sleep(1.0)
         if not reachy.is_connected():
