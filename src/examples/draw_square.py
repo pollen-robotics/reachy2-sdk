@@ -129,9 +129,6 @@ if __name__ == "__main__":
     goto_ids = reachy.goto_posture("default", wait=True)
     # wait_for_pose_to_finish(goto_ids)
 
-    print("Turning off Reachy")
-    reachy.turn_off()
-
     time.sleep(0.2)
 
     exit("Exiting example")
