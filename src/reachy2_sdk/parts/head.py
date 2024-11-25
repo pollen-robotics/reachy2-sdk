@@ -405,8 +405,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
     def goto_posture(
         self,
-        duration: float = 2,
         common_posture: str = "default",
+        duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
