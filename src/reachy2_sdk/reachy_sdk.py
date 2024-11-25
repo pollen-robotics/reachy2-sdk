@@ -529,7 +529,8 @@ class ReachySDK:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         speed_limit_high = 25
-        torque_limit_low = 35
+        # Enough to sustain the arm weight
+        torque_limit_low = 50
         torque_limit_high = 100
         duration = 3
         arms_list = []
@@ -548,7 +549,7 @@ class ReachySDK:
         countingTime = 0
         while countingTime < duration:
             time.sleep(1)
-            torque_limit_low -= 10
+            torque_limit_low -= 15
             for arm_part in arms_list:
                 arm_part.set_torque_limits(torque_limit_low)
             countingTime += 1
