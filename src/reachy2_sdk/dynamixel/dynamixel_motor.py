@@ -1,0 +1,155 @@
+"""Reachy OrbitaJoint module.
+
+Handles all specific methods to OrbitaJoint.
+"""
+
+import logging
+import time
+from typing import Any, Dict, Optional
+from grpc import Channel
+
+from google.protobuf.wrappers_pb2 import FloatValue
+from reachy2_sdk_api.component_pb2 import ComponentId
+from reachy2_sdk_api.dynamixel_motor_pb2 import (
+    DynamixelMotorCommand,
+    DynamixelMotorsCommand,
+    DynamixelMotorState,
+    DynamixelMotorStatus,
+)
+from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
+from ..orbita.utils import to_internal_position, to_position
+
+from ..parts.part import Part
+
+
+class DynamixelMotor:
+    """The DynamixelMotor class represents any Dynamixel motor.
+
+    The DynamixelMotor class is used to store the up-to-date state of the motor, especially:
+    - its present_position (RO)
+    - its goal_position (RW)
+    """
+
+    def __init__(
+        self,
+        uid: int,
+        name: str,
+        initial_state: DynamixelMotorState,
+        grpc_channel: Channel,
+        part: Part,
+    ):
+        """Initialize the OrbitaJoint with its initial state and configuration.
+
+        This sets up the joint by assigning its actuator, axis type, and position order within
+        the part, and updates its state based on the provided initial values.
+
+        Args:
+            initial_state: A dictionary containing the initial state of the joint, with
+                each entry representing a specific parameter of the joint (e.g., present position).
+            axis_type: The type of axis for the joint (e.g., roll, pitch, yaw).
+            actuator: The actuator to which this joint belongs.
+            position_order_in_part: The position order of this joint in the overall part's
+                list of joints.
+        """
+        self._logger = logging.getLogger(__name__)
+        self._name = name
+        self._id = uid
+        self._stub = DynamixelMotorServiceStub(grpc_channel)
+        self._part = part
+        self._update_with(initial_state)
+
+        self._outgoing_goal_position: Optional[float] = None
+
+    def __repr__(self) -> str:
+        """Clean representation of the OrbitaJoint."""
+        repr_template = (
+            '<DynamixelMotor present_position={present_position} goal_position={goal_position} >'
+        )
+        return repr_template.format(
+            present_position=round(self.present_position, 2),
+            goal_position=round(self.goal_position, 2),
+        )
+
+    @property
+    def present_position(self) -> float:
+        """Get the present position of the joint in degrees."""
+        return to_position(self._present_position)
+
+    @property
+    def goal_position(self) -> float:
+        """Get the goal position of the joint in degrees."""
+        return to_position(self._goal_position)
+
+    @goal_position.setter
+    def goal_position(self, value: float | int) -> None:
+        """Set the goal position of the joint in degrees.
+
+        The goal position is not send to the joint immediately, it is stored locally until the `send_goal_positions` method
+        is called.
+
+        Args:
+            value: The goal position to set, specified as a float or int.
+
+        Raises:
+            TypeError: If the provided value is not a float or int.
+        """
+        if isinstance(value, float) | isinstance(value, int):
+            self._outgoing_goal_position = to_internal_position(value)
+        else:
+            raise TypeError("goal_position must be a float or int")
+    
+    def send_goal_positions(self, check_positions: bool = True) -> None:
+        """Send goal positions to the actuator's joints.
+
+        If goal positions have been specified for any joint of this actuator, sends them to the actuator.
+
+        Args :
+            check_positions: A boolean indicating whether to check the positions after sending the command.
+                Defaults to True.
+        """        
+        if self._outgoing_goal_position is not None:
+            command = DynamixelMotorsCommand(
+                cmd=DynamixelMotorCommand(
+                    id=ComponentId(id=self._id),
+                    goal_position=FloatValue(value=self._outgoing_goal_position),
+                )
+            )
+
+            self._outgoing_goal_position = None
+            self._stub.SendCommand(command)
+
+            if check_positions:
+                # self._post_send_goal_positions()
+                pass
+    
+    def set_speed_limits(self, speed_limit: float | int) -> None:
+        """Set the speed limit as a percentage of the maximum speed for all motors of the actuator.
+
+        Args:
+            speed_limit: The desired speed limit as a percentage (0-100) of the maximum speed. Can be
+                specified as a float or int.
+        """
+        if not isinstance(speed_limit, float | int):
+            raise TypeError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
+        if not (0 <= speed_limit <= 100):
+            raise ValueError(f"speed_limit must be in [0, 100], got {speed_limit}.")
+        speed_limit = speed_limit / 100.0
+
+        command = DynamixelMotorsCommand(
+                cmd=DynamixelMotorCommand(
+                    id=ComponentId(id=self._id),
+                    speed_limit=FloatValue(value=speed_limit),
+                )
+            )
+
+        self._stub.SendCommand(command)
+
+    def _update_with(self, new_state: Dict[str, FloatValue]) -> None:
+        """Update the present and goal positions of the joint with new state values.
+
+        Args:
+            new_state: A dictionary containing the new state values for the joint. The keys should include
+                "present_position" and "goal_position", with corresponding FloatValue objects as values.
+        """
+        self._present_position = new_state["present_position"].value
+        self._goal_position = new_state["goal_position"].value
