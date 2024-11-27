@@ -514,15 +514,48 @@ class Head(JointsBasedPart, IGoToBasedPart):
     
     def sad(self) -> None:
         """Play sad emotion with the antennas."""
+        self._l_antenna.set_speed_limits(70)
+        self._r_antenna.set_speed_limits(70)
+
+        def send_antennas_opposite_pos(angle: float) -> None:
+            self._l_antenna.goal_position = angle
+            self._l_antenna.goal_position = -angle
+            self.send_goal_positions()
+
+        send_antennas_opposite_pos(140)
+        time.sleep(2)
+
+        self._l_antenna.set_speed_limits(30)
+        self._r_antenna.set_speed_limits(30)
+
+        for _ in range(2):
+            send_antennas_opposite_pos(120)
+            time.sleep(0.6)
+            send_antennas_opposite_pos(140)
+            time.sleep(0.6)
+
+        time.sleep(0.4)
+
+        self._l_antenna.set_speed_limits(70)
+        self._r_antenna.set_speed_limits(70)
+
+        send_antennas_opposite_pos(0)
+
+    def surprised(self) -> None:
+        """Play surprised emotion with the antennas."""
+        self._l_antenna.set_speed_limits(70)
+        self._r_antenna.set_speed_limits(70)
+
+        self._l_antenna.goal_position = -20
+        self._r_antenna.goal_position = -80
+        self.send_goal_positions()
+
+        time.sleep(2)
+
+        self._l_antenna.goal_position = 0
+        self._r_antenna.goal_position = 0
+        self.send_goal_positions()
+
+        time.sleep(0.5)
         self._l_antenna.set_speed_limits(100)
         self._r_antenna.set_speed_limits(100)
-
-        dur = 3
-        t = np.linspace(0, dur, dur * 100)
-        pos = 10 * np.sin(2 * np.pi * 5 * t)
-
-        for p in pos:
-            self.l_antenna.goal_position = p
-            self.r_antenna.goal_position = -p
-            self.send_goal_positions(check_positions=False)
-            time.sleep(0.01)
