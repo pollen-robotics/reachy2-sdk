@@ -314,7 +314,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         """
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
-        if not self.neck.is_on():
+        if self.neck.is_off():
             self._logger.warning("head.neck is off. No command sent.")
             return GoToId(id=-1)
 
