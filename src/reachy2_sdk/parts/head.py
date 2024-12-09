@@ -416,6 +416,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
         The default posture sets the neck joints to [0, -10, 0] (roll, pitch, yaw).
 
         Args:
+            common_posture: The standard positions to which all joints will be sent.
+                It can be 'default' or 'elbow_90'. Defaults to 'default'.
             duration: The time in seconds for the neck to reach the target posture. Defaults to 2.
             wait: Whether to wait for the movement to complete before returning. Defaults to False.
             wait_for_goto_end: Whether to wait for all previous goto commands to finish before executing
