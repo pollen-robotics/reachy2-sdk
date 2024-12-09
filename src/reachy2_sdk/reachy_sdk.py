@@ -114,7 +114,8 @@ class ReachySDK:
 
         self._setup_parts()
         # self._setup_audio()
-        self._cameras = self._setup_video()
+        if self.info is not None and self.info.mode != "FAKE":
+            self._cameras = self._setup_video()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
@@ -292,6 +293,9 @@ class ReachySDK:
         """Get the camera manager if available and connected."""
         if not self._grpc_connected:
             self._logger.error("Cannot get cameras, not connected to Reachy")
+            return None
+        if self.info is not None and self.info.mode == "FAKE":
+            self._logger.warning("Cameras are not available in FAKE mode")
             return None
         return self._cameras
 
