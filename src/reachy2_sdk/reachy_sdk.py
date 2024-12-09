@@ -605,23 +605,24 @@ class ReachySDK:
     def goto_posture(
         self,
         common_posture: str = "default",
+        duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
-        duration: float = 2,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToHomeId:
         """Move the robot to a predefined posture.
 
         Args:
             common_posture: The name of the posture. It can be 'default' or 'elbow_90'. Defaults to 'default'.
+            duration: The time duration in seconds for the robot to move to the specified posture.
+                Defaults to 2.
             wait: Determines whether the program should wait for the movement to finish before
                 returning. If set to `True`, the program waits for the movement to complete before continuing
                 execution. Defaults to `False`.
             wait_for_goto_end: Specifies whether commands will be sent to a part immediately or
                 only after all previous commands in the queue have been executed. If set to `False`, the program
                 will cancel all executing moves and queues. Defaults to `True`.
-            duration: The time duration in seconds for the robot to move to the specified posture.
-                Defaults to 2.
+
             interpolation_mode: The type of interpolation used when moving the arm's joints.
                 Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
 
