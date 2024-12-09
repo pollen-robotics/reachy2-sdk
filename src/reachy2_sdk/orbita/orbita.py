@@ -192,6 +192,14 @@ class Orbita(ABC):
         """
         return not self._compliant
 
+    def is_off(self) -> bool:
+        """Check if the actuator is currently compliant.
+
+        Returns:
+            `True` if the actuator is compliant (not stiff), `False` otherwise.
+        """
+        return self._compliant
+
     @property
     def temperatures(self) -> Dict[str, float]:
         """Get the current temperatures of all the motors in the actuator.
