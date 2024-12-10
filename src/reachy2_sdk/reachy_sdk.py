@@ -114,8 +114,7 @@ class ReachySDK:
 
         self._setup_parts()
         # self._setup_audio()
-        if self.info is not None and self.info.mode != "FAKE":
-            self._cameras = self._setup_video()
+        self._cameras = self._setup_video()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
         self._sync_thread.daemon = True
@@ -293,9 +292,6 @@ class ReachySDK:
         """Get the camera manager if available and connected."""
         if not self._grpc_connected:
             self._logger.error("Cannot get cameras, not connected to Reachy")
-            return None
-        if self.info is not None and self.info.mode == "FAKE":
-            self._logger.warning("Cameras are not available in FAKE mode")
             return None
         return self._cameras
 
@@ -529,7 +525,8 @@ class ReachySDK:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
         speed_limit_high = 25
-        torque_limit_low = 35
+        # Enough to sustain the arm weight
+        torque_limit_low = 50
         torque_limit_high = 100
         duration = 3
         arms_list = []
@@ -548,7 +545,7 @@ class ReachySDK:
         countingTime = 0
         while countingTime < duration:
             time.sleep(1)
-            torque_limit_low -= 10
+            torque_limit_low -= 15
             for arm_part in arms_list:
                 arm_part.set_torque_limits(torque_limit_low)
             countingTime += 1
@@ -609,23 +606,23 @@ class ReachySDK:
     def goto_posture(
         self,
         common_posture: str = "default",
+        duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
-        duration: float = 2,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToHomeId:
         """Move the robot to a predefined posture.
 
         Args:
             common_posture: The name of the posture. It can be 'default' or 'elbow_90'. Defaults to 'default'.
+            duration: The time duration in seconds for the robot to move to the specified posture.
+                Defaults to 2.
             wait: Determines whether the program should wait for the movement to finish before
                 returning. If set to `True`, the program waits for the movement to complete before continuing
                 execution. Defaults to `False`.
             wait_for_goto_end: Specifies whether commands will be sent to a part immediately or
                 only after all previous commands in the queue have been executed. If set to `False`, the program
                 will cancel all executing moves and queues. Defaults to `True`.
-            duration: The time duration in seconds for the robot to move to the specified posture.
-                Defaults to 2.
             interpolation_mode: The type of interpolation used when moving the arm's joints.
                 Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
 

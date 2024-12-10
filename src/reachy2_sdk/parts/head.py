@@ -312,7 +312,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         """
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
-        if not self.neck.is_on():
+        if self.neck.is_off():
             self._logger.warning("head.neck is off. No command sent.")
             return GoToId(id=-1)
 
@@ -403,8 +403,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
     def goto_posture(
         self,
-        duration: float = 2,
         common_posture: str = "default",
+        duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
@@ -414,6 +414,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
         The default posture sets the neck joints to [0, -10, 0] (roll, pitch, yaw).
 
         Args:
+            common_posture: The standard positions to which all joints will be sent.
+                It can be 'default' or 'elbow_90'. Defaults to 'default'.
             duration: The time in seconds for the neck to reach the target posture. Defaults to 2.
             wait: Whether to wait for the movement to complete before returning. Defaults to False.
             wait_for_goto_end: Whether to wait for all previous goto commands to finish before executing

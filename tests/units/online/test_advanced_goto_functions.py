@@ -574,6 +574,11 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
 
     assert np.allclose(reachy_sdk_zeroed.head.get_current_positions(), [15, 0, 10], atol=1e-01)
 
+    reachy_sdk_zeroed.turn_off()
+    assert reachy_sdk_zeroed.l_arm.shoulder.roll.goto(10).id == -1
+    assert reachy_sdk_zeroed.head.neck.roll.goto(10).id == -1
+    reachy_sdk_zeroed.turn_on()
+
 
 @pytest.mark.online
 def test_get_translation_by(reachy_sdk_zeroed: ReachySDK) -> None:
