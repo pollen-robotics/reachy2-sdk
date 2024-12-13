@@ -4,8 +4,7 @@ Handles all specific methods to OrbitaJoint.
 """
 
 import logging
-import time
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from grpc import Channel
@@ -14,7 +13,6 @@ from reachy2_sdk_api.dynamixel_motor_pb2 import (
     DynamixelMotorCommand,
     DynamixelMotorsCommand,
     DynamixelMotorState,
-    DynamixelMotorStatus,
 )
 from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 
@@ -95,6 +93,24 @@ class DynamixelMotor:
         """Get the goal position of the joint in degrees."""
         return to_position(self._goal_position)
 
+    @goal_position.setter
+    def goal_position(self, value: float | int) -> None:
+        """Set the goal position of the joint in degrees.
+
+        The goal position is not send to the joint immediately, it is stored locally until the `send_goal_positions` method
+        is called.
+
+        Args:
+            value: The goal position to set, specified as a float or int.
+
+        Raises:
+            TypeError: If the provided value is not a float or int.
+        """
+        if isinstance(value, float) | isinstance(value, int):
+            self._outgoing_goal_position = to_internal_position(value)
+        else:
+            raise TypeError("goal_position must be a float or int")
+
     def _set_compliant(self, compliant: bool) -> None:
         """Set the compliance mode of the actuator's motors.
 
@@ -113,24 +129,6 @@ class DynamixelMotor:
             ]
         )
         self._stub.SendCommand(command)
-
-    @goal_position.setter
-    def goal_position(self, value: float | int) -> None:
-        """Set the goal position of the joint in degrees.
-
-        The goal position is not send to the joint immediately, it is stored locally until the `send_goal_positions` method
-        is called.
-
-        Args:
-            value: The goal position to set, specified as a float or int.
-
-        Raises:
-            TypeError: If the provided value is not a float or int.
-        """
-        if isinstance(value, float) | isinstance(value, int):
-            self._outgoing_goal_position = to_internal_position(value)
-        else:
-            raise TypeError("goal_position must be a float or int")
 
     def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send goal positions to the actuator's joints.
