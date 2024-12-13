@@ -155,3 +155,15 @@ class IGoToBasedPart(ABC):
     def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for a goto movement."""
         pass
+
+    @abstractmethod
+    def goto_posture(
+        self,
+        common_posture: str = "default",
+        duration: float = 2,
+        wait: bool = False,
+        wait_for_goto_end: bool = True,
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode."""
+        pass
