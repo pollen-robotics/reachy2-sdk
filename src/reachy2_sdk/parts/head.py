@@ -517,48 +517,55 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
     def sad(self) -> None:
         """Play sad emotion with the antennas."""
-        self._l_antenna.set_speed_limits(70)
-        self._r_antenna.set_speed_limits(70)
 
         def send_antennas_opposite_pos(angle: float) -> None:
             self._l_antenna.goal_position = angle
-            self._l_antenna.goal_position = -angle
+            self._r_antenna.goal_position = -angle
             self.send_goal_positions()
+        origin = 0
+        target_1 = 130
 
-        send_antennas_opposite_pos(140)
-        time.sleep(2)
+        for t in np.linspace(0, 1, 60):
+            interpolated = (1 - t) * origin + t * target_1
+            send_antennas_opposite_pos(interpolated)
+            time.sleep(0.01)
 
-        self._l_antenna.set_speed_limits(30)
-        self._r_antenna.set_speed_limits(30)
+        dur = 2
+        t = np.linspace(0, dur, dur * 200)
+        pos = 20 * np.sin(2 * np.pi * t) + 130
 
-        for _ in range(2):
-            send_antennas_opposite_pos(120)
-            time.sleep(0.6)
-            send_antennas_opposite_pos(140)
-            time.sleep(0.6)
+        for p in pos:
+            send_antennas_opposite_pos(p)
+            time.sleep(0.01)
 
-        time.sleep(0.4)
+        time.sleep(0.5)
 
-        self._l_antenna.set_speed_limits(70)
-        self._r_antenna.set_speed_limits(70)
-
-        send_antennas_opposite_pos(0)
+        for t in np.linspace(0, 1, 60):
+            interpolated = (1 - t) * target_1 + t * origin
+            send_antennas_opposite_pos(interpolated)
+            time.sleep(0.01)
 
     def surprised(self) -> None:
         """Play surprised emotion with the antennas."""
-        self._l_antenna.set_speed_limits(70)
-        self._r_antenna.set_speed_limits(70)
 
-        self._l_antenna.goal_position = -20
-        self._r_antenna.goal_position = -80
-        self.send_goal_positions()
+        origin = 0
+        target_left = -20
+        target_right = -70
+
+        for t in np.linspace(0, 1, 30):
+            interpolated_left = (1 - t) * origin + t * target_left
+            interpolated_right = (1 - t) * origin + t * target_right
+            self._l_antenna.goal_position = interpolated_left
+            self._r_antenna.goal_position = interpolated_right
+            self.send_goal_positions()
+            time.sleep(0.01)
 
         time.sleep(2)
 
-        self._l_antenna.goal_position = 0
-        self._r_antenna.goal_position = 0
-        self.send_goal_positions()
-
-        time.sleep(0.5)
-        self._l_antenna.set_speed_limits(100)
-        self._r_antenna.set_speed_limits(100)
+        for t in np.linspace(0, 1, 30):
+            interpolated_left = (1 - t) * target_left + t * origin
+            interpolated_right = (1 - t) * target_right + t * origin
+            self._l_antenna.goal_position = interpolated_left
+            self._r_antenna.goal_position = interpolated_right
+            self.send_goal_positions()
+            time.sleep(0.01)
