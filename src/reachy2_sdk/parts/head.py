@@ -3,11 +3,11 @@
 Handles all specific methods to a Head.
 """
 
+import time
 from typing import Any, List, Optional, overload
 
 import grpc
 import numpy as np
-import time
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.goto_pb2 import (
@@ -31,8 +31,8 @@ from reachy2_sdk_api.head_pb2 import (
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
 
-from ..orbita.orbita3d import Orbita3d
 from ..dynamixel.dynamixel_motor import DynamixelMotor
+from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import get_grpc_interpolation_mode, quaternion_from_euler_angles
 from .goto_based_part import IGoToBasedPart
 from .joints_based_part import JointsBasedPart
@@ -124,7 +124,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def l_antenna(self) -> DynamixelMotor:
         """Get the left antenna actuator of the head."""
         return self._l_antenna
-    
+
     @property
     def r_antenna(self) -> DynamixelMotor:
         """Get the right antenna actuator of the head."""
@@ -487,6 +487,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
             new_state: A HeadState object representing the new state of the head's actuators.
         """
         self.neck._update_with(new_state.neck_state)
+        self.l_antenna._update_with(new_state.l_antenna_state)
+        self.r_antenna._update_with(new_state.r_antenna_state)
 
     def _update_audit_status(self, new_status: HeadStatus) -> None:
         """Update the audit status of the neck with the new status from the gRPC server.
@@ -496,13 +498,12 @@ class Head(JointsBasedPart, IGoToBasedPart):
         """
         self.neck._update_audit_status(new_status.neck_status)
 
-
     def happy(self) -> None:
         """Play happy emotion with the antennas."""
         self._l_antenna.set_speed_limits(100)
         self._r_antenna.set_speed_limits(100)
 
-        dur = 3
+        dur = 2
         t = np.linspace(0, dur, dur * 100)
         pos = 10 * np.sin(2 * np.pi * 5 * t)
 
@@ -511,7 +512,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self.r_antenna.goal_position = -p
             self.send_goal_positions(check_positions=False)
             time.sleep(0.01)
-    
+
     def sad(self) -> None:
         """Play sad emotion with the antennas."""
         self._l_antenna.set_speed_limits(70)
