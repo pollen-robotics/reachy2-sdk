@@ -502,9 +502,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
     def happy(self) -> None:
         """Play happy emotion with the antennas."""
-        self._l_antenna.set_speed_limits(100)
-        self._r_antenna.set_speed_limits(100)
-
         dur = 2
         t = np.linspace(0, dur, dur * 100)
         pos = 10 * np.sin(2 * np.pi * 5 * t)
@@ -522,6 +519,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._l_antenna.goal_position = angle
             self._r_antenna.goal_position = -angle
             self.send_goal_positions()
+
         origin = 0
         target_1 = 130
 
