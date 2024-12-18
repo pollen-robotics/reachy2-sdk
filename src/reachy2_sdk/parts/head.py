@@ -567,3 +567,28 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._r_antenna.goal_position = interpolated_right
             self.send_goal_positions()
             time.sleep(0.01)
+
+    def surprised2(self) -> None:
+        """Play surprised emotion with the antennas."""
+
+        origin = 0
+        target_left = 50
+        target_right = -10
+
+        for t in np.linspace(0, 1, 30):
+            interpolated_left = (1 - t) * origin + t * target_left
+            interpolated_right = (1 - t) * origin + t * target_right
+            self._l_antenna.goal_position = interpolated_left
+            self._r_antenna.goal_position = interpolated_right
+            self.send_goal_positions()
+            time.sleep(0.01)
+
+        time.sleep(2)
+
+        for t in np.linspace(0, 1, 30):
+            interpolated_left = (1 - t) * target_left + t * origin
+            interpolated_right = (1 - t) * target_right + t * origin
+            self._l_antenna.goal_position = interpolated_left
+            self._r_antenna.goal_position = interpolated_right
+            self.send_goal_positions()
+            time.sleep(0.01)
