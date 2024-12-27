@@ -106,7 +106,6 @@ class Lidar:
                 safety_on=BoolValue(value=self.safety_enabled),
                 safety_distance=FloatValue(value=self.safety_slowdown_distance),
                 critical_distance=FloatValue(value=value),
-                
             )
         )
 
