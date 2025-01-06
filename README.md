@@ -9,27 +9,46 @@
 
 ## Install
 
-Use the following command to install:
+You can install the library either from Pypi, or by cloning the entire repository : 
 
-```console
-$ pip install -e .[dev]
+<details> 
+<summary>From PyPi</summary>
+
+```bash
+pip install reachy2-sdk
+```
+</details>
+
+<details>
+<summary>From the source</summary>
+
+```bash
+git clone https://github.com/pollen-robotics/reachy2-sdk.git
+cd reachy2-sdk
+pip install -e .[dev]
 ```
 
 The *[dev]* option includes tools for developers.
 
+</details>
+
+
 ## Usage
 
 Check out the [examples](src/examples/) folder for jupyter notebooks and example scripts.
+You can also take a look on the [Reachy2 Documentation](https://pollen-robotics.github.io/reachy2-docs/developing-with-reachy-2/getting-started-sdk/), which provides a more detailed overview of the SDK's various functions.
 
 ## Documentation
 
-Documentation is generated via pdoc, and it's available at [https://pollen-robotics.github.io/reachy2-sdk/reachy2_sdk.html](https://pollen-robotics.github.io/reachy2-sdk/reachy2_sdk.html)
+SDK Documentation is generated via pdoc, and it's available at [https://pollen-robotics.github.io/reachy2-sdk/reachy2_sdk.html](https://pollen-robotics.github.io/reachy2-sdk/reachy2_sdk.html)
 
 
 It can be generated locally with:
 ```console
 pdoc reachy2_sdk --output-dir docs --logo "https://pollen-robotics.github.io/reachy2-sdk/pollen_logo.png" --logo-link "https://www.pollen-robotics.com" --docformat google
 ```
+
+*You maybe have to install pdoc first by running <code>pip install pdoc</code>.*
 
 The documentation relies on the provided docstrings with the google style. pydocstyle is used to enforced this style.
 ```console

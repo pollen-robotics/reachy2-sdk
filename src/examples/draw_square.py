@@ -42,7 +42,8 @@ def draw_square(reachy: ReachySDK) -> None:
     - C: (0.4, -0.3, 0)
     - D: (0.4, -0.3, -0.2)
 
-    see https://docs.pollen-robotics.com/sdk/first-moves/kinematics/ for Reachy's coordinate system
+    see https://pollen-robotics.github.io/reachy2-docs/developing-with-reachy-2/basics/4-use-arm-kinematics/
+    for Reachy's coordinate system
 
     Each movement uses inverse kinematics to calculate the required joint
     positions to achieve the target pose and then sends the commands to
