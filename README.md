@@ -15,7 +15,7 @@ You can install the library either from Pypi, or by cloning the entire repositor
 <summary>From PyPi</summary>
 
 ```bash
-pip install reachy2-sdk
+pip install reachy2-sdk -e .
 ```
 </details>
 
