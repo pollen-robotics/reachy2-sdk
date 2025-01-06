@@ -910,6 +910,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         elliptic_radius: Optional[float] = None,
         interpolation_frequency: float = 120,
         precision_distance_xyz: float = 0.003,
+        rviz_mode: bool = False,
     ) -> None:
         """Perform Cartesian interpolation and move the arm towards a target pose.
 
@@ -933,6 +934,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 the current end-effector position and the target position. If the end-effector is
                 further than this distance from the target after the movement, the movement is repeated
                 until the precision is met. Defaults to 0.003.
+            rviz_mode: If the robot is in fake mode (meaning it moves only on Rviz), needs to be set to True.
 
         Raises:
             TypeError: If the target is not a NumPy matrix.
@@ -989,6 +991,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             current_pose = self.forward_kinematics()
             current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
         self._logger.info(f"l2 xyz distance to goal: {current_precision_distance_xyz}")
+        if rviz_mode:
+            time.sleep(0.2)
 
     def _send_linear_interpolation(
         self,
