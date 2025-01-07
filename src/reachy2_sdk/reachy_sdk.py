@@ -610,6 +610,7 @@ class ReachySDK:
         wait: bool = False,
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
+        with_gripper: bool = True,
     ) -> GoToHomeId:
         """Move the robot to a predefined posture.
 
@@ -625,6 +626,7 @@ class ReachySDK:
                 will cancel all executing moves and queues. Defaults to `True`.
             interpolation_mode: The type of interpolation used when moving the arm's joints.
                 Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+            with_gripper: If `True`, the gripper will open, if `False` it won't move. Defaults to `True`.
 
         Returns:
             A GoToHomeId containing movement GoToIds for each part.
@@ -651,6 +653,7 @@ class ReachySDK:
                 wait=wait_r_arm,
                 wait_for_goto_end=wait_for_goto_end,
                 interpolation_mode=interpolation_mode,
+                with_gripper=with_gripper,
             )
         if self.l_arm is not None:
             l_arm_id = self.l_arm.goto_posture(
@@ -659,6 +662,7 @@ class ReachySDK:
                 wait=wait,
                 wait_for_goto_end=wait_for_goto_end,
                 interpolation_mode=interpolation_mode,
+                with_gripper=with_gripper,
             )
         ids = GoToHomeId(
             head=head_id,
