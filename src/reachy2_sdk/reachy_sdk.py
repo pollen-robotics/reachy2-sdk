@@ -610,7 +610,7 @@ class ReachySDK:
         wait: bool = False,
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
-        with_gripper: bool = True,
+        with_gripper: bool = False,
     ) -> GoToHomeId:
         """Move the robot to a predefined posture.
 

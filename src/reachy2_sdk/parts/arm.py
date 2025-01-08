@@ -600,7 +600,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
-        with_gripper: bool = True,
+        with_gripper: bool = False,
     ) -> GoToId:
         """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode.
 
@@ -617,7 +617,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 will cancel all executing moves and queues. Defaults to `True`.
             interpolation_mode: The type of interpolation used when moving the arm's joints.
                 Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
-            with_gripper: If `True`, the gripper will open, if `False` it won't move. Defaults to `True`.
+            with_gripper: If `True`, the gripper will open, if `False` it won't move. Defaults to `False`.
 
         Returns:
             A unique GoToId identifier for this specific movement.

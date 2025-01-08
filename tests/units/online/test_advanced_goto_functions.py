@@ -274,7 +274,7 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
     # Test the default pose
     reachy_sdk_zeroed.l_arm.gripper.close()
     reachy_sdk_zeroed.r_arm.gripper.close()
-    reachy_sdk_zeroed.goto_posture("default")
+    reachy_sdk_zeroed.goto_posture("default", with_gripper=True)
     time.sleep(2)
     assert reachy_sdk_zeroed.l_arm.gripper.opening == 100.0
     assert reachy_sdk_zeroed.r_arm.gripper.opening == 100.0
@@ -283,7 +283,7 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.goto_posture("elbow_90")
     time.sleep(2)
     reachy_sdk_zeroed.l_arm.turn_off()
-    reachy_sdk_zeroed.goto_posture("default")
+    reachy_sdk_zeroed.goto_posture("default", with_gripper=True)
     time.sleep(2)
     assert np.isclose(reachy_sdk_zeroed.l_arm.gripper.opening, 30, atol=5)
     assert reachy_sdk_zeroed.r_arm.gripper.opening == 100.0
