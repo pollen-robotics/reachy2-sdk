@@ -626,7 +626,7 @@ class ReachySDK:
                 will cancel all executing moves and queues. Defaults to `True`.
             interpolation_mode: The type of interpolation used when moving the arm's joints.
                 Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
-            with_gripper: If `True`, the gripper will open, if `False` it won't move. Defaults to `True`.
+            with_gripper: If `True`, the gripper will open, if `False` it won't move. Defaults to `False`.
 
         Returns:
             A GoToHomeId containing movement GoToIds for each part.
