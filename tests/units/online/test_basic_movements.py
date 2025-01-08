@@ -210,7 +210,7 @@ def test_get_default_posture_matrix(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.l_arm.gripper.set_opening(50)
     reachy_sdk_zeroed.goto_posture(common_posture="default", wait=True)
     assert np.allclose(reachy_sdk_zeroed.l_arm.gripper.opening, 50, atol=5)
-    reachy_sdk_zeroed.goto_posture(common_posture="default", wait=True, with_gripper=True)
+    reachy_sdk_zeroed.goto_posture(common_posture="default", wait=True, open_gripper=True)
     assert np.allclose(reachy_sdk_zeroed.l_arm.gripper.opening, 100, atol=5)
 
 
