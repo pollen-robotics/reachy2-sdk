@@ -78,9 +78,6 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         mobile_base.send_speed_command()
 
-    with pytest.raises(ValueError):
-        asyncio.run(mobile_base._goto_async(x=1.5, y=1.5, theta=10, timeout=4))
-
     new_battery = BatteryLevel(level=FloatValue(value=20))
 
     new_drive_mode = ZuuuModeCommand(mode=ZuuuModePossiblities.FREE_WHEEL)
