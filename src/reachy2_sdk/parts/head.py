@@ -3,7 +3,6 @@
 Handles all specific methods to a Head.
 """
 
-import time
 from typing import Any, List, Optional, overload
 
 import grpc
@@ -31,7 +30,6 @@ from reachy2_sdk_api.head_pb2 import (
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
 
-from ..dynamixel.dynamixel_motor import DynamixelMotor
 from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import get_grpc_interpolation_mode, quaternion_from_euler_angles
 from .goto_based_part import IGoToBasedPart
@@ -93,20 +91,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
             part=self,
             joints_position_order=[NeckJoints.ROLL, NeckJoints.PITCH, NeckJoints.YAW],
         )
-        self._l_antenna = DynamixelMotor(
-            uid=description.l_antenna.id.id,
-            name=description.l_antenna.id.name,
-            initial_state=initial_state.l_antenna_state,
-            grpc_channel=self._grpc_channel,
-            part=self,
-        )
-        self._r_antenna = DynamixelMotor(
-            uid=description.r_antenna.id.id,
-            name=description.r_antenna.id.name,
-            initial_state=initial_state.r_antenna_state,
-            grpc_channel=self._grpc_channel,
-            part=self,
-        )
 
     def __repr__(self) -> str:
         """Clean representation of an Head."""
@@ -119,16 +103,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def neck(self) -> Orbita3d:
         """Get the neck actuator of the head."""
         return self._neck
-
-    @property
-    def l_antenna(self) -> DynamixelMotor:
-        """Get the left antenna actuator of the head."""
-        return self._l_antenna
-
-    @property
-    def r_antenna(self) -> DynamixelMotor:
-        """Get the right antenna actuator of the head."""
-        return self._r_antenna
 
     def get_current_orientation(self) -> pyQuat:
         """Get the current orientation of the head.
@@ -479,8 +453,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
             return
         for actuator in self._actuators.values():
             actuator.send_goal_positions(check_positions)
-        self._l_antenna.send_goal_positions(check_positions)
-        self._r_antenna.send_goal_positions(check_positions)
 
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state from the gRPC server.
@@ -489,8 +461,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
             new_state: A HeadState object representing the new state of the head's actuators.
         """
         self.neck._update_with(new_state.neck_state)
-        self.l_antenna._update_with(new_state.l_antenna_state)
-        self.r_antenna._update_with(new_state.r_antenna_state)
 
     def _update_audit_status(self, new_status: HeadStatus) -> None:
         """Update the audit status of the neck with the new status from the gRPC server.
@@ -499,96 +469,3 @@ class Head(JointsBasedPart, IGoToBasedPart):
             new_status: A HeadStatus object representing the new status of the neck.
         """
         self.neck._update_audit_status(new_status.neck_status)
-
-    def happy(self) -> None:
-        """Play happy emotion with the antennas."""
-        dur = 2
-        t = np.linspace(0, dur, dur * 100)
-        pos = 10 * np.sin(2 * np.pi * 5 * t)
-
-        for p in pos:
-            self.l_antenna.goal_position = p
-            self.r_antenna.goal_position = -p
-            self.send_goal_positions(check_positions=False)
-            time.sleep(0.01)
-
-    def sad(self) -> None:
-        """Play sad emotion with the antennas."""
-
-        def send_antennas_opposite_pos(angle: float) -> None:
-            self._l_antenna.goal_position = angle
-            self._r_antenna.goal_position = -angle
-            self.send_goal_positions()
-
-        origin = 0
-        target_1 = 130
-
-        for t in np.linspace(0, 1, 60):
-            interpolated = (1 - t) * origin + t * target_1
-            send_antennas_opposite_pos(interpolated)
-            time.sleep(0.01)
-
-        dur = 2
-        t = np.linspace(0, dur, dur * 200)
-        pos = 20 * np.sin(2 * np.pi * t) + 130
-
-        for p in pos:
-            send_antennas_opposite_pos(p)
-            time.sleep(0.01)
-
-        time.sleep(0.5)
-
-        for t in np.linspace(0, 1, 60):
-            interpolated = (1 - t) * target_1 + t * origin
-            send_antennas_opposite_pos(interpolated)
-            time.sleep(0.01)
-
-    def surprised(self) -> None:
-        """Play surprised emotion with the antennas."""
-
-        origin = 0
-        target_left = -20
-        target_right = -70
-
-        for t in np.linspace(0, 1, 30):
-            interpolated_left = (1 - t) * origin + t * target_left
-            interpolated_right = (1 - t) * origin + t * target_right
-            self._l_antenna.goal_position = interpolated_left
-            self._r_antenna.goal_position = interpolated_right
-            self.send_goal_positions()
-            time.sleep(0.01)
-
-        time.sleep(2)
-
-        for t in np.linspace(0, 1, 30):
-            interpolated_left = (1 - t) * target_left + t * origin
-            interpolated_right = (1 - t) * target_right + t * origin
-            self._l_antenna.goal_position = interpolated_left
-            self._r_antenna.goal_position = interpolated_right
-            self.send_goal_positions()
-            time.sleep(0.01)
-
-    def surprised2(self) -> None:
-        """Play surprised emotion with the antennas."""
-
-        origin = 0
-        target_left = 50
-        target_right = -10
-
-        for t in np.linspace(0, 1, 30):
-            interpolated_left = (1 - t) * origin + t * target_left
-            interpolated_right = (1 - t) * origin + t * target_right
-            self._l_antenna.goal_position = interpolated_left
-            self._r_antenna.goal_position = interpolated_right
-            self.send_goal_positions()
-            time.sleep(0.01)
-
-        time.sleep(2)
-
-        for t in np.linspace(0, 1, 30):
-            interpolated_left = (1 - t) * target_left + t * origin
-            interpolated_right = (1 - t) * target_right + t * origin
-            self._l_antenna.goal_position = interpolated_left
-            self._r_antenna.goal_position = interpolated_right
-            self.send_goal_positions()
-            time.sleep(0.01)
