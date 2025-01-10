@@ -134,8 +134,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     @overload
     def goto(
@@ -145,8 +144,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     def goto(
         self,

@@ -377,8 +377,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     @overload
     def goto(
@@ -389,8 +388,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
-    ) -> GoToId:
-        ...
+    ) -> GoToId: ...
 
     def goto(
         self,
