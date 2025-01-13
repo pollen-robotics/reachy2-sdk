@@ -482,21 +482,25 @@ class ReachySDK:
             `True` if successful, `False` otherwise.
         """
         speed_limit_high = 25
+        success = self.is_on()
 
         if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
-        for part in self.info._enabled_parts.values():
-            part.set_speed_limits(1)
-        time.sleep(0.05)
-        for part in self.info._enabled_parts.values():
-            part._turn_on()
-        if self._mobile_base is not None:
-            self._mobile_base._turn_on()
-        time.sleep(0.05)
-        for part in self.info._enabled_parts.values():
-            part.set_speed_limits(speed_limit_high)
-        time.sleep(0.4)
+
+        while not success:
+            for part in self.info._enabled_parts.values():
+                part.set_speed_limits(1)
+            time.sleep(0.05)
+            for part in self.info._enabled_parts.values():
+                part._turn_on()
+            if self._mobile_base is not None:
+                self._mobile_base._turn_on()
+            time.sleep(0.05)
+            for part in self.info._enabled_parts.values():
+                part.set_speed_limits(speed_limit_high)
+            time.sleep(0.4)
+            success = self.is_on()
 
         return True
 
