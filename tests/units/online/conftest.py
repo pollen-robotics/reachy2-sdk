@@ -5,7 +5,6 @@ Common functions shared by all tests
 import time
 
 import pytest
-import pytest_timeout
 
 from reachy2_sdk.reachy_sdk import ReachySDK
 

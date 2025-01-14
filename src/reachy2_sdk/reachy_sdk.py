@@ -61,9 +61,7 @@ class ReachySDK:
 
     _instances_by_host: Dict[str, "ReachySDK"] = {}
 
-    def __new__(
-        cls: Type[ReachySDK], host: str, sdk_port: int = 50051, audio_port: int = 50063, video_port: int = 50065
-    ) -> ReachySDK:
+    def __new__(cls: Type[ReachySDK], host: str) -> ReachySDK:
         """Ensure only one connected instance per IP is created."""
         if host in cls._instances_by_host:
             if cls._instances_by_host[host]._grpc_connected:
