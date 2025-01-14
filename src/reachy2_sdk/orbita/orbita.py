@@ -87,7 +87,7 @@ class Orbita(ABC):
             A dictionary where each key corresponds to a joint attribute, and each value
             is another dictionary of state information with string keys and `FloatValue` values.
         """
-        pass
+        pass  # pragma: no cover
 
     def __repr__(self) -> str:
         """Clean representation of an Orbita."""
@@ -256,7 +256,7 @@ class Orbita(ABC):
                 the joint positions relative to their last goal positions.
                 Default is `True`.
         """
-        pass
+        pass  # pragma: no cover
 
     def _post_send_goal_positions(self) -> None:
         """Start a background thread to check the goal positions after sending them.

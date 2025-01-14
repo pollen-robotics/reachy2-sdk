@@ -2,6 +2,8 @@ import grpc
 import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
+from reachy2_sdk_api.error_pb2 import Error
+from reachy2_sdk_api.orbita2d_pb2 import Orbita2dStatus
 
 from reachy2_sdk.orbita.orbita2d import (
     Axis,
@@ -143,6 +145,9 @@ def test_orbita2d() -> None:
     assert orbita2d.pitch.goal_position == to_position(goal_position.axis_1.value)
     assert orbita2d.pitch.present_position == to_position(present_position.axis_1.value)
 
+    with pytest.raises(TypeError):
+        orbita2d.roll.goal_position = "wrong value"
+
     pid_set = orbita2d.get_pids()
     assert pid_set["motor_1"][0] == pid_new.motor_1.p.value
     assert pid_set["motor_1"][1] == pid_new.motor_1.i.value
@@ -162,3 +167,9 @@ def test_orbita2d() -> None:
 
     orbita2d.temperatures["motor_1"] == temperature.motor_1.value
     orbita2d.temperatures["motor_2"] == temperature.motor_1.value
+
+    assert orbita2d.audit is None
+    error = Error(details="test")
+    orbita2d_status = Orbita2dStatus(errors=[error])
+    orbita2d._update_audit_status(orbita2d_status)
+    assert orbita2d.audit == "test"
