@@ -9,11 +9,13 @@ You can also send joint commands, compute forward or inverse kinematics.
 # from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 # from .dynamixel_motor import DynamixelMotor
 
+from __future__ import annotations
+
 import threading
 import time
 from collections import namedtuple
 from logging import getLogger
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
@@ -57,6 +59,19 @@ class ReachySDK:
         and performing movements.
     """
 
+    _instances_by_host: Dict[str, "ReachySDK"] = {}
+
+    def __new__(
+        cls: Type[ReachySDK], host: str, sdk_port: int = 50051, audio_port: int = 50063, video_port: int = 50065
+    ) -> ReachySDK:
+        """Ensure only one instance per IP is created."""
+        if host in cls._instances_by_host:
+            return cls._instances_by_host[host]
+
+        instance = super().__new__(cls)
+        cls._instances_by_host[host] = instance
+        return instance
+
     def __init__(
         self,
         host: str,
@@ -72,6 +87,10 @@ class ReachySDK:
             audio_port: The gRPC port for audio services. Default is 50063.
             video_port: The gRPC port for video services. Default is 50065.
         """
+        if hasattr(self, "_initialized"):
+            self._logger.warning("An instance already exists.")
+            return
+
         self._logger = getLogger(__name__)
         self._host = host
         self._sdk_port = sdk_port
@@ -79,8 +98,8 @@ class ReachySDK:
         self._video_port = video_port
 
         self._grpc_connected = False
+        self._initialized = True
 
-        # declared to help mypy. actually filled in self._setup_parts()
         self._r_arm: Optional[Arm] = None
         self._l_arm: Optional[Arm] = None
         self._head: Optional[Head] = None
@@ -139,11 +158,15 @@ class ReachySDK:
 
         self._grpc_connected = False
         self._grpc_channel.close()
+        self._grpc_channel = None
 
         self._head = None
         self._r_arm = None
         self._l_arm = None
         self._mobile_base = None
+
+        if self._host in self._instances_by_host:
+            del self._instances_by_host[self._host]
 
         self._logger.info("Disconnected from Reachy.")
 
@@ -415,8 +438,7 @@ class ReachySDK:
 
     def _start_sync_in_bg(self) -> None:
         """Start background synchronization with the robot."""
-        channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
-        reachy_stub = reachy_pb2_grpc.ReachyServiceStub(channel)
+        reachy_stub = reachy_pb2_grpc.ReachyServiceStub(self._grpc_channel)
         self._get_stream_update_loop(reachy_stub, freq=100)
 
     def _get_stream_update_loop(self, reachy_stub: reachy_pb2_grpc.ReachyServiceStub, freq: float) -> None:
@@ -430,21 +452,28 @@ class ReachySDK:
         try:
             for state_update in reachy_stub.StreamReachyState(stream_req):
                 self._update_timestamp = state_update.timestamp
-                if self._l_arm is not None:
-                    self._l_arm._update_with(state_update.l_arm_state)
-                    if self._l_arm.gripper is not None:
-                        self._l_arm.gripper._update_with(state_update.l_hand_state)
-                if self._r_arm is not None:
-                    self._r_arm._update_with(state_update.r_arm_state)
-                    if self._r_arm.gripper is not None:
-                        self._r_arm.gripper._update_with(state_update.r_hand_state)
-                if self._head is not None:
-                    self._head._update_with(state_update.head_state)
-                if self._mobile_base is not None:
-                    self._mobile_base._update_with(state_update.mobile_base_state)
-        except grpc._channel._MultiThreadedRendezvous:
-            self._grpc_connected = False
-            raise ConnectionError(f"Connection with Reachy ip:{self._host} lost, check the sdk server status.")
+
+                self._update_part(self._l_arm, state_update.l_arm_state)
+                self._update_part(self._r_arm, state_update.r_arm_state)
+                self._update_part(self._head, state_update.head_state)
+                self._update_part(self._mobile_base, state_update.mobile_base_state)
+
+                if self._l_arm and self._l_arm.gripper:
+                    self._l_arm.gripper._update_with(state_update.l_hand_state)
+                if self._r_arm and self._r_arm.gripper:
+                    self._r_arm.gripper._update_with(state_update.r_hand_state)
+
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.CANCELLED:
+                self._logger.warning("Reachy gRPC stream is shutting down.")
+            else:
+                self._grpc_connected = False
+                raise ConnectionError(f"Connection with Reachy ip:{self._host} lost, check the SDK server status.")
+
+    def _update_part(self, part: Optional[Any], state: Any) -> None:
+        """Helper function to update a robot part if it exists."""
+        if part is not None:
+            part._update_with(state)
 
     def _audit(self) -> None:
         """Periodically perform an audit of the robot's components."""
@@ -476,27 +505,37 @@ class ReachySDK:
         return audit_dict
 
     def turn_on(self) -> bool:
-        """Activate all motors of the robot's parts.
+        """Activate all motors of the robot's parts if all of them are not already turned on.
 
         Returns:
             `True` if successful, `False` otherwise.
         """
-        speed_limit_high = 25
-
         if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
-        for part in self.info._enabled_parts.values():
-            part.set_speed_limits(1)
-        time.sleep(0.05)
-        for part in self.info._enabled_parts.values():
-            part._turn_on()
-        if self._mobile_base is not None:
-            self._mobile_base._turn_on()
-        time.sleep(0.05)
-        for part in self.info._enabled_parts.values():
-            part.set_speed_limits(speed_limit_high)
-        time.sleep(0.4)
+
+        speed_limit_high = 25
+        success = self.is_on() and (
+            (not self._l_arm or not self._l_arm.gripper or self._l_arm.gripper.is_on())
+            and (not self._r_arm or not self._r_arm.gripper or self._r_arm.gripper.is_on())
+        )
+
+        while not success:
+            for part in self.info._enabled_parts.values():
+                part.set_speed_limits(1)
+            time.sleep(0.05)
+            for part in self.info._enabled_parts.values():
+                part._turn_on()
+            if self._mobile_base is not None:
+                self._mobile_base._turn_on()
+            time.sleep(0.05)
+            for part in self.info._enabled_parts.values():
+                part.set_speed_limits(speed_limit_high)
+            time.sleep(0.4)
+            success = self.is_on() and (
+                (not self._l_arm or not self._l_arm.gripper or self._l_arm.gripper.is_on())
+                and (not self._r_arm or not self._r_arm.gripper or self._r_arm.gripper.is_on())
+            )
 
         return True
 
