@@ -277,3 +277,14 @@ def test_class() -> None:
     assert arm.elbow.audit == "orbita2d error"
     assert arm.wrist.audit == "orbita3d error"
     assert arm.shoulder.audit == "orbita2d error"
+
+    assert arm.audit["elbow"] == "orbita2d error"
+
+    error = Error(details="Ok")
+    orbita3d_status = Orbita3dStatus(errors=[error])
+    error = Error(details="Ok")
+    orbita2d_status = Orbita2dStatus(errors=[error])
+    arm_status = ArmStatus(shoulder_status=orbita2d_status, elbow_status=orbita2d_status, wrist_status=orbita3d_status)
+    arm._update_audit_status(arm_status)
+
+    assert arm.audit["elbow"] == "Ok"
