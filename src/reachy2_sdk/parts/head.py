@@ -135,7 +135,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
     ) -> GoToId:
-        ...
+        ...  # pragma: no cover
 
     @overload
     def goto(
@@ -146,7 +146,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
     ) -> GoToId:
-        ...
+        ...  # pragma: no cover
 
     def goto(
         self,
