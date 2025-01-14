@@ -87,11 +87,13 @@ class ReachySDK:
             audio_port: The gRPC port for audio services. Default is 50063.
             video_port: The gRPC port for video services. Default is 50065.
         """
+
+        self._logger = getLogger(__name__)
+
         if hasattr(self, "_initialized"):
             self._logger.warning("An instance already exists.")
             return
 
-        self._logger = getLogger(__name__)
         self._host = host
         self._sdk_port = sdk_port
         self._audio_port = audio_port
