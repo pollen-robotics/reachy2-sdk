@@ -59,4 +59,5 @@ def test_same_robot(reachy_sdk_zeroed: ReachySDK) -> None:
 @pytest.mark.timeout(2)
 def test_multiple_turn_on(reachy_sdk_zeroed: ReachySDK) -> None:
     for _ in range(15):
-        reachy_sdk_zeroed.turn_on()
+        reachy2 = ReachySDK("localhost")
+        reachy2.turn_on()

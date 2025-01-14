@@ -64,9 +64,12 @@ class ReachySDK:
     def __new__(
         cls: Type[ReachySDK], host: str, sdk_port: int = 50051, audio_port: int = 50063, video_port: int = 50065
     ) -> ReachySDK:
-        """Ensure only one instance per IP is created."""
+        """Ensure only one connected instance per IP is created."""
         if host in cls._instances_by_host:
-            return cls._instances_by_host[host]
+            if cls._instances_by_host[host]._grpc_connected:
+                return cls._instances_by_host[host]
+            else:
+                del cls._instances_by_host[host]
 
         instance = super().__new__(cls)
         cls._instances_by_host[host] = instance
@@ -87,7 +90,6 @@ class ReachySDK:
             audio_port: The gRPC port for audio services. Default is 50063.
             video_port: The gRPC port for video services. Default is 50065.
         """
-
         self._logger = getLogger(__name__)
 
         if hasattr(self, "_initialized"):
@@ -154,6 +156,9 @@ class ReachySDK:
         Args:
             lost_connection: If `True`, indicates that the connection was lost unexpectedly.
         """
+        if self._host in self._instances_by_host:
+            del self._instances_by_host[self._host]
+
         if not self._grpc_connected:
             self._logger.warning("Already disconnected from Reachy.")
             return
@@ -166,9 +171,6 @@ class ReachySDK:
         self._r_arm = None
         self._l_arm = None
         self._mobile_base = None
-
-        if self._host in self._instances_by_host:
-            del self._instances_by_host[self._host]
 
         self._logger.info("Disconnected from Reachy.")
 
