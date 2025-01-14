@@ -120,3 +120,7 @@ def test_class() -> None:
     ri = ReachyInfo(reachy)
     ri._set_mobile_base(mobile_base)
     assert ri.battery_voltage == 20.0
+
+    mobile_base.goto(0, 0, 0, 0)
+
+    mobile_base._set_speed_limits(100)

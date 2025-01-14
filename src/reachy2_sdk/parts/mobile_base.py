@@ -496,7 +496,7 @@ class MobileBase(Part):
         Args:
             new_status: The new status of the mobile base, as a MobileBaseStatus object.
         """
-        pass
+        pass  # pragma: no cover
 
     def _set_speed_limits(self, value: int) -> None:
         """Set the speed limits for the mobile base.
