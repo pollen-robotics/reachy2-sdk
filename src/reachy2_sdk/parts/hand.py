@@ -277,4 +277,4 @@ class Hand(Part):
         Args:
             new_status: A HandStatus object representing the new status of the hand.
         """
-        pass
+        pass  # pragma: no cover
