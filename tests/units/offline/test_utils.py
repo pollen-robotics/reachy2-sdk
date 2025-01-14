@@ -8,6 +8,7 @@ from reachy2_sdk.utils.utils import (
     arm_position_to_list,
     convert_to_degrees,
     convert_to_radians,
+    decompose_matrix,
     ext_euler_angles_to_list,
     get_grpc_interpolation_mode,
     get_interpolation_mode,
@@ -17,6 +18,7 @@ from reachy2_sdk.utils.utils import (
     list_to_arm_position,
     matrix_from_euler_angles,
     quaternion_from_euler_angles,
+    recompose_matrix,
     rotate_in_self,
     translate_in_self,
 )
@@ -44,6 +46,13 @@ def test_arm_position_to_list() -> None:
 
     assert np.allclose(arm_position_float_ref, arm_position_float, atol=1e-03)
 
+    arm_position_float_ref = np.deg2rad(np.array(arm_position_float_ref))
+    arm_position = list_to_arm_position(arm_position_float_ref, False)
+
+    arm_position_float = arm_position_to_list(arm_position, False)
+
+    assert np.allclose(arm_position_float_ref, arm_position_float, atol=1e-03)
+
     """
     # Todo: this should be equivalent
 
@@ -62,6 +71,10 @@ def test_ext_euler_angles_list() -> None:
     ext_euler = ExtEulerAngles(
         roll=FloatValue(value=rpy_rad[0]), pitch=FloatValue(value=rpy_rad[1]), yaw=FloatValue(value=rpy_rad[2])
     )
+
+    rad_list = ext_euler_angles_to_list(ext_euler, False)
+    assert np.array_equal(rpy_rad, rad_list)
+
     euler_list = ext_euler_angles_to_list(ext_euler, True)
     rpy_deg = convert_to_degrees(rpy_rad)
 
@@ -98,6 +111,9 @@ def test_matrix_from_euler_angles() -> None:
     expected_A = np.eye(4)
     expected_A[:3, :3] = scipy_result_A
     np.array_equal(expected_A, A)
+
+    A2 = matrix_from_euler_angles(np.deg2rad(20), np.deg2rad(45), np.deg2rad(30), False)
+    np.array_equal(expected_A, A2)
 
     B = matrix_from_euler_angles(40, -50, -15)
     scipy_result_B = np.array(
@@ -338,3 +354,34 @@ def test_get_normal_vector() -> None:
 
     with pytest.raises(ValueError):
         get_normal_vector([0.1, 0.2, 0.3], arc_direction="coucou")
+
+    initial_vector = [0, 0, 0]
+    normal_above = get_normal_vector(vector=initial_vector, arc_direction="above")
+    normal_below = get_normal_vector(vector=initial_vector, arc_direction="below")
+    normal_front = get_normal_vector(vector=initial_vector, arc_direction="front")
+    normal_back = get_normal_vector(vector=initial_vector, arc_direction="back")
+    normal_right = get_normal_vector(vector=initial_vector, arc_direction="right")
+    normal_left = get_normal_vector(vector=initial_vector, arc_direction="left")
+    assert normal_above is None
+    assert normal_below is None
+    assert normal_front is None
+    assert normal_back is None
+    assert normal_right is None
+    assert normal_left is None
+
+
+@pytest.mark.offline
+def test_decompose_recompose_matrices() -> None:
+    M = np.array(
+        [
+            [0.79389263, -0.5720614, 0.20610737, 1.0],
+            [0.5720614, 0.58778525, -0.5720614, 2.0],
+            [0.20610737, 0.5720614, 0.79389263, 3.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+
+    Q, T = decompose_matrix(M)
+    M_recomposed = recompose_matrix(Q.rotation_matrix, T)
+
+    assert np.allclose(M, M_recomposed, atol=1e-05)
