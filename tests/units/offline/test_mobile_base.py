@@ -20,7 +20,10 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
     ZuuuModePossiblities,
 )
 from reachy2_sdk_api.part_pb2 import PartId, PartInfo
+from reachy2_sdk_api.reachy_pb2 import Reachy
+from reachy2_sdk_api.reachy_pb2 import ReachyInfo as ReachyInfo_proto
 
+from reachy2_sdk.config.reachy_info import ReachyInfo
 from reachy2_sdk.parts.mobile_base import MobileBase
 
 
@@ -107,3 +110,13 @@ def test_class() -> None:
 
     with pytest.raises(ValueError):
         mobile_base._set_drive_mode("wrong")
+
+    serial_number = "Reachy-12345"
+    version_hard = "1.1"
+    version_soft = "1.2"
+    robot_info = ReachyInfo_proto(serial_number=serial_number, version_hard=version_hard, version_soft=version_soft)
+    reachy = Reachy(info=robot_info)
+
+    ri = ReachyInfo(reachy)
+    ri._set_mobile_base(mobile_base)
+    assert ri.battery_voltage == 20.0

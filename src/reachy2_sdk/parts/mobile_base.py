@@ -73,6 +73,7 @@ class MobileBase(Part):
 
         self._drive_mode: str = ZuuuModePossiblities.keys()[initial_state.zuuu_mode.mode].lower()
         self._control_mode: str = ControlModePossiblities.keys()[initial_state.control_mode.mode].lower()
+        self._battery_level = 30.0
 
         self._max_xy_vel = 1.0
         self._max_rot_vel = 180.0
