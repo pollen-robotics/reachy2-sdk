@@ -517,12 +517,10 @@ class ReachySDK:
             return False
 
         speed_limit_high = 25
-        success = self.is_on() and (
-            (not self._l_arm or not self._l_arm.gripper or self._l_arm.gripper.is_on())
-            and (not self._r_arm or not self._r_arm.gripper or self._r_arm.gripper.is_on())
-        )
+        max_iterations = 10
+        ite = 0
 
-        while not success:
+        while not self._is_fully_on() and ite < max_iterations:
             for part in self.info._enabled_parts.values():
                 part.set_speed_limits(1)
             time.sleep(0.05)
@@ -534,10 +532,11 @@ class ReachySDK:
             for part in self.info._enabled_parts.values():
                 part.set_speed_limits(speed_limit_high)
             time.sleep(0.4)
-            success = self.is_on() and (
-                (not self._l_arm or not self._l_arm.gripper or self._l_arm.gripper.is_on())
-                and (not self._r_arm or not self._r_arm.gripper or self._r_arm.gripper.is_on())
-            )
+            ite += 1
+
+        if ite == max_iterations:
+            self._logger.warning("Failed to turn on Reachy,")
+            return False
 
         return True
 
@@ -631,6 +630,10 @@ class ReachySDK:
         if self._mobile_base is not None and self._mobile_base.is_on():
             return False
         return True
+
+    def _is_fully_on(self) -> bool:
+        """Check if the robot and its grippers (if they exist) are turned on."""
+        return self.is_on() and all(arm.gripper.is_on() if arm and arm.gripper else True for arm in [self._l_arm, self._r_arm])
 
     def reset_default_limits(self) -> None:
         """Set back speed and torque limits of all parts to maximum value (100)."""
