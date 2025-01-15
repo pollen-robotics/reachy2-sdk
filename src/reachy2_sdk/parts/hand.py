@@ -3,6 +3,7 @@
 Handles all specific method to a Hand.
 """
 
+import time
 from collections import deque
 from typing import Deque, Optional
 
@@ -183,52 +184,102 @@ class Hand(Part):
         """
         return self.opening
 
-    def open(self) -> None:
-        """Open the hand.
+    def open(self, duration: float = 2, frequency: float = 100) -> None:
+        """Open the hand to a fully open position.
+
+        Args:
+            duration: The duration of the movement in seconds. Defaults to 2 seconds.
+            frequency: The frequency of the movement in Hz. Defaults to 100 Hz.
 
         Raises:
+            ValueError: If the duration or frequency is 0.
             RuntimeError: If the gripper is off and the open request cannot be sent.
         """
         if self._compliant:
             raise RuntimeError("Gripper is off. Open request not sent.")
-        self._hand_stub.OpenHand(self._part_id)
-        self._is_moving = True
+        if duration == 0:
+            raise ValueError("Duration should be greater than 0.")
+        if frequency == 0:
+            raise ValueError("Frequency should be greater than 0.")
 
-    def close(self) -> None:
-        """Close the hand.
+        self._is_moving = True
+        self._interpolate_gripper_move(target=100, duration=duration, frequency=frequency)
+
+    def close(self, duration: float = 2, frequency: float = 100) -> None:
+        """Close the hand to a fully closed position.
+
+        Args:
+            duration: The duration of the movement in seconds. Defaults to 2 seconds.
+            frequency: The frequency of the movement in Hz. Defaults to 100 Hz.
 
         Raises:
+            ValueError: If the duration or frequency is 0.
             RuntimeError: If the gripper is off and the close request cannot be sent.
         """
         if self._compliant:
             raise RuntimeError("Gripper is off. Close request not sent.")
-        self._hand_stub.CloseHand(self._part_id)
-        self._is_moving = True
+        if duration == 0:
+            raise ValueError("Duration should be greater than 0.")
+        if frequency == 0:
+            raise ValueError("Frequency should be greater than 0.")
 
-    def set_opening(self, percentage: float) -> None:
+        self._is_moving = True
+        self._interpolate_gripper_move(target=0, duration=duration, frequency=frequency)
+
+    def set_opening(self, percentage: float, duration: float = 2, frequency: float = 100) -> None:
         """Set the opening value for the hand.
 
         Args:
             percentage: The desired opening percentage of the hand, ranging from 0 to 100.
+            duration: The duration of the movement in seconds. Defaults to 2 seconds.
+            frequency: The frequency of the movement in Hz. Defaults to 100 Hz.
 
         Raises:
-            ValueError: If the percentage is not between 0 and 100.
+            ValueError: If the percentage is not between 0 and 100, or if the duration or frequency is 0.
             RuntimeError: If the gripper is off and the opening value cannot be set.
         """
         if not 0.0 <= percentage <= 100.0:
             raise ValueError(f"Percentage should be between 0 and 100, not {percentage}")
         if self._compliant:
             raise RuntimeError("Gripper is off. Opening value not sent.")
+        if duration == 0:
+            raise ValueError("Duration should be greater than 0.")
+        if frequency == 0:
+            raise ValueError("Frequency should be greater than 0.")
 
-        self._hand_stub.SetHandPosition(
-            HandPositionRequest(
-                id=self._part_id,
-                position=HandPosition(
-                    parallel_gripper=ParallelGripperPosition(opening_percentage=FloatValue(value=percentage / 100.0))
-                ),
-            )
-        )
         self._is_moving = True
+        self._interpolate_gripper_move(target=percentage, duration=duration, frequency=frequency)
+
+    def _interpolate_gripper_move(self, target: float, duration: float, frequency: float) -> None:
+        """Set the opening value for the hand over a specified duration and frequency.
+
+        Args :
+            target: The desired opening percentage of the hand, ranging from 0 to 100.
+            duration: The duration of the movement in seconds.
+            frequency: The frequency of the movement in Hz.
+        """
+        starting_time = time.time()
+        starting_opening = self.opening
+        amplitude = target - starting_opening
+        nb_steps = int(duration * frequency)
+        time_step = duration / nb_steps
+        opening_step = amplitude / nb_steps
+
+        for i in range(nb_steps):
+            t0 = time.time()
+            command = starting_opening + opening_step * (i + 1)
+            self._hand_stub.SetHandPosition(
+                HandPositionRequest(
+                    id=self._part_id,
+                    position=HandPosition(
+                        parallel_gripper=ParallelGripperPosition(opening_percentage=FloatValue(value=command / 100.0))
+                    ),
+                )
+            )
+            left_time = time_step - (time.time() - t0)
+            if left_time > 0:
+                time.sleep(left_time)
+        print("ending time : ", time.time() - starting_time)
 
     def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send the goal position to the hand actuator.

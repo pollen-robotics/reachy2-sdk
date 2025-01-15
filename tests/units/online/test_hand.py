@@ -107,3 +107,33 @@ def test_gripper_is_moving(reachy_sdk_zeroed: ReachySDK) -> None:
     time.sleep(1.0)
     assert not reachy_sdk_zeroed.l_arm.gripper.is_moving()
     assert not reachy_sdk_zeroed.r_arm.gripper.is_moving()
+
+
+@pytest.mark.online
+def test_gripper_with_duration(reachy_sdk_zeroed: ReachySDK) -> None:
+    starting_time = time.time()
+    reachy_sdk_zeroed.r_arm.gripper.close(duration=1.0)
+    ending_time = time.time()
+    assert np.isclose(ending_time - starting_time, 1.0, atol=1)
+    assert np.isclose(reachy_sdk_zeroed.r_arm.gripper.opening, 0, atol=2)
+
+    starting_time = time.time()
+    reachy_sdk_zeroed.r_arm.gripper.open()
+    ending_time = time.time()
+    assert np.isclose(ending_time - starting_time, 2.0, atol=1e-01)
+    assert np.isclose(reachy_sdk_zeroed.r_arm.gripper.opening, 100, atol=2)
+
+    starting_time = time.time()
+    reachy_sdk_zeroed.r_arm.gripper.set_opening(50, duration=3.0)
+    ending_time = time.time()
+    assert np.isclose(ending_time - starting_time, 3.0, atol=1e-01)
+    assert np.isclose(reachy_sdk_zeroed.r_arm.gripper.opening, 50, atol=2)
+
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.r_arm.gripper.set_opening(50, duration=0)
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.r_arm.gripper.set_opening(50, frequency=0)
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.r_arm.gripper.open(duration=0)
+    with pytest.raises(ValueError):
+        reachy_sdk_zeroed.r_arm.gripper.close(frequency=0)
