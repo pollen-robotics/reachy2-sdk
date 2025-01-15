@@ -54,3 +54,10 @@ def test_same_robot(reachy_sdk_zeroed: ReachySDK) -> None:
         assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), reachy2.l_arm.get_current_positions(), atol=1)
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), move1_goal, atol=1e-03)
     assert np.allclose(reachy2.l_arm.get_current_positions(), move1_goal, atol=1e-03)
+
+
+@pytest.mark.online
+def test_multiple_turn_on(reachy_sdk_zeroed: ReachySDK) -> None:
+    for _ in range(15):
+        reachy2 = ReachySDK("localhost")
+        assert reachy2.turn_on() == True
