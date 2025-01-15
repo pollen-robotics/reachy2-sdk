@@ -378,7 +378,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         degrees: bool = True,
         q0: Optional[List[float]] = None,
     ) -> GoToId:
-        ...
+        ...  # pragma: no cover
 
     @overload
     def goto(
@@ -390,7 +390,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         degrees: bool = True,
         q0: Optional[List[float]] = None,
     ) -> GoToId:
-        ...
+        ...  # pragma: no cover
 
     def goto(
         self,

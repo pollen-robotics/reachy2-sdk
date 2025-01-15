@@ -67,7 +67,7 @@ def wrapped_proto_value(value: bool | float | int) -> Any:
         return BoolValue(value=value)
     if isinstance(value, float):
         return FloatValue(value=value)
-    if isinstance(value, UInt32Value):
+    if isinstance(value, int):
         return UInt32Value(value=value)
     return value
 

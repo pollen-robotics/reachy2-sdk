@@ -4,10 +4,18 @@ import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from pyquaternion import Quaternion
 from reachy2_sdk_api.component_pb2 import PIDGains
+from reachy2_sdk_api.dynamixel_motor_pb2 import DynamixelMotorStatus
+from reachy2_sdk_api.error_pb2 import Error
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
-from reachy2_sdk_api.head_pb2 import HeadState
+from reachy2_sdk_api.head_pb2 import HeadState, HeadStatus
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
-from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState, PID3d, Vector3d
+from reachy2_sdk_api.orbita3d_pb2 import (
+    Float3d,
+    Orbita3dState,
+    Orbita3dStatus,
+    PID3d,
+    Vector3d,
+)
 
 from reachy2_sdk.orbita.utils import to_position
 from reachy2_sdk.parts.head import Head
@@ -52,6 +60,8 @@ def test_class() -> None:
     assert not head.neck.is_on()
     assert head.is_off()
     assert not head.is_on()
+
+    head.send_goal_positions()
 
     assert len(head._actuators) == 1
     assert isinstance(head._actuators, dict)
@@ -120,12 +130,17 @@ def test_class() -> None:
     assert len(head._actuators) == 1
     assert isinstance(head._actuators, dict)
 
+    head._check_goto_parameters(duration=1, target=[0, 0, 0])
+
     with pytest.raises(ValueError):
         head._check_goto_parameters(duration=0, target=[0, 0, 0])
     with pytest.raises(ValueError):
         head._check_goto_parameters(duration=2, target=[0, 0, 0, 0])
     with pytest.raises(TypeError):
         head._check_goto_parameters(duration=2, target=np.eye(4))
+
+    with pytest.raises(ValueError):
+        head._goto_single_joint(neck_joint=0, goal_position=0, duration=0)
 
     with pytest.raises(TypeError):
         head.set_speed_limits("wrong value")
@@ -144,6 +159,9 @@ def test_class() -> None:
 
     with pytest.raises(ValueError):
         head.set_torque_limits(-10)
+
+    with pytest.raises(ValueError):
+        head.rotate_by(frame="wrong")
 
     assert head.neck.roll.goal_position == to_position(goal_rot.rpy.roll.value)
     assert head.neck.roll.present_position == to_position(present_rot.rpy.roll.value)
@@ -173,3 +191,13 @@ def test_class() -> None:
 
     with pytest.raises(ValueError):
         head.goto([20, 30, 10], duration=0)
+
+    head.send_goal_positions()
+
+    error = Error(details="orbita3d error")
+    orbita3d_status = Orbita3dStatus(errors=[error])
+    error = Error(details="dynamixel error")
+    dynamixel_status = DynamixelMotorStatus(errors=[error])
+    head_status = HeadStatus(neck_status=orbita3d_status, l_antenna_status=dynamixel_status, r_antenna_status=dynamixel_status)
+    head._update_audit_status(head_status)
+    assert head.neck.audit == "orbita3d error"

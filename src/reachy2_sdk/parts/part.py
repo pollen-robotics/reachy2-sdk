@@ -120,7 +120,7 @@ class Part(ABC):
             state: The state data used to update the part, which can be an ArmState, HeadState,
                 HandState, or MobileBaseState.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def _update_audit_status(self, state: ArmStatus | HeadStatus | HandStatus | MobileBaseStatus) -> None:
@@ -133,7 +133,7 @@ class Part(ABC):
             state: The status data used to update the audit status, which can be an ArmStatus,
                 HeadStatus, HandStatus, or MobileBaseStatus.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def _set_speed_limits(self, value: int) -> None:
@@ -144,7 +144,7 @@ class Part(ABC):
         Args:
             value: The speed limit value to be set, as a percentage of the maximum speed allowed (0-100).
         """
-        pass
+        pass  # pragma: no cover
 
     @property
     def audit(self) -> Dict[str, str]:
