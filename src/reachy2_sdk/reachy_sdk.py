@@ -24,7 +24,7 @@ from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
-from reachy2_sdk_api.reachy_pb2 import ReachyState
+from reachy2_sdk_api.reachy_pb2 import ReachyCoreMode, ReachyState
 
 from .config.reachy_info import ReachyInfo
 from .media.camera_manager import CameraManager
@@ -64,10 +64,11 @@ class ReachySDK:
     def __new__(cls: Type[ReachySDK], host: str) -> ReachySDK:
         """Ensure only one connected instance per IP is created."""
         if host in cls._instances_by_host:
-            if cls._instances_by_host[host]._grpc_connected:
-                return cls._instances_by_host[host]
+            instance = cls._instances_by_host[host]
+            if instance._grpc_connected:
+                return instance
             else:
-                del cls._instances_by_host[host]
+                del instance
 
         instance = super().__new__(cls)
         cls._instances_by_host[host] = instance
@@ -92,6 +93,7 @@ class ReachySDK:
 
         if hasattr(self, "_initialized"):
             self._logger.warning("An instance already exists.")
+            self._print_mode_type()
             return
 
         self._host = host
@@ -111,12 +113,16 @@ class ReachySDK:
 
         self._update_timestamp: Timestamp = Timestamp(seconds=0)
 
+        self._inactivity_timer: Optional[threading.Timer] = None
+        self._check_inactivity_from_user()
+
         self.connect()
 
     def connect(self) -> None:
         """Connects the SDK to the robot."""
         if self._grpc_connected:
             self._logger.warning("Already connected to Reachy.")
+            self._print_mode_type()
             return
 
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
@@ -147,6 +153,7 @@ class ReachySDK:
 
         self._grpc_connected = True
         self._logger.info("Connected to Reachy.")
+        self._print_mode_type()
 
     def disconnect(self, lost_connection: bool = False) -> None:
         """Disconnect the SDK from the robot's server.
@@ -427,6 +434,39 @@ class ReachySDK:
         self._setup_part_l_arm(initial_state)
         self._setup_part_head(initial_state)
         self._setup_part_mobile_base(initial_state)
+
+    def _print_mode_type(self) -> None:
+        """Print a warning for users, on the mode of Reachy."""
+        if not self.info:
+            self._logger.warning("Reachy is not connected!")
+            return
+
+        mode: ReachyCoreMode = self.info.mode
+        if mode == "REAL":
+            warning_str = "Be careful, the PHYSICAL Reachy"
+        elif mode == "FAKE":
+            warning_str = "Only the virtual Reachy on Rviz"
+        elif mode == "GAZEBO":
+            warning_str = "Only the virtual Reachy on Gazebo"
+
+        self._logger.warning(f"\nThis Reachy is in {mode} mode : {warning_str} is going to move.\n")
+
+    def _check_inactivity_from_user(self, timeout: float = 30.0) -> None:
+        """Check inactivity from the user, by catching the functions called by them.
+        If that exceeds the timeout, print the mode type for the user to have a reminder.
+        """
+        if self._inactivity_timer:
+            self._inactivity_timer.cancel()
+        self._inactivity_timer = threading.Timer(timeout, self._print_mode_type)
+        self._inactivity_timer.start()
+
+    def __getattribute__(self, name: str) -> Any:
+        """Intercepts method calls to track user interactions, ignoring private/internal methods."""
+        if name.startswith("_"):
+            return super().__getattribute__(name)
+
+        self._check_inactivity_from_user()
+        return super().__getattribute__(name)
 
     def get_update_timestamp(self) -> int:
         """Returns the timestamp (ns) of the last update.
