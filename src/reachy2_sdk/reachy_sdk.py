@@ -11,8 +11,8 @@ You can also send joint commands, compute forward or inverse kinematics.
 
 from __future__ import annotations
 
-import logging
-import sys
+import platform
+import readline
 import threading
 import time
 from collections import namedtuple
@@ -96,8 +96,6 @@ class ReachySDK:
             audio_port: The gRPC port for audio services. Default is 50063.
             video_port: The gRPC port for video services. Default is 50065.
         """
-
-        logging.basicConfig(level=logging.DEBUG, format="%(message)s", stream=sys.stdout)
         self._logger = getLogger(__name__)
 
         if hasattr(self, "_initialized"):
@@ -125,6 +123,7 @@ class ReachySDK:
 
         self._mode: Optional[str] = None
         self._inactivity_timer: Optional[threading.Timer] = None
+        self._last_command_id: Optional[str] = None
 
         self.connect()
 
@@ -451,18 +450,32 @@ class ReachySDK:
         self._setup_part_head(initial_state)
         self._setup_part_mobile_base(initial_state)
 
+    def _get_current_command(self) -> str:
+        """Get the current command being typed by the user."""
+        if platform.system() == "Windows":
+            return ""
+        try:
+            return readline.get_line_buffer()
+            print(readline.get_line_buffer())
+        except Exception:
+            return ""
+
     def _print_mode_type(self) -> None:
         """Print a warning for users, on the mode of Reachy."""
         if self._grpc_connected:
             mode = self._mode
             if mode == "REAL":
-                warning_str = "Be careful, the PHYSICAL Reachy"
+                warning_str = "\n⚠️  Be careful, the PHYSICAL Reachy"
             elif mode == "FAKE":
-                warning_str = "Only the virtual Reachy on Rviz"
+                warning_str = " Only the virtual Reachy on Rviz"
             elif mode == "GAZEBO":
                 warning_str = "Only the virtual Reachy on Gazebo"
 
-            self._logger.warning(f"\nThis Reachy is in {mode} mode : {warning_str} is going to move.\n")
+            current_command = self._get_current_command()
+            if current_command and current_command == self._last_command_id:
+                return
+            self._logger.warning(f"This Reachy is in {mode} mode :{warning_str} is going to move.\n")
+            self._last_log_command_id = current_command
 
     def _check_inactivity_from_user(self, timeout: float = 60.0) -> None:
         """Check inactivity from the user, by catching the functions called by them.
