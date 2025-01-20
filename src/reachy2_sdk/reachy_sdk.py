@@ -11,6 +11,8 @@ You can also send joint commands, compute forward or inverse kinematics.
 
 from __future__ import annotations
 
+import logging
+import sys
 import threading
 import time
 from collections import namedtuple
@@ -62,7 +64,8 @@ class ReachySDK:
     _instances_by_host: Dict[str, "ReachySDK"] = {}
 
     def __new__(cls: Type[ReachySDK], host: str) -> ReachySDK:
-        """Ensure only one connected instance per IP is created."""
+        """Ensure that only one instance of ReachySDK is created for each host, and that the variable name is unique."""
+        # check that the host is not already connected to another instance
         if host in cls._instances_by_host:
             instance = cls._instances_by_host[host]
             if instance._grpc_connected:
@@ -70,8 +73,12 @@ class ReachySDK:
             else:
                 del instance
 
+        # Create a new instance
         instance = super().__new__(cls)
+
+        # Add the instance to the instances dict
         cls._instances_by_host[host] = instance
+
         return instance
 
     def __init__(
@@ -89,6 +96,8 @@ class ReachySDK:
             audio_port: The gRPC port for audio services. Default is 50063.
             video_port: The gRPC port for video services. Default is 50065.
         """
+
+        logging.basicConfig(level=logging.DEBUG, format="%(message)s", stream=sys.stdout)
         self._logger = getLogger(__name__)
 
         if hasattr(self, "_initialized"):
@@ -96,6 +105,7 @@ class ReachySDK:
             self._print_mode_type()
             return
 
+        self._variable_name: Optional[str] = None
         self._host = host
         self._sdk_port = sdk_port
         self._audio_port = audio_port
@@ -113,8 +123,8 @@ class ReachySDK:
 
         self._update_timestamp: Timestamp = Timestamp(seconds=0)
 
+        self._mode: Optional[str] = None
         self._inactivity_timer: Optional[threading.Timer] = None
-        self._check_inactivity_from_user()
 
         self.connect()
 
@@ -140,6 +150,8 @@ class ReachySDK:
             return
 
         self._setup_parts()
+        self._mode = str(ReachyCoreMode.keys()[self._info._mode]) if self._info else None
+
         # self._setup_audio()
         self._cameras = self._setup_video()
 
@@ -154,6 +166,9 @@ class ReachySDK:
         self._grpc_connected = True
         self._logger.info("Connected to Reachy.")
         self._print_mode_type()
+
+        if self._mode == "REAL":
+            self._check_inactivity_from_user()
 
     def disconnect(self, lost_connection: bool = False) -> None:
         """Disconnect the SDK from the robot's server.
@@ -176,6 +191,7 @@ class ReachySDK:
         self._r_arm = None
         self._l_arm = None
         self._mobile_base = None
+        self._mode = None
 
         self._logger.info("Disconnected from Reachy.")
 
@@ -437,23 +453,21 @@ class ReachySDK:
 
     def _print_mode_type(self) -> None:
         """Print a warning for users, on the mode of Reachy."""
-        if not self.info:
-            self._logger.warning("Reachy is not connected!")
-            return
+        if self._grpc_connected:
+            mode = self._mode
+            if mode == "REAL":
+                warning_str = "Be careful, the PHYSICAL Reachy"
+            elif mode == "FAKE":
+                warning_str = "Only the virtual Reachy on Rviz"
+            elif mode == "GAZEBO":
+                warning_str = "Only the virtual Reachy on Gazebo"
 
-        mode: ReachyCoreMode = self.info.mode
-        if mode == "REAL":
-            warning_str = "Be careful, the PHYSICAL Reachy"
-        elif mode == "FAKE":
-            warning_str = "Only the virtual Reachy on Rviz"
-        elif mode == "GAZEBO":
-            warning_str = "Only the virtual Reachy on Gazebo"
+            self._logger.warning(f"\nThis Reachy is in {mode} mode : {warning_str} is going to move.\n")
 
-        self._logger.warning(f"\nThis Reachy is in {mode} mode : {warning_str} is going to move.\n")
-
-    def _check_inactivity_from_user(self, timeout: float = 30.0) -> None:
+    def _check_inactivity_from_user(self, timeout: float = 60.0) -> None:
         """Check inactivity from the user, by catching the functions called by them.
         If that exceeds the timeout, print the mode type for the user to have a reminder.
+        Default timeout is 60 seconds.
         """
         if self._inactivity_timer:
             self._inactivity_timer.cancel()
@@ -462,10 +476,12 @@ class ReachySDK:
 
     def __getattribute__(self, name: str) -> Any:
         """Intercepts method calls to track user interactions, ignoring private/internal methods."""
-        if name.startswith("_"):
+        if name.startswith("_") or not self._grpc_connected:
             return super().__getattribute__(name)
 
-        self._check_inactivity_from_user()
+        elif self._mode == "REAL":
+            self._check_inactivity_from_user()
+
         return super().__getattribute__(name)
 
     def get_update_timestamp(self) -> int:
