@@ -140,6 +140,15 @@ class ReachySDK:
 
         try:
             self._get_info()
+            self._mode = str(ReachyCoreMode.keys()[self._info._mode]) if self._info else None
+
+            # ask for user confirmation if the robot is physical
+            if self._mode == "REAL":
+                if not self._confirm_connection():
+                    self._logger.warning("Connection to Reachy aborted.")
+                    self.disconnect()
+                    return
+
         except ConnectionError:
             self._logger.error(
                 f"Could not connect to Reachy with on IP address {self._host}, "
@@ -149,7 +158,6 @@ class ReachySDK:
             return
 
         self._setup_parts()
-        self._mode = str(ReachyCoreMode.keys()[self._info._mode]) if self._info else None
 
         # self._setup_audio()
         self._cameras = self._setup_video()
@@ -449,6 +457,14 @@ class ReachySDK:
         self._setup_part_l_arm(initial_state)
         self._setup_part_head(initial_state)
         self._setup_part_mobile_base(initial_state)
+
+    def _confirm_connection(self) -> bool:
+        """Ask the user to confirm the connection to a physical Reachy."""
+        response = input("⚠️  You are about to connect to a PHYSICAL Reachy.\n Do you want to continue (y/n)?").strip().lower()
+        if response in ["", "y", "yes"]:
+            return True
+        else:
+            return False
 
     def _get_current_command(self) -> str:
         """Get the current command being typed by the user."""
