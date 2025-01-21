@@ -258,7 +258,6 @@ class Hand(Part):
             duration: The duration of the movement in seconds.
             frequency: The frequency of the movement in Hz.
         """
-        starting_time = time.time()
         starting_opening = self.opening
         amplitude = target - starting_opening
         nb_steps = int(duration * frequency)
@@ -279,7 +278,6 @@ class Hand(Part):
             left_time = time_step - (time.time() - t0)
             if left_time > 0:
                 time.sleep(left_time)
-        print("ending time : ", time.time() - starting_time)
 
     def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send the goal position to the hand actuator.
