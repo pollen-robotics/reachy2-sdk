@@ -11,8 +11,6 @@ You can also send joint commands, compute forward or inverse kinematics.
 
 from __future__ import annotations
 
-import platform
-import readline
 import threading
 import time
 from collections import namedtuple
@@ -65,7 +63,7 @@ class ReachySDK:
     _last_executing_instance = None
 
     def __new__(cls: Type[ReachySDK], host: str) -> ReachySDK:
-        """Ensure that only one instance of ReachySDK is created for each host, and that the variable name is unique."""
+        """Ensure that only one instance of ReachySDK is created for each host."""
         # check that the host is not already connected to another instance
         if host in cls._instances_by_host:
             instance = cls._instances_by_host[host]
@@ -74,10 +72,8 @@ class ReachySDK:
             else:
                 del instance
 
-        # Create a new instance
+        # Create a new instance and add it to the dict
         instance = super().__new__(cls)
-
-        # Add the instance to the instances dict
         cls._instances_by_host[host] = instance
 
         return instance
@@ -104,7 +100,6 @@ class ReachySDK:
             self._print_mode_type()
             return
 
-        self._variable_name: Optional[str] = None
         self._host = host
         self._sdk_port = sdk_port
         self._audio_port = audio_port
@@ -124,7 +119,6 @@ class ReachySDK:
 
         self._mode: Optional[str] = None
         self._inactivity_timer: Optional[threading.Timer] = None
-        self._last_command_id: Optional[str] = None
 
         self.connect()
 
@@ -136,7 +130,6 @@ class ReachySDK:
             return
 
         self._grpc_channel = grpc.insecure_channel(f"{self._host}:{self._sdk_port}")
-
         self._stop_flag = threading.Event()
 
         try:
@@ -467,16 +460,6 @@ class ReachySDK:
         else:
             return False
 
-    def _get_current_command(self) -> str:
-        """Get the current command being typed by the user."""
-        if platform.system() == "Windows":
-            return ""
-        try:
-            return readline.get_line_buffer()
-            print(readline.get_line_buffer())
-        except Exception:
-            return ""
-
     def _print_mode_type(self) -> None:
         """Print a warning for users, on the mode of Reachy."""
         if self._grpc_connected:
@@ -486,11 +469,7 @@ class ReachySDK:
             else:
                 warning_str = " you're controlling the virtual Reachy"
 
-            current_command = self._get_current_command()
-
-            # if the last command was from a different instance, or if there is already a warning message under the last command
-            # we don't print another warning
-            if ReachySDK._last_executing_instance != self or (current_command and current_command == self._last_command_id):
+            if ReachySDK._last_executing_instance != self:
                 return
             self._logger.warning(f"This Reachy is in {mode} mode :{warning_str}.\n")
 
@@ -509,7 +488,6 @@ class ReachySDK:
         """Intercepts method calls to track user interactions, ignoring private/internal methods."""
         if name.startswith("_") or not self._grpc_connected:
             return super().__getattribute__(name)
-
         else:
             ReachySDK._last_executing_instance = self
 
