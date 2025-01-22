@@ -462,15 +462,16 @@ class ReachySDK:
 
     def _print_mode_type(self) -> None:
         """Print a warning for users, on the mode of Reachy."""
+        # check if the last executing instance is the current one to avoid printing warning on a different instance
+        if ReachySDK._last_executing_instance != self:
+            return
+
         if self._grpc_connected:
             mode = self._mode
             if mode == "REAL":
                 warning_str = "\n ⚠️  Be careful, you're controlling the PHYSICAL Reachy"
             else:
                 warning_str = " you're controlling the virtual Reachy"
-
-            if ReachySDK._last_executing_instance != self:
-                return
             self._logger.warning(f"This Reachy is in {mode} mode :{warning_str}.\n")
 
     def _check_inactivity_from_user(self, timeout: float = 60.0) -> None:
