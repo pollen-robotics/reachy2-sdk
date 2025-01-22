@@ -62,6 +62,7 @@ class ReachySDK:
     """
 
     _instances_by_host: Dict[str, "ReachySDK"] = {}
+    _last_executing_instance = None
 
     def __new__(cls: Type[ReachySDK], host: str) -> ReachySDK:
         """Ensure that only one instance of ReachySDK is created for each host, and that the variable name is unique."""
@@ -481,20 +482,21 @@ class ReachySDK:
         if self._grpc_connected:
             mode = self._mode
             if mode == "REAL":
-                warning_str = "\n⚠️  Be careful, the PHYSICAL Reachy"
-            elif mode == "FAKE":
-                warning_str = " Only the virtual Reachy on Rviz"
-            elif mode == "GAZEBO":
-                warning_str = "Only the virtual Reachy on Gazebo"
+                warning_str = "\n ⚠️  Be careful, you're controlling the PHYSICAL Reachy"
+            else:
+                warning_str = " you're controlling the virtual Reachy"
 
             current_command = self._get_current_command()
-            if current_command and current_command == self._last_command_id:
+
+            # if the last command was from a different instance, or if there is already a warning message under the last command
+            # we don't print another warning
+            if ReachySDK._last_executing_instance != self or (current_command and current_command == self._last_command_id):
                 return
-            self._logger.warning(f"This Reachy is in {mode} mode :{warning_str} is going to move.\n")
-            self._last_log_command_id = current_command
+            self._logger.warning(f"This Reachy is in {mode} mode :{warning_str}.\n")
 
     def _check_inactivity_from_user(self, timeout: float = 60.0) -> None:
         """Check inactivity from the user, by catching the functions called by them.
+
         If that exceeds the timeout, print the mode type for the user to have a reminder.
         Default timeout is 60 seconds.
         """
@@ -508,7 +510,10 @@ class ReachySDK:
         if name.startswith("_") or not self._grpc_connected:
             return super().__getattribute__(name)
 
-        elif self._mode == "REAL":
+        else:
+            ReachySDK._last_executing_instance = self
+
+        if self._mode == "REAL":
             self._check_inactivity_from_user()
 
         return super().__getattribute__(name)
