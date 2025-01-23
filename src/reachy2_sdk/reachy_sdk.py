@@ -15,7 +15,7 @@ import threading
 import time
 from collections import namedtuple
 from logging import getLogger
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Tuple, Type
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
@@ -516,29 +516,27 @@ class ReachySDK:
             self._logger.warning("Cannot turn on Reachy, not connected.")
             return False
 
-        speed_limit_high = 25
-        max_iterations = 10
-        ite = 0
+        if not self.is_on():
+            speed_limit_high = 25
+            parts_on, parts_off = self._check_parts_state()
 
-        while not self._is_fully_on() and ite < max_iterations:
-            for part in self.info._enabled_parts.values():
-                part.set_speed_limits(1)
+            for part in parts_off:
+                if issubclass(type(part), JointsBasedPart):
+                    part.set_speed_limits(1)
             time.sleep(0.05)
-            for part in self.info._enabled_parts.values():
+            for part in parts_off:
                 part._turn_on()
-            if self._mobile_base is not None:
-                self._mobile_base._turn_on()
             time.sleep(0.05)
-            for part in self.info._enabled_parts.values():
-                part.set_speed_limits(speed_limit_high)
+            for part in parts_off:
+                if issubclass(type(part), JointsBasedPart):
+                    part.set_speed_limits(speed_limit_high)
             time.sleep(0.4)
-            ite += 1
 
-        if ite == max_iterations:
-            self._logger.warning("Failed to turn on Reachy,")
-            return False
+            if not self.is_on():
+                parts_on, parts_off = self._check_parts_state()
+                self._logger.warning(f"Failed to turn on Reachy : {parts_off} are off. Check the robot's services.")
 
-        return True
+        return self.is_on()
 
     def turn_off(self) -> bool:
         """Turn all motors of enabled parts off.
@@ -554,7 +552,11 @@ class ReachySDK:
             self._mobile_base._turn_off()
         time.sleep(0.5)
 
-        return True
+        if not self.is_off():
+            parts_on, parts_off = self._check_parts_state()
+            self._logger.warning(f"Failed to turn off Reachy : {parts_on} are still on.")
+
+        return self.is_off()
 
     def turn_off_smoothly(self) -> bool:
         """Turn all motors of robot parts off.
@@ -595,7 +597,12 @@ class ReachySDK:
             arm_part.set_torque_limits(torque_limit_high)
 
         time.sleep(0.5)
-        return True
+
+        if not self.is_off():
+            parts_on, parts_off = self._check_parts_state()
+            self._logger.warning(f"Failed to turn off Reachy : {parts_on} are still on.")
+
+        return self.is_off()
 
     def is_on(self) -> bool:
         """Check if all actuators of Reachy parts are on (stiff).
@@ -612,6 +619,11 @@ class ReachySDK:
                 return False
         if self._mobile_base is not None and self._mobile_base.is_off():
             return False
+        if self._l_arm and self._l_arm.gripper and self._l_arm.gripper.is_off():
+            return False
+        if self._r_arm and self._r_arm.gripper and self._r_arm.gripper.is_off():
+            return False
+
         return True
 
     def is_off(self) -> bool:
@@ -629,11 +641,38 @@ class ReachySDK:
                 return False
         if self._mobile_base is not None and self._mobile_base.is_on():
             return False
+        if self._l_arm and self._l_arm.gripper and self._l_arm.gripper.is_on():
+            return False
+        if self._r_arm and self._r_arm.gripper and self._r_arm.gripper.is_on():
+            return False
         return True
 
-    def _is_fully_on(self) -> bool:
-        """Check if the robot and its grippers (if they exist) are turned on."""
-        return self.is_on() and all(arm.gripper.is_on() if arm and arm.gripper else True for arm in [self._l_arm, self._r_arm])
+    def _check_parts_state(self) -> Tuple[list[Any], list[Any]]:
+        """Check the state of all parts of the robot.
+
+        Returns:
+            A tuple containing two lists:
+            - the first list contains the parts that are on
+            - the second list contains the parts that are off.
+        """
+
+        def add_part_state(part: Any) -> None:
+            if part and part.is_on():
+                parts_on.append(part)
+            elif part:
+                parts_off.append(part)
+
+        parts_on: list[Any] = []
+        parts_off: list[Any] = []
+        if self.info:
+            for part in self.info._enabled_parts.values():
+                add_part_state(part)
+
+            add_part_state(self._mobile_base)
+            add_part_state(self._l_arm.gripper if self._l_arm else None)
+            add_part_state(self._r_arm.gripper if self._r_arm else None)
+
+        return parts_on, parts_off
 
     def reset_default_limits(self) -> None:
         """Set back speed and torque limits of all parts to maximum value (100)."""

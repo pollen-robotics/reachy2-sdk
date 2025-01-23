@@ -58,7 +58,7 @@ class Part(ABC):
 
         self._actuators: Dict[str, Any] = {}
 
-    def turn_on(self) -> None:
+    def turn_on(self) -> bool:
         """Turn on the part.
 
         This method sets the speed limits to a low value, turns on all motors of the part, and then restores the speed limits
@@ -66,26 +66,46 @@ class Part(ABC):
         """
         self._set_speed_limits(1)
         time.sleep(0.05)
-        self._turn_on()
+        turned_on = self._turn_on()
         time.sleep(0.05)
         self._set_speed_limits(100)
         time.sleep(0.4)
+        return turned_on
 
-    def turn_off(self) -> None:
+    def turn_off(self) -> bool:
         """Turn off the part.
 
         This method turns off all motors of the part and waits for a brief period to ensure the operation is complete.
         """
-        self._turn_off()
-        time.sleep(0.5)
+        return self._turn_off()
 
-    def _turn_on(self) -> None:
+    def _turn_on(self) -> bool:
         """Send a command to turn on immediately the part."""
-        self._stub.TurnOn(self._part_id)
+        max_iter = 10
+        ite = 0
+        while not self.is_on() and ite < max_iter:
+            self._stub.TurnOn(self._part_id)
+            ite += 1
+            time.sleep(0.05)
 
-    def _turn_off(self) -> None:
+        if ite == max_iter:
+            self._logger.warning(f"Failed to turn on {self._part_id.name}")
+            return False
+        return True
+
+    def _turn_off(self) -> bool:
         """Send a command to turn off immediately the part."""
-        self._stub.TurnOff(self._part_id)
+        max_iter = 10
+        ite = 0
+        while not self.is_off() and ite < max_iter:
+            self._stub.TurnOff(self._part_id)
+            ite += 1
+            time.sleep(0.05)
+
+        if ite == max_iter:
+            self._logger.warning(f"Failed to turn off {self._part_id.name}")
+            return False
+        return True
 
     def is_on(self) -> bool:
         """Check if all actuators of the part are currently on.

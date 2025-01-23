@@ -170,23 +170,29 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             s
         }\n>"""
 
-    def turn_on(self) -> None:
+    def turn_on(self) -> bool:
         """Turn on all motors of the part, making all arm motors stiff.
 
         If a gripper is present, it will also be turned on.
         """
-        if self._gripper is not None:
+        if self._gripper:
             self._gripper._turn_on()
+            if not self._gripper.is_on():
+                return False
         super().turn_on()
+        return self.is_on()
 
-    def turn_off(self) -> None:
+    def turn_off(self) -> bool:
         """Turn off all motors of the part, making all arm motors compliant.
 
         If a gripper is present, it will also be turned off.
         """
-        if self._gripper is not None:
+        if self._gripper:
             self._gripper._turn_off()
+            if not self._gripper.is_off():
+                return False
         super().turn_off()
+        return self.is_off()
 
     def turn_off_smoothly(self) -> None:
         """Gradually reduce the torque limit of all motors over 3 seconds before turning them off.
@@ -211,23 +217,29 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         super().turn_off()
         self.set_torque_limits(torque_limit_high)
 
-    def _turn_on(self) -> None:
+    def _turn_on(self) -> bool:
         """Turn on all motors of the part.
 
         This will make all arm motors stiff. If a gripper is present, it will also be turned on.
         """
-        if self._gripper is not None:
+        if self._gripper:
             self._gripper._turn_on()
+            if not self._gripper.is_on():
+                return False
         super()._turn_on()
+        return self.is_on()
 
-    def _turn_off(self) -> None:
+    def _turn_off(self) -> bool:
         """Turn off all motors of the part.
 
         This will make all arm motors compliant. If a gripper is present, it will also be turned off.
         """
-        if self._gripper is not None:
+        if self._gripper:
             self._gripper._turn_off()
+            if not self._gripper.is_off():
+                return False
         super()._turn_off()
+        return self.is_off()
 
     def is_on(self) -> bool:
         """Check if all actuators of the arm are stiff.
