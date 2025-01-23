@@ -5,11 +5,12 @@ Enable access to the microphones and speaker.
 
 import logging
 import os
+from io import BytesIO
 from typing import Generator, List
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
-from reachy2_sdk_api.audio_pb2 import AudioFile, UploadAudioFileRequest
+from reachy2_sdk_api.audio_pb2 import AudioFile, AudioFileRequest
 from reachy2_sdk_api.audio_pb2_grpc import AudioServiceStub
 
 
@@ -65,8 +66,8 @@ class Audio:
             self._logger.error(f"File does not exist: {path}")
             return False
 
-        def generate_requests(file_path: str) -> Generator[UploadAudioFileRequest, None, None]:
-            yield UploadAudioFileRequest(info=AudioFile(path=os.path.basename(file_path)))
+        def generate_requests(file_path: str) -> Generator[AudioFileRequest, None, None]:
+            yield AudioFileRequest(info=AudioFile(path=os.path.basename(file_path)))
 
             # 64KiB seems to be the size limit. see https://github.com/grpc/grpc.github.io/issues/371
             CHUNK_SIZE = 64 * 1024  # 64 KB
@@ -76,13 +77,42 @@ class Audio:
                     chunk = file.read(CHUNK_SIZE)
                     if not chunk:
                         break
-                    yield UploadAudioFileRequest(chunk_data=chunk)
+                    yield AudioFileRequest(chunk_data=chunk)
 
         response = self._audio_stub.UploadAudioFile(generate_requests(path))
         if response.success.value:
             return True
         else:
             self._logger.error(f"Failed to upload file: {response.error}")
+            return False
+
+    def download_audio_file(self, name: str, path: str) -> bool:
+        """Download an audio file from the robot.
+
+        This method downloads an audio file from the robot.
+
+        Args:
+            name: The name of the audio file to download.
+            path: The folder to save the downloaded audio file.
+        """
+
+        response_iterator = self._audio_stub.DownloadAudioFile(AudioFile(path=name))
+
+        file_name = None
+        buffer = BytesIO()
+
+        for response in response_iterator:
+            if response.WhichOneof("data") == "info":
+                file_name = response.info.path
+            elif response.WhichOneof("data") == "chunk_data":
+                buffer.write(response.chunk_data)
+
+        if file_name:
+            file_path = os.path.join(path, file_name)
+            with open(file_path, "wb") as file:
+                file.write(buffer.getvalue())
+            return os.path.exists(file_path)
+        else:
             return False
 
     def get_audio_files(self) -> List[str]:
