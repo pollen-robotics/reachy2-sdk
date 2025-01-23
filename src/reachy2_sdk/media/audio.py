@@ -108,3 +108,42 @@ class Audio:
         else:
             self._logger.error(f"Failed to remove file: {response.error}")
             return False
+
+    def play_audio_file(self, name: str) -> None:
+        """Play an audio file on the robot.
+
+        This method plays an audio file on the robot.
+
+        Args:
+            name: The name of the audio file to play.
+        """
+        self._audio_stub.PlayAudioFile(request=AudioFile(path=name))
+
+    def stop_playing(self) -> None:
+        """Stop playing audio on the robot.
+
+        This method stops the audio that is currently playing on the robot.
+        """
+        self._audio_stub.StopPlaying(Empty())
+
+    def record_audio(self, name: str) -> bool:
+        """Record audio on the robot.
+
+        This method records audio on the robot.
+
+        Args:
+            name: name of the audio file. The extension defines the encoding. Supported extensions are .wav, .ogg, .mp3.
+        """
+        if not self._validate_extension(name):
+            self._logger.error("Invalid file type. Supported file types are .wav, .ogg, .mp3")
+            return False
+
+        self._audio_stub.RecordAudioFile(request=AudioFile(path=name))
+        return True
+
+    def stop_recording(self) -> None:
+        """Stop recording audio on the robot.
+
+        This method stops the audio recording on the robot.
+        """
+        self._audio_stub.StopRecording(Empty())

@@ -34,3 +34,9 @@ def test_audio(reachy_sdk: ReachySDK) -> None:
     assert not reachy_sdk.audio.remove_audio_file("doesnotexist.mp3")
 
     assert reachy_sdk.audio.remove_audio_file(os.path.basename(tmp_file_path))
+
+
+@pytest.mark.audio
+def test_recording(reachy_sdk: ReachySDK) -> None:
+    file = "badextension.mp4"
+    assert not reachy_sdk.audio.record_audio(file)

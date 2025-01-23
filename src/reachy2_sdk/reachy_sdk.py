@@ -336,14 +336,8 @@ class ReachySDK:
         self._grpc_connected = True
 
     def _setup_audio(self) -> None:
-        """Set up the audio server for the robot.
-
-        Attempts to connect to the audio server and initializes the audio-related components.
-        """
-        try:
-            self.audio = Audio(self._host, self._audio_port)
-        except Exception:
-            self._logger.error("Failed to connect to audio server. ReachySDK.audio will not be available.")
+        """Initializes the audio grpc client."""
+        self.audio = Audio(self._host, self._audio_port)
 
     def _setup_video(self) -> Optional[CameraManager]:
         """Set up the video server for the robot.
