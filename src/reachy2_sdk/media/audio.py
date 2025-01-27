@@ -156,19 +156,20 @@ class Audio:
         """
         self._audio_stub.StopPlaying(Empty())
 
-    def record_audio(self, name: str) -> bool:
+    def record_audio(self, name: str, duration_secs: float) -> bool:
         """Record audio on the robot.
 
         This method records audio on the robot.
 
         Args:
             name: name of the audio file. The extension defines the encoding. Supported extensions are .wav, .ogg, .mp3.
+            duration_secs: duration of the recording in seconds.
         """
         if not self._validate_extension(name):
             self._logger.error("Invalid file type. Supported file types are .wav, .ogg, .mp3")
             return False
 
-        self._audio_stub.RecordAudioFile(request=AudioFile(path=name))
+        self._audio_stub.RecordAudioFile(request=AudioFile(path=name, duration=duration_secs))
         return True
 
     def stop_recording(self) -> None:
