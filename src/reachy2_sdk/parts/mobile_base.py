@@ -342,7 +342,12 @@ class MobileBase(Part, IGoToBasedPart):
         self.goto(x_goal, y_goal, theta, wait=wait, distance_tolerance=distance_tolerance, timeout=timeout)
 
     def rotate_by(
-        self, theta: float, wait: bool = False, degrees: bool = True, angle_tolerance: Optional[float] = None, timeout: Optional[float] = None
+        self,
+        theta: float,
+        wait: bool = False,
+        degrees: bool = True,
+        angle_tolerance: Optional[float] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         """Send a target rotation relative to the current rotation of the mobile base.
 
