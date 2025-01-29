@@ -181,7 +181,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._logger.warning("head.neck is off. No command sent.")
             return GoToId(id=-1)
 
-        self._check_goto_parameters(duration, target)
+        self._check_goto_parameters(target, duration)
 
         if isinstance(target, list):
             if degrees:
