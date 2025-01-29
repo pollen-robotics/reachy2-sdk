@@ -311,7 +311,7 @@ class MobileBase(Part, IGoToBasedPart):
         if response.id == -1:
             self._logger.error(f"Unable to go to requested position x={x}, y={y}, theta={theta}. No command sent.")
         elif wait:
-            self._wait_goto(response)
+            self._wait_goto(response, duration=0)
 
         return response
 
@@ -501,3 +501,13 @@ class MobileBase(Part, IGoToBasedPart):
         """
         if not (isinstance(value, float) | isinstance(value, int)):
             raise TypeError(f"{value} must be a float or int, got {type(value)} instead")
+
+    def goto_posture(
+        self,
+        common_posture: str = "default",
+        duration: float = 2,
+        wait: bool = False,
+        wait_for_goto_end: bool = True,
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        return super().goto_posture(common_posture, duration, wait, wait_for_goto_end, interpolation_mode)
