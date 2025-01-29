@@ -434,7 +434,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             ValueError: If the `q0` list has a length other than 7.
             ValueError: If the `duration` is set to 0.
         """
-        self._check_goto_parameters(duration, target, q0)
+        self._check_goto_parameters(target, duration, q0)
 
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
