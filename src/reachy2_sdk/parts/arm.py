@@ -378,7 +378,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         degrees: bool = True,
         q0: Optional[List[float]] = None,
     ) -> GoToId:
-        ...
+        ...  # pragma: no cover
 
     @overload
     def goto(
@@ -390,7 +390,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         degrees: bool = True,
         q0: Optional[List[float]] = None,
     ) -> GoToId:
-        ...
+        ...  # pragma: no cover
 
     def goto(
         self,
@@ -447,12 +447,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         if response.id == -1:
             self._logger.error("Target was not reachable. No command sent.")
-
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+        elif wait:
+            self._wait_goto(response, duration)
 
         return response
 
@@ -590,11 +586,11 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         response = self._goto_stub.GoToJoints(request)
-        if wait:
-            self._logger.info(f"Waiting for movement with {response}.")
-            while not self._is_goto_finished(response):
-                time.sleep(0.1)
-            self._logger.info(f"Movement with {response} finished.")
+
+        if response.id == -1:
+            self._logger.error(f"Position {goal_position} was not reachable. No command sent.")
+        elif wait:
+            self._wait_goto(response, duration)
         return response
 
     def goto_posture(
@@ -604,6 +600,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         wait: bool = False,
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
+        open_gripper: bool = False,
     ) -> GoToId:
         """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode.
 
@@ -620,14 +617,15 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                 will cancel all executing moves and queues. Defaults to `True`.
             interpolation_mode: The type of interpolation used when moving the arm's joints.
                 Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+            open_gripper: If `True`, the gripper will open, if `False`, it stays in its current position.
+                Defaults to `False`.
 
         Returns:
             A unique GoToId identifier for this specific movement.
         """
         joints = self.get_default_posture_joints(common_posture=common_posture)
-        if common_posture == "default":
-            if self._gripper is not None and self._gripper.is_on():
-                self._gripper.open()
+        if self._gripper is not None and self._gripper.is_on() and open_gripper:
+            self._gripper.open()
         if not wait_for_goto_end:
             self.cancel_all_goto()
         if self.is_on():
@@ -656,9 +654,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         else:
             elbow_pitch = 0
         if self._part_id.name == "r_arm":
-            return [0, -15, -15, elbow_pitch, 0, 0, 0]
+            return [0, 10, -10, elbow_pitch, 0, 0, 0]
         else:
-            return [0, 15, 15, elbow_pitch, 0, 0, 0]
+            return [0, -10, 10, elbow_pitch, 0, 0, 0]
 
     def get_default_posture_matrix(self, common_posture: str = "default") -> npt.NDArray[np.float64]:
         """Get the 4x4 pose matrix in Reachy coordinate system for a default robot posture.

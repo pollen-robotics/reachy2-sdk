@@ -149,7 +149,7 @@ def test_send_goal_positions(reachy_sdk_zeroed: ReachySDK) -> None:
             ik = reachy.l_arm.inverse_kinematics(pose)
             for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
                 joint.goal_position = goal_pos
-        reachy.send_goal_positions()
+        reachy.send_goal_positions(check_positions=False)
         return ik
 
     def make_circle(
@@ -207,18 +207,24 @@ def test_get_default_posture_matrix(reachy_sdk_zeroed: ReachySDK) -> None:
     with pytest.raises(ValueError):
         reachy_sdk_zeroed.r_arm.get_default_posture_matrix("coucou")
 
+    reachy_sdk_zeroed.l_arm.gripper.set_opening(50)
+    reachy_sdk_zeroed.goto_posture(common_posture="default", wait=True)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.gripper.opening, 50, atol=5)
+    reachy_sdk_zeroed.goto_posture(common_posture="default", wait=True, open_gripper=True)
+    assert np.allclose(reachy_sdk_zeroed.l_arm.gripper.opening, 100, atol=5)
+
 
 @pytest.mark.online
 def test_get_default_posture_joints(reachy_sdk_zeroed: ReachySDK) -> None:
-    r_default_joints_expected = [0, -15, -15, 0, 0, 0, 0]
-    l_default_joints_expected = [0, 15, 15, 0, 0, 0, 0]
+    r_default_joints_expected = [0, 10, -10, 0, 0, 0, 0]
+    l_default_joints_expected = [0, -10, 10, 0, 0, 0, 0]
     r_default_joints = reachy_sdk_zeroed.r_arm.get_default_posture_joints(common_posture="default")
     l_default_joints = reachy_sdk_zeroed.l_arm.get_default_posture_joints(common_posture="default")
     assert np.allclose(r_default_joints, r_default_joints_expected, atol=1e-03)
     assert np.allclose(l_default_joints, l_default_joints_expected, atol=1e-03)
 
-    r_elbow_90_joints_expected = [0, -15, -15, -90, 0, 0, 0]
-    l_elbow_90_joints_expected = [0, 15, 15, -90, 0, 0, 0]
+    r_elbow_90_joints_expected = [0, 10, -10, -90, 0, 0, 0]
+    l_elbow_90_joints_expected = [0, -10, 10, -90, 0, 0, 0]
     r_elbow_90_joints = reachy_sdk_zeroed.r_arm.get_default_posture_joints(common_posture="elbow_90")
     l_elbow_90_joints = reachy_sdk_zeroed.l_arm.get_default_posture_joints(common_posture="elbow_90")
     assert np.allclose(r_elbow_90_joints, r_elbow_90_joints_expected, atol=1e-03)

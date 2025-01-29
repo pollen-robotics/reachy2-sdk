@@ -87,7 +87,7 @@ class Orbita(ABC):
             A dictionary where each key corresponds to a joint attribute, and each value
             is another dictionary of state information with string keys and `FloatValue` values.
         """
-        pass
+        pass  # pragma: no cover
 
     def __repr__(self) -> str:
         """Clean representation of an Orbita."""
@@ -192,6 +192,14 @@ class Orbita(ABC):
         """
         return not self._compliant
 
+    def is_off(self) -> bool:
+        """Check if the actuator is currently compliant.
+
+        Returns:
+            `True` if the actuator is compliant (not stiff), `False` otherwise.
+        """
+        return self._compliant
+
     @property
     def temperatures(self) -> Dict[str, float]:
         """Get the current temperatures of all the motors in the actuator.
@@ -248,7 +256,7 @@ class Orbita(ABC):
                 the joint positions relative to their last goal positions.
                 Default is `True`.
         """
-        pass
+        pass  # pragma: no cover
 
     def _post_send_goal_positions(self) -> None:
         """Start a background thread to check the goal positions after sending them.

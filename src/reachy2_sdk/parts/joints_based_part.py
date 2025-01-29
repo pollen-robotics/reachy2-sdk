@@ -66,7 +66,7 @@ class JointsBasedPart(Part):
         Returns:
             A list of float values representing the present positions in degrees of the arm's joints.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def send_goal_positions(self, check_positions: bool = True) -> None:
@@ -78,7 +78,7 @@ class JointsBasedPart(Part):
             check_positions: A boolean indicating whether to check the positions after sending the command.
                 Defaults to True.
         """
-        pass
+        pass  # pragma: no cover
 
     def set_torque_limits(self, torque_limit: int) -> None:
         """Set the torque limit as a percentage of the maximum torque for all motors of the part.

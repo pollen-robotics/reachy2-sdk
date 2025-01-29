@@ -5,7 +5,7 @@ This module provides main informations about the robot.
 
 from typing import Any, Dict, List, Optional
 
-from reachy2_sdk_api.reachy_pb2 import Reachy
+from reachy2_sdk_api.reachy_pb2 import Reachy, ReachyCoreMode
 
 from ..parts.mobile_base import MobileBase
 
@@ -35,6 +35,8 @@ class ReachyInfo:
         self._enabled_parts: Dict[str, Any] = {}
         self._disabled_parts: List[str] = []
         self._mobile_base: Optional[MobileBase] = None
+
+        self._mode: ReachyCoreMode = reachy.info.core_mode
 
         self._set_config(reachy)
 
@@ -73,12 +75,14 @@ class ReachyInfo:
     def __repr__(self) -> str:
         """Clean representation of a ReachyInfo."""
         repr_template = (
-            '<ReachyInfo robot_serial_number="{serial_number}" \n'
+            '<ReachyInfo mode="{mode}" \n'
+            ' robot_serial_number="{serial_number}" \n'
             ' hardware_version="{hardware_version}" \n'
             ' core_software_version="{software_version}" \n'
             " battery_voltage={battery_voltage} >"
         )
         return repr_template.format(
+            mode=self.mode,
             serial_number=self.robot_serial_number,
             hardware_version=self.hardware_version,
             software_version=self.core_software_version,
@@ -112,3 +116,11 @@ class ReachyInfo:
     def core_software_version(self) -> str:
         """Returns the robot's core software version."""
         return self._core_software_version
+
+    @property
+    def mode(self) -> str:
+        """Returns the robot's core mode.
+
+        Can be either "FAKE", "REAL" or "GAZEBO".
+        """
+        return str(ReachyCoreMode.keys()[self._mode])

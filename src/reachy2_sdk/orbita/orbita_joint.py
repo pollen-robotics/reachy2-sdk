@@ -108,6 +108,10 @@ class OrbitaJoint:
         Returns:
             The GoToId associated with the movement command.
         """
+        if self._actuator._part.is_off():
+            self._actuator._logger.warning(f"{self._actuator._part._part_id.name} is off. No command sent.")
+            return GoToId(id=-1)
+
         return self._actuator._part._goto_single_joint(
             self._position_order_in_part,
             goal_position=goal_position,

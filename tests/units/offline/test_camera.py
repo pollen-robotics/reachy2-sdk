@@ -11,7 +11,7 @@ def test_class() -> None:
 
     assert cam is not None
 
-    cam_depth = CameraFeatures(name="depth_torsi", stereo=False, depth=True)
+    cam_depth = CameraFeatures(name="depth_torso", stereo=False, depth=True)
     cam = Camera(cam_info=cam_depth, video_stub=None)
 
     assert cam is not None
