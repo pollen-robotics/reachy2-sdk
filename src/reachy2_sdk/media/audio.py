@@ -36,7 +36,7 @@ class Audio:
 
         self._audio_stub = AudioServiceStub(self._grpc_audio_channel)
 
-    def _validate_extension(self, path: str) -> bool:
+    def _validate_extension(self, path: str, valid_extensions: List[str]) -> bool:
         """Validate the file type and return the file name if valid.
 
         Args:
@@ -45,8 +45,7 @@ class Audio:
         Returns:
             The file name if the file type is valid, otherwise None.
         """
-        valid_extensions = (".wav", ".ogg", ".mp3")
-        return path.lower().endswith(valid_extensions)
+        return path.lower().endswith(tuple(valid_extensions))
 
     def upload_audio_file(self, path: str) -> bool:
         """Upload an audio file to the robot.
@@ -57,8 +56,7 @@ class Audio:
         Args:
             path: The path to the audio file to upload.
         """
-
-        if not self._validate_extension(path):
+        if not self._validate_extension(path, [".wav", ".ogg", ".mp3"]):
             self._logger.error("Invalid file type. Supported file types are .wav, .ogg, .mp3")
             return False
 
@@ -89,13 +87,10 @@ class Audio:
     def download_audio_file(self, name: str, path: str) -> bool:
         """Download an audio file from the robot.
 
-        This method downloads an audio file from the robot.
-
         Args:
             name: The name of the audio file to download.
             path: The folder to save the downloaded audio file.
         """
-
         response_iterator = self._audio_stub.DownloadAudioFile(AudioFile(path=name))
 
         file_name = None
@@ -162,11 +157,11 @@ class Audio:
         This method records audio on the robot.
 
         Args:
-            name: name of the audio file. The extension defines the encoding. Supported extensions are .wav, .ogg, .mp3.
+            name: name of the audio file. The extension defines the encoding. Ony ogg is supported.
             duration_secs: duration of the recording in seconds.
         """
-        if not self._validate_extension(name):
-            self._logger.error("Invalid file type. Supported file types are .wav, .ogg, .mp3")
+        if not self._validate_extension(name, [".ogg"]):
+            self._logger.error("Invalid file type. Supported file type is .ogg")
             return False
 
         self._audio_stub.RecordAudioFile(request=AudioFile(path=name, duration=duration_secs))
