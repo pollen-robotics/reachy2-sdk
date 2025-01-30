@@ -320,47 +320,53 @@ class MobileBase(Part, IGoToBasedPart):
 
     def _wait_goto(self, id: GoToId, timeout: float) -> None:
         """Wait for a goto to finish. timeout is in seconds."""
-        print("coucou")
         t0 = time.time()
         self._logger_goto.info(f"Waiting for movement with {id}.")
 
-        time.sleep(0.2)
-
         id_playing = self.get_goto_playing()
-        print(id_playing)
-        # while id_playing.id == -1:
-        #     time.sleep(0.005)
-        #     id_playing = self.get_goto_playing()
+        while id_playing.id == -1:
+            time.sleep(0.005)
+            id_playing = self.get_goto_playing()
 
-        #     # manage an id_playing staying at -1
-        #     if time.time() - t0 > timeout:
-        #         self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
-        #         return
+            # manage an id_playing staying at -1
+            if time.time() - t0 > timeout:
+                self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
+                return
 
-        # info_gotos = [self._get_goto_joints_request(id)]
-        # print(info_gotos)
+        info_gotos = [self._get_goto_odometry_request(id)]
+        ids_queue = self.get_goto_queue()
+        for goto_id in ids_queue:
+            info_gotos.append(self._get_goto_odometry_request(goto_id))
 
-        # info_gotos = [self._get_goto_joints_request(id)]
-        # ids_queue = self.get_goto_queue()
-        # for goto_id in ids_queue:
-        #     info_gotos.append(self._get_goto_joints_request(goto_id))
+        timeout = 1  # adding one more sec
+        for igoto in info_gotos:
+            if igoto is not None:
+                timeout += igoto.timeout.value
 
-        # timeout = 1  # adding one more sec
-        # for igoto in info_gotos:
-        #     if igoto is not None:
-        #         timeout += igoto.duration
+        self._logger_goto.debug(f"timeout is set to {timeout}")
 
-        # self._logger_goto.debug(f"timeout is set to {timeout}")
+        t_start = time.time()  # timeout for others
+        while not self._is_goto_finished(id):
+            time.sleep(0.1)
 
-        # t_start = time.time()  # timeout for others
-        # while not self._is_goto_finished(id):
-        #     time.sleep(0.1)
+            if time.time() - t_start > timeout:
+                self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
+                return
 
-        #     if time.time() - t_start > timeout:
-        #         self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
-        #         return
+        self._logger_goto.info(f"Movement with {id} finished.")
 
-        # self._logger_goto.info(f"Movement with {id} finished.")
+    def _get_goto_odometry_request(self, goto_id: GoToId) -> OdometryGoal:
+        """Return the odometry goal for the given GoToId.
+
+        Args:
+            goto_id: The ID of the goto command for which to retrieve the details.
+
+        Returns:
+            A OdometryGoal object containing the info.
+        """
+        response = self._goto_stub.GetGoToRequest(goto_id)
+
+        return response.odometry_goal
 
     def translate_by(
         self,
