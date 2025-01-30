@@ -39,4 +39,4 @@ def test_audio(reachy_sdk: ReachySDK) -> None:
 @pytest.mark.audio
 def test_recording(reachy_sdk: ReachySDK) -> None:
     file = "badextension.mp4"
-    assert not reachy_sdk.audio.record_audio(file)
+    assert not reachy_sdk.audio.record_audio(file, duration_secs=2.0)
