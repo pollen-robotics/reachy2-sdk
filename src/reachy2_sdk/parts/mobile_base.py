@@ -375,7 +375,7 @@ class MobileBase(Part, IGoToBasedPart):
         wait: bool = False,
         distance_tolerance: Optional[float] = None,
         timeout: float = 100,
-    ) -> None:
+    ) -> GoToId:
         """Send a target position relative to the current position of the mobile base.
 
         The (x, y) coordinates specify the desired translation in the mobile base's Cartesian space.
@@ -383,16 +383,46 @@ class MobileBase(Part, IGoToBasedPart):
         Args:
             x: The desired translation along the x-axis in meters.
             y: The desired translation along the y-axis in meters.
+            wait:  If True, the function waits until the movement is completed before returning.
+            distance_tolerance: An optional distance tolerance for reaching the target position, in meters.
             timeout: An optional timeout for reaching the target position, in seconds.
+
+        Returns:
+            The GoToId of the movement command, created using the `goto` method.
         """
-        odometry = self.odometry
-        x_current = odometry["x"]
-        y_current = odometry["y"]
-        theta = odometry["theta"]
-        theta_rad = deg2rad(theta)
-        x_goal = x_current + (x * np.cos(theta_rad) - y * np.sin(theta_rad))
-        y_goal = y_current + (x * np.sin(theta_rad) + y * np.cos(theta_rad))
-        self.goto(x_goal, y_goal, theta, wait=wait, distance_tolerance=distance_tolerance, timeout=timeout)
+
+        try:
+            goto = self.get_goto_queue()[-1]
+        except IndexError:
+            goto = self.get_goto_playing()
+
+        if goto.id != -1:
+            odom_request = self._get_goto_odometry_request(goto)
+        else:
+            odom_request = None
+
+        angle_tolerance = None
+
+        if odom_request is not None:
+            base_odom = odom_request.odometry_goal.direction
+            angle_tolerance = odom_request.angle_tolerance.value
+        else:
+            base_odom = self.odometry
+            base_odom["theta"] = deg2rad(base_odom["theta"])
+
+        theta_goal = base_odom["theta"]
+        x_goal = base_odom["x"] + (x * np.cos(theta_goal) - y * np.sin(theta_goal))
+        y_goal = base_odom["y"] + (x * np.sin(theta_goal) + y * np.cos(theta_goal))
+        return self.goto(
+            x_goal,
+            y_goal,
+            theta_goal,
+            wait=wait,
+            distance_tolerance=distance_tolerance,
+            angle_tolerance=angle_tolerance,
+            degrees=False,
+            timeout=timeout,
+        )
 
     def rotate_by(
         self,
@@ -401,7 +431,7 @@ class MobileBase(Part, IGoToBasedPart):
         degrees: bool = True,
         angle_tolerance: Optional[float] = None,
         timeout: float = 100,
-    ) -> None:
+    ) -> GoToId:
         """Send a target rotation relative to the current rotation of the mobile base.
 
         The theta parameter defines the desired rotation in degrees.
@@ -410,14 +440,45 @@ class MobileBase(Part, IGoToBasedPart):
             theta: The desired rotation in degrees, relative to the current orientation.
             timeout: An optional timeout for completing the rotation, in seconds.
         """
-        odometry = self.odometry
-        x = odometry["x"]
-        y = odometry["y"]
-        if degrees:
-            theta = odometry["theta"] + rad2deg(theta)
+
+        try:
+            goto = self.get_goto_queue()[-1]
+        except IndexError:
+            goto = self.get_goto_playing()
+
+        if goto.id != -1:
+            odom_request = self._get_goto_odometry_request(goto)
         else:
-            theta = deg2rad(odometry["theta"]) + theta
-        self.goto(x, y, theta, wait=wait, degrees=degrees, angle_tolerance=angle_tolerance, timeout=timeout)
+            odom_request = None
+
+        distance_tolerance = None
+
+        if odom_request is not None:
+            base_odom = odom_request.odometry_goal.direction
+            base_odom["theta"] = rad2deg(base_odom["theta"])
+            if angle_tolerance is None:
+                angle_tolerance = odom_request.angle_tolerance.value
+            distance_tolerance = odom_request.distance_tolerance.value
+        else:
+            base_odom = self.odometry
+
+        if degrees:
+            theta = base_odom["theta"] + rad2deg(theta)
+        else:
+            theta = deg2rad(base_odom["theta"]) + theta
+        x = base_odom["x"]
+        y = base_odom["y"]
+
+        return self.goto(
+            x,
+            y,
+            theta,
+            wait=wait,
+            degrees=degrees,
+            distance_tolerance=distance_tolerance,
+            angle_tolerance=angle_tolerance,
+            timeout=timeout,
+        )
 
     def reset_odometry(self) -> None:
         """Reset the odometry.
