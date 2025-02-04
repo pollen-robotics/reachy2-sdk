@@ -424,8 +424,12 @@ class MobileBase(Part, IGoToBasedPart):
 
         This method resets the mobile base's odometry, so that the current position is now (x, y, theta) = (0, 0, 0).
         """
+        if self.get_goto_playing().id != -1 or len(self.get_goto_queue()) != 0:
+            self._logger.warning(
+                "Odometry reset requested while goto in progress: aborting the current goto and all queued gotos."
+            )
         self._stub.ResetOdometry(self._part_id)
-        time.sleep(0.03)
+        time.sleep(0.05)
 
     def set_goal_speed(self, x: float | int = 0, y: float | int = 0, theta: float | int = 0) -> None:
         """Set the goal speed for the mobile base.
