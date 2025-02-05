@@ -378,12 +378,12 @@ class Head(JointsBasedPart, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
+            joints_request = self._get_goto_request(goto)
         else:
             joints_request = None
 
         if joints_request is not None:
-            initial_orientation = joints_request.goal_positions
+            initial_orientation = joints_request.request.goal_positions
 
             # as there is a 10° offset between the joint space
             # and the zero position in cartesian space in Reachy's frame for the yaw joint :

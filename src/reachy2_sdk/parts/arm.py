@@ -763,12 +763,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
+            joints_request = self._get_goto_request(goto)
         else:
             joints_request = None
 
         if joints_request is not None:
-            pose = self.forward_kinematics(joints_request.goal_positions)
+            pose = self.forward_kinematics(joints_request.request.goal_positions)
         else:
             pose = self.forward_kinematics()
 
@@ -880,12 +880,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
+            joints_request = self._get_goto_request(goto)
         else:
             joints_request = None
 
         if joints_request is not None:
-            pose = self.forward_kinematics(joints_request.goal_positions)
+            pose = self.forward_kinematics(joints_request.request.goal_positions)
         else:
             pose = self.forward_kinematics()
 

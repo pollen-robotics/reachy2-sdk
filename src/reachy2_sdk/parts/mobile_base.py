@@ -318,56 +318,6 @@ class MobileBase(Part, IGoToBasedPart):
 
         return response
 
-    def _wait_goto(self, id: GoToId, timeout: float) -> None:
-        """Wait for a goto to finish. timeout is in seconds."""
-        t0 = time.time()
-        self._logger_goto.info(f"Waiting for movement with {id}.")
-
-        id_playing = self.get_goto_playing()
-        while id_playing.id == -1:
-            time.sleep(0.005)
-            id_playing = self.get_goto_playing()
-
-            # manage an id_playing staying at -1
-            if time.time() - t0 > timeout:
-                self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
-                return
-
-        info_gotos = [self._get_goto_odometry_request(id)]
-        ids_queue = self.get_goto_queue()
-        for goto_id in ids_queue:
-            info_gotos.append(self._get_goto_odometry_request(goto_id))
-
-        timeout = 1  # adding one more sec
-        for igoto in info_gotos:
-            if igoto is not None:
-                timeout += igoto.timeout.value
-
-        self._logger_goto.debug(f"timeout is set to {timeout}")
-
-        t_start = time.time()  # timeout for others
-        while not self._is_goto_finished(id):
-            time.sleep(0.1)
-
-            if time.time() - t_start > timeout:
-                self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
-                return
-
-        self._logger_goto.info(f"Movement with {id} finished.")
-
-    def _get_goto_odometry_request(self, goto_id: GoToId) -> OdometryGoal:
-        """Return the odometry goal for the given GoToId.
-
-        Args:
-            goto_id: The ID of the goto command for which to retrieve the details.
-
-        Returns:
-            A OdometryGoal object containing the info.
-        """
-        response = self._goto_stub.GetGoToRequest(goto_id)
-
-        return response.odometry_goal
-
     def translate_by(
         self,
         x: float,
@@ -397,15 +347,15 @@ class MobileBase(Part, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            odom_request = self._get_goto_odometry_request(goto)
+            odom_request = self._get_goto_request(goto)
         else:
             odom_request = None
 
         angle_tolerance = None
 
         if odom_request is not None:
-            base_odom = odom_request.odometry_goal.direction
-            angle_tolerance = odom_request.angle_tolerance.value
+            base_odom = odom_request.request.goal_positions
+            angle_tolerance = odom_request.request.angle_tolerance
         else:
             base_odom = self.odometry
             base_odom["theta"] = deg2rad(base_odom["theta"])
@@ -447,18 +397,18 @@ class MobileBase(Part, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            odom_request = self._get_goto_odometry_request(goto)
+            odom_request = self._get_goto_request(goto)
         else:
             odom_request = None
 
         distance_tolerance = None
 
         if odom_request is not None:
-            base_odom = odom_request.odometry_goal.direction
+            base_odom = odom_request.request.goal_positions
             base_odom["theta"] = rad2deg(base_odom["theta"])
             if angle_tolerance is None:
-                angle_tolerance = odom_request.angle_tolerance.value
-            distance_tolerance = odom_request.distance_tolerance.value
+                angle_tolerance = odom_request.request.angle_tolerance
+            distance_tolerance = odom_request.request.distance_tolerance
         else:
             base_odom = self.odometry
 

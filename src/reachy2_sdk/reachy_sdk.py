@@ -38,6 +38,8 @@ from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
 from .utils.custom_dict import CustomDict
 from .utils.utils import (
+    JointsRequest,
+    OdometryRequest,
     SimplifiedRequest,
     arm_position_to_list,
     ext_euler_angles_to_list,
@@ -737,7 +739,7 @@ class ReachySDK:
         )
         return result
 
-    def get_goto_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
+    def get_goto_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
         """Retrieve the details of a goto command based on its GoToId.
 
         Args:
@@ -761,26 +763,49 @@ class ReachySDK:
             raise ValueError("No answer was found for given move, goto_id is -1")
 
         response = self._goto_stub.GetGoToRequest(goto_id)
-        if response.joints_goal.HasField("arm_joint_goal"):
-            part = response.joints_goal.arm_joint_goal.id.name
-            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-            goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
-            duration = response.joints_goal.arm_joint_goal.duration.value
-        elif response.joints_goal.HasField("neck_joint_goal"):
-            part = response.joints_goal.neck_joint_goal.id.name
-            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-            goal_positions = ext_euler_angles_to_list(
-                response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
-            )
-            duration = response.joints_goal.neck_joint_goal.duration.value
 
-        request = SimplifiedRequest(
-            part=part,
-            goal_positions=goal_positions,
-            duration=duration,
-            mode=mode,
-        )
-        return request
+        if response.HasField("joints_goal"):
+            if response.joints_goal.HasField("arm_joint_goal"):
+                part = response.joints_goal.arm_joint_goal.id.name
+                mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+                goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
+                duration = response.joints_goal.arm_joint_goal.duration.value
+            elif response.joints_goal.HasField("neck_joint_goal"):
+                part = response.joints_goal.neck_joint_goal.id.name
+                mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+                goal_positions = ext_euler_angles_to_list(
+                    response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
+                )
+                duration = response.joints_goal.neck_joint_goal.duration.value
+
+            joints_request = JointsRequest(
+                goal_positions=goal_positions,
+                duration=duration,
+                mode=mode,
+            )
+
+            full_request = SimplifiedRequest(
+                part=part,
+                request=joints_request,
+            )
+        elif response.HasField("odometry_goal"):
+            part = response.odometry_goal.odometry_goal.id.name
+            odom_goal_positions = {}
+            odom_goal_positions["x"] = response.odometry_goal.odometry_goal.direction.x.value
+            odom_goal_positions["y"] = response.odometry_goal.odometry_goal.direction.y.value
+            odom_goal_positions["theta"] = response.odometry_goal.odometry_goal.direction.theta.value
+            odom_request = OdometryRequest(
+                goal_positions=odom_goal_positions,
+                timeout=response.odometry_goal.timeout.value,
+                distance_tolerance=response.odometry_goal.distance_tolerance.value,
+                angle_tolerance=response.odometry_goal.angle_tolerance.value,
+            )
+            full_request = SimplifiedRequest(
+                part=part,
+                request=odom_request,
+            )
+
+        return full_request
 
     def _get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
         """Retrieve the current state of a goto command.

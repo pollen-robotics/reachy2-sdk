@@ -20,7 +20,13 @@ from reachy2_sdk_api.goto_pb2 import GoToInterpolation, InterpolationMode
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 
-SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "goal_positions", "duration", "mode"])
+SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "request"])
+"""Named tuple for easy access to request variables"""
+
+JointsRequest = namedtuple("JointsRequest", ["goal_positions", "duration", "mode"])
+"""Named tuple for easy access to request variables"""
+
+OdometryRequest = namedtuple("OdometryRequest", ["goal_positions", "timeout", "distance_tolerance", "angle_tolerance"])
 """Named tuple for easy access to request variables"""
 
 

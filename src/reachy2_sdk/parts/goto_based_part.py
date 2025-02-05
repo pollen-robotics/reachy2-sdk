@@ -12,6 +12,8 @@ from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 
 from ..utils.utils import (
+    JointsRequest,
+    OdometryRequest,
     SimplifiedRequest,
     arm_position_to_list,
     ext_euler_angles_to_list,
@@ -66,39 +68,70 @@ class IGoToBasedPart(ABC):
         response = self._goto_stub.CancelPartAllGoTo(self.part._part_id)
         return response
 
-    def _get_goto_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
-        """Return the part affected, joint goal positions, duration, and mode for the given GoToId.
-
-        The part can be 'r_arm', 'l_arm', or 'head'.
+    def _get_goto_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
+        """Retrieve the details of a goto command based on its GoToId.
 
         Args:
-            goto_id: The ID of the goto command for which to retrieve the details.
+            goto_id: The ID of the goto command for which details are requested.
 
         Returns:
-            A SimplifiedRequest object containing the part, goal_positions, duration, and mode for the
-            corresponding GoToId. The goal_positions are returned as a list in degrees.
-        """
-        response = self._goto_stub.GetGoToRequest(goto_id)
-        if response.joints_goal.HasField("arm_joint_goal"):
-            part = response.joints_goal.arm_joint_goal.id.name
-            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-            goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
-            duration = response.joints_goal.arm_joint_goal.duration.value
-        elif response.joints_goal.HasField("neck_joint_goal"):
-            part = response.joints_goal.neck_joint_goal.id.name
-            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-            goal_positions = ext_euler_angles_to_list(
-                response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
-            )
-            duration = response.joints_goal.neck_joint_goal.duration.value
+            A `SimplifiedRequest` object containing the part name, joint goal positions
+            (in degrees), movement duration, and interpolation mode.
+            Returns `None` if the robot is not connected or if the `goto_id` is invalid.
 
-        request = SimplifiedRequest(
-            part=part,
-            goal_positions=goal_positions,
-            duration=duration,
-            mode=mode,
-        )
-        return request
+        Raises:
+            TypeError: If `goto_id` is not an instance of `GoToId`.
+            ValueError: If `goto_id` is -1, indicating an invalid command.
+        """
+        if not isinstance(goto_id, GoToId):
+            raise TypeError(f"goto_id must be a GoToId, got {type(goto_id).__name__}")
+        if goto_id.id == -1:
+            raise ValueError("No answer was found for given move, goto_id is -1")
+
+        response = self._goto_stub.GetGoToRequest(goto_id)
+
+        if response.HasField("joints_goal"):
+            if response.joints_goal.HasField("arm_joint_goal"):
+                part = response.joints_goal.arm_joint_goal.id.name
+                mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+                goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
+                duration = response.joints_goal.arm_joint_goal.duration.value
+            elif response.joints_goal.HasField("neck_joint_goal"):
+                part = response.joints_goal.neck_joint_goal.id.name
+                mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+                goal_positions = ext_euler_angles_to_list(
+                    response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
+                )
+                duration = response.joints_goal.neck_joint_goal.duration.value
+
+            joints_request = JointsRequest(
+                goal_positions=goal_positions,
+                duration=duration,
+                mode=mode,
+            )
+
+            full_request = SimplifiedRequest(
+                part=part,
+                request=joints_request,
+            )
+        elif response.HasField("odometry_goal"):
+            part = response.odometry_goal.odometry_goal.id.name
+            odom_goal_positions = {}
+            odom_goal_positions["x"] = response.odometry_goal.odometry_goal.direction.x.value
+            odom_goal_positions["y"] = response.odometry_goal.odometry_goal.direction.y.value
+            odom_goal_positions["theta"] = response.odometry_goal.odometry_goal.direction.theta.value
+            odom_request = OdometryRequest(
+                goal_positions=odom_goal_positions,
+                timeout=response.odometry_goal.timeout.value,
+                distance_tolerance=response.odometry_goal.distance_tolerance.value,
+                angle_tolerance=response.odometry_goal.angle_tolerance.value,
+            )
+            full_request = SimplifiedRequest(
+                part=part,
+                request=odom_request,
+            )
+
+        return full_request
 
     def _is_goto_finished(self, id: GoToId) -> bool:
         """Check if the goto movement has been completed or cancelled.
@@ -129,15 +162,18 @@ class IGoToBasedPart(ABC):
                 self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
                 return
 
-        info_gotos = [self._get_goto_joints_request(id)]
+        info_gotos = [self._get_goto_request(id)]
         ids_queue = self.get_goto_queue()
         for goto_id in ids_queue:
-            info_gotos.append(self._get_goto_joints_request(goto_id))
+            info_gotos.append(self._get_goto_request(goto_id))
 
         timeout = 1  # adding one more sec
         for igoto in info_gotos:
             if igoto is not None:
-                timeout += igoto.duration
+                if type(igoto.request) is JointsRequest:
+                    timeout += igoto.request.duration
+                elif type(igoto.request) is OdometryRequest:
+                    timeout += igoto.request.timeout
 
         self._logger_goto.debug(f"timeout is set to {timeout}")
 
