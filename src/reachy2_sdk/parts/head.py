@@ -3,11 +3,11 @@
 Handles all specific methods to a Head.
 """
 
+import time
 from typing import Any, List, Optional, overload
 
 import grpc
 import numpy as np
-import time
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion as pyQuat
 from reachy2_sdk_api.goto_pb2 import (
@@ -119,11 +119,12 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def neck(self) -> Orbita3d:
         """Get the neck actuator of the head."""
         return self._neck
-    
+
     @property
     def l_antenna(self) -> DynamixelMotor:
         """Get the left antenna actuator of the head."""
         return self._l_antenna
+
     @property
     def r_antenna(self) -> DynamixelMotor:
         """Get the right antenna actuator of the head."""
@@ -512,10 +513,12 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
     def sad(self) -> None:
         """Play sad emotion with the antennas."""
+
         def send_antennas_opposite_pos(angle: float) -> None:
             self._l_antenna.goal_position = angle
             self._r_antenna.goal_position = -angle
             self.send_goal_positions()
+
         origin = 0
         target_1 = 130
         for t in np.linspace(0, 1, 60):

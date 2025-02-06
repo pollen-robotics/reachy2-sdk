@@ -3,6 +3,7 @@ Handles all specific methods to OrbitaJoint.
 """
 import logging
 from typing import Optional
+
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from grpc import Channel
 from reachy2_sdk_api.component_pb2 import ComponentId
@@ -12,14 +13,18 @@ from reachy2_sdk_api.dynamixel_motor_pb2 import (
     DynamixelMotorState,
 )
 from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
+
 from ..orbita.utils import to_internal_position, to_position
 from ..parts.part import Part
+
+
 class DynamixelMotor:
     """The DynamixelMotor class represents any Dynamixel motor.
     The DynamixelMotor class is used to store the up-to-date state of the motor, especially:
     - its present_position (RO)
     - its goal_position (RW)
     """
+
     def __init__(
         self,
         uid: int,
@@ -46,6 +51,7 @@ class DynamixelMotor:
         self._part = part
         self._update_with(initial_state)
         self._outgoing_goal_position: Optional[float] = None
+
     def __repr__(self) -> str:
         """Clean representation of the OrbitaJoint."""
         repr_template = "<DynamixelMotor on={dxl_on} present_position={present_position} goal_position={goal_position} >"
@@ -54,26 +60,32 @@ class DynamixelMotor:
             present_position=round(self.present_position, 2),
             goal_position=round(self.goal_position, 2),
         )
+
     def turn_on(self) -> None:
         """Turn on the motor."""
         self._set_compliant(False)
+
     def turn_off(self) -> None:
         """Turn off the motor."""
         self._set_compliant(True)
+
     def is_on(self) -> bool:
         """Check if the dynamixel motor is currently stiff.
         Returns:
             `True` if the motor is stiff (not compliant), `False` otherwise.
         """
         return not self._compliant
+
     @property
     def present_position(self) -> float:
         """Get the present position of the joint in degrees."""
         return to_position(self._present_position)
+
     @property
     def goal_position(self) -> float:
         """Get the goal position of the joint in degrees."""
         return to_position(self._goal_position)
+
     @goal_position.setter
     def goal_position(self, value: float | int) -> None:
         """Set the goal position of the joint in degrees.
@@ -88,6 +100,7 @@ class DynamixelMotor:
             self._outgoing_goal_position = to_internal_position(value)
         else:
             raise TypeError("goal_position must be a float or int")
+
     def _set_compliant(self, compliant: bool) -> None:
         """Set the compliance mode of the actuator's motors.
         Compliance mode determines whether the motors are stiff or compliant.
@@ -104,6 +117,7 @@ class DynamixelMotor:
             ]
         )
         self._stub.SendCommand(command)
+
     def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send goal positions to the actuator's joints.
         If goal positions have been specified for any joint of this actuator, sends them to the actuator.
@@ -125,6 +139,7 @@ class DynamixelMotor:
             if check_positions:
                 # self._post_send_goal_positions()
                 pass
+
     def set_speed_limits(self, speed_limit: float | int) -> None:
         """Set the speed limit as a percentage of the maximum speed for all motors of the actuator.
         Args:
@@ -145,6 +160,7 @@ class DynamixelMotor:
             ]
         )
         self._stub.SendCommand(command)
+
     def _update_with(self, new_state: DynamixelMotorState) -> None:
         """Update the present and goal positions of the joint with new state values.
         Args:
