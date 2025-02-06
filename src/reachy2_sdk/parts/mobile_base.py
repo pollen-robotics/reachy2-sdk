@@ -173,6 +173,12 @@ class MobileBase(Part, IGoToBasedPart):
         else:
             raise ValueError(f"Drive mode requested should be in {possible_drive_modes}!")
 
+    def _get_drive_mode(self) -> str:
+        """Get the mobile base's drive mode."""
+        mode_int = self._stub.GetZuuuMode(self._part_id).mode
+        drive_mode = str(ZuuuModePossiblities.Name(mode_int).lower())
+        return drive_mode
+
     def _set_control_mode(self, mode: str) -> None:
         """Set the base's control mode.
 
@@ -191,6 +197,13 @@ class MobileBase(Part, IGoToBasedPart):
             self._control_mode = mode
         else:
             raise ValueError(f"Control mode requested should be in {possible_control_modes}!")
+
+    def _get_control_mode(self) -> str:
+        """Get the mobile base's control mode."""
+        # TODO: Fix in server to get correct answer
+        mode_int = self._stub.GetControlMode(self._part_id).mode
+        control_mode = str(ControlModePossiblities.Name(mode_int).lower())
+        return control_mode
 
     def is_on(self) -> bool:
         """Check if the mobile base is currently stiff (not in free-wheel mode).
