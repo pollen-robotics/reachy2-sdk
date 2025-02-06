@@ -307,9 +307,11 @@ class MobileBase(Part):
             tolerance: A dictionary specifying the tolerances for x, y, theta, and overall distance to
                 consider the target reached.
         """
-        for pos, value in {"x": x, "y": y}.items():
+        x_offset = abs(x - self.odometry["x"])
+        y_offset = abs(y - self.odometry["y"])
+        for pos, value in {"x": x_offset, "y": y_offset}.items():
             if abs(value) > self._max_xy_goto:
-                raise ValueError(f"The asbolute value of {pos} should not be more than {self._max_xy_goto}!")
+                raise ValueError(f"The displacement in {pos} should not be more than {self._max_xy_goto}m!")
 
         req = GoToVector(
             x_goal=FloatValue(value=x),
