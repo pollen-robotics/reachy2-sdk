@@ -65,6 +65,7 @@ class MobileBase(Part, IGoToBasedPart):
             mb_msg: A MobileBase_proto message containing the configuration details for the mobile base.
             initial_state: The initial state of the mobile base, as a MobileBaseState object.
             grpc_channel: The gRPC channel used to communicate with the mobile base service.
+            goto_stub: The gRPC service stub for the GoTo service.
         """
         self._logger = logging.getLogger(__name__)
         super().__init__(mb_msg, grpc_channel, MobileBaseUtilityServiceStub(grpc_channel))
@@ -340,7 +341,6 @@ class MobileBase(Part, IGoToBasedPart):
         Returns:
             The GoToId of the movement command, created using the `goto` method.
         """
-
         try:
             goto = self.get_goto_queue()[-1]
         except IndexError:
@@ -388,9 +388,11 @@ class MobileBase(Part, IGoToBasedPart):
 
         Args:
             theta: The desired rotation in degrees, relative to the current orientation.
+            wait: If True, the function waits until the rotation is completed before returning.
+            degrees: If True, the theta value and angle_tolerance are treated as degrees, otherwise as radians.
+            angle_tolerance: An optional angle tolerance for reaching the target orientation.
             timeout: An optional timeout for completing the rotation, in seconds.
         """
-
         try:
             goto = self.get_goto_queue()[-1]
         except IndexError:
@@ -578,4 +580,5 @@ class MobileBase(Part, IGoToBasedPart):
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
+        """Mobile base is not affected by goto_posture. No command is sent."""
         return super().goto_posture(common_posture, duration, wait, wait_for_goto_end, interpolation_mode)
