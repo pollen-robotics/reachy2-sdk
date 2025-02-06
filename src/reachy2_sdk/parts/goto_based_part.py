@@ -149,43 +149,50 @@ class IGoToBasedPart(ABC):
 
     def _wait_goto(self, id: GoToId, duration: float) -> None:
         """Wait for a goto to finish. timeout is in seconds."""
-        t0 = time.time()
         self._logger_goto.info(f"Waiting for movement with {id}.")
 
+        if not self._is_goto_already_over(id, duration):
+            info_gotos = [self._get_goto_request(id)]
+            ids_queue = self.get_goto_queue()
+            for goto_id in ids_queue:
+                info_gotos.append(self._get_goto_request(goto_id))
+
+            timeout = 1  # adding one more sec
+            for igoto in info_gotos:
+                if igoto is not None:
+                    if type(igoto.request) is JointsRequest:
+                        timeout += igoto.request.duration
+                    elif type(igoto.request) is OdometryRequest:
+                        timeout += igoto.request.timeout
+
+            self._logger_goto.debug(f"timeout is set to {timeout}")
+
+            t_start = time.time()  # timeout for others
+            while not self._is_goto_finished(id):
+                time.sleep(0.1)
+
+                if time.time() - t_start > timeout:
+                    self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
+                    return
+
+            self._logger_goto.info(f"Movement with {id} finished.")
+
+    def _is_goto_already_over(self, id: GoToId, timeout: float) -> bool:
+        """Check if the goto movement is already over."""
+        t0 = time.time()
         id_playing = self.get_goto_playing()
         while id_playing.id == -1:
             time.sleep(0.005)
             id_playing = self.get_goto_playing()
 
+            if self._is_goto_finished(id):
+                return True
+
             # manage an id_playing staying at -1
-            if time.time() - t0 > duration:
+            if time.time() - t0 > timeout:
                 self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
-                return
-
-        info_gotos = [self._get_goto_request(id)]
-        ids_queue = self.get_goto_queue()
-        for goto_id in ids_queue:
-            info_gotos.append(self._get_goto_request(goto_id))
-
-        timeout = 1  # adding one more sec
-        for igoto in info_gotos:
-            if igoto is not None:
-                if type(igoto.request) is JointsRequest:
-                    timeout += igoto.request.duration
-                elif type(igoto.request) is OdometryRequest:
-                    timeout += igoto.request.timeout
-
-        self._logger_goto.debug(f"timeout is set to {timeout}")
-
-        t_start = time.time()  # timeout for others
-        while not self._is_goto_finished(id):
-            time.sleep(0.1)
-
-            if time.time() - t_start > timeout:
-                self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
-                return
-
-        self._logger_goto.info(f"Movement with {id} finished.")
+                return True
+        return False
 
     @abstractmethod
     def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
