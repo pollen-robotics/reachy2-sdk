@@ -323,7 +323,7 @@ class MobileBase(Part, IGoToBasedPart):
         x: float,
         y: float,
         wait: bool = False,
-        distance_tolerance: Optional[float] = None,
+        distance_tolerance: Optional[float] = 0.05,
         timeout: float = 100,
     ) -> GoToId:
         """Send a target position relative to the current position of the mobile base.
@@ -401,7 +401,7 @@ class MobileBase(Part, IGoToBasedPart):
         else:
             odom_request = None
 
-        distance_tolerance = None
+        distance_tolerance = 0.05
 
         if odom_request is not None:
             base_odom = odom_request.request.goal_positions
@@ -413,7 +413,7 @@ class MobileBase(Part, IGoToBasedPart):
             base_odom = self.odometry
 
         if degrees:
-            theta = base_odom["theta"] + rad2deg(theta)
+            theta = base_odom["theta"] + theta
         else:
             theta = deg2rad(base_odom["theta"]) + theta
         x = base_odom["x"]
