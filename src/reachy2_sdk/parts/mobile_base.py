@@ -175,7 +175,7 @@ class MobileBase(Part):
         """Set the maximum distance of goto method.
 
         Args:
-            distance: The desired maximum absolute distance from origin for the goto method.  
+            distance: The desired maximum absolute distance from origin for the goto method.
         """
         self._max_xy_goto
 
