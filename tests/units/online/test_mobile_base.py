@@ -1,9 +1,9 @@
 import time
 
+import numpy as np
 import pytest
 
 from reachy2_sdk.reachy_sdk import ReachySDK
-
 
 @pytest.mark.online
 def test_modes(reachy_sdk_zeroed: ReachySDK) -> None:
@@ -42,3 +42,10 @@ def test_lidar_safety_distances(reachy_sdk_zeroed: ReachySDK) -> None:
         time.sleep(0.2)
         assert reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance == 0.7
         assert reachy_sdk_zeroed.mobile_base.lidar.safety_critical_distance == 0.55
+
+
+@pytest.mark.online
+def test_mb_goto(reachy_sdk_zeroed: ReachySDK) -> None:
+    if reachy_sdk_zeroed.mobile_base is not None:
+        assert reachy_sdk_zeroed.mobile_base is not None
+        reachy_sdk_zeroed.mobile_base.goto(x=0.5, y=0.5, theta=0.5)
