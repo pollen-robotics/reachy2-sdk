@@ -61,7 +61,7 @@ def test_class() -> None:
         control_mode=control_mode,
     )
 
-    mobile_base = MobileBase(mb_msg=mb_proto, initial_state=mb_state, grpc_channel=grpc_channel)
+    mobile_base = MobileBase(mb_msg=mb_proto, initial_state=mb_state, grpc_channel=grpc_channel, goto_stub=None)
 
     assert mobile_base.lidar is not None
     assert mobile_base.battery_voltage == 25
@@ -80,9 +80,6 @@ def test_class() -> None:
     mobile_base.set_goal_speed(x=1.5, y=1.5, theta=100)
     with pytest.raises(ValueError):
         mobile_base.send_speed_command()
-
-    with pytest.raises(ValueError):
-        asyncio.run(mobile_base._goto_async(x=1.5, y=1.5, theta=10, timeout=4))
 
     new_battery = BatteryLevel(level=FloatValue(value=20))
 
