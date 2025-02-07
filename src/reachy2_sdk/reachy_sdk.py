@@ -21,6 +21,7 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.timestamp_pb2 import Timestamp
 from grpc._channel import _InactiveRpcError
+from numpy import rad2deg
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
@@ -793,12 +794,12 @@ class ReachySDK:
             odom_goal_positions = {}
             odom_goal_positions["x"] = response.odometry_goal.odometry_goal.direction.x.value
             odom_goal_positions["y"] = response.odometry_goal.odometry_goal.direction.y.value
-            odom_goal_positions["theta"] = response.odometry_goal.odometry_goal.direction.theta.value
+            odom_goal_positions["theta"] = rad2deg(response.odometry_goal.odometry_goal.direction.theta.value)
             odom_request = OdometryRequest(
                 goal_positions=odom_goal_positions,
                 timeout=response.odometry_goal.timeout.value,
                 distance_tolerance=response.odometry_goal.distance_tolerance.value,
-                angle_tolerance=response.odometry_goal.angle_tolerance.value,
+                angle_tolerance=rad2deg(response.odometry_goal.angle_tolerance.value),
             )
             full_request = SimplifiedRequest(
                 part=part,

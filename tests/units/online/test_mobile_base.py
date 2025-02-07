@@ -23,6 +23,11 @@ def test_modes(reachy_sdk_zeroed: ReachySDK) -> None:
         assert reachy_sdk_zeroed.mobile_base._drive_mode == "brake"
         assert reachy_sdk_zeroed.mobile_base.is_on()
 
+        reachy_sdk_zeroed.mobile_base._set_drive_mode("cmd_goto")
+        time.sleep(0.2)
+        assert reachy_sdk_zeroed.mobile_base._drive_mode == "cmd_goto"
+        assert reachy_sdk_zeroed.mobile_base.is_on()
+
         reachy_sdk_zeroed.mobile_base._set_control_mode("pid")
         time.sleep(0.2)
         assert reachy_sdk_zeroed.mobile_base._control_mode == "pid"
