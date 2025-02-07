@@ -77,8 +77,8 @@ class MobileBase(Part, IGoToBasedPart):
         self._control_mode: str = ControlModePossiblities.keys()[initial_state.control_mode.mode].lower()
         self._battery_level = 30.0
 
-        self._max_xy_vel = 1.0
-        self._max_rot_vel = 180.0
+        self._max_xy_vel = 0.61
+        self._max_rot_vel = 114.0
         self._max_xy_goto = 1.0
 
         self.lidar = Lidar(initial_state.lidar_safety, grpc_channel, self)
@@ -444,31 +444,31 @@ class MobileBase(Part, IGoToBasedPart):
         self._stub.ResetOdometry(self._part_id)
         time.sleep(0.05)
 
-    def set_goal_speed(self, x: float | int = 0, y: float | int = 0, theta: float | int = 0) -> None:
+    def set_goal_speed(self, vx: float | int = 0, vy: float | int = 0, vtheta: float | int = 0) -> None:
         """Set the goal speed for the mobile base.
 
         This method sets the target velocities for the mobile base's movement along the x and y axes, as well as
         its rotational speed. The actual movement is executed after calling `send_speed_command`.
 
         Args:
-            x (float | int, optional): Linear velocity along the x-axis in meters per second. Defaults to 0.
-            y (float | int, optional): Linear velocity along the y-axis in meters per second. Defaults to 0.
-            theta (float | int, optional): Rotational velocity (around the z-axis) in degrees per second. Defaults to 0.
+            vx (float | int, optional): Linear velocity along the x-axis in meters per second. Defaults to 0.
+            vy (float | int, optional): Linear velocity along the y-axis in meters per second. Defaults to 0.
+            vtheta (float | int, optional): Rotational velocity (around the z-axis) in degrees per second. Defaults to 0.
 
         Raises:
-            TypeError: If any of the velocity values (`x`, `y`, `theta`) are not of type `float` or `int`.
+            TypeError: If any of the velocity values (`vx`, `vy`, `vtheta`) are not of type `float` or `int`.
 
         Notes:
             - Use `send_speed_command` after this method to execute the movement.
             - The velocities will be used to command the mobile base for a short duration (0.2 seconds).
         """
-        for vel in [x, y, theta]:
+        for vel in [vx, vy, vtheta]:
             if not isinstance(vel, float) | isinstance(vel, int):
                 raise TypeError("goal_speed must be a float or int")
 
-        self._x_vel_goal = x
-        self._y_vel_goal = y
-        self._rot_vel_goal = theta
+        self._x_vel_goal = vx
+        self._y_vel_goal = vy
+        self._rot_vel_goal = vtheta
 
     def send_speed_command(self) -> None:
         """Send the speed command to the mobile base, based on previously set goal speeds.
