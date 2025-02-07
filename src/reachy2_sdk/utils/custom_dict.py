@@ -3,6 +3,7 @@
 Defines a custom dict class to modify repr of dict.
 
 """
+
 from typing import Any, Generic, TypeVar
 
 K = TypeVar("K", bound=Any)
