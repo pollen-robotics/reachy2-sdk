@@ -121,3 +121,6 @@ def test_class() -> None:
     mobile_base.goto(0, 0, 0, 0)
 
     mobile_base._set_speed_limits(100)
+
+    mobile_base._set_max_xy_goto(2.0)
+    assert mobile_base._max_xy_goto == 2.0

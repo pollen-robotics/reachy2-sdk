@@ -489,10 +489,12 @@ class MobileBase(Part, IGoToBasedPart):
             return
         for vel, value in {"x_vel": self._x_vel_goal, "y_vel": self._y_vel_goal}.items():
             if abs(value) > self._max_xy_vel:
-                raise ValueError(f"The absolute value of {vel} should not be more than {self._max_xy_vel}!")
+                raise ValueError(f"The absolute value of {vel} should not be more than {self._max_xy_vel}, got {abs(value)}")
 
         if abs(self._rot_vel_goal) > self._max_rot_vel:
-            raise ValueError(f"The absolute value of rot_vel should not be more than {self._max_rot_vel}!")
+            raise ValueError(
+                f"The absolute value of rot_vel should not be more than {self._max_rot_vel}, got {abs(self._rot_vel_goal)}"
+            )
 
         if self._drive_mode != "cmd_vel":
             self._set_drive_mode("cmd_vel")
@@ -561,7 +563,7 @@ class MobileBase(Part, IGoToBasedPart):
         y_offset = abs(target[1] - self.odometry["y"])
         for pos, value in {"x": x_offset, "y": y_offset}.items():
             if abs(value) > self._max_xy_goto:
-                raise ValueError(f"The displacement in {pos} should not be more than {self._max_xy_goto}m!")
+                raise ValueError(f"The displacement in {pos} should not be more than {self._max_xy_goto}, got {abs(value)}")
 
     def _check_type_float(self, value: Any, arg_name: str) -> None:
         """Check the type of the value parameter.
