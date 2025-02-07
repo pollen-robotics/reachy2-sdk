@@ -5,7 +5,8 @@ import pytest
 
 from reachy2_sdk.reachy_sdk import ReachySDK
 
-@pytest.mark.online
+
+@pytest.mark.mobile_base
 def test_modes(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         reachy_sdk_zeroed.turn_on()
@@ -27,7 +28,7 @@ def test_modes(reachy_sdk_zeroed: ReachySDK) -> None:
         assert reachy_sdk_zeroed.mobile_base._control_mode == "pid"
 
 
-@pytest.mark.online
+@pytest.mark.mobile_base
 def test_lidar_safety_distances(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance = 5.0
@@ -44,7 +45,7 @@ def test_lidar_safety_distances(reachy_sdk_zeroed: ReachySDK) -> None:
         assert reachy_sdk_zeroed.mobile_base.lidar.safety_critical_distance == 0.55
 
 
-@pytest.mark.online
+@pytest.mark.mobile_base
 def test_mb_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         assert reachy_sdk_zeroed.mobile_base is not None
