@@ -37,7 +37,7 @@ def test_lidar_safety_distances(reachy_sdk_zeroed: ReachySDK) -> None:
         assert reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance == 5.0
         assert reachy_sdk_zeroed.mobile_base.lidar.safety_critical_distance == 1.0
 
-        reachy_sdk_zeroed.mobile_base.lidar.reset_safety_default_values()
+        reachy_sdk_zeroed.mobile_base.lidar.reset_safety_default_distances()
 
         time.sleep(0.2)
         assert reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance == 0.7

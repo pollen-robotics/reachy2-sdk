@@ -74,7 +74,9 @@ class Lidar:
         """
         self._stub.SetZuuuSafety(
             LidarSafety(
+                safety_on=BoolValue(value=self.safety_enabled),
                 safety_distance=FloatValue(value=value),
+                critical_distance=FloatValue(value=self.safety_critical_distance),
             )
         )
 
@@ -101,6 +103,8 @@ class Lidar:
         """
         self._stub.SetZuuuSafety(
             LidarSafety(
+                safety_on=BoolValue(value=self.safety_enabled),
+                safety_distance=FloatValue(value=self.safety_slowdown_distance),
                 critical_distance=FloatValue(value=value),
             )
         )
@@ -125,6 +129,8 @@ class Lidar:
         self._stub.SetZuuuSafety(
             LidarSafety(
                 safety_on=BoolValue(value=value),
+                safety_distance=FloatValue(value=self.safety_slowdown_distance),
+                critical_distance=FloatValue(value=self.safety_critical_distance),
             )
         )
 
@@ -138,14 +144,14 @@ class Lidar:
         """
         return self._obstacle_detection_status
 
-    def reset_safety_default_values(self) -> None:
+    def reset_safety_default_distances(self) -> None:
         """Reset default distance values for safety detection.
 
         The reset values include:
         - safety_critical_distance
         - safety_slowdown_distance.
         """
-        self._stub.ResetDefaultValues(self._part._part_id)
+        self._stub.ResetDefaultSafetyDistances(self._part._part_id)
 
     def _update_with(self, new_lidar_state: LidarSafety) -> None:
         """Update lidar information with a new state received from a gRPC server.
