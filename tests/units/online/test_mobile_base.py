@@ -6,6 +6,8 @@ import pytest
 
 from reachy2_sdk.reachy_sdk import ReachySDK
 
+from .test_basic_movements import is_goto_finished
+
 
 @pytest.mark.mobile_base
 def test_modes(reachy_sdk_zeroed: ReachySDK) -> None:
@@ -237,5 +239,88 @@ def test_odometry_vel(reachy_sdk_zeroed: ReachySDK) -> None:
 @pytest.mark.mobile_base
 def test_mobile_base_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
-        assert reachy_sdk_zeroed.mobile_base is not None
-        reachy_sdk_zeroed.mobile_base.goto(x=0.5, y=0.5, theta=0.5)
+        with pytest.raises(ValueError):
+            reachy_sdk_zeroed.mobile_base.goto(x=1.5, y=0.2, theta=0)
+
+        with pytest.raises(ValueError):
+            reachy_sdk_zeroed.mobile_base.goto(x=0.0, y=1.2, theta=0)
+
+        goto1 = reachy_sdk_zeroed.mobile_base.goto(x=0.5, y=0.5, theta=50)
+        while not is_goto_finished(goto1):
+            time.sleep(0.1)
+        time.sleep(0.3)
+        odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
+        assert np.isclose(odom["x"], 0.5, atol=0.05)
+        assert np.isclose(odom["y"], 0.5, atol=0.05)
+        assert np.isclose(odom["theta"], 50, atol=5)
+
+        goto2 = reachy_sdk_zeroed.mobile_base.goto(x=0.8, y=0.2, theta=-20, wait=True)
+        assert is_goto_finished(goto2)
+        time.sleep(0.3)
+        odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
+        assert np.isclose(odom["x"], 0.8, atol=0.05)
+        assert np.isclose(odom["y"], 0.2, atol=0.05)
+        assert np.isclose(odom["theta"], -20, atol=5)
+
+        goto3 = reachy_sdk_zeroed.mobile_base.goto(x=0.0, y=-0.4, theta=30)
+        time.sleep(0.1)
+        assert not is_goto_finished(goto3)
+        time.sleep(0.2)
+        reachy_sdk_zeroed.cancel_goto_by_id(goto3)
+        assert is_goto_finished(goto3)
+        request3 = reachy_sdk_zeroed.get_goto_request(goto3)
+        assert request3.part == "mobile_base"
+        assert np.isclose(request3.request.goal_positions["x"], 0.0, atol=1e-03)
+        assert np.isclose(request3.request.goal_positions["y"], -0.4, atol=1e-03)
+        assert np.isclose(request3.request.goal_positions["theta"], 30, atol=1e-03)
+
+
+@pytest.mark.mobile_base
+def test_mobile_base_goto_timeout(reachy_sdk_zeroed: ReachySDK) -> None:
+    if reachy_sdk_zeroed.mobile_base is not None:
+        goto1 = reachy_sdk_zeroed.mobile_base.goto(x=0.8, y=0.5, theta=50, timeout=1, wait=True)
+        time.sleep(1.1)
+        assert is_goto_finished(goto1)
+        odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
+        assert not np.isclose(odom["x"], 0.8, atol=0.05)
+        assert not np.isclose(odom["y"], 0.5, atol=0.05)
+        assert not np.isclose(odom["theta"], 50, atol=5)
+
+        request1 = reachy_sdk_zeroed.get_goto_request(goto1)
+        assert request1.part == "mobile_base"
+        assert np.isclose(request1.request.goal_positions["x"], 0.8, atol=1e-03)
+        assert np.isclose(request1.request.goal_positions["y"], 0.5, atol=1e-03)
+        assert np.isclose(request1.request.goal_positions["theta"], 50, atol=1e-03)
+        assert np.isclose(request1.request.timeout, 1, atol=1e-03)
+
+        tic = time.time()
+        goto2 = reachy_sdk_zeroed.mobile_base.goto(x=0.0, y=-0.2, theta=0, timeout=0.8)
+        while not is_goto_finished(goto2):
+            time.sleep(0.01)
+        assert np.isclose(time.time() - tic, 0.8, atol=0.2)
+        odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
+        assert not np.isclose(odom["x"], 0.0, atol=0.05)
+        assert not np.isclose(odom["y"], -0.2, atol=0.05)
+        assert not np.isclose(odom["theta"], 0, atol=5)
+
+        request2 = reachy_sdk_zeroed.get_goto_request(goto2)
+        assert request1.part == "mobile_base"
+        assert np.isclose(request2.request.goal_positions["x"], 0.0, atol=1e-03)
+        assert np.isclose(request2.request.goal_positions["y"], -0.2, atol=1e-03)
+        assert np.isclose(request2.request.goal_positions["theta"], 0, atol=1e-03)
+        assert np.isclose(request2.request.timeout, 0.8, atol=1e-03)
+
+
+@pytest.mark.mobile_base
+def test_mobile_base_goto_tolerances(reachy_sdk_zeroed: ReachySDK) -> None:
+    pass
+
+
+@pytest.mark.mobile_base
+def test_mobile_base_translate_by(reachy_sdk_zeroed: ReachySDK) -> None:
+    pass
+
+
+@pytest.mark.mobile_base
+def test_mobile_base_rotate_by(reachy_sdk_zeroed: ReachySDK) -> None:
+    pass
