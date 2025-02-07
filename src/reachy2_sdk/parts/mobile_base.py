@@ -553,12 +553,15 @@ class MobileBase(Part, IGoToBasedPart):
             TypeError: If the y goal is not a float or int.
             TypeError: If the theta goal is not a float or int.
         """
-        if not (isinstance(target[0], float) | isinstance(target[0], int)):
-            raise TypeError(f"x must be a float or int, got {type(target[0])} instead")
-        if not (isinstance(target[1], float) | isinstance(target[1], int)):
-            raise TypeError(f"y must be a float or int, got {type(target[1])} instead")
-        if not (isinstance(target[2], float) | isinstance(target[2], int)):
-            raise TypeError(f"theta must be a float or int, got {type(target[2])} instead")
+        self._check_type_float(target[0], "x")
+        self._check_type_float(target[1], "y")
+        self._check_type_float(target[2], "theta")
+
+        x_offset = abs(target[0] - self.odometry["x"])
+        y_offset = abs(target[1] - self.odometry["y"])
+        for pos, value in {"x": x_offset, "y": y_offset}.items():
+            if abs(value) > self._max_xy_goto:
+                raise ValueError(f"The displacement in {pos} should not be more than {self._max_xy_goto}m!")
 
     def _check_type_float(self, value: Any, arg_name: str) -> None:
         """Check the type of the value parameter.
@@ -570,7 +573,15 @@ class MobileBase(Part, IGoToBasedPart):
             TypeError: If the value is not a float or int.
         """
         if not (isinstance(value, float) | isinstance(value, int)):
-            raise TypeError(f"{value} must be a float or int, got {type(value)} instead")
+            raise TypeError(f"{arg_name} must be a float or int, got {type(value)} instead")
+
+    def _set_max_xy_goto(self, value: float) -> None:
+        """Set the maximum displacement in the x and y directions for the mobile base.
+
+        Args:
+            value: The maximum displacement value to be set, in meters.
+        """
+        self._max_xy_goto = value
 
     def goto_posture(
         self,
