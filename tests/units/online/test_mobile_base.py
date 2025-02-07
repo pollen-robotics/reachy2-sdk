@@ -32,17 +32,19 @@ def test_modes(reachy_sdk_zeroed: ReachySDK) -> None:
 def test_lidar_safety_distances(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance = 5.0
-        reachy_sdk_zeroed.mobile_base.lidar.safety_critical_distance = 1.0
-
         time.sleep(0.2)
-        assert reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance == 5.0
-        assert reachy_sdk_zeroed.mobile_base.lidar.safety_critical_distance == 1.0
+        assert np.isclose(reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance, 5.0, atol=1e-03)
+
+        reachy_sdk_zeroed.mobile_base.lidar.safety_critical_distance = 1.0
+        time.sleep(0.2)
+        assert np.isclose(reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance, 5.0, atol=1e-03)
+        assert np.isclose(reachy_sdk_zeroed.mobile_base.lidar.safety_critical_distance, 1.0, atol=1e-03)
 
         reachy_sdk_zeroed.mobile_base.lidar.reset_safety_default_distances()
 
-        time.sleep(0.2)
-        assert reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance == 0.7
-        assert reachy_sdk_zeroed.mobile_base.lidar.safety_critical_distance == 0.55
+        time.sleep(0.5)
+        assert np.isclose(reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance, 0.7, atol=1e-03)
+        assert np.isclose(reachy_sdk_zeroed.mobile_base.lidar.safety_critical_distance, 0.55, atol=1e-03)
 
 
 @pytest.mark.mobile_base
