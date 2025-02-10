@@ -559,8 +559,23 @@ class MobileBase(Part, IGoToBasedPart):
         self._check_type_float(target[1], "y")
         self._check_type_float(target[2], "theta")
 
-        x_offset = abs(target[0] - self.odometry["x"])
-        y_offset = abs(target[1] - self.odometry["y"])
+        try:
+            goto = self.get_goto_queue()[-1]
+        except IndexError:
+            goto = self.get_goto_playing()
+
+        if goto.id != -1:
+            odom_request = self._get_goto_request(goto)
+        else:
+            odom_request = None
+
+        if odom_request is not None:
+            base_odom = odom_request.request.goal_positions
+            x_offset = abs(target[0] - base_odom["x"])
+            y_offset = abs(target[1] - base_odom["y"])
+        else:
+            x_offset = abs(target[0] - self.odometry["x"])
+            y_offset = abs(target[1] - self.odometry["y"])
         for pos, value in {"x": x_offset, "y": y_offset}.items():
             if abs(value) > self._max_xy_goto:
                 raise ValueError(f"The displacement in {pos} should not be more than {self._max_xy_goto}, got {abs(value)}")
