@@ -259,8 +259,8 @@ class MobileBase(Part, IGoToBasedPart):
                     Defaults to False.
             degrees: If True, the theta value and angle_tolerance are treated as degrees.
                     Defaults to True.
-            distance_tolerance: Optional; the maximum distance allowed between the target and the position reached, in meters.
-            angle_tolerance: Optional; the maximum angle allowed between the target and the position reached, in meters.
+            distance_tolerance: Optional; the tolerance to the target position to consider the goto finished, in meters.
+            angle_tolerance: Optional; the angle tolerance to the target to consider the goto finished, in meters.
             timeout: Optional; the maximum time allowed to reach the target, in seconds.
 
         Returns:
@@ -274,13 +274,7 @@ class MobileBase(Part, IGoToBasedPart):
             return
 
         self._check_goto_parameters(target=[x, y, theta])
-
-        if distance_tolerance is not None:
-            self._check_type_float(distance_tolerance, "distance_tolerance")
-        if angle_tolerance is not None:
-            self._check_type_float(angle_tolerance, "angle_tolerance")
-        if timeout is not None:
-            self._check_type_float(timeout, "timeout")
+        self._check_optional_goto_parameters(distance_tolerance, angle_tolerance, timeout)
 
         if degrees:
             theta = deg2rad(theta)
@@ -335,7 +329,7 @@ class MobileBase(Part, IGoToBasedPart):
             x: The desired translation along the x-axis in meters.
             y: The desired translation along the y-axis in meters.
             wait:  If True, the function waits until the movement is completed before returning.
-            distance_tolerance: An optional distance tolerance for reaching the target position, in meters.
+            distance_tolerance: Optional; The distance tolerance to the target to consider the goto finished, in meters.
             timeout: An optional timeout for reaching the target position, in seconds.
 
         Returns:
@@ -390,7 +384,7 @@ class MobileBase(Part, IGoToBasedPart):
             theta: The desired rotation in degrees, relative to the current orientation.
             wait: If True, the function waits until the rotation is completed before returning.
             degrees: If True, the theta value and angle_tolerance are treated as degrees, otherwise as radians.
-            angle_tolerance: An optional angle tolerance for reaching the target orientation.
+            angle_tolerance: Optional; The angle tolerance to the target to consider the goto finished.
             timeout: An optional timeout for completing the rotation, in seconds.
         """
         try:
@@ -436,6 +430,7 @@ class MobileBase(Part, IGoToBasedPart):
         """Reset the odometry.
 
         This method resets the mobile base's odometry, so that the current position is now (x, y, theta) = (0, 0, 0).
+        If any goto is being played, stop the goto and the queued ones.
         """
         if self.get_goto_playing().id != -1 or len(self.get_goto_queue()) != 0:
             self._logger.warning(
@@ -580,6 +575,34 @@ class MobileBase(Part, IGoToBasedPart):
             if abs(value) > self._max_xy_goto:
                 raise ValueError(f"The displacement in {pos} should not be more than {self._max_xy_goto}, got {abs(value)}")
 
+    def _check_optional_goto_parameters(
+        self, distance_tolerance: Optional[float], angle_tolerance: Optional[float], timeout: Optional[float]
+    ) -> None:
+        """Check the validity of the optional parameters for the `goto` method.
+
+        Args:
+            distance_tolerance: The distance tolerance value to be checked.
+            angle_tolerance: The angle tolerance value to be checked.
+            timeout: The timeout value to be checked.
+
+        Raises:
+            ValueError: If the distance_tolerance is negative.
+            ValueError: If the angle_tolerance is negative.
+            ValueError: If the timeout is negative or null.
+        """
+        if distance_tolerance is not None:
+            self._check_type_float(distance_tolerance, "distance_tolerance")
+            if distance_tolerance < 0:
+                raise ValueError(f"distance_tolerance must be a positive value, got {distance_tolerance}")
+        if angle_tolerance is not None:
+            self._check_type_float(angle_tolerance, "angle_tolerance")
+            if angle_tolerance < 0:
+                raise ValueError(f"angle_tolerance must be a positive value, got {angle_tolerance}")
+        if timeout is not None:
+            self._check_type_float(timeout, "timeout")
+            if timeout <= 0:
+                raise ValueError(f"timeout must be a positive value greater than 0, got {timeout}")
+
     def _check_type_float(self, value: Any, arg_name: str) -> None:
         """Check the type of the value parameter.
 
@@ -592,7 +615,7 @@ class MobileBase(Part, IGoToBasedPart):
         if not (isinstance(value, float) | isinstance(value, int)):
             raise TypeError(f"{arg_name} must be a float or int, got {type(value)} instead")
 
-    def _set_max_xy_goto(self, value: float) -> None:
+    def set_max_xy_goto(self, value: float) -> None:
         """Set the maximum displacement in the x and y directions for the mobile base.
 
         Args:
