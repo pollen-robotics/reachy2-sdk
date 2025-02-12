@@ -243,17 +243,27 @@ class Hand(Part):
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
             return
-        if self._outgoing_goal_positions is not None:
-            self._hand_stub.SetHandPosition(
-                HandPositionRequest(
-                    id=self._part_id,
-                    position=HandPosition(
-                        parallel_gripper=ParallelGripperPosition(position=FloatValue(value=self._outgoing_goal_positions))
-                    ),
-                )
-            )
-            self._outgoing_goal_positions = None
+        command = self._get_goal_positions_message()
+        if command is not None:
+            self._hand_stub.SetHandPosition(command)
+            self._clean_outgoing_goal_positions()
             self._is_moving = True
+
+    def _get_goal_positions_message(self) -> Optional[HandPositionRequest]:
+        """Get the Orbita2dsCommand message to send the goal positions to the actuator."""
+        if self._outgoing_goal_positions is not None:
+            command = HandPositionRequest(
+                id=self._part_id,
+                position=HandPosition(
+                    parallel_gripper=ParallelGripperPosition(position=FloatValue(value=self._outgoing_goal_positions))
+                ),
+            )
+            return command
+        return None
+
+    def _clean_outgoing_goal_positions(self) -> None:
+        """Clean the outgoing goal positions."""
+        self._outgoing_goal_positions = None
 
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state from the gRPC server.

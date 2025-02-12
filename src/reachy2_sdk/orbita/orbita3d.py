@@ -3,7 +3,7 @@
 Handles all specific methods to Orbita3d.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from google.protobuf.wrappers_pb2 import FloatValue
 from grpc import Channel
@@ -162,6 +162,15 @@ class Orbita3d(Orbita):
         Args:
             check_positions: A boolean indicating whether to check the positions after sending the command.
         """
+        command = self._get_goal_positions_message()
+        if command is not None:
+            self._clean_outgoing_goal_positions()
+            self._stub.SendCommand(command)
+            if check_positions:
+                self._post_send_goal_positions()
+
+    def _get_goal_positions_message(self) -> Optional[Orbita3dsCommand]:
+        """Get the Orbita2dsCommand message to send the goal positions to the actuator."""
         if self._outgoing_goal_positions:
             req_pos = {}
             for joint_axis in self._joints.keys():
@@ -177,10 +186,12 @@ class Orbita3d(Orbita):
                     )
                 ]
             )
-            self._outgoing_goal_positions = {}
-            self._stub.SendCommand(command)
-            if check_positions:
-                self._post_send_goal_positions()
+            return command
+        return None
+
+    def _clean_outgoing_goal_positions(self) -> None:
+        """Clean the outgoing goal positions."""
+        self._outgoing_goal_positions = {}
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
         """Set the speed limit as a percentage of the maximum speed for all motors of the actuator.
