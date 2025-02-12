@@ -14,6 +14,7 @@ from pyquaternion import Quaternion
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmCartesianGoal,
+    ArmComponentsCommands,
     ArmEndEffector,
     ArmFKRequest,
     ArmIKRequest,
@@ -1150,6 +1151,20 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             return
         for actuator in self._actuators.values():
             actuator.send_goal_positions(check_positions)
+
+    def _get_goal_positions_message(self) -> ArmComponentsCommands:
+        """Get the Orbita2dsCommand message to send the goal positions to the actuator."""
+        commands = {}
+        shoulder_command = self.shoulder._get_goal_positions_message()
+        if shoulder_command is not None:
+            commands["shoulder_command"] = shoulder_command
+        elbow_command = self.elbow._get_goal_positions_message()
+        if elbow_command is not None:
+            commands["elbow_command"] = elbow_command
+        wrist_command = self.wrist._get_goal_positions_message()
+        if wrist_command is not None:
+            commands["wrist_command"] = wrist_command
+        return ArmComponentsCommands(**commands)
 
     def _update_with(self, new_state: ArmState) -> None:
         """Update the arm with a newly received (partial) state from the gRPC server.

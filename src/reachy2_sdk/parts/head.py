@@ -20,6 +20,7 @@ from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import CustomNeckJoints
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
+    HeadComponentsCommands,
     HeadState,
     HeadStatus,
     NeckCartesianGoal,
@@ -453,6 +454,14 @@ class Head(JointsBasedPart, IGoToBasedPart):
             return
         for actuator in self._actuators.values():
             actuator.send_goal_positions(check_positions)
+
+    def _get_goal_positions_message(self) -> HeadComponentsCommands:
+        """Get the Orbita2dsCommand message to send the goal positions to the actuator."""
+        commands = {}
+        neck_command = self.neck._get_goal_positions_message()
+        if neck_command is not None:
+            commands["neck_command"] = neck_command
+        return HeadComponentsCommands(**commands)
 
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state from the gRPC server.

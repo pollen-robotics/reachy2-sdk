@@ -24,7 +24,7 @@ from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
-from reachy2_sdk_api.reachy_pb2 import ReachyState
+from reachy2_sdk_api.reachy_pb2 import ReachyComponentsCommands, ReachyState
 
 from .config.reachy_info import ReachyInfo
 from .media.audio import Audio
@@ -841,6 +841,45 @@ class ReachySDK:
             self._logger.warning("Reachy is not connected!")
             return
 
-        for part in self.info._enabled_parts.values():
-            if issubclass(type(part), JointsBasedPart):
-                part.send_goal_positions(check_positions)
+        # for part in self.info._enabled_parts.values():
+        #     if issubclass(type(part), JointsBasedPart):
+        #         part.send_goal_positions(check_positions)
+
+        commands = {}
+        if self.r_arm is not None and self.r_arm.is_on():
+            r_arm_command = self.r_arm._get_goal_positions_message()
+            if r_arm_command is not None:
+                commands["r_arm_commands"] = r_arm_command
+        else:
+            self._logger.warning("r_arm is off. Command not sent.")
+
+        if self.l_arm is not None and self.l_arm.is_on():
+            l_arm_command = self.l_arm._get_goal_positions_message()
+            if l_arm_command is not None:
+                commands["l_arm_commands"] = l_arm_command
+        else:
+            self._logger.warning("l_arm is off. Command not sent.")
+
+        if self.head is not None and self.head.is_on():
+            head_command = self.head._get_goal_positions_message()
+            if head_command is not None:
+                commands["head_commands"] = head_command
+        else:
+            self._logger.warning("head is off. Command not sent.")
+
+        if self.r_arm is not None and self.r_arm.gripper is not None and self.r_arm.gripper.is_on():
+            r_hand_command = self.r_arm.gripper._get_goal_positions_message()
+            if r_hand_command is not None:
+                commands["r_hand_command"] = r_hand_command
+        else:
+            self._logger.warning("r_hand is off. Command not sent.")
+
+        if self.l_arm is not None and self.l_arm.gripper is not None and self.l_arm.gripper.is_on():
+            l_hand_command = self.l_arm.gripper._get_goal_positions_message()
+            if l_hand_command is not None:
+                commands["l_hand_command"] = l_hand_command
+        else:
+            self._logger.warning("l_hand is off. Command not sent.")
+
+        components_commands = ReachyComponentsCommands(**commands)
+        self._stub.SendComponentsCommands(components_commands)
