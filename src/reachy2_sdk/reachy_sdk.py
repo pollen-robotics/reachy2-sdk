@@ -850,6 +850,7 @@ class ReachySDK:
             r_arm_command = self.r_arm._get_goal_positions_message()
             if r_arm_command is not None:
                 commands["r_arm_commands"] = r_arm_command
+                self.r_arm._clean_outgoing_goal_positions()
         else:
             self._logger.warning("r_arm is off. Command not sent.")
 
@@ -857,6 +858,7 @@ class ReachySDK:
             l_arm_command = self.l_arm._get_goal_positions_message()
             if l_arm_command is not None:
                 commands["l_arm_commands"] = l_arm_command
+                self.l_arm._clean_outgoing_goal_positions()
         else:
             self._logger.warning("l_arm is off. Command not sent.")
 
@@ -864,6 +866,7 @@ class ReachySDK:
             head_command = self.head._get_goal_positions_message()
             if head_command is not None:
                 commands["head_commands"] = head_command
+                self.head._clean_outgoing_goal_positions()
         else:
             self._logger.warning("head is off. Command not sent.")
 
@@ -871,6 +874,7 @@ class ReachySDK:
             r_hand_command = self.r_arm.gripper._get_goal_positions_message()
             if r_hand_command is not None:
                 commands["r_hand_command"] = r_hand_command
+                self.r_arm.gripper._clean_outgoing_goal_positions()
         else:
             self._logger.warning("r_hand is off. Command not sent.")
 
@@ -878,6 +882,7 @@ class ReachySDK:
             l_hand_command = self.l_arm.gripper._get_goal_positions_message()
             if l_hand_command is not None:
                 commands["l_hand_command"] = l_hand_command
+                self.l_arm.gripper._clean_outgoing_goal_positions()
         else:
             self._logger.warning("l_hand is off. Command not sent.")
 

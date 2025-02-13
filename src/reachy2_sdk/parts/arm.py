@@ -1166,6 +1166,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             commands["wrist_command"] = wrist_command
         return ArmComponentsCommands(**commands)
 
+    def _clean_outgoing_goal_positions(self) -> None:
+        """Clean the outgoing goal positions."""
+        self.shoulder._clean_outgoing_goal_positions()
+        self.elbow._clean_outgoing_goal_positions()
+        self.wrist._clean_outgoing_goal_positions()
+
     def _update_with(self, new_state: ArmState) -> None:
         """Update the arm with a newly received (partial) state from the gRPC server.
 

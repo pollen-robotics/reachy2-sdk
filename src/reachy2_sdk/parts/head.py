@@ -463,6 +463,10 @@ class Head(JointsBasedPart, IGoToBasedPart):
             commands["neck_command"] = neck_command
         return HeadComponentsCommands(**commands)
 
+    def _clean_outgoing_goal_positions(self) -> None:
+        """Clean the outgoing goal positions."""
+        self.neck._clean_outgoing_goal_positions()
+
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state from the gRPC server.
 
