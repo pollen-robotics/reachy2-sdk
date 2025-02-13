@@ -3,20 +3,18 @@
 Handles all specific methods to a MobileBase.
 """
 
-import asyncio
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor
-from queue import Queue
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import grpc
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from numpy import deg2rad, rad2deg, round
+from reachy2_sdk_api.goto_pb2 import GoToId, GoToRequest, OdometryGoal
+from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.mobile_base_mobility_pb2 import (
     DirectionVector,
-    GoToVector,
     TargetDirectionCommand,
 )
 from reachy2_sdk_api.mobile_base_mobility_pb2_grpc import MobileBaseMobilityServiceStub
@@ -34,10 +32,11 @@ from reachy2_sdk_api.mobile_base_utility_pb2 import (
 from reachy2_sdk_api.mobile_base_utility_pb2_grpc import MobileBaseUtilityServiceStub
 
 from ..sensors.lidar import Lidar
+from .goto_based_part import IGoToBasedPart
 from .part import Part
 
 
-class MobileBase(Part):
+class MobileBase(Part, IGoToBasedPart):
     """MobileBase class for controlling Reachy's mobile base.
 
     This class provides methods to interact with and control the mobile base of a Reachy robot. It allows
@@ -54,6 +53,7 @@ class MobileBase(Part):
         mb_msg: MobileBase_proto,
         initial_state: MobileBaseState,
         grpc_channel: grpc.Channel,
+        goto_stub: GoToServiceStub,
     ) -> None:
         """Initialize the MobileBase with its gRPC communication and configuration.
 
@@ -65,9 +65,11 @@ class MobileBase(Part):
             mb_msg: A MobileBase_proto message containing the configuration details for the mobile base.
             initial_state: The initial state of the mobile base, as a MobileBaseState object.
             grpc_channel: The gRPC channel used to communicate with the mobile base service.
+            goto_stub: The gRPC service stub for the GoTo service.
         """
         self._logger = logging.getLogger(__name__)
         super().__init__(mb_msg, grpc_channel, MobileBaseUtilityServiceStub(grpc_channel))
+        IGoToBasedPart.__init__(self, self, goto_stub)
 
         self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
 
@@ -75,8 +77,8 @@ class MobileBase(Part):
         self._control_mode: str = ControlModePossiblities.keys()[initial_state.control_mode.mode].lower()
         self._battery_level = 30.0
 
-        self._max_xy_vel = 1.0
-        self._max_rot_vel = 180.0
+        self._max_xy_vel = 0.61
+        self._max_rot_vel = 114.0
         self._max_xy_goto = 1.0
 
         self.lidar = Lidar(initial_state.lidar_safety, grpc_channel, self)
@@ -236,9 +238,12 @@ class MobileBase(Part):
         x: float,
         y: float,
         theta: float,
-        timeout: Optional[float] = None,
-        tolerance: Dict[str, float] = {"delta_x": 0.05, "delta_y": 0.05, "delta_theta": 5, "distance": 0.05},
-    ) -> None:
+        wait: bool = False,
+        degrees: bool = True,
+        distance_tolerance: Optional[float] = 0.05,
+        angle_tolerance: Optional[float] = None,
+        timeout: float = 100,
+    ) -> GoToId:
         """Send the mobile base to a specified target position.
 
         The (x, y) coordinates define the position in Cartesian space, and theta specifies the orientation in degrees.
@@ -250,129 +255,72 @@ class MobileBase(Part):
             x: The target x-coordinate in meters.
             y: The target y-coordinate in meters.
             theta: The target orientation in degrees.
+            wait: If True, the function waits until the movement is completed before returning.
+                    Defaults to False.
+            degrees: If True, the theta value and angle_tolerance are treated as degrees.
+                    Defaults to True.
+            distance_tolerance: Optional; the tolerance to the target position to consider the goto finished, in meters.
+            angle_tolerance: Optional; the angle tolerance to the target to consider the goto finished, in meters.
             timeout: Optional; the maximum time allowed to reach the target, in seconds.
-            tolerance: A dictionary specifying the tolerances for x, y, theta, and overall distance to
-                consider the target reached. Defaults to {"delta_x": 0.05, "delta_y": 0.05, "delta_theta": 5, "distance": 0.05}.
+
+        Returns:
+            GoToId: The unique GoToId identifier for the movement command.
 
         Raises:
-            ValueError: If the target is not reached and the mobile base is stopped due to an obstacle.
+            TypeError: If the target is not reached and the mobile base is stopped due to an obstacle.
         """
         if self.is_off():
             self._logger.warning("Mobile base is off. Goto not sent.")
             return
 
-        exc_queue: Queue[Exception] = Queue()
+        self._check_goto_parameters(target=[x, y, theta])
+        self._check_optional_goto_parameters(distance_tolerance, angle_tolerance, timeout)
 
-        if not timeout:
-            # We consider that the max velocity for the mobile base is 0.5 m/s
-            # timeout is 2*_max_xy_goto / max velocity
-            timeout = 2 * self._max_xy_goto / 0.5
+        if degrees:
+            theta = deg2rad(theta)
+            if angle_tolerance is not None:
+                angle_tolerance = deg2rad(angle_tolerance)
 
-        def _wrapped_goto() -> None:
-            try:
-                asyncio.run(
-                    self._goto_async(
-                        x=x,
-                        y=y,
-                        theta=theta,
-                        timeout=timeout,
-                        tolerance=tolerance,
-                    ),
-                )
-            except Exception as e:
-                exc_queue.put(e)
+        if angle_tolerance is None:
+            angle_tolerance = deg2rad(5.0)
 
-        with ThreadPoolExecutor() as exec:
-            exec.submit(_wrapped_goto)
-        if not exc_queue.empty():
-            raise exc_queue.get()
+        vector_goal = TargetDirectionCommand(
+            id=self._part_id,
+            direction=DirectionVector(
+                x=FloatValue(value=x),
+                y=FloatValue(value=y),
+                theta=FloatValue(value=theta),
+            ),
+        )
 
-    async def _goto_async(
+        odometry_goal = OdometryGoal(
+            odometry_goal=vector_goal,
+            distance_tolerance=FloatValue(value=distance_tolerance),
+            angle_tolerance=FloatValue(value=angle_tolerance),
+            timeout=FloatValue(value=timeout),
+        )
+
+        request = GoToRequest(
+            odometry_goal=odometry_goal,
+        )
+
+        response = self._goto_stub.GoToOdometry(request)
+
+        if response.id == -1:
+            self._logger.error(f"Unable to go to requested position x={x}, y={y}, theta={theta}. No command sent.")
+        elif wait:
+            self._wait_goto(response, timeout)
+
+        return response
+
+    def translate_by(
         self,
         x: float,
         y: float,
-        theta: float,
-        timeout: float,
-        tolerance: Dict[str, float] = {"delta_x": 0.05, "delta_y": 0.05, "delta_theta": 5, "distance": 0.05},
-    ) -> None:
-        """Async version of the `goto` method.
-
-        This method sends the mobile base to the specified target asynchronously.
-
-        Args:
-            x: The target x-coordinate in meters.
-            y: The target y-coordinate in meters.
-            theta: The target orientation in degrees.
-            timeout: The maximum time allowed to reach the target, in seconds.
-            tolerance: A dictionary specifying the tolerances for x, y, theta, and overall distance to
-                consider the target reached.
-        """
-        x_offset = abs(x - self.odometry["x"])
-        y_offset = abs(y - self.odometry["y"])
-        for pos, value in {"x": x_offset, "y": y_offset}.items():
-            if abs(value) > self._max_xy_goto:
-                raise ValueError(f"The displacement in {pos} should not be more than {self._max_xy_goto}m!")
-
-        req = GoToVector(
-            x_goal=FloatValue(value=x),
-            y_goal=FloatValue(value=y),
-            theta_goal=FloatValue(value=deg2rad(theta)),
-        )
-        self._mobility_stub.SendGoTo(req)
-
-        arrived = await self._is_arrived_in_given_time(time.time(), timeout, tolerance)
-
-        if not arrived and self.lidar.obstacle_detection_status == "OBJECT_DETECTED_STOP":
-            # Error type must be modified
-            raise ValueError("Target not reached. Mobile base stopped because of obstacle.")
-
-    async def _is_arrived_in_given_time(self, starting_time: float, timeout: float, tolerance: Dict[str, float]) -> bool:
-        """Check if the mobile base arrived at the goal within the given time.
-
-        This method periodically checks the distance to the goal and determines if the mobile base
-        reaches the specified position and orientation within the allowed time and tolerance.
-
-        Args:
-            starting_time: The time when the checking started, in seconds.
-            timeout: The maximum time allowed to reach the target, in seconds.
-            tolerance: A dictionary specifying the tolerances for x, y, theta, and overall distance to
-                consider the target reached.
-
-        Returns:
-            True if the mobile base reaches the target within the time limit, otherwise False.
-        """
-        arrived: bool = False
-        while time.time() - starting_time < timeout:
-            arrived = True
-            distance_to_goal = self._distance_to_goto_goal()
-            for delta_key in tolerance.keys():
-                if tolerance[delta_key] < abs(distance_to_goal[delta_key]):
-                    arrived = False
-                    break
-            await asyncio.sleep(0.1)
-            if arrived:
-                break
-        return arrived
-
-    def _distance_to_goto_goal(self) -> Dict[str, float]:
-        """Get the distance to the current goto goal.
-
-        The distances returned include delta_x, delta_y, delta_theta, and overall distance.
-
-        Returns:
-            A dictionary containing the distance values to the goal, with keys 'delta_x', 'delta_y',
-            'delta_theta', and 'distance', all rounded to three decimal places.
-        """
-        response = self._mobility_stub.DistanceToGoal(self._part_id)
-        distance = {
-            "delta_x": round(response.delta_x.value, 3),
-            "delta_y": round(response.delta_y.value, 3),
-            "delta_theta": round(rad2deg(response.delta_theta.value), 3),
-            "distance": round(response.distance.value, 3),
-        }
-        return distance
-
-    def translate_by(self, x: float, y: float, timeout: Optional[float] = None) -> None:
+        wait: bool = False,
+        distance_tolerance: Optional[float] = 0.05,
+        timeout: float = 100,
+    ) -> GoToId:
         """Send a target position relative to the current position of the mobile base.
 
         The (x, y) coordinates specify the desired translation in the mobile base's Cartesian space.
@@ -380,65 +328,142 @@ class MobileBase(Part):
         Args:
             x: The desired translation along the x-axis in meters.
             y: The desired translation along the y-axis in meters.
+            wait:  If True, the function waits until the movement is completed before returning.
+            distance_tolerance: Optional; The distance tolerance to the target to consider the goto finished, in meters.
             timeout: An optional timeout for reaching the target position, in seconds.
-        """
-        odometry = self.odometry
-        x_current = odometry["x"]
-        y_current = odometry["y"]
-        theta = odometry["theta"]
-        theta_rad = deg2rad(theta)
-        x_goal = x_current + (x * np.cos(theta_rad) - y * np.sin(theta_rad))
-        y_goal = y_current + (x * np.sin(theta_rad) + y * np.cos(theta_rad))
-        self.goto(x_goal, y_goal, theta, timeout=timeout)
 
-    def rotate_by(self, theta: float, timeout: Optional[float] = None) -> None:
+        Returns:
+            The GoToId of the movement command, created using the `goto` method.
+        """
+        try:
+            goto = self.get_goto_queue()[-1]
+        except IndexError:
+            goto = self.get_goto_playing()
+
+        if goto.id != -1:
+            odom_request = self._get_goto_request(goto)
+        else:
+            odom_request = None
+
+        angle_tolerance = None
+
+        if odom_request is not None:
+            base_odom = odom_request.request.goal_positions
+            angle_tolerance = odom_request.request.angle_tolerance
+        else:
+            base_odom = self.odometry
+            base_odom["theta"] = deg2rad(base_odom["theta"])
+
+        theta_goal = base_odom["theta"]
+        x_goal = base_odom["x"] + (x * np.cos(theta_goal) - y * np.sin(theta_goal))
+        y_goal = base_odom["y"] + (x * np.sin(theta_goal) + y * np.cos(theta_goal))
+        return self.goto(
+            x_goal,
+            y_goal,
+            theta_goal,
+            wait=wait,
+            distance_tolerance=distance_tolerance,
+            angle_tolerance=angle_tolerance,
+            degrees=False,
+            timeout=timeout,
+        )
+
+    def rotate_by(
+        self,
+        theta: float,
+        wait: bool = False,
+        degrees: bool = True,
+        angle_tolerance: Optional[float] = None,
+        timeout: float = 100,
+    ) -> GoToId:
         """Send a target rotation relative to the current rotation of the mobile base.
 
         The theta parameter defines the desired rotation in degrees.
 
         Args:
             theta: The desired rotation in degrees, relative to the current orientation.
+            wait: If True, the function waits until the rotation is completed before returning.
+            degrees: If True, the theta value and angle_tolerance are treated as degrees, otherwise as radians.
+            angle_tolerance: Optional; The angle tolerance to the target to consider the goto finished.
             timeout: An optional timeout for completing the rotation, in seconds.
         """
-        odometry = self.odometry
-        x = odometry["x"]
-        y = odometry["y"]
-        theta = odometry["theta"] + theta
-        self.goto(x, y, theta, timeout=timeout)
+        try:
+            goto = self.get_goto_queue()[-1]
+        except IndexError:
+            goto = self.get_goto_playing()
+
+        if goto.id != -1:
+            odom_request = self._get_goto_request(goto)
+        else:
+            odom_request = None
+
+        distance_tolerance = 0.05
+
+        if odom_request is not None:
+            base_odom = odom_request.request.goal_positions
+            base_odom["theta"] = rad2deg(base_odom["theta"])
+            if angle_tolerance is None:
+                angle_tolerance = odom_request.request.angle_tolerance
+            distance_tolerance = odom_request.request.distance_tolerance
+        else:
+            base_odom = self.odometry
+
+        if degrees:
+            theta = base_odom["theta"] + theta
+        else:
+            theta = deg2rad(base_odom["theta"]) + theta
+        x = base_odom["x"]
+        y = base_odom["y"]
+
+        return self.goto(
+            x,
+            y,
+            theta,
+            wait=wait,
+            degrees=degrees,
+            distance_tolerance=distance_tolerance,
+            angle_tolerance=angle_tolerance,
+            timeout=timeout,
+        )
 
     def reset_odometry(self) -> None:
         """Reset the odometry.
 
         This method resets the mobile base's odometry, so that the current position is now (x, y, theta) = (0, 0, 0).
+        If any goto is being played, stop the goto and the queued ones.
         """
+        if self.get_goto_playing().id != -1 or len(self.get_goto_queue()) != 0:
+            self._logger.warning(
+                "Odometry reset requested while goto in progress: aborting the current goto and all queued gotos."
+            )
         self._stub.ResetOdometry(self._part_id)
-        time.sleep(0.03)
+        time.sleep(0.05)
 
-    def set_goal_speed(self, x: float | int = 0, y: float | int = 0, theta: float | int = 0) -> None:
+    def set_goal_speed(self, vx: float | int = 0, vy: float | int = 0, vtheta: float | int = 0) -> None:
         """Set the goal speed for the mobile base.
 
         This method sets the target velocities for the mobile base's movement along the x and y axes, as well as
         its rotational speed. The actual movement is executed after calling `send_speed_command`.
 
         Args:
-            x (float | int, optional): Linear velocity along the x-axis in meters per second. Defaults to 0.
-            y (float | int, optional): Linear velocity along the y-axis in meters per second. Defaults to 0.
-            theta (float | int, optional): Rotational velocity (around the z-axis) in degrees per second. Defaults to 0.
+            vx (float | int, optional): Linear velocity along the x-axis in meters per second. Defaults to 0.
+            vy (float | int, optional): Linear velocity along the y-axis in meters per second. Defaults to 0.
+            vtheta (float | int, optional): Rotational velocity (around the z-axis) in degrees per second. Defaults to 0.
 
         Raises:
-            TypeError: If any of the velocity values (`x`, `y`, `theta`) are not of type `float` or `int`.
+            TypeError: If any of the velocity values (`vx`, `vy`, `vtheta`) are not of type `float` or `int`.
 
         Notes:
             - Use `send_speed_command` after this method to execute the movement.
             - The velocities will be used to command the mobile base for a short duration (0.2 seconds).
         """
-        for vel in [x, y, theta]:
+        for vel in [vx, vy, vtheta]:
             if not isinstance(vel, float) | isinstance(vel, int):
                 raise TypeError("goal_speed must be a float or int")
 
-        self._x_vel_goal = x
-        self._y_vel_goal = y
-        self._rot_vel_goal = theta
+        self._x_vel_goal = vx
+        self._y_vel_goal = vy
+        self._rot_vel_goal = vtheta
 
     def send_speed_command(self) -> None:
         """Send the speed command to the mobile base, based on previously set goal speeds.
@@ -459,10 +484,12 @@ class MobileBase(Part):
             return
         for vel, value in {"x_vel": self._x_vel_goal, "y_vel": self._y_vel_goal}.items():
             if abs(value) > self._max_xy_vel:
-                raise ValueError(f"The absolute value of {vel} should not be more than {self._max_xy_vel}!")
+                raise ValueError(f"The absolute value of {vel} should not be more than {self._max_xy_vel}, got {abs(value)}")
 
         if abs(self._rot_vel_goal) > self._max_rot_vel:
-            raise ValueError(f"The absolute value of rot_vel should not be more than {self._max_rot_vel}!")
+            raise ValueError(
+                f"The absolute value of rot_vel should not be more than {self._max_rot_vel}, got {abs(self._rot_vel_goal)}"
+            )
 
         if self._drive_mode != "cmd_vel":
             self._set_drive_mode("cmd_vel")
@@ -509,3 +536,100 @@ class MobileBase(Part):
             value: The speed limit value to be set, as an integer.
         """
         return super()._set_speed_limits(value)
+
+    def _check_goto_parameters(self, target: Any, duration: Optional[float] = None, q0: Optional[List[float]] = None) -> None:
+        """Check the validity of the parameters for the `goto` method.
+
+        Args:
+            duration: Not required here.
+            target: The target goal, as a list [x, y, theta] in the odometry coordinate system.
+            q0: Not required here. Defaults to None.
+
+        Raises:
+            TypeError: If the x goal is not a float or int.
+            TypeError: If the y goal is not a float or int.
+            TypeError: If the theta goal is not a float or int.
+        """
+        self._check_type_float(target[0], "x")
+        self._check_type_float(target[1], "y")
+        self._check_type_float(target[2], "theta")
+
+        try:
+            goto = self.get_goto_queue()[-1]
+        except IndexError:
+            goto = self.get_goto_playing()
+
+        if goto.id != -1:
+            odom_request = self._get_goto_request(goto)
+        else:
+            odom_request = None
+
+        if odom_request is not None:
+            base_odom = odom_request.request.goal_positions
+            x_offset = abs(target[0] - base_odom["x"])
+            y_offset = abs(target[1] - base_odom["y"])
+        else:
+            x_offset = abs(target[0] - self.odometry["x"])
+            y_offset = abs(target[1] - self.odometry["y"])
+        for pos, value in {"x": x_offset, "y": y_offset}.items():
+            if abs(value) > self._max_xy_goto:
+                raise ValueError(f"The displacement in {pos} should not be more than {self._max_xy_goto}, got {abs(value)}")
+
+    def _check_optional_goto_parameters(
+        self, distance_tolerance: Optional[float], angle_tolerance: Optional[float], timeout: Optional[float]
+    ) -> None:
+        """Check the validity of the optional parameters for the `goto` method.
+
+        Args:
+            distance_tolerance: The distance tolerance value to be checked.
+            angle_tolerance: The angle tolerance value to be checked.
+            timeout: The timeout value to be checked.
+
+        Raises:
+            ValueError: If the distance_tolerance is negative.
+            ValueError: If the angle_tolerance is negative.
+            ValueError: If the timeout is negative or null.
+        """
+        if distance_tolerance is not None:
+            self._check_type_float(distance_tolerance, "distance_tolerance")
+            if distance_tolerance < 0:
+                raise ValueError(f"distance_tolerance must be a positive value, got {distance_tolerance}")
+        if angle_tolerance is not None:
+            self._check_type_float(angle_tolerance, "angle_tolerance")
+            if angle_tolerance < 0:
+                raise ValueError(f"angle_tolerance must be a positive value, got {angle_tolerance}")
+        if timeout is not None:
+            self._check_type_float(timeout, "timeout")
+            if timeout <= 0:
+                raise ValueError(f"timeout must be a positive value greater than 0, got {timeout}")
+
+    def _check_type_float(self, value: Any, arg_name: str) -> None:
+        """Check the type of the value parameter.
+
+        Args:
+            value: The value to be checked.
+
+        Raises:
+            TypeError: If the value is not a float or int.
+        """
+        if not (isinstance(value, float) | isinstance(value, int)):
+            raise TypeError(f"{arg_name} must be a float or int, got {type(value)} instead")
+
+    def set_max_xy_goto(self, value: float) -> None:
+        """Set the maximum displacement in the x and y directions for the mobile base.
+
+        Args:
+            value: The maximum displacement value to be set, in meters.
+        """
+        self._max_xy_goto = value
+
+    def goto_posture(
+        self,
+        common_posture: str = "default",
+        duration: float = 2,
+        wait: bool = False,
+        wait_for_goto_end: bool = True,
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        """Mobile base is not affected by goto_posture. No command is sent."""
+        return super().goto_posture(common_posture, duration, wait, wait_for_goto_end, interpolation_mode)

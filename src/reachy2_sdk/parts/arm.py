@@ -434,7 +434,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             ValueError: If the `q0` list has a length other than 7.
             ValueError: If the `duration` is set to 0.
         """
-        self._check_goto_parameters(duration, target, q0)
+        self._check_goto_parameters(target, duration, q0)
 
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
@@ -510,7 +510,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         )
         return self._goto_stub.GoToCartesian(request)
 
-    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
+    def _check_goto_parameters(self, target: Any, duration: Optional[float] = 0, q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
 
         Args:
@@ -763,12 +763,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
+            joints_request = self._get_goto_request(goto)
         else:
             joints_request = None
 
         if joints_request is not None:
-            pose = self.forward_kinematics(joints_request.goal_positions)
+            pose = self.forward_kinematics(joints_request.request.goal_positions)
         else:
             pose = self.forward_kinematics()
 
@@ -880,12 +880,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
+            joints_request = self._get_goto_request(goto)
         else:
             joints_request = None
 
         if joints_request is not None:
-            pose = self.forward_kinematics(joints_request.goal_positions)
+            pose = self.forward_kinematics(joints_request.request.goal_positions)
         else:
             pose = self.forward_kinematics()
 

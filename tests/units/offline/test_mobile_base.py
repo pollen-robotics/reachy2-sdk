@@ -61,7 +61,7 @@ def test_class() -> None:
         control_mode=control_mode,
     )
 
-    mobile_base = MobileBase(mb_msg=mb_proto, initial_state=mb_state, grpc_channel=grpc_channel)
+    mobile_base = MobileBase(mb_msg=mb_proto, initial_state=mb_state, grpc_channel=grpc_channel, goto_stub=None)
 
     assert mobile_base.lidar is not None
     assert mobile_base.battery_voltage == 25
@@ -73,11 +73,11 @@ def test_class() -> None:
 
     assert mobile_base.__repr__() != ""
 
-    mobile_base.set_goal_speed(x=0.5, y=0.5, theta=200)
+    mobile_base.set_goal_speed(vx=0.5, vy=0.5, vtheta=200)
     with pytest.raises(ValueError):
         mobile_base.send_speed_command()
 
-    mobile_base.set_goal_speed(x=1.5, y=1.5, theta=100)
+    mobile_base.set_goal_speed(vx=1.5, vy=1.5, vtheta=100)
     with pytest.raises(ValueError):
         mobile_base.send_speed_command()
 
@@ -121,3 +121,6 @@ def test_class() -> None:
     mobile_base.goto(0, 0, 0, 0)
 
     mobile_base._set_speed_limits(100)
+
+    mobile_base.set_max_xy_goto(2.0)
+    assert mobile_base._max_xy_goto == 2.0

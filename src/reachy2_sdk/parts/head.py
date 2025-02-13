@@ -181,7 +181,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._logger.warning("head.neck is off. No command sent.")
             return GoToId(id=-1)
 
-        self._check_goto_parameters(duration, target)
+        self._check_goto_parameters(target, duration)
 
         if isinstance(target, list):
             if degrees:
@@ -220,7 +220,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._wait_goto(response, duration)
         return response
 
-    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
+    def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
 
         Args:
@@ -378,12 +378,12 @@ class Head(JointsBasedPart, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
+            joints_request = self._get_goto_request(goto)
         else:
             joints_request = None
 
         if joints_request is not None:
-            initial_orientation = joints_request.goal_positions
+            initial_orientation = joints_request.request.goal_positions
 
             # as there is a 10° offset between the joint space
             # and the zero position in cartesian space in Reachy's frame for the yaw joint :
