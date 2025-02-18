@@ -42,6 +42,7 @@ from ..utils.utils import (
     arm_position_to_list,
     decompose_matrix,
     get_grpc_interpolation_mode,
+    get_grpc_interpolation_space,
     get_normal_vector,
     list_to_arm_position,
     matrix_from_euler_angles,
@@ -374,6 +375,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: List[float],
         duration: float = 2,
         wait: bool = False,
+        interpolation_space: str = "joints",
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
@@ -386,6 +388,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: npt.NDArray[np.float64],
         duration: float = 2,
         wait: bool = False,
+        interpolation_space: str = "joints",
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
@@ -397,6 +400,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: Any,
         duration: float = 2,
         wait: bool = False,
+        interpolation_space: str = "joints",
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
@@ -416,6 +420,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             duration: The time in seconds for the movement to be completed. Defaults to 2.
             wait: If True, the function waits until the movement is completed before returning.
                     Defaults to False.
+            interpolation_space: The space in which the interpolation should be performed. It can
+                    be either "joints" or "cartesian". Defaults to "joints".
             interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk"
                     or "linear". Defaults to "minimum_jerk".
             degrees: If True, the joint values in the `target` argument are treated as degrees.
@@ -441,9 +447,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             return GoToId(id=-1)
 
         if isinstance(target, list) and len(target) == 7:
-            response = self._goto_joints(target, duration, interpolation_mode, degrees)
+            response = self._goto_joints(target, duration, interpolation_space, interpolation_mode, degrees)
         elif isinstance(target, np.ndarray) and target.shape == (4, 4):
-            response = self._goto_from_matrix(target, duration, interpolation_mode, q0)
+            response = self._goto_from_matrix(target, duration, interpolation_space, interpolation_mode, q0)
 
         if response.id == -1:
             self._logger.error("Target was not reachable. No command sent.")
@@ -452,7 +458,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         return response
 
-    def _goto_joints(self, target: List[float], duration: float, interpolation_mode: str, degrees: bool) -> GoToId:
+    def _goto_joints(
+        self, target: List[float], duration: float, interpolation_space: str, interpolation_mode: str, degrees: bool
+    ) -> GoToId:
         """Handle movement to a specified position in joint space.
 
         Args:
@@ -471,12 +479,18 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             joints_goal=JointsGoal(
                 arm_joint_goal=ArmJointGoal(id=self._part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
             ),
+            interpolation_space=get_grpc_interpolation_space(interpolation_space),
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         return self._goto_stub.GoToJoints(request)
 
     def _goto_from_matrix(
-        self, target: npt.NDArray[np.float64], duration: float, interpolation_mode: str, q0: Optional[List[float]]
+        self,
+        target: npt.NDArray[np.float64],
+        duration: float,
+        interpolation_space: str,
+        interpolation_mode: str,
+        q0: Optional[List[float]],
     ) -> GoToId:
         """Handle movement to a Cartesian target using a 4x4 transformation matrix.
 
@@ -506,6 +520,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                     q0=list_to_arm_position(q0) if q0 is not None else None,
                 )
             ),
+            interpolation_space=get_grpc_interpolation_space(interpolation_space),
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
         return self._goto_stub.GoToCartesian(request)

@@ -16,7 +16,12 @@ import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion
 from reachy2_sdk_api.arm_pb2 import ArmPosition
-from reachy2_sdk_api.goto_pb2 import GoToInterpolation, InterpolationMode
+from reachy2_sdk_api.goto_pb2 import (
+    GoToInterpolation,
+    GoToInterpolationSpace,
+    InterpolationMode,
+    InterpolationSpace,
+)
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 
@@ -166,6 +171,30 @@ def get_grpc_interpolation_mode(interpolation_mode: str) -> GoToInterpolation:
     return GoToInterpolation(interpolation_type=interpolation_mode)
 
 
+def get_grpc_interpolation_space(interpolation_space: str) -> GoToInterpolationSpace:
+    """Convert a given interpolation space string to a corresponding GoToInterpolationSpace object.
+
+    Args:
+        interpolation_space: A string representing the interpolation space to be used. It can be either
+            "joints" or "cartesian".
+
+    Returns:
+        An instance of the GoToInterpolationSpace class with the interpolation type set based on the input
+        interpolation_space string.
+
+    Raises:
+        ValueError: If the interpolation_space is not "joints" or "cartesian".
+    """
+    if interpolation_space not in ["joints", "cartesian"]:
+        raise ValueError(f"Interpolation space {interpolation_space} not supported! Should be 'joints' or 'cartesian'")
+
+    if interpolation_space == "joints":
+        interpolation_space = InterpolationSpace.JOINTS
+    else:
+        interpolation_space = InterpolationSpace.CARTESIAN
+    return GoToInterpolationSpace(interpolation_space=interpolation_space)
+
+
 def get_interpolation_mode(interpolation_mode: InterpolationMode) -> str:
     """Convert an interpolation mode enum to a string representation.
 
@@ -189,6 +218,31 @@ def get_interpolation_mode(interpolation_mode: InterpolationMode) -> str:
     else:
         mode = "linear"
     return mode
+
+
+def get_interpolation_space(interpolation_space: InterpolationSpace) -> str:
+    """Convert an interpolation space enum to a string representation.
+
+    Args:
+        interpolation_space: The interpolation space given as InterpolationSpace. The supported interpolation
+            modes are JOINTS and CARTESIAN.
+
+    Returns:
+        A string representing the interpolation mode based on the input interpolation_space. Returns
+        "joints" if the mode is InterpolationSpace.JOINTS, and "cartesian" if it is
+        InterpolationSpace.CARTESIAN.
+
+    Raises:
+        ValueError: If the interpolation_space is not InterpolationSpace.JOINTS or InterpolationSpace.CARTESIAN.
+    """
+    if interpolation_space not in [InterpolationSpace.JOINTS, InterpolationSpace.CARTESIAN]:
+        raise ValueError(f"Interpolation space {interpolation_space} not supported! Should be 'joints' or 'cartesian'")
+
+    if interpolation_space == InterpolationSpace.CARTESIAN:
+        space = "cartesian"
+    else:
+        space = "joints"
+    return space
 
 
 def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Tuple[Quaternion, npt.NDArray[np.float64]]:
