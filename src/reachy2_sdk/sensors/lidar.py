@@ -53,7 +53,7 @@ class Lidar:
             return None
         np_data = np.frombuffer(compressed_map.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
-        return img  # type: ignore[no-any-return]
+        return img.astype(np.uint8)
 
     @property
     def safety_slowdown_distance(self) -> float:
