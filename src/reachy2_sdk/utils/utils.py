@@ -176,22 +176,24 @@ def get_grpc_interpolation_space(interpolation_space: str) -> GoToInterpolationS
 
     Args:
         interpolation_space: A string representing the interpolation space to be used. It can be either
-            "joints" or "cartesian".
+            "joint_space" or "cartesian_space".
 
     Returns:
         An instance of the GoToInterpolationSpace class with the interpolation type set based on the input
         interpolation_space string.
 
     Raises:
-        ValueError: If the interpolation_space is not "joints" or "cartesian".
+        ValueError: If the interpolation_space is not "joint_space" or "cartesian_space".
     """
-    if interpolation_space not in ["joints", "cartesian"]:
-        raise ValueError(f"Interpolation space {interpolation_space} not supported! Should be 'joints' or 'cartesian'")
+    if interpolation_space not in ["joint_space", "cartesian_space"]:
+        raise ValueError(
+            f"Interpolation space {interpolation_space} not supported! Should be 'joint_space' or 'cartesian_space'"
+        )
 
-    if interpolation_space == "joints":
-        interpolation_space = InterpolationSpace.JOINTS
+    if interpolation_space == "joint_space":
+        interpolation_space = InterpolationSpace.JOINT_SPACE
     else:
-        interpolation_space = InterpolationSpace.CARTESIAN
+        interpolation_space = InterpolationSpace.CARTESIAN_SPACE
     return GoToInterpolationSpace(interpolation_space=interpolation_space)
 
 
@@ -225,23 +227,25 @@ def get_interpolation_space(interpolation_space: InterpolationSpace) -> str:
 
     Args:
         interpolation_space: The interpolation space given as InterpolationSpace. The supported interpolation
-            modes are JOINTS and CARTESIAN.
+            modes are JOINT_SPACE and CARTESIAN_SPACE.
 
     Returns:
         A string representing the interpolation mode based on the input interpolation_space. Returns
-        "joints" if the mode is InterpolationSpace.JOINTS, and "cartesian" if it is
-        InterpolationSpace.CARTESIAN.
+        "joint_space" if the mode is InterpolationSpace.JOINT_SPACE, and "cartesian_space" if it is
+        InterpolationSpace.CARTESIAN_SPACE.
 
     Raises:
-        ValueError: If the interpolation_space is not InterpolationSpace.JOINTS or InterpolationSpace.CARTESIAN.
+        ValueError: If the interpolation_space is not InterpolationSpace.JOINT_SPACE or InterpolationSpace.CARTESIAN_SPACE.
     """
-    if interpolation_space not in [InterpolationSpace.JOINTS, InterpolationSpace.CARTESIAN]:
-        raise ValueError(f"Interpolation space {interpolation_space} not supported! Should be 'joints' or 'cartesian'")
+    if interpolation_space not in [InterpolationSpace.JOINT_SPACE, InterpolationSpace.CARTESIAN_SPACE]:
+        raise ValueError(
+            f"Interpolation space {interpolation_space} not supported! Should be 'joint_space' or 'cartesian_space'"
+        )
 
     if interpolation_space == InterpolationSpace.CARTESIAN:
-        space = "cartesian"
+        space = "cartesian_space"
     else:
-        space = "joints"
+        space = "joint_space"
     return space
 
 

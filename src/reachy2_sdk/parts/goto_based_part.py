@@ -206,6 +206,7 @@ class IGoToBasedPart(ABC):
         duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
+        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode."""

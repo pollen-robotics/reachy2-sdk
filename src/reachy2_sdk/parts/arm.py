@@ -375,7 +375,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: List[float],
         duration: float = 2,
         wait: bool = False,
-        interpolation_space: str = "joints",
+        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
@@ -388,7 +388,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: npt.NDArray[np.float64],
         duration: float = 2,
         wait: bool = False,
-        interpolation_space: str = "joints",
+        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
@@ -400,7 +400,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: Any,
         duration: float = 2,
         wait: bool = False,
-        interpolation_space: str = "joints",
+        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
@@ -614,6 +614,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
+        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
         open_gripper: bool = False,
     ) -> GoToId:
@@ -644,7 +645,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if not wait_for_goto_end:
             self.cancel_all_goto()
         if self.is_on():
-            return self.goto(joints, duration, wait, interpolation_mode)
+            return self.goto(joints, duration, wait, interpolation_space, interpolation_mode)
         else:
             self._logger.warning(f"{self._part_id.name} is off. No command sent.")
         return GoToId(id=-1)
