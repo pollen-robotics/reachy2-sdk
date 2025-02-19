@@ -152,22 +152,26 @@ def get_grpc_interpolation_mode(interpolation_mode: str) -> GoToInterpolation:
 
     Args:
         interpolation_mode: A string representing the type of interpolation to be used. It can be either
-            "minimum_jerk" or "linear".
+            "minimum_jerk", "linear" or "elliptical".
 
     Returns:
         An instance of the GoToInterpolation class with the interpolation type set based on the input
         interpolation_mode string.
 
     Raises:
-        ValueError: If the interpolation_mode is not "minimum_jerk" or "linear".
+        ValueError: If the interpolation_mode is not "minimum_jerk", "linear" or "elliptical".
     """
     if interpolation_mode not in ["minimum_jerk", "linear"]:
-        raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
+        raise ValueError(
+            f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk', 'linear' or 'elliptical'"
+        )
 
     if interpolation_mode == "minimum_jerk":
         interpolation_mode = InterpolationMode.MINIMUM_JERK
-    else:
+    elif interpolation_mode == "linear":
         interpolation_mode = InterpolationMode.LINEAR
+    else:
+        interpolation_mode = InterpolationMode.ELLIPTICAL
     return GoToInterpolation(interpolation_type=interpolation_mode)
 
 
@@ -202,23 +206,28 @@ def get_interpolation_mode(interpolation_mode: InterpolationMode) -> str:
 
     Args:
         interpolation_mode: The interpolation mode given as InterpolationMode. The supported interpolation
-            modes are MINIMUM_JERK and LINEAR.
+            modes are MINIMUM_JERK, LINEAR and ELLIPTICAL.
 
     Returns:
         A string representing the interpolation mode based on the input interpolation_mode. Returns
-        "minimum_jerk" if the mode is InterpolationMode.MINIMUM_JERK, and "linear" if it is
-        InterpolationMode.LINEAR.
+        "minimum_jerk" if the mode is InterpolationMode.MINIMUM_JERK, "linear" if it is
+        InterpolationMode.LINEAR, and "elliptical" if it is InterpolationMode.ELLIPTICAL.
 
     Raises:
-        ValueError: If the interpolation_mode is not InterpolationMode.MINIMUM_JERK or InterpolationMode.LINEAR.
+        ValueError: If the interpolation_mode is not InterpolationMode.MINIMUM_JERK, InterpolationMode.LINEAR
+        or InterpolationMode.ELLIPTICAL.
     """
-    if interpolation_mode not in [InterpolationMode.MINIMUM_JERK, InterpolationMode.LINEAR]:
-        raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
+    if interpolation_mode not in [InterpolationMode.MINIMUM_JERK, InterpolationMode.LINEAR, InterpolationMode.ELLIPTICAL]:
+        raise ValueError(
+            f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk', 'linear' or 'elliptical'"
+        )
 
     if interpolation_mode == InterpolationMode.MINIMUM_JERK:
         mode = "minimum_jerk"
-    else:
+    elif interpolation_mode == InterpolationMode.LINEAR:
         mode = "linear"
+    else:
+        mode = "elliptical"
     return mode
 
 
