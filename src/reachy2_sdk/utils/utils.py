@@ -17,6 +17,7 @@ from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion
 from reachy2_sdk_api.arm_pb2 import ArmPosition
 from reachy2_sdk_api.goto_pb2 import (
+    ArcDirection,
     GoToInterpolation,
     GoToInterpolationSpace,
     InterpolationMode,
@@ -161,7 +162,7 @@ def get_grpc_interpolation_mode(interpolation_mode: str) -> GoToInterpolation:
     Raises:
         ValueError: If the interpolation_mode is not "minimum_jerk", "linear" or "elliptical".
     """
-    if interpolation_mode not in ["minimum_jerk", "linear"]:
+    if interpolation_mode not in ["minimum_jerk", "linear", "elliptical"]:
         raise ValueError(
             f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk', 'linear' or 'elliptical'"
         )
@@ -256,6 +257,39 @@ def get_interpolation_space(interpolation_space: InterpolationSpace) -> str:
     else:
         space = "joint_space"
     return space
+
+
+def get_grpc_arc_direction(arc_direction: str) -> ArcDirection:
+    """Convert a given arc direction string to a corresponding ArcDirection object.
+
+    Args:
+        arc_direction: A string representing the direction of the arc. It can be one of the following options:
+            "above", "below", "front", "back", "right", or "left".
+
+    Returns:
+        An instance of the ArcDirection class with the direction set based on the input arc_direction string.
+
+    Raises:
+        ValueError: If the arc_direction is not one of "above", "below", "front", "back", "right", or "left".
+    """
+    if arc_direction not in ["above", "below", "front", "back", "right", "left"]:
+        raise ValueError(
+            f"Arc direction {arc_direction} not supported! Should be 'above', 'below', 'front', 'back', 'right' or 'left'"
+        )
+
+    if arc_direction == "above":
+        arc_direction = ArcDirection.ABOVE
+    elif arc_direction == "below":
+        arc_direction = ArcDirection.BELOW
+    elif arc_direction == "front":
+        arc_direction = ArcDirection.FRONT
+    elif arc_direction == "back":
+        arc_direction = ArcDirection.BACK
+    elif arc_direction == "right":
+        arc_direction = ArcDirection.RIGHT
+    else:
+        arc_direction = ArcDirection.LEFT
+    return arc_direction
 
 
 def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Tuple[Quaternion, npt.NDArray[np.float64]]:

@@ -27,6 +27,7 @@ from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
     CustomJointGoal,
+    EllipticalGoToParameters,
     GoToId,
     GoToRequest,
     JointsGoal,
@@ -41,6 +42,7 @@ from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import (
     arm_position_to_list,
     decompose_matrix,
+    get_grpc_arc_direction,
     get_grpc_interpolation_mode,
     get_grpc_interpolation_space,
     get_normal_vector,
@@ -379,6 +381,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
+        arc_direction: str = "above",
+        secondary_radius: Optional[float] = None,
     ) -> GoToId:
         ...  # pragma: no cover
 
@@ -392,6 +396,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
+        arc_direction: str = "above",
+        secondary_radius: Optional[float] = None,
     ) -> GoToId:
         ...  # pragma: no cover
 
@@ -404,6 +410,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
+        arc_direction: str = "above",
+        secondary_radius: Optional[float] = None,
     ) -> GoToId:
         """Move the arm to a specified target position, either in joint space or Cartesian space.
 
@@ -446,10 +454,18 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
 
+        if secondary_radius is not None and secondary_radius > 0.3:
+            self._logger.warning("interpolation elliptic_radius was too large, reduced to 0.3")
+            secondary_radius = 0.3
+
         if isinstance(target, list) and len(target) == 7:
-            response = self._goto_joints(target, duration, interpolation_space, interpolation_mode, degrees)
+            response = self._goto_joints(
+                target, duration, interpolation_space, interpolation_mode, degrees, arc_direction, secondary_radius
+            )
         elif isinstance(target, np.ndarray) and target.shape == (4, 4):
-            response = self._goto_from_matrix(target, duration, interpolation_space, interpolation_mode, q0)
+            response = self._goto_from_matrix(
+                target, duration, interpolation_space, interpolation_mode, q0, arc_direction, secondary_radius
+            )
 
         if response.id == -1:
             self._logger.error("Target was not reachable. No command sent.")
@@ -459,7 +475,14 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         return response
 
     def _goto_joints(
-        self, target: List[float], duration: float, interpolation_space: str, interpolation_mode: str, degrees: bool
+        self,
+        target: List[float],
+        duration: float,
+        interpolation_space: str,
+        interpolation_mode: str,
+        degrees: bool,
+        arc_direction: str,
+        secondary_radius: Optional[float],
     ) -> GoToId:
         """Handle movement to a specified position in joint space.
 
@@ -475,13 +498,24 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if isinstance(target, np.ndarray):
             target = target.tolist()
         arm_pos = list_to_arm_position(target, degrees)
-        request = GoToRequest(
-            joints_goal=JointsGoal(
+
+        req_params = {
+            "joints_goal": JointsGoal(
                 arm_joint_goal=ArmJointGoal(id=self._part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
             ),
-            interpolation_space=get_grpc_interpolation_space(interpolation_space),
-            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-        )
+            "interpolation_space": get_grpc_interpolation_space(interpolation_space),
+            "interpolation_mode": get_grpc_interpolation_mode(interpolation_mode),
+        }
+
+        if interpolation_mode == "elliptical":
+            elliptical_params = EllipticalGoToParameters(
+                arc_direction=get_grpc_arc_direction(arc_direction),
+                secondary_radius=secondary_radius,
+            )
+            req_params["elliptical_parameters"] = elliptical_params
+
+        request = GoToRequest(**req_params)
+
         return self._goto_stub.GoToJoints(request)
 
     def _goto_from_matrix(
@@ -491,6 +525,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_space: str,
         interpolation_mode: str,
         q0: Optional[List[float]],
+        arc_direction: str,
+        secondary_radius: Optional[float],
     ) -> GoToId:
         """Handle movement to a Cartesian target using a 4x4 transformation matrix.
 
@@ -511,8 +547,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             ValueError: If the length of `q0` is not 7.
         """
         goal_pose = Matrix4x4(data=target.flatten().tolist())
-        request = GoToRequest(
-            cartesian_goal=CartesianGoal(
+
+        req_params = {
+            "cartesian_goal": CartesianGoal(
                 arm_cartesian_goal=ArmCartesianGoal(
                     id=self._part_id,
                     goal_pose=goal_pose,
@@ -520,9 +557,19 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                     q0=list_to_arm_position(q0) if q0 is not None else None,
                 )
             ),
-            interpolation_space=get_grpc_interpolation_space(interpolation_space),
-            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-        )
+            "interpolation_space": get_grpc_interpolation_space(interpolation_space),
+            "interpolation_mode": get_grpc_interpolation_mode(interpolation_mode),
+        }
+
+        if interpolation_mode == "elliptical":
+            elliptical_params = EllipticalGoToParameters(
+                arc_direction=get_grpc_arc_direction(arc_direction),
+                secondary_radius=secondary_radius,
+            )
+            req_params["elliptical_parameters"] = elliptical_params
+
+        request = GoToRequest(**req_params)
+
         return self._goto_stub.GoToCartesian(request)
 
     def _check_goto_parameters(self, target: Any, duration: Optional[float] = 0, q0: Optional[List[float]] = None) -> None:
