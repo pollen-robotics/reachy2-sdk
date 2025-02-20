@@ -454,8 +454,11 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
 
+        if interpolation_space == "joint_space" and interpolation_mode == "elliptical":
+            self._logger.warning("Elliptical interpolation is not supported in joint space. Switching to linear.")
+            interpolation_mode = "linear"
         if secondary_radius is not None and secondary_radius > 0.3:
-            self._logger.warning("interpolation elliptic_radius was too large, reduced to 0.3")
+            self._logger.warning("Interpolation secondary_radius was too large, reduced to 0.3")
             secondary_radius = 0.3
 
         if isinstance(target, list) and len(target) == 7:
