@@ -409,7 +409,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
         duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
-        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Send all neck joints to standard positions within the specified duration.

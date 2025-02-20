@@ -629,7 +629,6 @@ class MobileBase(Part, IGoToBasedPart):
         duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
-        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
         """Mobile base is not affected by goto_posture. No command is sent."""

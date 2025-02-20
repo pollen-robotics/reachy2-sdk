@@ -664,7 +664,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
-        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
         open_gripper: bool = False,
     ) -> GoToId:
@@ -695,7 +694,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if not wait_for_goto_end:
             self.cancel_all_goto()
         if self.is_on():
-            return self.goto(joints, duration, wait, interpolation_space, interpolation_mode)
+            return self.goto(joints, duration, wait, interpolation_mode=interpolation_mode)
         else:
             self._logger.warning(f"{self._part_id.name} is off. No command sent.")
         return GoToId(id=-1)
@@ -793,7 +792,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         duration: float = 2,
         wait: bool = False,
         frame: str = "robot",
+        interpolation_space: str = "cartesian_space",
         interpolation_mode: str = "minimum_jerk",
+        arc_direction: str = "above",
+        secondary_radius: Optional[float] = None,
     ) -> GoToId:
         """Create a translation movement for the arm's end effector.
 
@@ -839,7 +841,15 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose = self.forward_kinematics()
 
         pose = self.get_translation_by(x, y, z, initial_pose=pose, frame=frame)
-        return self.goto(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
+        return self.goto(
+            pose,
+            duration=duration,
+            wait=wait,
+            interpolation_space=interpolation_space,
+            interpolation_mode=interpolation_mode,
+            arc_direction=arc_direction,
+            secondary_radius=secondary_radius,
+        )
 
     def get_rotation_by(
         self,

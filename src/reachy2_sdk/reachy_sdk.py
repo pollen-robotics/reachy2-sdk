@@ -652,7 +652,6 @@ class ReachySDK:
         duration: float = 2,
         wait: bool = False,
         wait_for_goto_end: bool = True,
-        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
         open_gripper: bool = False,
     ) -> GoToHomeId:
@@ -697,7 +696,6 @@ class ReachySDK:
                 duration=duration,
                 wait=wait_r_arm,
                 wait_for_goto_end=wait_for_goto_end,
-                interpolation_space=interpolation_space,
                 interpolation_mode=interpolation_mode,
                 open_gripper=open_gripper,
             )
@@ -707,7 +705,6 @@ class ReachySDK:
                 duration=duration,
                 wait=wait,
                 wait_for_goto_end=wait_for_goto_end,
-                interpolation_space=interpolation_space,
                 interpolation_mode=interpolation_mode,
                 open_gripper=open_gripper,
             )
