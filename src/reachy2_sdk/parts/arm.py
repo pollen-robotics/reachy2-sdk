@@ -836,7 +836,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             joints_request = None
 
         if joints_request is not None:
-            pose = self.forward_kinematics(joints_request.request.goal_positions)
+            if joints_request.request.target.joints is not None:
+                pose = self.forward_kinematics(joints_request.request.target.joints)
+            else:
+                pose = joints_request.request.target.pose
         else:
             pose = self.forward_kinematics()
 
@@ -961,7 +964,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             joints_request = None
 
         if joints_request is not None:
-            pose = self.forward_kinematics(joints_request.request.goal_positions)
+            if joints_request.request.target.joints is not None:
+                pose = self.forward_kinematics(joints_request.request.target.joints)
+            else:
+                pose = joints_request.request.target.pose
         else:
             pose = self.forward_kinematics()
 

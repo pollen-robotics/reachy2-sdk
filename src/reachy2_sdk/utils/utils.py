@@ -29,10 +29,16 @@ from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "request"])
 """Named tuple for easy access to request variables"""
 
-JointsRequest = namedtuple("JointsRequest", ["goal_positions", "duration", "mode"])
+JointsRequest = namedtuple("JointsRequest", ["target", "duration", "mode", "interpolation_space", "elliptical_parameters"])
 """Named tuple for easy access to request variables"""
 
-OdometryRequest = namedtuple("OdometryRequest", ["goal_positions", "timeout", "distance_tolerance", "angle_tolerance"])
+TargetJointsRequest = namedtuple("TargetJointsRequest", ["joints", "pose"])
+"""Named tuple for easy access to target details"""
+
+OdometryRequest = namedtuple("OdometryRequest", ["target", "timeout", "distance_tolerance", "angle_tolerance"])
+"""Named tuple for easy access to request variables"""
+
+EllipticalParameters = namedtuple("EllipticalParameters", ["arc_direction", "secondary_radius"])
 """Named tuple for easy access to request variables"""
 
 
@@ -252,7 +258,7 @@ def get_interpolation_space(interpolation_space: InterpolationSpace) -> str:
             f"Interpolation space {interpolation_space} not supported! Should be 'joint_space' or 'cartesian_space'"
         )
 
-    if interpolation_space == InterpolationSpace.CARTESIAN:
+    if interpolation_space == InterpolationSpace.CARTESIAN_SPACE:
         space = "cartesian_space"
     else:
         space = "joint_space"
@@ -290,6 +296,49 @@ def get_grpc_arc_direction(arc_direction: str) -> ArcDirection:
     else:
         arc_direction = ArcDirection.LEFT
     return arc_direction
+
+
+def get_arc_direction(arc_direction: ArcDirection) -> str:
+    """Convert an arc direction enum to a string representation.
+
+    Args:
+        arc_direction: The arc direction given as ArcDirection. The supported arc directions are ABOVE, BELOW, FRONT,
+            BACK, RIGHT, and LEFT.
+
+    Returns:
+        A string representing the arc direction based on the input arc_direction. Returns "above" if the direction is
+        ArcDirection.ABOVE, "below" if it is ArcDirection.BELOW, "front" if it is ArcDirection.FRONT, "back" if it is
+        ArcDirection.BACK, "right" if it is ArcDirection.RIGHT, and "left" if it is ArcDirection.LEFT.
+
+    Raises:
+        ValueError: If the arc_direction is not ArcDirection.ABOVE, ArcDirection.BELOW, ArcDirection.FRONT, ArcDirection.BACK,
+        ArcDirection.RIGHT, or ArcDirection.LEFT.
+    """
+    if arc_direction not in [
+        ArcDirection.ABOVE,
+        ArcDirection.BELOW,
+        ArcDirection.FRONT,
+        ArcDirection.BACK,
+        ArcDirection.RIGHT,
+        ArcDirection.LEFT,
+    ]:
+        raise ValueError(
+            f"Arc direction {arc_direction} not supported! Should be 'above', 'below', 'front', 'back', 'right' or 'left'"
+        )
+
+    if arc_direction == ArcDirection.ABOVE:
+        direction = "above"
+    elif arc_direction == ArcDirection.BELOW:
+        direction = "below"
+    elif arc_direction == ArcDirection.FRONT:
+        direction = "front"
+    elif arc_direction == ArcDirection.BACK:
+        direction = "back"
+    elif arc_direction == ArcDirection.RIGHT:
+        direction = "right"
+    else:
+        direction = "left"
+    return direction
 
 
 def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Tuple[Quaternion, npt.NDArray[np.float64]]:

@@ -246,19 +246,19 @@ def test_get_goto_request(reachy_sdk_zeroed: ReachySDK) -> None:
 
     ans1 = reachy_sdk_zeroed.get_goto_request(req1)
     assert ans1.part == "head"
-    assert np.allclose(ans1.request.goal_positions, [30, 0, 0], atol=1e-03)
+    assert np.allclose(ans1.request.target.joints, [30, 0, 0], atol=1e-03)
     assert ans1.request.duration == 5
     assert ans1.request.mode == "minimum_jerk"
 
     ans2 = reachy_sdk_zeroed.get_goto_request(req2)
     assert ans2.part == "l_arm"
-    assert np.allclose(ans2.request.goal_positions, [10, 10, 15, -20, 15, -15, -10], atol=1e-03)
+    assert np.allclose(ans2.request.target.joints, [10, 10, 15, -20, 15, -15, -10], atol=1e-03)
     assert ans2.request.duration == 7
     assert ans2.request.mode == "linear"
 
     ans3 = reachy_sdk_zeroed.get_goto_request(req3)
     assert ans3.part == "r_arm"
-    assert np.allclose(ans3.request.goal_positions, [0, 10, 20, -40, 10, 10, -15], atol=1e-03)
+    assert np.allclose(ans3.request.target.joints, [0, 10, 20, -40, 10, 10, -15], atol=1e-03)
     assert ans3.request.duration == 10
     assert ans3.request.mode == "minimum_jerk"
 
@@ -338,7 +338,7 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
 
     ans_r = reachy_sdk_zeroed.get_goto_request(req_r)
     assert ans_r.part == "r_arm"
-    assert np.allclose(ans_r.request.goal_positions, zero_r_arm, atol=1e-03)
+    assert np.allclose(ans_r.request.target.joints, zero_r_arm, atol=1e-03)
     assert ans_r.request.duration == 2
     assert ans_r.request.mode == "minimum_jerk"
 
@@ -383,7 +383,7 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
 
     ans_l2 = reachy_sdk_zeroed.get_goto_request(req_l2)
     assert ans_l2.part == "l_arm"
-    assert np.allclose(ans_l2.request.goal_positions, zero_l_arm, atol=1e-03)
+    assert np.allclose(ans_l2.request.target.joints, zero_l_arm, atol=1e-03)
     assert ans_l2.request.duration == 1
     assert ans_l2.request.mode == "linear"
 
@@ -422,7 +422,7 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
 
     ans_l3 = reachy_sdk_zeroed.get_goto_request(req_l3)
     assert ans_l3.part == "l_arm"
-    assert np.allclose(ans_l3.request.goal_positions, elbow_90_l_arm, atol=1e-03)
+    assert np.allclose(ans_l3.request.target.joints, elbow_90_l_arm, atol=1e-03)
     assert ans_l3.request.duration == 2
     assert ans_l3.request.mode == "minimum_jerk"
 
@@ -673,8 +673,16 @@ def test_translate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req4 = reachy_sdk_zeroed.r_arm.goto([-10, -15, 20, -110, 0, 0, 0])
     req5 = reachy_sdk_zeroed.r_arm.translate_by(0.1, -0.1, -0.1)
 
-    pose4 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req4).request.goal_positions)
-    pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req5).request.goal_positions)
+    get_req4 = reachy_sdk_zeroed.get_goto_request(req4)
+    if get_req4.request.target.joints is not None:
+        pose4 = reachy_sdk_zeroed.r_arm.forward_kinematics(get_req4.request.target.joints)
+    else:
+        pose4 = get_req4.request.target.pose
+    get_req5 = reachy_sdk_zeroed.get_goto_request(req5)
+    if get_req5.request.target.joints is not None:
+        pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(get_req5.request.target.joints)
+    else:
+        pose5 = get_req5.request.target.pose
     assert np.allclose(pose4[:3, :3], pose5[:3, :3], atol=1e-03)
     assert np.isclose(pose4[0, 3] + 0.1, pose5[0, 3], atol=1e-03)
     assert np.isclose(pose4[1, 3] - 0.1, pose5[1, 3], atol=1e-03)
@@ -683,7 +691,7 @@ def test_translate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req6 = reachy_sdk_zeroed.r_arm.translate_by(0, 0, -0.1)
 
     with pytest.raises(ValueError):
-        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req6).request.goal_positions)
+        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req6).request.target.pose)
 
 
 @pytest.mark.online
@@ -709,8 +717,16 @@ def test_translate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req4 = reachy_sdk_zeroed.r_arm.goto([-10, -15, 20, -110, 0, 0, 0])
     req5 = reachy_sdk_zeroed.r_arm.translate_by(0.1, -0.1, -0.1, frame="gripper")
 
-    pose4 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req4).request.goal_positions)
-    pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req5).request.goal_positions)
+    get_req4 = reachy_sdk_zeroed.get_goto_request(req4)
+    if get_req4.request.target.joints is not None:
+        pose4 = reachy_sdk_zeroed.r_arm.forward_kinematics(get_req4.request.target.joints)
+    else:
+        pose4 = get_req4.request.target.pose
+    get_req5 = reachy_sdk_zeroed.get_goto_request(req5)
+    if get_req5.request.target.joints is not None:
+        pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(get_req5.request.target.joints)
+    else:
+        pose5 = get_req5.request.target.pose
     translation5 = np.eye(4)
     translation5[0, 3] = 0.1
     translation5[1, 3] = -0.1
@@ -723,17 +739,26 @@ def test_translate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req6 = reachy_sdk_zeroed.r_arm.goto([-10, -15, 30, -70, 0, 10, 0])
     req7 = reachy_sdk_zeroed.r_arm.translate_by(0.15, 0, 0.05, frame="gripper")
 
-    pose6 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req6).request.goal_positions)
-    pose7 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req7).request.goal_positions)
+    get_req6 = reachy_sdk_zeroed.get_goto_request(req6)
+    if get_req6.request.target.joints is not None:
+        pose6 = reachy_sdk_zeroed.r_arm.forward_kinematics(get_req6.request.target.joints)
+    else:
+        pose6 = get_req6.request.target.pose
+    get_req7 = reachy_sdk_zeroed.get_goto_request(req7)
+    if get_req7.request.target.joints is not None:
+        pose7 = reachy_sdk_zeroed.r_arm.forward_kinematics(get_req7.request.target.joints)
+    else:
+        pose7 = get_req7.request.target.pose
     translation7 = np.eye(4)
     translation7[0, 3] = 0.15
     translation7[2, 3] = 0.05
     assert np.allclose(pose6 @ translation7, pose7, atol=1e-03)
 
-    req8 = reachy_sdk_zeroed.r_arm.translate_by(0, -0.3, -0.3, frame="gripper")
+    req8 = reachy_sdk_zeroed.r_arm.translate_by(0, -0.3, -0.3, frame="gripper", wait=True)
 
-    with pytest.raises(ValueError):
-        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req8).request.goal_positions)
+    assert not np.allclose(
+        reachy_sdk_zeroed.get_goto_request(req8).request.target.pose, reachy_sdk_zeroed.r_arm.forward_kinematics()
+    )
 
 
 @pytest.mark.online
@@ -760,7 +785,11 @@ def test_rotate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req4 = reachy_sdk_zeroed.r_arm.goto([-10, 10, 20, -110, 0, 0, 0])
     req5 = reachy_sdk_zeroed.r_arm.rotate_by(15, -10, -5, frame="robot")
 
-    pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req5).request.goal_positions)
+    get_req5 = reachy_sdk_zeroed.get_goto_request(req5)
+    if get_req5.request.target.joints is not None:
+        pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(get_req5.request.target.joints)
+    else:
+        pose5 = get_req5.request.target.pose
     expected_pose5 = np.array(
         [
             [-0.62069375, -0.4494677, -0.64243136, 0.32550951],
@@ -777,7 +806,11 @@ def test_rotate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req6 = reachy_sdk_zeroed.r_arm.goto([-10, 10, 30, -70, 0, 10, 0])
     req7 = reachy_sdk_zeroed.r_arm.rotate_by(0.15, 0, 0.05)
 
-    pose7 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req7).request.goal_positions)
+    get_req7 = reachy_sdk_zeroed.get_goto_request(req7)
+    if get_req7.request.target.joints is not None:
+        pose7 = reachy_sdk_zeroed.r_arm.forward_kinematics(get_req7.request.target.joints)
+    else:
+        pose7 = get_req7.request.target.pose
     expected_pose7 = np.array(
         [
             [0.20722949, -0.6570895, -0.72476846, 0.33380879],
@@ -790,8 +823,9 @@ def test_rotate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
 
     req8 = reachy_sdk_zeroed.r_arm.rotate_by(50, -20, 70, frame="robot")
 
-    with pytest.raises(ValueError):
-        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req8).request.goal_positions)
+    assert not np.allclose(
+        reachy_sdk_zeroed.get_goto_request(req8).request.target.pose, reachy_sdk_zeroed.r_arm.forward_kinematics()
+    )
 
 
 @pytest.mark.online
@@ -821,7 +855,11 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req4 = reachy_sdk_zeroed.r_arm.goto([-10, 10, 10, -110, 0, 0, 0])
     req5 = reachy_sdk_zeroed.r_arm.rotate_by(15, -10, -5, frame="gripper")
 
-    pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req5).request.goal_positions)
+    get_req5 = reachy_sdk_zeroed.get_goto_request(req5)
+    if get_req5.request.target.joints is not None:
+        pose5 = reachy_sdk_zeroed.r_arm.forward_kinematics(get_req5.request.target.joints)
+    else:
+        pose5 = get_req5.request.target.pose
     expected_pose5 = np.array(
         [
             [-0.58122566, -0.57576842, -0.57503692, 0.35318658],
@@ -838,7 +876,11 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req6 = reachy_sdk_zeroed.r_arm.goto([-10, 10, 15, -70, 0, 10, 0])
     req7 = reachy_sdk_zeroed.r_arm.rotate_by(0.15, 0, 0.05, frame="gripper")
 
-    pose7 = reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req7).request.goal_positions)
+    get_req7 = reachy_sdk_zeroed.get_goto_request(req7)
+    if get_req7.request.target.joints is not None:
+        pose7 = reachy_sdk_zeroed.r_arm.forward_kinematics(get_req7.request.target.joints)
+    else:
+        pose7 = get_req7.request.target.pose
     expected_pose7 = np.array(
         [
             [0.27965445, -0.44712639, -0.84963015, 0.38450476],
@@ -851,8 +893,9 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
 
     req8 = reachy_sdk_zeroed.r_arm.rotate_by(50, -80, 70, frame="gripper")
 
-    with pytest.raises(ValueError):
-        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req8).request.goal_positions)
+    assert not np.allclose(
+        reachy_sdk_zeroed.get_goto_request(req8).request.target.pose, reachy_sdk_zeroed.r_arm.forward_kinematics()
+    )
 
 
 @pytest.mark.online
