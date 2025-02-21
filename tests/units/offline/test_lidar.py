@@ -65,7 +65,7 @@ def test_class() -> None:
         control_mode=control_mode,
     )
 
-    mobile_base = MobileBase(mb_msg=mb_proto, initial_state=mb_state, grpc_channel=grpc_channel)
+    mobile_base = MobileBase(mb_msg=mb_proto, initial_state=mb_state, grpc_channel=grpc_channel, goto_stub=None)
 
     lidar = Lidar(initial_state=lidar_safety, grpc_channel=grpc_channel, part=mobile_base)
 

@@ -5,11 +5,21 @@ import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from online.test_basic_movements import build_pose_matrix
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
-from reachy2_sdk_api.arm_pb2 import ArmDescription, ArmState
+from reachy2_sdk_api.arm_pb2 import ArmDescription, ArmState, ArmStatus
 from reachy2_sdk_api.component_pb2 import PIDGains
+from reachy2_sdk_api.error_pb2 import Error
+from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
+from reachy2_sdk_api.hand_pb2 import HandState
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2d as Orbita2d_proto
-from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState, PID3d, Vector3d
+from reachy2_sdk_api.orbita2d_pb2 import Orbita2dStatus
+from reachy2_sdk_api.orbita3d_pb2 import (
+    Float3d,
+    Orbita3dState,
+    Orbita3dStatus,
+    PID3d,
+    Vector3d,
+)
 from reachy2_sdk_api.part_pb2 import PartId
 
 from reachy2_sdk.orbita.orbita2d import (
@@ -101,6 +111,19 @@ def test_class() -> None:
     assert isinstance(arm._actuators, dict)
 
     with pytest.raises(ValueError):
+        arm._check_goto_parameters(duration=0, target=[0, 0, 0, 0, 0, 0, 0])
+    with pytest.raises(ValueError):
+        arm._check_goto_parameters(duration=2, target=[0, 0, 0, 0])
+    with pytest.raises(TypeError):
+        arm._check_goto_parameters(duration=2, target="default")
+    with pytest.raises(ValueError):
+        arm._check_goto_parameters(duration=2, target=np.eye(3))
+    with pytest.raises(TypeError):
+        arm._check_goto_parameters(duration=2, target=np.eye(4), q0=np.eye(4))
+    with pytest.raises(ValueError):
+        arm._check_goto_parameters(duration=2, target=np.eye(4), q0=[0, 0, 0, 0, 0, 0])
+
+    with pytest.raises(TypeError):
         arm.set_speed_limits("wrong value")
 
     with pytest.raises(ValueError):
@@ -109,7 +132,7 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         arm.set_speed_limits(-10)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         arm.set_torque_limits("wrong value")
 
     with pytest.raises(ValueError):
@@ -190,22 +213,78 @@ def test_class() -> None:
         arm.inverse_kinematics(target=np.zeros((4, 4)), q0=np.zeros((4, 4)))
 
     with pytest.raises(ValueError):
-        arm.goto_from_matrix(target=np.zeros((3, 3)))
+        arm.goto(target=np.zeros((3, 3)))
 
     with pytest.raises(ValueError):
-        arm.goto_from_matrix(target=np.zeros((4, 4)), q0=[0.0])
+        arm.goto(target=np.zeros((4, 4)), q0=[0.0])
 
     # Arm is off
-    assert arm.goto_from_matrix(target=np.zeros((4, 4)), q0=[0.0, 0, 0, 0, 0, 0, 0]).id == -1
+    assert arm.goto(target=np.zeros((4, 4)), q0=[0.0, 0, 0, 0, 0, 0, 0]).id == -1
 
     with pytest.raises(ValueError):
-        arm.goto_joints(positions=[0.0])
+        arm.goto(target=[0.0])
 
     # Arm is off
-    assert arm.goto_joints(positions=[0.0, 0, 0, 0, 0, 0, 0]).id == -1
+    assert arm.goto(target=[0.0, 0, 0, 0, 0, 0, 0]).id == -1
 
     with pytest.raises(ValueError):
-        arm.goto_joints([0, 0, 0, -90, 0, 0, 0], duration=0)
+        arm.goto([0, 0, 0, -90, 0, 0, 0], duration=0)
 
     with pytest.raises(ValueError):
-        arm.goto_from_matrix(build_pose_matrix(0.3, -0.4, -0.3), duration=0)
+        arm.goto(build_pose_matrix(0.3, -0.4, -0.3), duration=0)
+
+    hand_proto = Hand_proto(part_id=PartId(name="l_hand", id=2))
+    hand_state = HandState(
+        opening=FloatValue(value=0.5),
+        force=FloatValue(value=0.5),
+        holding_object=BoolValue(value=False),
+        compliant=BoolValue(value=False),
+    )
+
+    arm._init_hand(hand_proto, hand_state)
+    assert arm.gripper.opening == 50
+
+    assert (
+        str(arm)
+        == '<Arm on=False actuators=\n\tshoulder: <Orbita2d on=False joints=\n\t<OrbitaJoint axis_type="pitch" present_position=57.3 goal_position=171.89 >\n\t<OrbitaJoint axis_type="roll" present_position=114.59 goal_position=229.18 >\n>\n\telbow: <Orbita2d on=False joints=\n\t<OrbitaJoint axis_type="pitch" present_position=57.3 goal_position=171.89 >\n\t<OrbitaJoint axis_type="yaw" present_position=114.59 goal_position=229.18 >\n>\n\twrist: <Orbita3d on=False joints=\n\t<OrbitaJoint axis_type="roll" present_position=1432.39 goal_position=1604.28 >\n\t<OrbitaJoint axis_type="pitch" present_position=1489.69 goal_position=1661.58 >\n\t<OrbitaJoint axis_type="yaw" present_position=1546.99 goal_position=1718.87 >\n>\n>'
+    )
+
+    present_load2 = Vector3d(x=FloatValue(value=222), y=FloatValue(value=23), z=FloatValue(value=24))
+    orbita3d_state = Orbita3dState(
+        compliant=compliance,
+        present_position=present_rot,
+        goal_position=goal_rot,
+        temperature=temperature,
+        pid=pid,
+        speed_limit=speed_limit,
+        torque_limit=torque_limit,
+        present_speed=present_speed,
+        present_load=present_load2,
+    )
+
+    arm_state = ArmState(shoulder_state=orbita2d_state, elbow_state=orbita2d_state, wrist_state=orbita3d_state)
+    assert arm.wrist._axis["x"].present_load != present_load2.x.value
+    arm._update_with(arm_state)
+    assert arm.wrist._axis["x"].present_load == present_load2.x.value
+
+    error = Error(details="orbita3d error")
+    orbita3d_status = Orbita3dStatus(errors=[error])
+    error = Error(details="orbita2d error")
+    orbita2d_status = Orbita2dStatus(errors=[error])
+    arm_status = ArmStatus(shoulder_status=orbita2d_status, elbow_status=orbita2d_status, wrist_status=orbita3d_status)
+    arm._update_audit_status(arm_status)
+
+    assert arm.elbow.audit == "orbita2d error"
+    assert arm.wrist.audit == "orbita3d error"
+    assert arm.shoulder.audit == "orbita2d error"
+
+    assert arm.audit["elbow"] == "orbita2d error"
+
+    error = Error(details="Ok")
+    orbita3d_status = Orbita3dStatus(errors=[error])
+    error = Error(details="Ok")
+    orbita2d_status = Orbita2dStatus(errors=[error])
+    arm_status = ArmStatus(shoulder_status=orbita2d_status, elbow_status=orbita2d_status, wrist_status=orbita3d_status)
+    arm._update_audit_status(arm_status)
+
+    assert arm.audit["elbow"] == "Ok"

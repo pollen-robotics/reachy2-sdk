@@ -47,6 +47,7 @@ def test_class() -> None:
     assert hand.__repr__() != ""
 
     assert hand.opening == 20
+    assert hand.get_current_opening() == 20
 
     with pytest.raises(ValueError):
         hand.set_opening(-1)
@@ -59,6 +60,7 @@ def test_class() -> None:
     assert hand.goal_position == np.rad2deg(goal_position_rad)
     assert hand.present_position == np.rad2deg(present_position_rad)
     assert hand.is_on() is False
+    assert hand.is_off() is True
 
     goal_position_rad = 5
     present_position_rad = 6
@@ -89,7 +91,20 @@ def test_class() -> None:
     with pytest.raises(RuntimeError):
         hand.set_opening(50)
 
+    with pytest.raises(TypeError):
+        hand.goal_position = "wrong value"
+
     assert hand._goal_position == goal_position_rad
     assert hand._present_position == present_position_rad
     assert hand.goal_position == np.rad2deg(goal_position_rad)
     assert hand.present_position == np.rad2deg(present_position_rad)
+
+    hand._set_speed_limits(100)
+    hand.send_goal_positions()
+
+    hand._is_moving = True
+
+    for _ in range(10):
+        hand._check_hand_movement(0)
+
+    assert hand.is_moving() == False

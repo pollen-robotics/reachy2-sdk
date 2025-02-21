@@ -30,10 +30,14 @@ def reachy_sdk() -> ReachySDK:
 
 @pytest.fixture
 def reachy_sdk_zeroed(reachy_sdk: ReachySDK) -> ReachySDK:
-    reachy_sdk.cancel_all_moves()
+    reachy_sdk.cancel_all_goto()
     for joint in reachy_sdk.joints.values():
         joint.goal_position = 0
     reachy_sdk.send_goal_positions()
+    reachy_sdk.r_arm.gripper.set_opening(100)
+    reachy_sdk.l_arm.gripper.set_opening(100)
+    if reachy_sdk.mobile_base is not None:
+        reachy_sdk.mobile_base.reset_odometry()
 
     time.sleep(1)
 

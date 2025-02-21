@@ -1,5 +1,4 @@
-"""
-# ReachySDK package.
+"""ReachySDK package.
 
 This package provides remote access (via socket) to a Reachy robot.
 It automatically handles the synchronization with the robot.
@@ -14,10 +13,11 @@ reachy = ReachySDK(host="ip_address")
 
 And you're ready to use Reachy!
 
-*Examples and tutorials are available [here](../src/examples/)!*
+*Examples are available [here](https://github.com/pollen-robotics/reachy2-sdk/tree/develop/src/examples)
+ and tutorials [there](https://github.com/pollen-robotics/reachy2-tutorials) !*
 
 """
 
 from .reachy_sdk import ReachySDK  # noqa: F401
 
-__version__ = "1.0.3"
+__version__ = "1.0.9"

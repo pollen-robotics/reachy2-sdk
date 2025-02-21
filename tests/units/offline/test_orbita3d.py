@@ -2,8 +2,15 @@ import grpc
 import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
+from reachy2_sdk_api.error_pb2 import Error
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
-from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState, PID3d, Vector3d
+from reachy2_sdk_api.orbita3d_pb2 import (
+    Float3d,
+    Orbita3dState,
+    Orbita3dStatus,
+    PID3d,
+    Vector3d,
+)
 
 from reachy2_sdk.orbita.orbita3d import Orbita3d
 from reachy2_sdk.orbita.utils import to_position
@@ -87,7 +94,7 @@ def test_class() -> None:
     orbita3d.temperatures["motor_2"] == temperature.motor_1.value
     orbita3d.temperatures["motor_3"] == temperature.motor_3.value
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         orbita3d.set_speed_limits("wrong value")
 
     with pytest.raises(ValueError):
@@ -96,7 +103,7 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         orbita3d.set_speed_limits(-10)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         orbita3d.set_torque_limits("wrong value")
 
     with pytest.raises(ValueError):
@@ -176,3 +183,9 @@ def test_class() -> None:
     orbita3d.temperatures["motor_1"] == temperature.motor_1.value
     orbita3d.temperatures["motor_2"] == temperature.motor_1.value
     orbita3d.temperatures["motor_3"] == temperature.motor_3.value
+
+    assert orbita3d.audit is None
+    error = Error(details="test")
+    orbita3d_status = Orbita3dStatus(errors=[error])
+    orbita3d._update_audit_status(orbita3d_status)
+    assert orbita3d.audit == "test"
