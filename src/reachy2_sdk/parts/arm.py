@@ -427,13 +427,16 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             wait: If True, the function waits until the movement is completed before returning.
                     Defaults to False.
             interpolation_space: The space in which the interpolation should be performed. It can
-                    be either "joints" or "cartesian". Defaults to "joints".
+                    be either "joint_space" or "cartesian_space". Defaults to "joint_space".
             interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk"
                     or "linear". Defaults to "minimum_jerk".
             degrees: If True, the joint values in the `target` argument are treated as degrees.
                     Defaults to True.
             q0: An optional list of 7 joint values representing the initial configuration
                     for inverse kinematics. Defaults to None.
+            arc_direction: The direction of the arc to be followed during elliptical interpolation.
+                    Can be "above", "below", "front", "back", "left" or "right" . Defaults to "above".
+            secondary_radius: The secondary radius of the ellipse for elliptical interpolation, in meters.
 
         Returns:
             GoToId: The unique GoToId identifier for the movement command.
@@ -492,6 +495,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         Args:
             target: A list of 7 joint positions to move the arm to.
             duration: The time in seconds for the movement to be completed.
+            interpolation_space: The space in which the interpolation should be performed.
+                    Only "joint_space" is supported for joints target.
             interpolation_mode: The interpolation method to be used. Can be "minimum_jerk" or "linear".
             degrees: If True, the joint positions are interpreted as degrees; otherwise, as radians.
 
@@ -542,8 +547,13 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         Args:
             target: A 4x4 NumPy array representing the Cartesian target pose.
             duration: The time in seconds for the movement to be completed.
-            interpolation_mode: The interpolation method to be used. Can be "minimum_jerk" or "linear".
+            interpolation_space: The space in which the interpolation should be performed. Can be "joint_space"
+                    or "cartesian_space".
+            interpolation_mode: The interpolation method to be used. Can be "minimum_jerk", "linear" or "elliptical".
             q0: An optional list of 7 joint positions representing the initial configuration. Defaults to None.
+            arc_direction: The direction of the arc to be followed during elliptical interpolation. Can be "above",
+                    "below", "front", "back", "left" or "right".
+            secondary_radius: The secondary radius of the ellipse for elliptical interpolation, in meters.
 
         Returns:
             GoToId: A unique identifier for the movement command.
