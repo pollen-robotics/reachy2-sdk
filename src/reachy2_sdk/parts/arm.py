@@ -381,8 +381,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
-        arc_direction: str = "above",
-        secondary_radius: Optional[float] = None,
     ) -> GoToId:
         ...  # pragma: no cover
 
@@ -463,7 +461,11 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         if isinstance(target, list) and len(target) == 7:
             response = self._goto_joints(
-                target, duration, interpolation_space, interpolation_mode, degrees, arc_direction, secondary_radius
+                target,
+                duration,
+                interpolation_space,
+                interpolation_mode,
+                degrees,
             )
         elif isinstance(target, np.ndarray) and target.shape == (4, 4):
             response = self._goto_from_matrix(
@@ -484,8 +486,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         interpolation_space: str,
         interpolation_mode: str,
         degrees: bool,
-        arc_direction: str,
-        secondary_radius: Optional[float],
     ) -> GoToId:
         """Handle movement to a specified position in joint space.
 
@@ -502,6 +502,15 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             target = target.tolist()
         arm_pos = list_to_arm_position(target, degrees)
 
+        if interpolation_space == "cartesian_space":
+            self._logger.warning(
+                "cartesian_space interpolation is not supported using joints target. Switching to joint_space interpolation."
+            )
+            interpolation_space == "joint_space"
+        if interpolation_mode == "elliptical":
+            self._logger.warning("Elliptical interpolation is not supported in joint space. Switching to linear.")
+            interpolation_mode = "linear"
+
         req_params = {
             "joints_goal": JointsGoal(
                 arm_joint_goal=ArmJointGoal(id=self._part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
@@ -509,13 +518,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             "interpolation_space": get_grpc_interpolation_space(interpolation_space),
             "interpolation_mode": get_grpc_interpolation_mode(interpolation_mode),
         }
-
-        if interpolation_mode == "elliptical":
-            elliptical_params = EllipticalGoToParameters(
-                arc_direction=get_grpc_arc_direction(arc_direction),
-                secondary_radius=secondary_radius,
-            )
-            req_params["elliptical_parameters"] = elliptical_params
 
         request = GoToRequest(**req_params)
 
