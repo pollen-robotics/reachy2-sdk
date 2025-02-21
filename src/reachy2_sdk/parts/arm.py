@@ -579,7 +579,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if interpolation_mode == "elliptical":
             elliptical_params = EllipticalGoToParameters(
                 arc_direction=get_grpc_arc_direction(arc_direction),
-                secondary_radius=secondary_radius,
+                secondary_radius=FloatValue(value=secondary_radius),
             )
             req_params["elliptical_parameters"] = elliptical_params
 
