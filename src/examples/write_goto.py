@@ -1,56 +1,11 @@
 import logging
-import math
 import time
-from typing import List, Tuple
-
-import numpy as np
-import numpy.typing as npt
 
 from reachy2_sdk import ReachySDK
 from reachy2_sdk.utils.utils import get_pose_matrix
 
 # For scale 1
 SIZE = 0.01
-
-
-def circlePoints(r: float, n: int = 100, phase: float = 0) -> List[Tuple[float, float]]:
-    return [(math.cos(2 * math.pi / n * x + phase) * r, math.sin(2 * math.pi / n * x + phase) * r) for x in range(0, n + 1)]
-
-
-def ellipsePoints(
-    r1: float, r2: float, n: int = 100, clockwise: bool = True, phase: float = math.pi / 2
-) -> List[Tuple[float, float]]:
-    if clockwise:
-        return [
-            (math.cos(2 * math.pi / n * x + phase) * r1, math.sin(2 * math.pi / n * x + phase) * r2) for x in range(n, -1, -1)
-        ]
-    else:
-        return [
-            (math.cos(2 * math.pi / n * x + phase) * r1, math.sin(2 * math.pi / n * x + phase) * r2) for x in range(0, n + 1)
-        ]
-
-
-def build_pose_matrix(x: float, y: float, z: float) -> npt.NDArray[np.float64]:
-    # The effector is always at the same orientation in the world frame
-    return np.array(
-        [
-            [0, 0, -1, x],
-            [0, 1, 0, y],
-            [1, 0, 0, z],
-            [0, 0, 0, 1],
-        ]
-    )
-
-
-def send_arm_position(reachy: ReachySDK, ik_sol: List[float]) -> None:
-    reachy.r_arm.shoulder.pitch.goal_position = ik_sol[0]
-    reachy.r_arm.shoulder.roll.goal_position = ik_sol[1]
-    reachy.r_arm.elbow.yaw.goal_position = ik_sol[2]
-    reachy.r_arm.elbow.pitch.goal_position = ik_sol[3]
-    reachy.r_arm.wrist.roll.goal_position = ik_sol[4]
-    reachy.r_arm.wrist.pitch.goal_position = ik_sol[5]
-    reachy.r_arm.wrist.yaw.goal_position = ik_sol[6]
-    reachy.send_goal_positions()
 
 
 def write_A(
@@ -75,27 +30,35 @@ def write_A(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size / 2, y - half_size / 2, z + 0.02), interpolation_space="cartesian_space", duration=1
+        get_pose_matrix([x + half_size / 2, y - half_size / 2, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
     )
     # Start writing
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size / 2, y - half_size / 2, z), interpolation_space="cartesian_space", duration=1
+        get_pose_matrix([x + half_size / 2, y - half_size / 2, z], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
     )
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size / 2, y - 3 * half_size / 2, z), interpolation_space="cartesian_space", duration=1
+        get_pose_matrix([x + half_size / 2, y - 3 * half_size / 2, z], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
     )
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size / 2, y - 3 * half_size / 2, z + 0.02),
+        get_pose_matrix([x + half_size / 2, y - 3 * half_size / 2, z + 0.02], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         duration=1,
         wait=wait,
@@ -123,17 +86,17 @@ def write_B(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y, z),
+        get_pose_matrix([x + half_size, y, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         duration=1,
@@ -141,7 +104,7 @@ def write_B(
         secondary_radius=half_size,
     )
     reachy.r_arm.goto(
-        build_pose_matrix(x, y, z),
+        get_pose_matrix([x, y, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         duration=1,
@@ -151,7 +114,7 @@ def write_B(
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x, y, z + 0.02),
+        get_pose_matrix([x, y, z + 0.02], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         duration=1,
         wait=wait,
@@ -179,21 +142,30 @@ def write_C(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x, y - half_size, z),
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - half_size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="left",
         duration=1,
     )
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
+    )
 
     print("C finished")
 
@@ -217,17 +189,17 @@ def write_D(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x, y, z),
+        get_pose_matrix([x, y, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="right",
@@ -235,7 +207,7 @@ def write_D(
     )
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y, z + 0.02), duration=1, wait=wait)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z + 0.02], [roll, pitch, yaw]), duration=1, wait=wait)
 
     print("D finished")
 
@@ -260,27 +232,40 @@ def write_E(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
-
-    # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-
-    # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+
+    # Pen up
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+
+    # Pen up
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("E finished")
@@ -306,26 +291,39 @@ def write_F(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
-
-    # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-
-    # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+
+    # Pen up
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+
+    # Pen up
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("F finished")
@@ -351,24 +349,37 @@ def write_G(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x, y - half_size, z),
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - half_size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="left",
         duration=1,
     )
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - half_size, z], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y - half_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x + half_size, y - half_size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("G finished")
@@ -394,26 +405,39 @@ def write_H(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
-
-    # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
-
-    # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+
+    # Pen up
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+
+    # Pen up
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("H finished")
@@ -440,28 +464,49 @@ def write_I(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - half_size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + size, y - quarter_size, z + 0.02), interpolation_space="cartesian_space", duration=1
+        get_pose_matrix([x + size, y - quarter_size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
     )
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - quarter_size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - 3 * quarter_size, z), interpolation_space="cartesian_space", duration=1)
-
-    # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y - quarter_size, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x, y - quarter_size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - 3 * quarter_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - quarter_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - 3 * quarter_size, z], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x, y - 3 * quarter_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x, y - quarter_size, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - quarter_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - 3 * quarter_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+
+    # Pen up
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - 3 * quarter_size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("I finished")
@@ -488,12 +533,18 @@ def write_J(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - half_size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y, z),
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - half_size, z], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="back",
@@ -503,15 +554,23 @@ def write_J(
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + size, y - quarter_size, z + 0.02), interpolation_space="cartesian_space", duration=1
+        get_pose_matrix([x + size, y - quarter_size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
     )
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - quarter_size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - 3 * quarter_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - quarter_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - 3 * quarter_size, z], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + size, y - 3 * quarter_size, z + 0.02),
+        get_pose_matrix([x + size, y - 3 * quarter_size, z + 0.02], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         duration=1,
         wait=wait,
@@ -540,20 +599,28 @@ def write_K(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - size, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
 
     print("K finished")
 
@@ -577,14 +644,19 @@ def write_L(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
+    )
 
     print("L finished")
 
@@ -609,21 +681,32 @@ def write_M(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
-
-    # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - half_size, z], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+
+    # Pen up
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("M finished")
@@ -648,25 +731,36 @@ def write_N(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
+    )
 
     print("N finished")
 
@@ -691,18 +785,20 @@ def write_O(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - half_size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x, y - half_size, z),
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - half_size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="left",
         duration=1,
     )
     reachy.r_arm.goto(
-        build_pose_matrix(x + size, y - half_size, z),
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="right",
@@ -711,7 +807,10 @@ def write_O(
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + size, y - half_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x + size, y - half_size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("O finished")
@@ -737,17 +836,19 @@ def write_P(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y, z),
+        get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="right",
@@ -757,7 +858,10 @@ def write_P(
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x + half_size, y, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("P finished")
@@ -783,18 +887,20 @@ def write_Q(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - half_size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x, y - half_size, z),
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - half_size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="left",
         duration=1,
     )
     reachy.r_arm.goto(
-        build_pose_matrix(x + size, y - half_size, z),
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="right",
@@ -803,25 +909,28 @@ def write_Q(
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y - half_size, z + 0.02),
+        get_pose_matrix([x + half_size, y - half_size, z + 0.02], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         duration=1,
     )
     # Start writing
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y - half_size, z),
+        get_pose_matrix([x + half_size, y - half_size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         duration=1,
     )
     reachy.r_arm.goto(
-        build_pose_matrix(x - half_size, y - size, z),
+        get_pose_matrix([x - half_size, y - size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         duration=1,
     )
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x - half_size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x - half_size, y - size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("Q finished")
@@ -847,27 +956,34 @@ def write_R(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y, z),
+        get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="right",
         secondary_radius=half_size,
         duration=1,
     )
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
+    )
 
     print("R finished")
 
@@ -892,11 +1008,13 @@ def write_S(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - half_size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y - half_size, z),
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - half_size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="left",
@@ -904,7 +1022,7 @@ def write_S(
         duration=1,
     )
     reachy.r_arm.goto(
-        build_pose_matrix(x, y - half_size, z),
+        get_pose_matrix([x, y - half_size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="right",
@@ -914,7 +1032,10 @@ def write_S(
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x, y - half_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x, y - half_size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("S finished")
@@ -940,20 +1061,31 @@ def write_T(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - half_size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z), interpolation_space="cartesian_space", duration=1)
-
-    # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
-    # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+
+    # Pen up
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("T finished")
@@ -979,22 +1111,29 @@ def write_U(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
     reachy.r_arm.goto(
-        build_pose_matrix(x + half_size, y - size, z),
+        get_pose_matrix([x + half_size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - size, z], [roll, pitch, yaw]),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="back",
         duration=1,
     )
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("U finished")
@@ -1020,20 +1159,29 @@ def write_V(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - half_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x, y - half_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x, y - half_size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("V finished")
@@ -1060,32 +1208,53 @@ def write_W(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - quarter_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - quarter_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + half_size, y - half_size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - quarter_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - half_size, z], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - quarter_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + half_size, y - half_size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - 3 * quarter_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - half_size, z], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - 3 * quarter_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - 3 * quarter_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - 3 * quarter_size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
 
     # Pen up
     reachy.r_arm.goto(
-        build_pose_matrix(x, y - 3 * quarter_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+        get_pose_matrix([x, y - 3 * quarter_size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
     )
 
     print("W finished")
@@ -1110,19 +1279,23 @@ def write_X(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
     print("X finished")
 
@@ -1147,19 +1320,27 @@ def write_Y(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + half_size, y - half_size, z], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y - size, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y, z + 0.02], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
     print("Y finished")
 
 
@@ -1182,15 +1363,22 @@ def write_Z(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z + 0.02], [roll, pitch, yaw]), duration=1)
     # Start writing
-    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x + size, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        get_pose_matrix([x + size, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1
+    )
+    reachy.r_arm.goto(get_pose_matrix([x, y, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(get_pose_matrix([x, y - size, z], [roll, pitch, yaw]), interpolation_space="cartesian_space", duration=1)
 
     # Pen up
-    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
+    reachy.r_arm.goto(
+        get_pose_matrix([x, y - size, z + 0.02], [roll, pitch, yaw]),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
+    )
 
     print("Z finished")
 
