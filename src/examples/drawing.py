@@ -5,6 +5,7 @@ from typing import List, Tuple, Any
 
 from reachy2_sdk import ReachySDK
 from reachy2_sdk.utils.utils import get_pose_matrix
+from skimage.morphology import skeletonize
 
 import time
 
@@ -51,6 +52,18 @@ def extract_trajectories(image_path: str) -> List[List[Tuple[int, int]]]:
 
     # Afficher l'image binaire intermédiaire
     cv2.imshow("Binary Image", binary)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    # Appliquer une opération morphologique pour connecter les segments discontinus
+    kernel = np.ones((3, 3), np.uint8)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+    
+    # Réduction à la structure squelettique
+    skeleton = skeletonize(binary // 255).astype(np.uint8) * 255
+    
+    # Afficher l'image squelettique
+    cv2.imshow("Skeleton Image", skeleton)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -132,7 +145,7 @@ if __name__ == "__main__":
     print("Set to Elbow 120 pose ...")
     r_arm_120 = reachy.r_arm.goto([35, -15, -15, -120, 0, 0, 0], wait=True)
 
-    image_path = "OpenDrawing.jpg"  # Remplace par le chemin de ton image
+    image_path = "House.jpg"  # Remplace par le chemin de ton image
     print(f"Reading image {image_path}")
     trajectories = extract_trajectories(image_path)
 
