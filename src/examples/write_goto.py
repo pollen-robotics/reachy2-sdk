@@ -7,6 +7,7 @@ import numpy as np
 import numpy.typing as npt
 
 from reachy2_sdk import ReachySDK
+from reachy2_sdk.utils.utils import get_pose_matrix
 
 # For scale 1
 SIZE = 0.01
@@ -53,7 +54,16 @@ def send_arm_position(reachy: ReachySDK, ik_sol: List[float]) -> None:
 
 
 def write_A(
-    reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1, orientation: str = "horizontal", wait: bool = True
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
 ) -> None:
     print("Starting A")
 
@@ -94,7 +104,16 @@ def write_A(
 
 
 def write_B(
-    reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1, orientation: str = "horizontal", wait: bool = True
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
 ) -> None:
     print("Starting B")
 
@@ -141,7 +160,16 @@ def write_B(
 
 
 def write_C(
-    reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1, orientation: str = "horizontal", wait: bool = True
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
 ) -> None:
     print("Starting C")
 
@@ -149,1032 +177,1080 @@ def write_C(
     half_size = size / 2
 
     reachy.head.look_at(x, y, z, duration=1)
-    
+
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x, y - half_size, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="left",
+        duration=1,
+    )
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
+
     print("C finished")
 
 
-def write_D(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_D(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting D")
 
     size = SIZE * scale
-    half_size = size / 2
-
-    z_range = np.linspace(z + size, z, num=20)
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
 
-    for zp in z_range:
-        target_pose = build_pose_matrix(x, y, zp)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x, y, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="right",
+        duration=1,
+    )
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x, y, z + 0.02), duration=1, wait=wait)
 
-    nb_points = 30
-    points = ellipsePoints(size, size / 2, nb_points)
-    for yp, zp in points[: nb_points // 2 + 1]:
-        target_pose = build_pose_matrix(x, y - yp, z + zp + half_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
     print("D finished")
 
 
-def write_E(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_E(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting E")
 
     size = SIZE * scale
     half_size = size / 2
 
-    z_range = np.linspace(z, z + size, num=20)
-    y_range = np.linspace(y, y - size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    for ze in reversed(z_range):
-        target_pose = build_pose_matrix(x, y, ze)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for ye in y_range:
-        target_pose = build_pose_matrix(x, ye, z)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
-    for ye in y_range:
-        target_pose = build_pose_matrix(x, ye, z + size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + half_size))
-    inter_pos_2 = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + half_size))
-    while not reachy.is_move_finished(inter_pos_2):
-        time.sleep(0.1)
-    for ye in y_range:
-        target_pose = build_pose_matrix(x, ye, z + half_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + half_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
     print("E finished")
 
 
-def write_F(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_F(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting F")
 
     size = SIZE * scale
     half_size = size / 2
 
-    z_range = np.linspace(z, z + size, num=20)
-    y_range = np.linspace(y, y - size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
 
-    for ze in reversed(z_range):
-        target_pose = build_pose_matrix(x, y, ze)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
-    for ye in y_range:
-        target_pose = build_pose_matrix(x, ye, z + size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + half_size))
-    inter_pos_2 = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + half_size))
-    while not reachy.is_move_finished(inter_pos_2):
-        time.sleep(0.1)
-    for ye in y_range:
-        target_pose = build_pose_matrix(x, ye, z + half_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + half_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
     print("F finished")
 
 
-def write_G(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_G(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting G")
 
     size = SIZE * scale
     half_size = size / 2
 
-    nb_points = 30
-    points = circlePoints(half_size, nb_points)
-    y_range = np.linspace(y - size, y - half_size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x - 0.02, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x, y - half_size, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="left",
+        duration=1,
     )
-    first_pos = reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size), duration=1
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y - half_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
     )
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
 
-    for yg, zg in points[nb_points // 6 :]:
-        target_pose = build_pose_matrix(x, y - yg - half_size, z + zg + half_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for yg in y_range:
-        target_pose = build_pose_matrix(x, yg, z + half_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - half_size, z + half_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
     print("G finished")
 
 
-def write_H(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_H(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting H")
 
     size = SIZE * scale
     half_size = size / 2
 
-    z_range = np.linspace(z, z + size, num=20)
-    y_range = np.linspace(y, y - size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
 
-    for zh in reversed(z_range):
-        target_pose = build_pose_matrix(x, y, zh)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - size, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
-    for zh in reversed(z_range):
-        target_pose = build_pose_matrix(x, y - size, zh)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + half_size))
-    inter_pos_2 = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + half_size))
-    while not reachy.is_move_finished(inter_pos_2):
-        time.sleep(0.1)
-    for yh in y_range:
-        target_pose = build_pose_matrix(x, yh, z + half_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + half_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
     print("H finished")
 
 
-def write_I(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_I(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting I")
 
     size = SIZE * scale
     half_size = size / 2
-
-    z_range = np.linspace(z + size, z, num=20)
+    quarter_size = size / 4
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - half_size, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - half_size, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z), interpolation_space="cartesian_space", duration=1)
 
-    for zi in z_range:
-        target_pose = build_pose_matrix(x, y - half_size, zi)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + size, y - quarter_size, z + 0.02), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - quarter_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - 3 * quarter_size, z), interpolation_space="cartesian_space", duration=1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - half_size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x, y - quarter_size, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x, y - quarter_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - 3 * quarter_size, z), interpolation_space="cartesian_space", duration=1)
+
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x, y - 3 * quarter_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
+
     print("I finished")
 
 
-def write_J(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_J(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting J")
 
     size = SIZE * scale
     half_size = size / 2
-    quarter_size = half_size / 2
-
-    z_range = np.linspace(z + size, z + half_size, num=20)
-    y_range = np.linspace(y, y - size, num=20)
+    quarter_size = size / 4
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - half_size, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - half_size, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="back",
+        secondary_radius=half_size,
+        duration=1,
+    )
 
-    for zj in z_range:
-        target_pose = build_pose_matrix(x, y - half_size, zj)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + size, y - quarter_size, z + 0.02), interpolation_space="cartesian_space", duration=1
+    )
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - quarter_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - 3 * quarter_size, z), interpolation_space="cartesian_space", duration=1)
 
-    nb_points = 30
-    points = ellipsePoints(quarter_size, half_size, nb_points, phase=0)
-    for yj, zj in points[: nb_points // 2 + 1]:
-        target_pose = build_pose_matrix(x, y - yj - quarter_size, z + zj + half_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
-
-    for yj in y_range:
-        target_pose = build_pose_matrix(x, yj, z + size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + size, y - 3 * quarter_size, z + 0.02),
+        interpolation_space="cartesian_space",
+        duration=1,
+        wait=wait,
+    )
 
     print("J finished")
 
 
-def write_K(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_K(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting K")
 
     size = SIZE * scale
     half_size = size / 2
 
-    z_range = np.linspace(z + size, z, num=20)
-    z2_range = np.linspace(z + size, z + half_size, num=20)
-    y_range = np.linspace(y, y - size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
 
-    for zk in z_range:
-        target_pose = build_pose_matrix(x, y, zk)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - size, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
-
-    for yk, zk in zip(reversed(y_range), z2_range):
-        target_pose = build_pose_matrix(x, yk, zk)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for yk, zk in zip(y_range, z2_range - half_size):
-        target_pose = build_pose_matrix(x, yk, zk)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1)
 
     print("K finished")
 
 
-def write_L(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_L(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting L")
 
     size = SIZE * scale
 
-    z_range = np.linspace(z, z + size, num=20)
-    y_range = np.linspace(y, y - size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    for ze in reversed(z_range):
-        target_pose = build_pose_matrix(x, y, ze)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for ye in y_range:
-        target_pose = build_pose_matrix(x, ye, z)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
     print("L finished")
 
 
-def write_M(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_M(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting M")
 
     size = SIZE * scale
     half_size = size / 2
 
-    z_range = np.linspace(z + size, z, num=20)
-    z2_range = np.linspace(z + size, z + half_size, num=20)
-    y_range = np.linspace(y, y - half_size, num=20)
-    y2_range = np.linspace(y - half_size, y - size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
 
-    for zn in z_range:
-        target_pose = build_pose_matrix(x, y, zn)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
-
-    for yn, zn in zip(y_range, z2_range):
-        target_pose = build_pose_matrix(x, yn, zn)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for yn, zn in zip(y2_range, reversed(z2_range)):
-        target_pose = build_pose_matrix(x, yn, zn)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for zn in z_range:
-        target_pose = build_pose_matrix(x, y - size, zn)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
     print("M finished")
 
 
-def write_N(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_N(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting N")
 
     size = SIZE * scale
 
-    z_range = np.linspace(z, z + size, num=20)
-    y_range = np.linspace(y, y - size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
 
-    for zn in reversed(z_range):
-        target_pose = build_pose_matrix(x, y, zn)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    for yn, zn in zip(y_range, reversed(z_range)):
-        target_pose = build_pose_matrix(x, yn, zn)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for zn in z_range:
-        target_pose = build_pose_matrix(x, y - size, zn)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
 
     print("N finished")
 
 
-def write_O(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_O(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting O")
 
     size = SIZE * scale
     half_size = size / 2
 
-    nb_points = 30
-    points = circlePoints(half_size, nb_points)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - points[0][0] - half_size, z + points[0][1] + half_size))
-    first_pos = reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x, y - points[0][0] - half_size, z + points[0][1] + half_size), duration=1
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x, y - half_size, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="left",
+        duration=1,
     )
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
-
-    for yo, zo in points:
-        target_pose = build_pose_matrix(x, y - yo - half_size, z + zo + half_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x - 0.02, y - points[-1][0] - half_size, z + points[-1][1] + half_size), duration=1
+    reachy.r_arm.goto(
+        build_pose_matrix(x + size, y - half_size, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="right",
+        duration=1,
     )
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + size, y - half_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
     print("O finished")
 
 
-def write_P(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_P(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting P")
 
     size = SIZE * scale
     half_size = size / 2
-    quarter_size = half_size / 2
-
-    z_range = np.linspace(z + size, z, num=20)
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
 
-    for zp in z_range:
-        target_pose = build_pose_matrix(x, y, zp)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="right",
+        secondary_radius=half_size,
+        duration=1,
+    )
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
-
-    nb_points = 30
-    points = ellipsePoints(size, quarter_size, nb_points)
-    for yp, zp in points[: nb_points // 2 + 1]:
-        target_pose = build_pose_matrix(x, y - yp, z + zp + 3 * quarter_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + half_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
     print("P finished")
 
 
-def write_Q(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_Q(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting Q")
 
     size = SIZE * scale
     half_size = size / 2
-    quarter_size = half_size / 2
-
-    y_range = np.linspace(y - 3 * quarter_size, y - size, num=20)
-    z_range = np.linspace(z + quarter_size, z - quarter_size, num=20)
-
-    nb_points = 30
-    points = circlePoints(half_size, nb_points)
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - points[0][0] - half_size, z + points[0][1] + half_size))
-    first_pos = reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x, y - points[0][0] - half_size, z + points[0][1] + half_size), duration=1
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x, y - half_size, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="left",
+        duration=1,
     )
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x + size, y - half_size, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="right",
+        duration=1,
+    )
 
-    for yq, zq in points:
-        target_pose = build_pose_matrix(x, y - yq - half_size, z + zq + half_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y - half_size, z + 0.02),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
+    # Start writing
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y - half_size, z),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
+    reachy.r_arm.goto(
+        build_pose_matrix(x - half_size, y - size, z),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - 3 * quarter_size, z + quarter_size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - 3 * quarter_size, z + quarter_size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x - half_size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
-    for yq, zq in zip(y_range, z_range):
-        target_pose = build_pose_matrix(x, yq, zq)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z - quarter_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
     print("Q finished")
 
 
-def write_R(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_R(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting R")
 
     size = SIZE * scale
     half_size = size / 2
-    quarter_size = half_size / 2
-
-    z_range = np.linspace(z + size, z, num=20)
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
 
-    for zr in z_range:
-        target_pose = build_pose_matrix(x, y, zr)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="right",
+        secondary_radius=half_size,
+        duration=1,
+    )
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
 
-    nb_points = 30
-    points = ellipsePoints(size, quarter_size, nb_points)
-    for yr, zr in points[: nb_points // 2 + 1]:
-        target_pose = build_pose_matrix(x, y - yr, z + zr + 3 * quarter_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    y_range = np.linspace(y, y - size, num=10)
-    z2_range = np.linspace(z + half_size, z, num=10)
-
-    for yr, zr in zip(y_range, z2_range):
-        target_pose = build_pose_matrix(x, yr, zr)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
     print("R finished")
 
 
-def write_S(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_S(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting S")
 
     size = SIZE * scale
     half_size = size / 2
-    quarter_size = half_size / 2
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    nb_points = 36
-    points_top = ellipsePoints(half_size, quarter_size, nb_points, clockwise=False, phase=math.pi / 6)
-    points_bottom = ellipsePoints(half_size, quarter_size, nb_points)
-
-    reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x - 0.02, y - points_top[0][0] - half_size, z + points_top[0][1] + 3 * quarter_size)
-    )
-    first_pos = reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x, y - points_top[0][0] - half_size, z + points_top[0][1] + 3 * quarter_size), duration=1
-    )
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
-
-    for ys, zs in points_top[: 2 * nb_points // 3]:
-        target_pose = build_pose_matrix(x, y - ys - half_size, z + zs + 3 * quarter_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for ys, zs in points_bottom[: 2 * nb_points // 3]:
-        target_pose = build_pose_matrix(x, y - ys - half_size, z + zs + quarter_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(
-            x - 0.02,
-            y - points_bottom[2 * nb_points // 3][0] - half_size,
-            z + points_bottom[2 * nb_points // 3][1] + quarter_size,
-        ),
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y - half_size, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="left",
+        secondary_radius=half_size,
         duration=1,
     )
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x, y - half_size, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="right",
+        secondary_radius=half_size,
+        duration=1,
+    )
+
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x, y - half_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
+
     print("S finished")
 
 
-def write_T(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_T(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting T")
 
     size = SIZE * scale
     half_size = size / 2
 
-    z_range = np.linspace(z + size, z, num=20)
-    y_range = np.linspace(y, y - size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - half_size, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - half_size, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z), interpolation_space="cartesian_space", duration=1)
 
-    for zt in z_range:
-        target_pose = build_pose_matrix(x, y - half_size, zt)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), interpolation_space="cartesian_space", duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos_2 = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos_2):
-        time.sleep(0.1)
-    for yt in y_range:
-        target_pose = build_pose_matrix(x, yt, z + size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
     print("T finished")
 
 
-def write_U(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_U(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting U")
 
     size = SIZE * scale
     half_size = size / 2
 
-    z_range = np.linspace(z + size, z + half_size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(
+        build_pose_matrix(x + half_size, y - size, z),
+        interpolation_space="cartesian_space",
+        interpolation_mode="elliptical",
+        arc_direction="back",
+        duration=1,
+    )
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    for zu in z_range:
-        target_pose = build_pose_matrix(x, y, zu)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    nb_points = 30
-    points = circlePoints(half_size, nb_points, phase=math.pi)
-    for yu, zu in points[: nb_points // 2 + 1]:
-        target_pose = build_pose_matrix(x, y - yu - half_size, z + zu + half_size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    for zu in reversed(z_range):
-        target_pose = build_pose_matrix(x, y - size, zu)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x + size, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
     print("U finished")
 
 
-def write_V(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_V(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting V")
 
     size = SIZE * scale
     half_size = size / 2
 
-    y_range = np.linspace(y, y - half_size, num=20)
-    y2_range = np.linspace(y - half_size, y - size, num=20)
-    z_range = np.linspace(z, z + size, num=20)
-    line_1 = [(ya, za) for ya, za in zip(y_range, reversed(z_range))]
-    line_2 = [(ya, za) for ya, za in zip(y2_range, z_range)]
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z), interpolation_space="cartesian_space", duration=1)
 
-    for ya, za in line_1:
-        target_pose = build_pose_matrix(x, ya, za)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for ya, za in line_2:
-        target_pose = build_pose_matrix(x, ya, za)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z), interpolation_space="cartesian_space", duration=1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x, y - half_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
     print("V finished")
 
 
-def write_W(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_W(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting W")
 
     size = SIZE * scale
     half_size = size / 2
-    quarter_size = half_size / 2
+    quarter_size = size / 4
 
-    y_range = np.linspace(y, y - quarter_size, num=10)
-    z_range = np.linspace(z, z + size, num=10)
-    z2_range = np.linspace(z, z + half_size, num=10)
+    reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - quarter_size, z), interpolation_space="cartesian_space", duration=1)
 
-    for yw, zw in zip(y_range, reversed(z_range)):
-        target_pose = build_pose_matrix(x, yw, zw)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for yw, zw in zip(y_range - quarter_size, z2_range):
-        target_pose = build_pose_matrix(x, yw, zw)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for yw, zw in zip(y_range - half_size, reversed(z2_range)):
-        target_pose = build_pose_matrix(x, yw, zw)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for yw, zw in zip(y_range - 3 * quarter_size, z_range):
-        target_pose = build_pose_matrix(x, yw, zw)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - quarter_size, z), interpolation_space="cartesian_space", duration=1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - 3 * quarter_size, z), interpolation_space="cartesian_space", duration=1)
+
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - 3 * quarter_size, z), interpolation_space="cartesian_space", duration=1)
+
+    # Pen up
+    reachy.r_arm.goto(
+        build_pose_matrix(x, y - 3 * quarter_size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait
+    )
 
     print("W finished")
 
 
-def write_X(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_X(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting X")
 
     size = SIZE * scale
 
-    y_range = np.linspace(y, y - size, num=10)
-    z_range = np.linspace(z + size, z, num=10)
+    reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    for yx, zx in zip(y_range, z_range):
-        target_pose = build_pose_matrix(x, yx, zx)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - size, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
-    for yx, zx in zip(reversed(y_range), z_range):
-        target_pose = build_pose_matrix(x, yx, zx)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
 
     print("X finished")
 
 
-def write_Y(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_Y(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting Y")
 
     size = SIZE * scale
     half_size = size / 2
 
-    y_range = np.linspace(y, y - half_size, num=10)
-    y2_range = np.linspace(y - size, y, num=20)
-    z_range = np.linspace(z + size, z + half_size, num=10)
-    z2_range = np.linspace(z + size, z, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + half_size, y - half_size, z), interpolation_space="cartesian_space", duration=1)
 
-    for yy, zy in zip(y_range, z_range):
-        target_pose = build_pose_matrix(x, yy, zy)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - size, z + size))
-    while not reachy.is_move_finished(inter_pos):
-        time.sleep(0.1)
-    for yy, zy in zip(y2_range, z2_range):
-        target_pose = build_pose_matrix(x, yy, zy)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x, y, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
     print("Y finished")
 
 
-def write_Z(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_Z(
+    reachy: ReachySDK,
+    x: float,
+    y: float,
+    z: float,
+    roll: float,
+    pitch: float,
+    yaw: float,
+    scale: float = 1,
+    orientation: str = "horizontal",
+    wait: bool = True,
+) -> None:
     print("Starting Z")
 
     size = SIZE * scale
 
-    z_range = np.linspace(z + size, z, num=20)
-    y_range = np.linspace(y, y - size, num=20)
-
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z + 0.02), duration=1)
+    # Start writing
+    reachy.r_arm.goto(build_pose_matrix(x + size, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x + size, y - size, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y, z), interpolation_space="cartesian_space", duration=1)
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z), interpolation_space="cartesian_space", duration=1)
 
-    for yn in y_range:
-        target_pose = build_pose_matrix(x, yn, z + size)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for yn, zn in zip(reversed(y_range), z_range):
-        target_pose = build_pose_matrix(x, yn, zn)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-    for yn in y_range:
-        target_pose = build_pose_matrix(x, yn, z)
-        ik = reachy.r_arm.inverse_kinematics(target_pose)
-        send_arm_position(reachy, ik)
-        time.sleep(0.1)
-
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
-        time.sleep(0.1)
+    # Pen up
+    reachy.r_arm.goto(build_pose_matrix(x, y - size, z + 0.02), interpolation_space="cartesian_space", duration=1, wait=wait)
 
     print("Z finished")
 
 
-def write_letter(reachy: ReachySDK, letter: str, x: float, y: float, z: float, scale: float = 1) -> None:
+def write_letter(
+    reachy: ReachySDK, letter: str, x: float, y: float, z: float, roll: float, pitch: float, yaw: float, scale: float = 1
+) -> None:
     match letter:
         case "a":
-            write_A(reachy, x, y, z, scale)
+            write_A(reachy, x, y, z, roll, pitch, yaw, scale)
         case "b":
-            write_B(reachy, x, y, z, scale)
+            write_B(reachy, x, y, z, roll, pitch, yaw, scale)
         case "c":
-            write_C(reachy, x, y, z, scale)
+            write_C(reachy, x, y, z, roll, pitch, yaw, scale)
         case "d":
-            write_D(reachy, x, y, z, scale)
+            write_D(reachy, x, y, z, roll, pitch, yaw, scale)
         case "e":
-            write_E(reachy, x, y, z, scale)
+            write_E(reachy, x, y, z, roll, pitch, yaw, scale)
         case "f":
-            write_F(reachy, x, y, z, scale)
+            write_F(reachy, x, y, z, roll, pitch, yaw, scale)
         case "g":
-            write_G(reachy, x, y, z, scale)
+            write_G(reachy, x, y, z, roll, pitch, yaw, scale)
         case "h":
-            write_H(reachy, x, y, z, scale)
+            write_H(reachy, x, y, z, roll, pitch, yaw, scale)
         case "i":
-            write_I(reachy, x, y, z, scale)
+            write_I(reachy, x, y, z, roll, pitch, yaw, scale)
         case "j":
-            write_J(reachy, x, y, z, scale)
+            write_J(reachy, x, y, z, roll, pitch, yaw, scale)
         case "k":
-            write_K(reachy, x, y, z, scale)
+            write_K(reachy, x, y, z, roll, pitch, yaw, scale)
         case "l":
-            write_L(reachy, x, y, z, scale)
+            write_L(reachy, x, y, z, roll, pitch, yaw, scale)
         case "m":
-            write_M(reachy, x, y, z, scale)
+            write_M(reachy, x, y, z, roll, pitch, yaw, scale)
         case "n":
-            write_N(reachy, x, y, z, scale)
+            write_N(reachy, x, y, z, roll, pitch, yaw, scale)
         case "o":
-            write_O(reachy, x, y, z, scale)
+            write_O(reachy, x, y, z, roll, pitch, yaw, scale)
         case "p":
-            write_P(reachy, x, y, z, scale)
+            write_P(reachy, x, y, z, roll, pitch, yaw, scale)
         case "q":
-            write_Q(reachy, x, y, z, scale)
+            write_Q(reachy, x, y, z, roll, pitch, yaw, scale)
         case "r":
-            write_R(reachy, x, y, z, scale)
+            write_R(reachy, x, y, z, roll, pitch, yaw, scale)
         case "s":
-            write_S(reachy, x, y, z, scale)
+            write_S(reachy, x, y, z, roll, pitch, yaw, scale)
         case "t":
-            write_T(reachy, x, y, z, scale)
+            write_T(reachy, x, y, z, roll, pitch, yaw, scale)
         case "u":
-            write_U(reachy, x, y, z, scale)
+            write_U(reachy, x, y, z, roll, pitch, yaw, scale)
         case "s":
-            write_V(reachy, x, y, z, scale)
+            write_V(reachy, x, y, z, roll, pitch, yaw, scale)
         case "w":
-            write_W(reachy, x, y, z, scale)
+            write_W(reachy, x, y, z, roll, pitch, yaw, scale)
         case "x":
-            write_X(reachy, x, y, z, scale)
+            write_X(reachy, x, y, z, roll, pitch, yaw, scale)
         case "y":
-            write_Y(reachy, x, y, z, scale)
+            write_Y(reachy, x, y, z, roll, pitch, yaw, scale)
         case "z":
-            write_Z(reachy, x, y, z, scale)
+            write_Z(reachy, x, y, z, roll, pitch, yaw, scale)
 
 
 if __name__ == "__main__":
@@ -1201,7 +1277,15 @@ if __name__ == "__main__":
 
     starting_y = -0.35
     x = 0.45
-    z = 0
+    z = 0.0
+    scale = 2
+
+    # TEST
+    starting_y = 0.1
+    x = 0.3
+    z = -0.2
+    roll = 0
+    pitch = -90
     scale = 2
 
     word = input("Enter word to write: ")
@@ -1210,7 +1294,8 @@ if __name__ == "__main__":
     for char in word:
         if char.isalpha():
             char = char.lower()
-            write_letter(reachy, char, x, y, z, scale)
+            yaw = ((y + 0.6) * 80) / 0.7 - 20
+            write_letter(reachy, char, x, y, z, roll, pitch, yaw, scale)
             y -= SIZE * scale * 1.5
         if char == " ":
             y -= SIZE * scale * 0.5
