@@ -67,18 +67,28 @@ def extract_trajectories(image_path: str) -> List[List[Tuple[int, int]]]:
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+
+    ## METHODE 1
+
     # Trouver les contours
-    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    print(len(contours), "contours trouvés")
+    # contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # print(len(contours), "contours trouvés")
 
-    # Extraire et lisser les trajectoires
-    trajectories = []
-    for contour in contours:
-        trajectory = [(point[0][0], point[0][1]) for point in contour]
-        smoothed_trajectory = smooth_trajectory(trajectory, shape=image.shape)
-        trajectories.append(smoothed_trajectory)
+    # # Extraire et lisser les trajectoires
+    # trajectories = []
+    # for contour in contours:
+    #     trajectory = [(point[0][0], point[0][1]) for point in contour]
+    #     smoothed_trajectory = smooth_trajectory(trajectory, shape=image.shape)
+    #     trajectories.append(smoothed_trajectory)
 
-    return trajectories
+
+    ## METHODE 2 
+    trajectories = trace_skeleton(skeleton)
+
+    # Filtrage des trajectoires pour simplifier les lignes droites
+    filtered_trajectories = filter_straight_segments(trajectories)
+
+    return filtered_trajectories
 
 
 def smooth_trajectory(trajectory: List[Tuple[int, int]], shape: Tuple[int, int], epsilon: float = 5.0) -> List[Tuple[int, int]]:
@@ -90,6 +100,72 @@ def smooth_trajectory(trajectory: List[Tuple[int, int]], shape: Tuple[int, int],
     smoothed_contour = cv2.approxPolyDP(contour_array, epsilon, True)
     # return [(point[0][0], point[0][1]) for point in smoothed_contour]
     return [(shape[0] - point[0][1], point[0][0]) for point in smoothed_contour]
+
+def trace_skeleton(skeleton: Any) -> List[List[Tuple[int, int]]]:
+    """
+    Génère des trajectoires à partir du squelette en suivant les lignes.
+    """
+    visited = np.zeros_like(skeleton)
+    trajectories = []
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+
+    def is_valid(x, y):
+        return 0 <= x < skeleton.shape[0] and 0 <= y < skeleton.shape[1] and skeleton[x, y] == 255 and visited[x, y] == 0
+
+    def follow_line(x, y):
+        trajectory = [(y, x)]
+        visited[x, y] = 1
+        while True:
+            found = False
+            for dx, dy in directions:
+                nx, ny = x + dx, y + dy
+                if is_valid(nx, ny):
+                    trajectory.append((ny, nx))
+                    visited[nx, ny] = 1
+                    x, y = nx, ny
+                    found = True
+                    break
+            if not found:
+                break
+        return trajectory
+
+    for i in range(skeleton.shape[0]):
+        for j in range(skeleton.shape[1]):
+            if skeleton[i, j] == 255 and visited[i, j] == 0:
+                trajectory = follow_line(i, j)
+                if len(trajectory) > 1:  # Éviter les points isolés
+                    trajectories.append(trajectory)
+
+    return trajectories
+
+
+def filter_straight_segments(trajectories: List[List[Tuple[int, int]]], tolerance: float = 2.0) -> List[List[Tuple[int, int]]]:
+    """
+    Filtre les trajectoires pour ne garder que les segments de ligne droite.
+    Utilise l'algorithme de régression linéaire pour détecter les droites.
+    """
+    filtered_trajectories = []
+    for trajectory in trajectories:
+        if len(trajectory) < 3:  # Pas besoin de filtrer si moins de 3 points
+            filtered_trajectories.append(trajectory)
+            continue
+
+        # Ajuster une droite avec régression linéaire
+        x, y = zip(*trajectory)
+        x = np.array(x)
+        y = np.array(y)
+        A = np.vstack([x, np.ones(len(x))]).T
+        m, c = np.linalg.lstsq(A, y, rcond=None)[0]  # Pente et ordonnée à l'origine
+
+        # Calculer la distance de chaque point à la droite ajustée
+        distances = np.abs(y - (m * x + c)) / np.sqrt(m**2 + 1)
+
+        # Si toutes les distances sont en dessous du seuil de tolérance, garder seulement 2 points
+        if np.all(distances <= tolerance):
+            filtered_trajectories.append([(x[0], y[0]), (x[-1], y[-1])])
+        else:
+            filtered_trajectories.append(trajectory)
+    return filtered_trajectories
 
 
 def plot_trajectories(trajectories: List[List[Tuple[int, int]]]) -> None:
