@@ -147,7 +147,7 @@ def write_B(
         interpolation_mode="elliptical",
         duration=1,
         arc_direction="right",
-        secondary_radius=half_size,
+        secondary_radius=3 * half_size / 2,
     )
     reachy.r_arm.goto(
         get_oriented_pose_matrix([0, 0], origin=origin, orientation=orientation),
@@ -229,6 +229,7 @@ def write_D(
     print("Starting D")
 
     size = SIZE * scale
+    half_size = size / 2
 
     reachy.head.look_at(x, y, z, duration=1)
 
@@ -255,10 +256,20 @@ def write_D(
         duration=1,
     )
     reachy.r_arm.goto(
-        get_oriented_pose_matrix([0, 0], origin=origin, orientation=orientation),
+        get_oriented_pose_matrix([size, half_size], origin=origin, orientation=orientation),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
+    reachy.r_arm.goto(
+        get_oriented_pose_matrix([0, half_size], origin=origin, orientation=orientation),
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="right",
+        duration=1,
+    )
+    reachy.r_arm.goto(
+        get_oriented_pose_matrix([0, 0], origin=origin, orientation=orientation),
+        interpolation_space="cartesian_space",
         duration=1,
     )
 
@@ -1042,7 +1053,7 @@ def write_P(
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="right",
-        secondary_radius=half_size,
+        secondary_radius=size,
         duration=1,
     )
 
@@ -1170,7 +1181,7 @@ def write_R(
         interpolation_space="cartesian_space",
         interpolation_mode="elliptical",
         arc_direction="right",
-        secondary_radius=half_size,
+        secondary_radius=size,
         duration=1,
     )
     reachy.r_arm.goto(
@@ -1205,10 +1216,13 @@ def write_S(
     reachy.head.look_at(x, y, z, duration=1)
 
     # Pen up
-    reachy.r_arm.goto(
-        get_oriented_pose_matrix([size, half_size], origin=origin, orientation=orientation, pen_up=True), duration=1
-    )
+    reachy.r_arm.goto(get_oriented_pose_matrix([size, size], origin=origin, orientation=orientation, pen_up=True), duration=1)
     # Start writing
+    reachy.r_arm.goto(
+        get_oriented_pose_matrix([size, size], origin=origin, orientation=orientation),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
     reachy.r_arm.goto(
         get_oriented_pose_matrix([size, half_size], origin=origin, orientation=orientation),
         interpolation_space="cartesian_space",
@@ -1230,10 +1244,15 @@ def write_S(
         secondary_radius=half_size,
         duration=1,
     )
+    reachy.r_arm.goto(
+        get_oriented_pose_matrix([0, 0], origin=origin, orientation=orientation),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
 
     # Pen up
     reachy.r_arm.goto(
-        get_oriented_pose_matrix([0, half_size], origin=origin, orientation=orientation, pen_up=True),
+        get_oriented_pose_matrix([0, 0], origin=origin, orientation=orientation, pen_up=True),
         interpolation_space="cartesian_space",
         duration=1,
         wait=wait,
