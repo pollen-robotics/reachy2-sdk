@@ -66,9 +66,9 @@ def write_A(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for ya, za in line_1:
@@ -82,12 +82,12 @@ def write_A(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
     fk = reachy.r_arm.forward_kinematics()
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, fk[1, 3], fk[2, 3]))
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y_range[10], z_range[10]))
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y2_range[10], z_range[10]))
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, fk[1, 3], fk[2, 3]))
+    reachy.r_arm.goto(build_pose_matrix(x, y_range[10], z_range[10]))
+    reachy.r_arm.goto(build_pose_matrix(x, y2_range[10], z_range[10]))
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y2_range[10], z_range[10]), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y2_range[10], z_range[10]), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("A finished")
 
@@ -101,9 +101,9 @@ def write_B(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zp in z_range:
@@ -112,9 +112,9 @@ def write_B(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
 
     nb_points = 30
@@ -130,8 +130,8 @@ def write_B(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("B finished")
 
@@ -146,13 +146,13 @@ def write_C(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(
+    reachy.r_arm.goto(
         build_pose_matrix(x - 0.02, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size)
     )
-    first_pos = reachy.r_arm.goto_from_matrix(
+    first_pos = reachy.r_arm.goto(
         build_pose_matrix(x, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size), duration=1
     )
-    while not reachy.is_move_finished(first_pos):
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for yc, zc in points[nb_points // 6 : -nb_points // 6]:
@@ -161,11 +161,11 @@ def write_C(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(
+    last_pos = reachy.r_arm.goto(
         build_pose_matrix(x - 0.02, y - points[-nb_points // 6][0] - half_size, z + points[-nb_points // 6][1] + half_size),
         duration=1,
     )
-    while not reachy.is_move_finished(last_pos):
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("C finished")
 
@@ -180,9 +180,9 @@ def write_D(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zp in z_range:
@@ -191,9 +191,9 @@ def write_D(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
 
     nb_points = 30
@@ -204,8 +204,8 @@ def write_D(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("D finished")
 
@@ -221,9 +221,9 @@ def write_E(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for ze in reversed(z_range):
@@ -237,9 +237,9 @@ def write_E(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
     for ye in y_range:
         target_pose = build_pose_matrix(x, ye, z + size)
@@ -247,9 +247,9 @@ def write_E(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + half_size))
-    inter_pos_2 = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + half_size))
-    while not reachy.is_move_finished(inter_pos_2):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + half_size))
+    inter_pos_2 = reachy.r_arm.goto(build_pose_matrix(x, y, z + half_size))
+    while not reachy.is_goto_finished(inter_pos_2):
         time.sleep(0.1)
     for ye in y_range:
         target_pose = build_pose_matrix(x, ye, z + half_size)
@@ -257,8 +257,8 @@ def write_E(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + half_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + half_size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("E finished")
 
@@ -274,9 +274,9 @@ def write_F(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for ze in reversed(z_range):
@@ -285,9 +285,9 @@ def write_F(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
     for ye in y_range:
         target_pose = build_pose_matrix(x, ye, z + size)
@@ -295,9 +295,9 @@ def write_F(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + half_size))
-    inter_pos_2 = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + half_size))
-    while not reachy.is_move_finished(inter_pos_2):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + half_size))
+    inter_pos_2 = reachy.r_arm.goto(build_pose_matrix(x, y, z + half_size))
+    while not reachy.is_goto_finished(inter_pos_2):
         time.sleep(0.1)
     for ye in y_range:
         target_pose = build_pose_matrix(x, ye, z + half_size)
@@ -305,8 +305,8 @@ def write_F(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + half_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + half_size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("F finished")
 
@@ -323,13 +323,13 @@ def write_G(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(
+    reachy.r_arm.goto(
         build_pose_matrix(x - 0.02, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size)
     )
-    first_pos = reachy.r_arm.goto_from_matrix(
+    first_pos = reachy.r_arm.goto(
         build_pose_matrix(x, y - points[nb_points // 6][0] - half_size, z + points[nb_points // 6][1] + half_size), duration=1
     )
-    while not reachy.is_move_finished(first_pos):
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for yg, zg in points[nb_points // 6 :]:
@@ -343,8 +343,8 @@ def write_G(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - half_size, z + half_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - half_size, z + half_size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("G finished")
 
@@ -360,9 +360,9 @@ def write_H(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zh in reversed(z_range):
@@ -371,9 +371,9 @@ def write_H(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - size, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y - size, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
     for zh in reversed(z_range):
         target_pose = build_pose_matrix(x, y - size, zh)
@@ -381,9 +381,9 @@ def write_H(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + half_size))
-    inter_pos_2 = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + half_size))
-    while not reachy.is_move_finished(inter_pos_2):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + half_size))
+    inter_pos_2 = reachy.r_arm.goto(build_pose_matrix(x, y, z + half_size))
+    while not reachy.is_goto_finished(inter_pos_2):
         time.sleep(0.1)
     for yh in y_range:
         target_pose = build_pose_matrix(x, yh, z + half_size)
@@ -391,8 +391,8 @@ def write_H(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + half_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + half_size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("H finished")
 
@@ -407,9 +407,9 @@ def write_I(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - half_size, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - half_size, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - half_size, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zi in z_range:
@@ -418,8 +418,8 @@ def write_I(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - half_size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - half_size, z), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("I finished")
 
@@ -436,9 +436,9 @@ def write_J(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - half_size, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - half_size, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - half_size, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zj in z_range:
@@ -455,9 +455,9 @@ def write_J(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
 
     for yj in y_range:
@@ -466,8 +466,8 @@ def write_J(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("J finished")
@@ -485,9 +485,9 @@ def write_K(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zk in z_range:
@@ -496,9 +496,9 @@ def write_K(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - size, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y - size, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
 
     for yk, zk in zip(reversed(y_range), z2_range):
@@ -512,8 +512,8 @@ def write_K(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("K finished")
@@ -529,9 +529,9 @@ def write_L(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for ze in reversed(z_range):
@@ -545,8 +545,8 @@ def write_L(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("L finished")
 
@@ -564,9 +564,9 @@ def write_M(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zn in z_range:
@@ -575,9 +575,9 @@ def write_M(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
 
     for yn, zn in zip(y_range, z2_range):
@@ -596,8 +596,8 @@ def write_M(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("M finished")
@@ -613,9 +613,9 @@ def write_N(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zn in reversed(z_range):
@@ -624,9 +624,9 @@ def write_N(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
 
     for yn, zn in zip(y_range, reversed(z_range)):
@@ -640,8 +640,8 @@ def write_N(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("N finished")
@@ -658,11 +658,9 @@ def write_O(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - points[0][0] - half_size, z + points[0][1] + half_size))
-    first_pos = reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x, y - points[0][0] - half_size, z + points[0][1] + half_size), duration=1
-    )
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - points[0][0] - half_size, z + points[0][1] + half_size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y - points[0][0] - half_size, z + points[0][1] + half_size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for yo, zo in points:
@@ -671,10 +669,10 @@ def write_O(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(
+    last_pos = reachy.r_arm.goto(
         build_pose_matrix(x - 0.02, y - points[-1][0] - half_size, z + points[-1][1] + half_size), duration=1
     )
-    while not reachy.is_move_finished(last_pos):
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("O finished")
@@ -691,9 +689,9 @@ def write_P(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zp in z_range:
@@ -702,9 +700,9 @@ def write_P(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
 
     nb_points = 30
@@ -715,8 +713,8 @@ def write_P(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + half_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + half_size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("P finished")
@@ -737,11 +735,9 @@ def write_Q(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - points[0][0] - half_size, z + points[0][1] + half_size))
-    first_pos = reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x, y - points[0][0] - half_size, z + points[0][1] + half_size), duration=1
-    )
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - points[0][0] - half_size, z + points[0][1] + half_size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y - points[0][0] - half_size, z + points[0][1] + half_size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for yq, zq in points:
@@ -750,9 +746,9 @@ def write_Q(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - 3 * quarter_size, z + quarter_size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - 3 * quarter_size, z + quarter_size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - 3 * quarter_size, z + quarter_size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y - 3 * quarter_size, z + quarter_size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
 
     for yq, zq in zip(y_range, z_range):
@@ -761,8 +757,8 @@ def write_Q(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z - quarter_size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z - quarter_size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("Q finished")
 
@@ -778,9 +774,9 @@ def write_R(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zr in z_range:
@@ -789,15 +785,17 @@ def write_R(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
 
     nb_points = 30
     points = ellipsePoints(size, quarter_size, nb_points)
+
     for yr, zr in points[: nb_points // 2 + 1]:
         target_pose = build_pose_matrix(x, y - yr, z + zr + 3 * quarter_size)
+        print(f"target_pose: {y - yr}, {z + zr + 3 * quarter_size}")
         ik = reachy.r_arm.inverse_kinematics(target_pose)
         send_arm_position(reachy, ik)
         time.sleep(0.1)
@@ -811,8 +809,8 @@ def write_R(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("R finished")
 
@@ -830,13 +828,11 @@ def write_S(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
     points_top = ellipsePoints(half_size, quarter_size, nb_points, clockwise=False, phase=math.pi / 6)
     points_bottom = ellipsePoints(half_size, quarter_size, nb_points)
 
-    reachy.r_arm.goto_from_matrix(
-        build_pose_matrix(x - 0.02, y - points_top[0][0] - half_size, z + points_top[0][1] + 3 * quarter_size)
-    )
-    first_pos = reachy.r_arm.goto_from_matrix(
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - points_top[0][0] - half_size, z + points_top[0][1] + 3 * quarter_size))
+    first_pos = reachy.r_arm.goto(
         build_pose_matrix(x, y - points_top[0][0] - half_size, z + points_top[0][1] + 3 * quarter_size), duration=1
     )
-    while not reachy.is_move_finished(first_pos):
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for ys, zs in points_top[: 2 * nb_points // 3]:
@@ -850,7 +846,7 @@ def write_S(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(
+    last_pos = reachy.r_arm.goto(
         build_pose_matrix(
             x - 0.02,
             y - points_bottom[2 * nb_points // 3][0] - half_size,
@@ -858,7 +854,7 @@ def write_S(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         ),
         duration=1,
     )
-    while not reachy.is_move_finished(last_pos):
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("S finished")
 
@@ -874,9 +870,9 @@ def write_T(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - half_size, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - half_size, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - half_size, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y - half_size, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zt in z_range:
@@ -885,9 +881,9 @@ def write_T(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    inter_pos_2 = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size))
-    while not reachy.is_move_finished(inter_pos_2):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    inter_pos_2 = reachy.r_arm.goto(build_pose_matrix(x, y, z + size))
+    while not reachy.is_goto_finished(inter_pos_2):
         time.sleep(0.1)
     for yt in y_range:
         target_pose = build_pose_matrix(x, yt, z + size)
@@ -895,8 +891,8 @@ def write_T(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("T finished")
 
@@ -911,9 +907,9 @@ def write_U(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for zu in z_range:
@@ -936,8 +932,8 @@ def write_U(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("U finished")
@@ -957,9 +953,9 @@ def write_V(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for ya, za in line_1:
@@ -973,8 +969,8 @@ def write_V(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("V finished")
@@ -991,9 +987,9 @@ def write_W(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
     z_range = np.linspace(z, z + size, num=10)
     z2_range = np.linspace(z, z + half_size, num=10)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for yw, zw in zip(y_range, reversed(z_range)):
@@ -1017,8 +1013,8 @@ def write_W(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + size), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("W finished")
@@ -1032,9 +1028,9 @@ def write_X(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
     y_range = np.linspace(y, y - size, num=10)
     z_range = np.linspace(z + size, z, num=10)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for yx, zx in zip(y_range, z_range):
@@ -1043,9 +1039,9 @@ def write_X(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - size, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y - size, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
     for yx, zx in zip(reversed(y_range), z_range):
         target_pose = build_pose_matrix(x, yx, zx)
@@ -1053,8 +1049,8 @@ def write_X(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("X finished")
@@ -1073,9 +1069,9 @@ def write_Y(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for yy, zy in zip(y_range, z_range):
@@ -1084,9 +1080,9 @@ def write_Y(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z + size))
-    inter_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y - size, z + size))
-    while not reachy.is_move_finished(inter_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z + size))
+    inter_pos = reachy.r_arm.goto(build_pose_matrix(x, y - size, z + size))
+    while not reachy.is_goto_finished(inter_pos):
         time.sleep(0.1)
     for yy, zy in zip(y2_range, z2_range):
         target_pose = build_pose_matrix(x, yy, zy)
@@ -1094,8 +1090,8 @@ def write_Y(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
     print("Y finished")
 
@@ -1110,9 +1106,9 @@ def write_Z(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
 
     reachy.head.look_at(x, y, z, duration=1)
 
-    reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y, z + size))
-    first_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x, y, z + size), duration=1)
-    while not reachy.is_move_finished(first_pos):
+    reachy.r_arm.goto(build_pose_matrix(x - 0.02, y, z + size))
+    first_pos = reachy.r_arm.goto(build_pose_matrix(x, y, z + size), duration=1)
+    while not reachy.is_goto_finished(first_pos):
         time.sleep(0.1)
 
     for yn in y_range:
@@ -1131,8 +1127,8 @@ def write_Z(reachy: ReachySDK, x: float, y: float, z: float, scale: float = 1) -
         send_arm_position(reachy, ik)
         time.sleep(0.1)
 
-    last_pos = reachy.r_arm.goto_from_matrix(build_pose_matrix(x - 0.02, y - size, z), duration=1)
-    while not reachy.is_move_finished(last_pos):
+    last_pos = reachy.r_arm.goto(build_pose_matrix(x - 0.02, y - size, z), duration=1)
+    while not reachy.is_goto_finished(last_pos):
         time.sleep(0.1)
 
     print("Z finished")
@@ -1205,13 +1201,13 @@ if __name__ == "__main__":
 
     print("Turning on Reachy")
     reachy.turn_on()
-    reachy.set_pose()
+    reachy.goto_posture()
 
     time.sleep(0.2)
 
     print("Set to Elbow 90 pose ...")
-    r_arm_120 = reachy.r_arm.goto_joints([35, -15, -15, -120, 0, 0, 0])
-    while not reachy.is_move_finished(r_arm_120):
+    r_arm_120 = reachy.r_arm.goto([35, -15, -15, -120, 0, 0, 0])
+    while not reachy.is_goto_finished(r_arm_120):
         time.sleep(0.1)
 
     letters_space = SIZE + SIZE / 2
@@ -1233,7 +1229,7 @@ if __name__ == "__main__":
             y -= SIZE * scale * 0.5
 
     print("Set back to Elbow 90 pose ...")
-    head_move = reachy.head.set_pose("default")
-    r_arm_120 = reachy.r_arm.goto_joints([35, -15, -15, -120, 0, 0, 0])
-    while not reachy.is_move_finished(r_arm_120):
+    head_move = reachy.head.goto_posture("default")
+    r_arm_120 = reachy.r_arm.goto([35, -15, -15, -120, 0, 0, 0])
+    while not reachy.is_goto_finished(r_arm_120):
         time.sleep(0.1)
