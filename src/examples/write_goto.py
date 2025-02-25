@@ -872,10 +872,15 @@ def write_M(
         interpolation_space="cartesian_space",
         duration=1,
     )
+    reachy.r_arm.goto(
+        get_oriented_pose_matrix([0, size], origin=origin, orientation=orientation),
+        interpolation_space="cartesian_space",
+        duration=1,
+    )
 
     # Pen up
     reachy.r_arm.goto(
-        get_oriented_pose_matrix([size, size], origin=origin, orientation=orientation, pen_up=True),
+        get_oriented_pose_matrix([0, size], origin=origin, orientation=orientation, pen_up=True),
         interpolation_space="cartesian_space",
         duration=1,
         wait=wait,
@@ -1706,7 +1711,7 @@ def write_letter(reachy: ReachySDK, letter: str, origin: List[float], scale: flo
             write_T(reachy, origin, scale)
         case "u":
             write_U(reachy, origin, scale)
-        case "s":
+        case "v":
             write_V(reachy, origin, scale)
         case "w":
             write_W(reachy, origin, scale)
