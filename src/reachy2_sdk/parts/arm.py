@@ -577,10 +577,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         }
 
         if interpolation_mode == "elliptical":
-            elliptical_params = EllipticalGoToParameters(
-                arc_direction=get_grpc_arc_direction(arc_direction),
-                secondary_radius=FloatValue(value=secondary_radius),
-            )
+            ellipse_params = {
+                "arc_direction": get_grpc_arc_direction(arc_direction),
+            }
+            if secondary_radius is not None:
+                ellipse_params["secondary_radius"] = FloatValue(value=secondary_radius)
+            elliptical_params = EllipticalGoToParameters(**ellipse_params)
             req_params["elliptical_parameters"] = elliptical_params
 
         request = GoToRequest(**req_params)
@@ -1210,9 +1212,18 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
             # Interpolated point in plan
             trans_interpolated = np.dot(rotation_matrix, vector_origin_center)
-            # Adjusting the ellipse
-            ellipse_interpolated = trans_interpolated * np.array([1, 1, secondary_radius / radius])
-            trans_interpolated = ellipse_interpolated + center
+            # Find the major and minor axes in the plane of the ellipse
+            major_axis = vector_target_origin / np.linalg.norm(vector_target_origin)
+            minor_axis = np.cross(normal, major_axis)
+            minor_axis = minor_axis / np.linalg.norm(minor_axis)
+
+            # Project the interpolated point onto the major and minor axes
+            major_component = np.dot(trans_interpolated, major_axis)
+            minor_component = np.dot(trans_interpolated, minor_axis)
+
+            # Adjust the ellipse using the secondary radius
+            adjusted_trans = major_component * major_axis + (minor_component * (secondary_radius / radius)) * minor_axis
+            trans_interpolated = adjusted_trans + center
 
             # SLERP for the rotation
             q_interpolated = Quaternion.slerp(origin_rot, target_rot, t)
