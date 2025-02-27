@@ -1,6 +1,8 @@
-"""Reachy OrbitaJoint module.
-Handles all specific methods to OrbitaJoint.
+"""Reachy DynamixelMotor module.
+
+Handles all specific methods to DynamixelMotor.
 """
+
 import logging
 from typing import Optional
 
@@ -20,6 +22,7 @@ from ..parts.part import Part
 
 class DynamixelMotor:
     """The DynamixelMotor class represents any Dynamixel motor.
+
     The DynamixelMotor class is used to store the up-to-date state of the motor, especially:
     - its present_position (RO)
     - its goal_position (RW)
@@ -34,15 +37,16 @@ class DynamixelMotor:
         part: Part,
     ):
         """Initialize the DynamixelMotor with its initial state and configuration.
-        This sets up the joint by assigning its actuator, axis type, and position order within
-        the part, and updates its state based on the provided initial values.
+
+        This sets up the motor by assigning its state based on the provided initial values.
+
         Args:
             uid: The unique identifier of the component.
-            name: The name of the joint.
+            name: The name of the component.
             initial_state: A dictionary containing the initial state of the joint, with
                 each entry representing a specific parameter of the joint (e.g., present position).
             grpc_channel: The gRPC channel used to communicate with the DynamixelMotor service.
-            part: The part to which this joint belongs.
+            part: The part to which this motor belongs.
         """
         self._logger = logging.getLogger(__name__)
         self._name = name
@@ -53,7 +57,7 @@ class DynamixelMotor:
         self._outgoing_goal_position: Optional[float] = None
 
     def __repr__(self) -> str:
-        """Clean representation of the OrbitaJoint."""
+        """Clean representation of the DynamixelMotor."""
         repr_template = "<DynamixelMotor on={dxl_on} present_position={present_position} goal_position={goal_position} >"
         return repr_template.format(
             dxl_on=self.is_on(),
@@ -71,6 +75,7 @@ class DynamixelMotor:
 
     def is_on(self) -> bool:
         """Check if the dynamixel motor is currently stiff.
+
         Returns:
             `True` if the motor is stiff (not compliant), `False` otherwise.
         """
@@ -89,10 +94,13 @@ class DynamixelMotor:
     @goal_position.setter
     def goal_position(self, value: float | int) -> None:
         """Set the goal position of the joint in degrees.
+
         The goal position is not send to the joint immediately, it is stored locally until the `send_goal_positions` method
         is called.
+
         Args:
             value: The goal position to set, specified as a float or int.
+
         Raises:
             TypeError: If the provided value is not a float or int.
         """
@@ -102,10 +110,12 @@ class DynamixelMotor:
             raise TypeError("goal_position must be a float or int")
 
     def _set_compliant(self, compliant: bool) -> None:
-        """Set the compliance mode of the actuator's motors.
-        Compliance mode determines whether the motors are stiff or compliant.
+        """Set the compliance mode of the motor.
+
+        Compliance mode determines whether the motor is stiff or compliant.
+
         Args:
-            compliant: A boolean value indicating whether to set the motors to
+            compliant: A boolean value indicating whether to set the motor to
                 compliant (`True`) or stiff (`False`).
         """
         command = DynamixelMotorsCommand(
@@ -119,8 +129,9 @@ class DynamixelMotor:
         self._stub.SendCommand(command)
 
     def send_goal_positions(self, check_positions: bool = True) -> None:
-        """Send goal positions to the actuator's joints.
-        If goal positions have been specified for any joint of this actuator, sends them to the actuator.
+        """Send goal positions to the motor.
+
+        If goal positions have been specified, sends them to the motor.
         Args :
             check_positions: A boolean indicating whether to check the positions after sending the command.
                 Defaults to True.
@@ -141,7 +152,8 @@ class DynamixelMotor:
                 pass
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
-        """Set the speed limit as a percentage of the maximum speed for all motors of the actuator.
+        """Set the speed limit as a percentage of the maximum speed the motor.
+
         Args:
             speed_limit: The desired speed limit as a percentage (0-100) of the maximum speed. Can be
                 specified as a float or int.
@@ -163,6 +175,7 @@ class DynamixelMotor:
 
     def _update_with(self, new_state: DynamixelMotorState) -> None:
         """Update the present and goal positions of the joint with new state values.
+
         Args:
             new_state: A dictionary containing the new state values for the joint. The keys should include
                 "present_position" and "goal_position", with corresponding FloatValue objects as values.

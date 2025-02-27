@@ -1,6 +1,8 @@
-"""Reachy OrbitaJoint module.
-Handles all specific methods to OrbitaJoint.
+"""Reachy Antenna module.
+
+Handles all specific methods to Antennas.
 """
+
 from typing import Any, List, Optional
 
 import numpy as np
@@ -20,7 +22,7 @@ from ..utils.utils import get_grpc_interpolation_mode
 
 
 class Antenna(DynamixelMotor, IGoToBasedPart):
-    """The Antenna class represents any antenna of the robot head."""
+    """The Antenna class represents any antenna of the robot's head."""
 
     def __init__(
         self,
@@ -32,8 +34,7 @@ class Antenna(DynamixelMotor, IGoToBasedPart):
         part: Part,
     ):
         """Initialize the Antenna with its initial state and configuration.
-        This sets up the joint by assigning its actuator, axis type, and position order within
-        the part, and updates its state based on the provided initial values.
+
         Args:
             uid: The unique identifier of the component.
             name: The name of the joint.

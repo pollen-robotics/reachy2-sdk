@@ -230,6 +230,17 @@ def process_goto_request(response: GoToRequest) -> Optional[SimplifiedRequest]:
             )
             duration = response.joints_goal.neck_joint_goal.duration.value
             elliptical_params = None
+        elif response.joints_goal.HasField("antenna_joint_goal"):
+            part = response.joints_goal.antenna_joint_goal.antenna.id.name
+            if part == "antenna_right":
+                part = "r_antenna"
+            elif part == "antenna_left":
+                part = "l_antenna"
+            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+            interpolation_space = "joint_space"
+            target_joints = np.rad2deg(response.joints_goal.antenna_joint_goal.joint_goal.value)
+            duration = response.joints_goal.antenna_joint_goal.duration.value
+            elliptical_params = None
 
         target = TargetJointsRequest(
             joints=target_joints,
