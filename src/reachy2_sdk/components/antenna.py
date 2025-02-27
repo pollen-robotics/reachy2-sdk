@@ -17,11 +17,12 @@ from reachy2_sdk_api.head_pb2 import AntennaJointGoal
 
 from ..dynamixel.dynamixel_motor import DynamixelMotor
 from ..parts.goto_based_part import IGoToBasedPart
+from .goto_based_component import IGoToBasedComponent
 from ..parts.part import Part
 from ..utils.utils import get_grpc_interpolation_mode
 
 
-class Antenna(DynamixelMotor, IGoToBasedPart):
+class Antenna(DynamixelMotor, IGoToBasedComponent):
     """The Antenna class represents any antenna of the robot's head."""
 
     def __init__(
@@ -45,6 +46,7 @@ class Antenna(DynamixelMotor, IGoToBasedPart):
             part: The part to which this joint belongs.
         """
         super().__init__(uid, name, initial_state, grpc_channel, part)
+        IGoToBasedComponent.__init__(self, ComponentId(id=uid, name=name), goto_stub)
         self._goto_stub = goto_stub
 
     def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
@@ -73,8 +75,33 @@ class Antenna(DynamixelMotor, IGoToBasedPart):
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode."""
-        pass  # pragma: no cover
+        """Send the antenna to standard positions within the specified duration.
+
+        The default posture sets the antenna is 0.0.
+
+        Args:
+            common_posture: The standard positions to which all joints will be sent.
+                It can be 'default' or 'elbow_90'. Defaults to 'default'.
+            duration: The time in seconds for the neck to reach the target posture. Defaults to 2.
+            wait: Whether to wait for the movement to complete before returning. Defaults to False.
+            wait_for_goto_end: Whether to wait for all previous goto commands to finish before executing
+                the current command. If False, it cancels all ongoing commands. Defaults to True.
+            interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
+                Defaults to "minimum_jerk".
+
+        Returns:
+            The unique GoToId associated with the movement command.
+
+        Raises:
+            ValueError: If the neck is off and the command cannot be sent.
+        """
+        if not wait_for_goto_end:
+            self.cancel_all_goto()
+        if self.is_on():
+            return self.goto(0, duration, wait, interpolation_mode)
+        else:
+            self._logger.warning(f"{self._name} is off. No command sent.")
+        return GoToId(id=-1)
 
     def goto(
         self,

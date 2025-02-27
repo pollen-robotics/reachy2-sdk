@@ -67,7 +67,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             goto_stub: The GoToServiceStub used to handle goto-based movements for the head.
         """
         JointsBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel))
-        IGoToBasedPart.__init__(self, self, goto_stub)
+        IGoToBasedPart.__init__(self, self._part_id, goto_stub)
 
         self._setup_head(head_msg, initial_state)
         self._actuators = {
@@ -130,6 +130,28 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def r_antenna(self) -> Antenna:
         """Get the right antenna actuator of the head."""
         return self._r_antenna
+
+    def turn_on(self) -> None:
+        """Turn on all motors of the part, making all arm motors stiff.
+
+        If antennas are present, they will also be turned on.
+        """
+        if self._r_antenna is not None:
+            self._r_antenna.turn_on()
+        if self._l_antenna is not None:
+            self._l_antenna.turn_on()
+        super().turn_on()
+
+    def turn_off(self) -> None:
+        """Turn off all motors of the part, making all arm motors compliant.
+
+        If a gripper is present, it will also be turned off.
+        """
+        if self._r_antenna is not None:
+            self._r_antenna.turn_off()
+        if self._l_antenna is not None:
+            self._l_antenna.turn_off()
+        super().turn_off()
 
     def get_current_orientation(self) -> pyQuat:
         """Get the current orientation of the head.
@@ -460,6 +482,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
         """
         if not wait_for_goto_end:
             self.cancel_all_goto()
+        self.l_antenna.goto_posture(common_posture, duration, wait, wait_for_goto_end, interpolation_mode)
+        self.r_antenna.goto_posture(common_posture, duration, wait, wait_for_goto_end, interpolation_mode)
         if self.neck.is_on():
             return self.goto([0, -10, 0], duration, wait, interpolation_mode)
         else:
