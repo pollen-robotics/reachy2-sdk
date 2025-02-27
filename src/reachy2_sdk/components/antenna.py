@@ -16,7 +16,6 @@ from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import AntennaJointGoal
 
 from ..dynamixel.dynamixel_motor import DynamixelMotor
-from ..parts.goto_based_part import IGoToBasedPart
 from .goto_based_component import IGoToBasedComponent
 from ..parts.part import Part
 from ..utils.utils import get_grpc_interpolation_mode
