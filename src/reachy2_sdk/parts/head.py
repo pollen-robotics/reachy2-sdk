@@ -30,6 +30,7 @@ from reachy2_sdk_api.head_pb2 import (
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
 
+from ..components.antenna import Antenna
 from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import get_grpc_interpolation_mode, quaternion_from_euler_angles
 from .goto_based_part import IGoToBasedPart
@@ -91,6 +92,22 @@ class Head(JointsBasedPart, IGoToBasedPart):
             part=self,
             joints_position_order=[NeckJoints.ROLL, NeckJoints.PITCH, NeckJoints.YAW],
         )
+        self._l_antenna = Antenna(
+            uid=description.l_antenna.id.id,
+            name=description.l_antenna.id.name,
+            initial_state=initial_state.l_antenna_state,
+            grpc_channel=self._grpc_channel,
+            goto_stub=self._goto_stub,
+            part=self,
+        )
+        self._r_antenna = Antenna(
+            uid=description.r_antenna.id.id,
+            name=description.r_antenna.id.name,
+            initial_state=initial_state.r_antenna_state,
+            grpc_channel=self._grpc_channel,
+            goto_stub=self._goto_stub,
+            part=self,
+        )
 
     def __repr__(self) -> str:
         """Clean representation of an Head."""
@@ -103,6 +120,16 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def neck(self) -> Orbita3d:
         """Get the neck actuator of the head."""
         return self._neck
+
+    @property
+    def l_antenna(self) -> Antenna:
+        """Get the left antenna actuator of the head."""
+        return self._l_antenna
+
+    @property
+    def r_antenna(self) -> Antenna:
+        """Get the right antenna actuator of the head."""
+        return self._r_antenna
 
     def get_current_orientation(self) -> pyQuat:
         """Get the current orientation of the head.
@@ -453,6 +480,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
             return
         for actuator in self._actuators.values():
             actuator.send_goal_positions(check_positions)
+        self._l_antenna.send_goal_positions(check_positions)
+        self._r_antenna.send_goal_positions(check_positions)
 
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state from the gRPC server.
@@ -461,6 +490,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
             new_state: A HeadState object representing the new state of the head's actuators.
         """
         self.neck._update_with(new_state.neck_state)
+        self.l_antenna._update_with(new_state.l_antenna_state)
+        self.r_antenna._update_with(new_state.r_antenna_state)
 
     def _update_audit_status(self, new_status: HeadStatus) -> None:
         """Update the audit status of the neck with the new status from the gRPC server.
