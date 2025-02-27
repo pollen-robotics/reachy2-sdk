@@ -128,8 +128,6 @@ class Antenna(DynamixelMotor, IGoToBasedPart):
             interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
         )
 
-        print(f"request: {request}")
-
         response = self._goto_stub.GoToJoints(request)
 
         if response.id == -1:
