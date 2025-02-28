@@ -3,14 +3,17 @@
 Handles all specific methods to Antennas.
 """
 
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
 from grpc import Channel
 from reachy2_sdk_api.component_pb2 import ComponentId
 from reachy2_sdk_api.dynamixel_motor_pb2 import DynamixelMotor as DynamixelMotor_proto
-from reachy2_sdk_api.dynamixel_motor_pb2 import DynamixelMotorState
+from reachy2_sdk_api.dynamixel_motor_pb2 import (
+    DynamixelMotorState,
+    DynamixelMotorStatus,
+)
 from reachy2_sdk_api.goto_pb2 import GoToId, GoToRequest, JointsGoal
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import AntennaJointGoal
@@ -47,6 +50,12 @@ class Antenna(DynamixelMotor, IGoToBasedComponent):
         super().__init__(uid, name, initial_state, grpc_channel)
         IGoToBasedComponent.__init__(self, ComponentId(id=uid, name=name), goto_stub)
         self._part = part
+        self._error_status: Optional[str] = None
+        self._joints: Dict[str, Any]
+        if name == "antenna_left":
+            self._joints = {"l_antenna": self}
+        else:
+            self._joints = {"r_antenna": self}
 
     def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
@@ -161,3 +170,21 @@ class Antenna(DynamixelMotor, IGoToBasedComponent):
         elif wait:
             self._wait_goto(response, duration)
         return response
+
+    @property
+    def audit(self) -> Optional[str]:
+        """Get the current audit status of the actuator.
+
+        Returns:
+            The audit status as a string, representing the latest error or status
+            message, or `None` if there is no error.
+        """
+        pass
+
+    def _update_audit_status(self, new_status: DynamixelMotorStatus) -> None:
+        """Update the audit status based on the new status data.
+
+        Args:
+            new_status: The new status data, as a DynamixelMotorStatus object, containing error details.
+        """
+        pass

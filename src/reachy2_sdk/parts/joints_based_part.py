@@ -56,7 +56,10 @@ class JointsBasedPart(Part):
         _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
         for actuator_name, actuator in self._actuators.items():
             for joint in actuator._joints.values():
-                _joints[actuator_name + "." + joint._axis_type] = joint
+                if hasattr(joint, "_axis_type"):
+                    _joints[actuator_name + "." + joint._axis_type] = joint
+                else:
+                    _joints[actuator_name] = joint
         return _joints
 
     @abstractmethod
