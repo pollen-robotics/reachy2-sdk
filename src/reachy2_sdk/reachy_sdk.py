@@ -33,11 +33,11 @@ from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
-from .utils.goto_based_element import process_goto_request
 from .parts.head import Head
 from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
 from .utils.custom_dict import CustomDict
+from .utils.goto_based_element import process_goto_request
 from .utils.utils import SimplifiedRequest
 
 GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])

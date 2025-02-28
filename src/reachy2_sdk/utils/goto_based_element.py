@@ -1,6 +1,6 @@
-"""Reachy IGoToBasedPart interface.
+"""Reachy IGoToBasedElement interface.
 
-Handles common interface for parts performing movement using goto mechanism.
+Handles common interface for elements (parts or components) performing movements using goto mechanism.
 """
 
 import logging
@@ -10,9 +10,9 @@ from typing import Any, List, Optional
 
 import numpy as np
 from reachy2_sdk_api.component_pb2 import ComponentId
-from reachy2_sdk_api.part_pb2 import PartId
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToId, GoToRequest
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
+from reachy2_sdk_api.part_pb2 import PartId
 
 from ..utils.utils import (
     EllipticalParameters,
@@ -32,7 +32,7 @@ class IGoToBasedElement(ABC):
     """Interface for elements (parts or components) of Reachy that use goto functions.
 
     The `IGoToBasedElements` class defines a common interface for handling goto-based movements. It is
-    designed to be implemented by parts of the robot that perform movements via the goto mechanism.
+    designed to be implemented by any parts or components of the robot that perform movements via the goto mechanism.
     """
 
     def __init__(
@@ -40,15 +40,15 @@ class IGoToBasedElement(ABC):
         element_id: ComponentId | PartId,
         goto_stub: GoToServiceStub,
     ) -> None:
-        """Initialize the IGoToBasedPart interface.
+        """Initialize the IGoToBasedElement interface.
 
         Sets up the common attributes needed for handling goto-based movements. This includes
-        associating the part with the interface and setting up the gRPC stub for performing
+        associating the component with the interface and setting up the gRPC stub for performing
         goto commands.
 
         Args:
-            part: The robot part that uses this interface, such as an Arm or Head.
-            goto_stub: The gRPC stub used to send goto commands to the robot part.
+            element_id: The robot component or part that uses this interface.
+            goto_stub: The gRPC stub used to send goto commands to the robot element.
         """
         self._element_id = element_id
         self._goto_stub = goto_stub
@@ -80,7 +80,7 @@ class IGoToBasedElement(ABC):
             goto_id: The ID of the goto command for which details are requested.
 
         Returns:
-            A `SimplifiedRequest` object containing the part name, joint goal positions
+            A `SimplifiedRequest` object containing the element name, joint goal positions
             (in degrees), movement duration, and interpolation mode.
             Returns `None` if the robot is not connected or if the `goto_id` is invalid.
 
