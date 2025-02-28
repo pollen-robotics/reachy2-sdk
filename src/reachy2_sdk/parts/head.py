@@ -131,28 +131,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
         """Get the right antenna actuator of the head."""
         return self._r_antenna
 
-    def turn_on(self) -> None:
-        """Turn on all motors of the part, making all arm motors stiff.
-
-        If antennas are present, they will also be turned on.
-        """
-        if self._r_antenna is not None:
-            self._r_antenna.turn_on()
-        if self._l_antenna is not None:
-            self._l_antenna.turn_on()
-        super().turn_on()
-
-    def turn_off(self) -> None:
-        """Turn off all motors of the part, making all arm motors compliant.
-
-        If a gripper is present, it will also be turned off.
-        """
-        if self._r_antenna is not None:
-            self._r_antenna.turn_off()
-        if self._l_antenna is not None:
-            self._l_antenna.turn_off()
-        super().turn_off()
-
     def get_current_orientation(self) -> pyQuat:
         """Get the current orientation of the head.
 

@@ -44,9 +44,9 @@ class Antenna(DynamixelMotor, IGoToBasedComponent):
             goto_stub: The gRPC stub for controlling goto movements.
             part: The part to which this joint belongs.
         """
-        super().__init__(uid, name, initial_state, grpc_channel, part)
+        super().__init__(uid, name, initial_state, grpc_channel)
         IGoToBasedComponent.__init__(self, ComponentId(id=uid, name=name), goto_stub)
-        self._goto_stub = goto_stub
+        self._part = part
 
     def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.

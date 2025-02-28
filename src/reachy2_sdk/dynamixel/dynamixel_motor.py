@@ -17,7 +17,6 @@ from reachy2_sdk_api.dynamixel_motor_pb2 import (
 from reachy2_sdk_api.dynamixel_motor_pb2_grpc import DynamixelMotorServiceStub
 
 from ..orbita.utils import to_internal_position, to_position
-from ..parts.part import Part
 
 
 class DynamixelMotor:
@@ -34,7 +33,6 @@ class DynamixelMotor:
         name: str,
         initial_state: DynamixelMotorState,
         grpc_channel: Channel,
-        part: Part,
     ):
         """Initialize the DynamixelMotor with its initial state and configuration.
 
@@ -46,13 +44,11 @@ class DynamixelMotor:
             initial_state: A dictionary containing the initial state of the joint, with
                 each entry representing a specific parameter of the joint (e.g., present position).
             grpc_channel: The gRPC channel used to communicate with the DynamixelMotor service.
-            part: The part to which this motor belongs.
         """
         self._logger = logging.getLogger(__name__)
         self._name = name
         self._id = uid
         self._stub = DynamixelMotorServiceStub(grpc_channel)
-        self._part = part
         self._update_with(initial_state)
         self._outgoing_goal_position: Optional[float] = None
 
