@@ -13,13 +13,14 @@ from reachy2_sdk_api.goto_pb2 import GoToId, GoToRequest, JointsGoal
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
 from reachy2_sdk_api.hand_pb2 import (
+    HandJointGoal,
     HandPosition,
     HandPositionRequest,
     HandState,
     HandStatus,
     ParallelGripperPosition,
 )
-from reachy2_sdk_api.hand_pb2_grpc import HandJointGoal, HandServiceStub
+from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
 
 from ..orbita.utils import to_internal_position, to_position
 from ..utils.utils import get_grpc_interpolation_mode
