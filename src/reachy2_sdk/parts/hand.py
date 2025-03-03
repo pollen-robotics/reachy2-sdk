@@ -4,11 +4,13 @@ Handles all specific method to a Hand.
 """
 
 from collections import deque
-from typing import Deque, Optional
+from typing import Any, Deque, List, Optional
 
 import grpc
 import numpy as np
 from google.protobuf.wrappers_pb2 import FloatValue
+from reachy2_sdk_api.goto_pb2 import GoToId, GoToRequest, JointsGoal
+from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
 from reachy2_sdk_api.hand_pb2 import (
     HandPosition,
@@ -17,13 +19,15 @@ from reachy2_sdk_api.hand_pb2 import (
     HandStatus,
     ParallelGripperPosition,
 )
-from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
+from reachy2_sdk_api.hand_pb2_grpc import HandJointGoal, HandServiceStub
 
 from ..orbita.utils import to_internal_position, to_position
+from ..utils.utils import get_grpc_interpolation_mode
+from .goto_based_part import IGoToBasedPart
 from .part import Part
 
 
-class Hand(Part):
+class Hand(Part, IGoToBasedPart):
     """Class for controlling the Reachy's hand.
 
     The `Hand` class provides methods to control the gripper of Reachy, including opening and closing
@@ -41,6 +45,7 @@ class Hand(Part):
         hand_msg: Hand_proto,
         initial_state: HandState,
         grpc_channel: grpc.Channel,
+        goto_stub: GoToServiceStub,
     ) -> None:
         """Initialize the Hand component.
 
@@ -51,8 +56,10 @@ class Hand(Part):
             hand_msg: The Hand_proto object containing the configuration details for the hand.
             initial_state: The initial state of the hand, represented as a HandState object.
             grpc_channel: The gRPC channel used to communicate with the hand's gRPC service.
+            goto_stub: The gRPC stub for controlling goto movements.
         """
         super().__init__(hand_msg, grpc_channel, HandServiceStub(grpc_channel))
+        IGoToBasedPart.__init__(self, self._part_id, goto_stub)
         self._hand_stub = HandServiceStub(grpc_channel)
 
         self._is_moving = False
@@ -175,6 +182,24 @@ class Hand(Part):
             self._last_present_positions.clear()
         self._last_present_positions.append(present_position)
 
+    def _check_goto_parameters(self, target: Any, duration: Optional[float] = 0, q0: Optional[List[float]] = None) -> None:
+        """Check the validity of the parameters for the `goto` method.
+
+        Args:
+            duration: The time in seconds for the movement to be completed.
+            target: The target position, either a list of joint positions or a 4x4 pose matrix.
+            q0: An optional initial joint configuration for inverse kinematics. Defaults to None.
+
+        Raises:
+            TypeError: If the target is not a float or a int.
+            ValueError: If the duration is set to 0.
+        """
+        if not (isinstance(target, float) or isinstance(target, int)):
+            raise TypeError(f"Invalid target: must be either a float or a int, got {type(target)} instead.")
+
+        elif duration == 0:
+            raise ValueError("duration cannot be set to 0.")
+
     def get_current_opening(self) -> float:
         """Get the current opening of the hand.
 
@@ -254,6 +279,96 @@ class Hand(Part):
             )
             self._outgoing_goal_positions = None
             self._is_moving = True
+
+    def goto_posture(
+        self,
+        common_posture: str = "default",
+        duration: float = 2,
+        wait: bool = False,
+        wait_for_goto_end: bool = True,
+        interpolation_mode: str = "minimum_jerk",
+    ) -> GoToId:
+        """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode.
+
+        Args:
+            common_posture: The standard positions to which all joints will be sent.
+                It can be 'default' or 'elbow_90'. Defaults to 'default'.
+            duration: The time duration in seconds for the robot to move to the specified posture.
+                Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program waits for the movement to complete before continuing
+                execution. Defaults to `False`.
+            wait_for_goto_end: Specifies whether commands will be sent to a part immediately or
+                only after all previous commands in the queue have been executed. If set to `False`, the program
+                will cancel all executing moves and queues. Defaults to `True`.
+            interpolation_mode: The type of interpolation used when moving the arm's joints.
+                Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
+
+        Returns:
+            A unique GoToId identifier for this specific movement.
+        """
+        if not wait_for_goto_end:
+            self.cancel_all_goto()
+        if self.is_on():
+            return self.goto(0.0, duration, wait, interpolation_mode=interpolation_mode)
+        else:
+            self._logger.warning(f"{self._part_id.name} is off. No command sent.")
+        return GoToId(id=-1)
+
+    def goto(
+        self,
+        target: float | int,
+        duration: float = 2,
+        wait: bool = False,
+        interpolation_mode: str = "minimum_jerk",
+        degrees: bool = True,
+    ) -> GoToId:
+        """Move the hand to a specified goal position.
+
+        Args:
+            target: The target position. It can either be a float or int.
+            duration: The time in seconds for the movement to be completed. Defaults to 2.
+            wait: If True, the function waits until the movement is completed before returning.
+                    Defaults to False.
+            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk"
+                    or "linear". Defaults to "minimum_jerk".
+            degrees: If True, the joint values in the `target` argument are treated as degrees.
+                    Defaults to True.
+
+        Returns:
+            GoToId: The unique GoToId identifier for the movement command.
+        """
+        self._check_goto_parameters(target, duration)
+
+        if self.is_off():
+            self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
+            return GoToId(id=-1)
+
+        if degrees:
+            target = np.deg2rad(target)
+
+        request = GoToRequest(
+            joints_goal=JointsGoal(
+                hand_joint_goal=HandJointGoal(
+                    goal_request=HandPositionRequest(
+                        id=self._part_id,
+                        position=HandPosition(
+                            parallel_gripper=ParallelGripperPosition(position=FloatValue(value=self._outgoing_goal_positions))
+                        ),
+                    ),
+                    duration=FloatValue(value=duration),
+                )
+            ),
+            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
+        )
+
+        response = self._goto_stub.GoToJoints(request)
+
+        if response.id == -1:
+            self._logger.error(f"Position {target} was not reachable. No command sent.")
+        elif wait:
+            self._wait_goto(response, duration)
+        return response
 
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state from the gRPC server.
