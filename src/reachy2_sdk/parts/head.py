@@ -198,14 +198,16 @@ class Head(JointsBasedPart, IGoToBasedPart):
         This method moves the neck either to a given roll-pitch-yaw (RPY) position or to a quaternion orientation.
 
         Args:
-            target (Any): The desired orientation for the neck. Can either be:
+            target: The desired orientation for the neck. Can either be:
                 - A list of three floats [roll, pitch, yaw] representing the RPY orientation (in degrees if `degrees=True`).
                 - A pyQuat object representing a quaternion.
-            duration (float, optional): Time in seconds for the movement. Defaults to 2.0.
-            wait (bool, optional): Whether to wait for the movement to complete before returning. Defaults to False.
-            interpolation_mode (str, optional): The type of interpolation to be used for the movement.
-                                                Can be "minimum_jerk" or other modes. Defaults to "minimum_jerk".
-            degrees (bool, optional): Specifies if the RPY values in `target` are in degrees. Defaults to True.
+            duration: The time in seconds for the movement to be completed. Defaults to 2.
+            wait: If True, the function waits until the movement is completed before returning.
+                    Defaults to False.
+            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk"
+                    or "linear". Defaults to "minimum_jerk".
+            degrees: If True, the RPY values in the `target` argument are treated as degrees.
+                    Defaults to True.
 
         Raises:
             TypeError : If the input type for `target` is invalid
@@ -464,9 +466,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
         Returns:
             The unique GoToId associated with the movement command.
-
-        Raises:
-            ValueError: If the neck is off and the command cannot be sent.
         """
         if not wait_for_goto_end:
             self.cancel_all_goto()
