@@ -241,6 +241,15 @@ def process_goto_request(response: GoToRequest) -> Optional[SimplifiedRequest]:
             target_joints = np.rad2deg(response.joints_goal.antenna_joint_goal.joint_goal.value)
             duration = response.joints_goal.antenna_joint_goal.duration.value
             elliptical_params = None
+        elif response.joints_goal.HasField("hand_joint_goal"):
+            part = response.joints_goal.hand_joint_goal.goal_request.id.name
+            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+            interpolation_space = "joint_space"
+            duration = response.joints_goal.hand_joint_goal.duration.value
+            target_joints = np.rad2deg(
+                response.joints_goal.hand_joint_goal.goal_request.position.parallel_gripper.position.value
+            )
+            elliptical_params = None
 
         target = TargetJointsRequest(
             joints=target_joints,
