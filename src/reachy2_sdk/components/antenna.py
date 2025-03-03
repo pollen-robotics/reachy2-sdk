@@ -90,18 +90,19 @@ class Antenna(DynamixelMotor, IGoToBasedComponent):
         Args:
             common_posture: The standard positions to which all joints will be sent.
                 It can be 'default' or 'elbow_90'. Defaults to 'default'.
-            duration: The time in seconds for the neck to reach the target posture. Defaults to 2.
-            wait: Whether to wait for the movement to complete before returning. Defaults to False.
-            wait_for_goto_end: Whether to wait for all previous goto commands to finish before executing
-                the current command. If False, it cancels all ongoing commands. Defaults to True.
-            interpolation_mode: The interpolation mode for the movement, either "minimum_jerk" or "linear".
-                Defaults to "minimum_jerk".
+            duration: The time duration in seconds for the robot to move to the specified posture.
+                Defaults to 2.
+            wait: Determines whether the program should wait for the movement to finish before
+                returning. If set to `True`, the program waits for the movement to complete before continuing
+                execution. Defaults to `False`.
+            wait_for_goto_end: Specifies whether commands will be sent to a part immediately or
+                only after all previous commands in the queue have been executed. If set to `False`, the program
+                will cancel all executing moves and queues. Defaults to `True`.
+            interpolation_mode: The type of interpolation used when moving the arm's joints.
+                Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
 
         Returns:
             The unique GoToId associated with the movement command.
-
-        Raises:
-            ValueError: If the neck is off and the command cannot be sent.
         """
         if not wait_for_goto_end:
             self.cancel_all_goto()
@@ -119,19 +120,17 @@ class Antenna(DynamixelMotor, IGoToBasedComponent):
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
     ) -> GoToId:
-        """Send the neck to a specified orientation.
-
-        This method moves the neck either to a given roll-pitch-yaw (RPY) position or to a quaternion orientation.
+        """Send the antenna to a specified goal position.
 
         Args:
-            target (Any): The desired orientation for the neck. Can either be:
-                - A list of three floats [roll, pitch, yaw] representing the RPY orientation (in degrees if `degrees=True`).
-                - A pyQuat object representing a quaternion.
-            duration (float, optional): Time in seconds for the movement. Defaults to 2.0.
-            wait (bool, optional): Whether to wait for the movement to complete before returning. Defaults to False.
-            interpolation_mode (str, optional): The type of interpolation to be used for the movement.
-                                                Can be "minimum_jerk" or other modes. Defaults to "minimum_jerk".
-            degrees (bool, optional): Specifies if the RPY values in `target` are in degrees. Defaults to True.
+            target: The desired goal position for the antenna.
+            duration: The time in seconds for the movement to be completed. Defaults to 2.
+            wait: If True, the function waits until the movement is completed before returning.
+                    Defaults to False.
+            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk"
+                    or "linear". Defaults to "minimum_jerk".
+            degrees: If True, the joint value in the `target` argument is treated as degrees.
+                    Defaults to True.
 
         Raises:
             TypeError : If the input type for `target` is invalid
