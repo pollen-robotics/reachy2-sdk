@@ -42,7 +42,7 @@ def test_class() -> None:
         compliant=BoolValue(value=compliant),
     )
 
-    hand = Hand(hand_msg=hand_proto, initial_state=hand_state, grpc_channel=grpc_channel)
+    hand = Hand(hand_msg=hand_proto, initial_state=hand_state, grpc_channel=grpc_channel, goto_stub=None)
 
     assert hand.__repr__() != ""
 
