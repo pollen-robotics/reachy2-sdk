@@ -322,6 +322,7 @@ class Hand(Part, IGoToBasedPart):
         wait: bool = False,
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
+        percentage: float = False,
     ) -> GoToId:
         """Move the hand to a specified goal position.
 
@@ -334,6 +335,7 @@ class Hand(Part, IGoToBasedPart):
                     or "linear". Defaults to "minimum_jerk".
             degrees: If True, the joint values in the `target` argument are treated as degrees.
                     Defaults to True.
+            percentage: If True, the target value is treated as a percentage of opening. Defaults to False.
 
         Returns:
             GoToId: The unique GoToId identifier for the movement command.
@@ -344,17 +346,20 @@ class Hand(Part, IGoToBasedPart):
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
 
-        if degrees:
+        if degrees and not percentage:
             target = np.deg2rad(target)
+
+        if percentage:
+            parallel_gripper_target = ParallelGripperPosition(opening_percentage=FloatValue(value=target / 100.0))
+        else:
+            parallel_gripper_target = ParallelGripperPosition(position=FloatValue(value=target))
 
         request = GoToRequest(
             joints_goal=JointsGoal(
                 hand_joint_goal=HandJointGoal(
                     goal_request=HandPositionRequest(
                         id=self._part_id,
-                        position=HandPosition(
-                            parallel_gripper=ParallelGripperPosition(position=FloatValue(value=self._outgoing_goal_positions))
-                        ),
+                        position=HandPosition(parallel_gripper=parallel_gripper_target),
                     ),
                     duration=FloatValue(value=duration),
                 )
