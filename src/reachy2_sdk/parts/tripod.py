@@ -49,7 +49,7 @@ class Tripod:
         """Clean representation of the Tripod."""
         repr_template = "<Tripod height={height} >"
         return repr_template.format(
-            height=round(self.height, 2),
+            height=round(self.height, 3),
         )
 
     @property
