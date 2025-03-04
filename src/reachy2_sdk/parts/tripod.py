@@ -47,7 +47,7 @@ class Tripod:
 
     def __repr__(self) -> str:
         """Clean representation of the Tripod."""
-        repr_template = "< Tripod height={height} >"
+        repr_template = "<Tripod height={height} >"
         return repr_template.format(
             height=round(self.height, 2),
         )
@@ -67,7 +67,7 @@ class Tripod:
         if not limit_min <= height <= limit_max:
             self._logger.warning(f"Height value {height} is out of bounds. ")
             height = np.clip(height, limit_min, limit_max)
-            self._logger.warning(f"Setting height to the closest {height}.")
+            self._logger.warning(f"Setting height to {height}.")
         command = TripodCommand(
             part_id=self._part_id,
             height_position=FloatValue(value=height),
