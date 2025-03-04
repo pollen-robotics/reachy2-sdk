@@ -55,7 +55,7 @@ class Tripod:
     @property
     def height(self) -> float:
         """Get the current height of the robot torso in meters."""
-        return self._present_position
+        return float(np.round(self._present_position, 3))
 
     def set_height(self, height: float) -> None:
         """Set the height of the tripod.
