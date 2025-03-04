@@ -1,6 +1,6 @@
-"""Reachy DynamixelMotor module.
+"""Reachy Tripod module.
 
-Handles all specific methods to DynamixelMotor.
+Handles all specific methods to the tripod.
 """
 
 import logging
@@ -16,11 +16,9 @@ from reachy2_sdk_api.tripod_pb2_grpc import TripodServiceStub
 
 
 class Tripod:
-    """The DynamixelMotor class represents any Dynamixel motor.
+    """The Tripod class represents the fixed tripod of the robot.
 
-    The DynamixelMotor class is used to store the up-to-date state of the motor, especially:
-    - its present_position (RO)
-    - its goal_position (RW)
+    The Tripod class is used to update manually the robot tripod's height value.
     """
 
     def __init__(
@@ -29,9 +27,9 @@ class Tripod:
         initial_state: TripodState,
         grpc_channel: grpc.Channel,
     ):
-        """Initialize the DynamixelMotor with its initial state and configuration.
+        """Initialize the Tripod with its initial state and configuration.
 
-        This sets up the motor by assigning its state based on the provided initial values.
+        This sets up the tripod by assigning its state based on the provided initial values.
 
         Args:
             proto_msg: The protobuf message containing configuration details for the part.
@@ -48,7 +46,7 @@ class Tripod:
         self._update_with(initial_state)
 
     def __repr__(self) -> str:
-        """Clean representation of the DynamixelMotor."""
+        """Clean representation of the Tripod."""
         repr_template = "< Tripod height={height} >"
         return repr_template.format(
             height=round(self.height, 2),
@@ -56,7 +54,7 @@ class Tripod:
 
     @property
     def height(self) -> float:
-        """Get the present position of the joint in degrees."""
+        """Get the current height of the robot torso in meters."""
         return self._present_position
 
     def set_height(self, height: float) -> None:
