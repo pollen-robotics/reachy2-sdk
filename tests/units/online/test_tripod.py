@@ -1,18 +1,7 @@
 import time
 
 import pytest
-from google.protobuf.wrappers_pb2 import FloatValue
-from reachy2_sdk_api.part_pb2 import PartId
-from reachy2_sdk_api.tripod_pb2 import Tripod as Tripod_proto
-from reachy2_sdk_api.tripod_pb2 import (
-    TripodAxis,
-    TripodDescription,
-    TripodJoint,
-    TripodJointState,
-    TripodState,
-)
 
-from reachy2_sdk.parts.tripod import Tripod
 from reachy2_sdk.reachy_sdk import ReachySDK
 
 
