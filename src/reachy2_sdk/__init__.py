@@ -49,7 +49,10 @@ def check_reachy2_sdk_api_dependency(requirement: str) -> None:
     Also check if the used version of reachy2-sdk-api is higher than the minimal required version.
     """
     api_requirement = pkg_resources.Requirement.parse(requirement)
-    installed_version = reachy2_sdk_api.__version__
+    try:
+        installed_version = reachy2_sdk_api.__version__
+    except AttributeError:
+        installed_version = pkg_resources.get_distribution("reachy2-sdk-api").version
 
     if api_requirement.specifier.contains(installed_version):
         min_required_version = None
