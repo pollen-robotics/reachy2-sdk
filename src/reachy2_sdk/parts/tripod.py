@@ -62,7 +62,13 @@ class Tripod:
 
         Args:
             height: The height of the tripod in meters.
+
+        Raises:
+            TypeError: If the height is not a float or int.
         """
+        if not isinstance(height, float) and not isinstance(height, int):
+            raise TypeError(f"height should be a float or int (got {type(height)} instead)!")
+
         limit_min, limit_max = self.get_limits()
         if not limit_min <= height <= limit_max:
             self._logger.warning(f"Height value {height} is out of bounds. ")
@@ -91,7 +97,7 @@ class Tripod:
         """Update the present and goal positions of the joint with new state values.
 
         Args:
-            new_state: A dictionary containing the new state values for the joint. The keys should include
+            new_state: A TripodState containing the new state values for the joint. Should include
                 "present_position" and "goal_position", with corresponding FloatValue objects as values.
         """
         self._present_position = new_state.height.present_position.value
