@@ -52,3 +52,6 @@ def test_class() -> None:
 
     assert tripod.height == 3.0
     assert str(tripod) == "<Tripod height=3.0 >"
+
+    with pytest.raises(TypeError):
+        tripod.set_height("l")
