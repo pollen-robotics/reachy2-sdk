@@ -64,6 +64,9 @@ class Hand(Part, IGoToBasedPart):
         self._hand_stub = HandServiceStub(grpc_channel)
 
         self._is_moving = False
+        self._nb_steps_to_ignore = 0
+        self._steps_ignored = 0
+        self._last_goto_checked: Optional[int] = None
         self._last_present_positions_queue_size = 10
         self._last_present_positions: Deque[float] = deque(maxlen=self._last_present_positions_queue_size)
 
@@ -163,6 +166,11 @@ class Hand(Part, IGoToBasedPart):
         Returns:
             `True` if the gripper is moving, `False` otherwise.
         """
+        goto_playing = self.get_goto_playing()
+        if goto_playing.id != -1 and goto_playing.id != self._last_goto_checked:
+            self._is_moving = True
+            self._last_goto_checked = goto_playing.id
+            self._check_hand_movement(np.deg2rad(self.present_position))
         return self._is_moving
 
     def _check_hand_movement(self, present_position: float) -> None:
@@ -180,8 +188,13 @@ class Hand(Part, IGoToBasedPart):
             and np.isclose(present_position, self._last_present_positions[-2], np.deg2rad(0.1))
         ):
             self._is_moving = False
+            self._nb_steps_to_ignore = 0
+            self._steps_ignored = 0
             self._last_present_positions.clear()
-        self._last_present_positions.append(present_position)
+        if self._nb_steps_to_ignore > 0 and self._steps_ignored < self._nb_steps_to_ignore:
+            self._steps_ignored += 1
+        else:
+            self._last_present_positions.append(present_position)
 
     def _check_goto_parameters(self, target: Any, duration: Optional[float] = 0, q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
@@ -374,6 +387,9 @@ class Hand(Part, IGoToBasedPart):
             self._logger.error(f"Position {target} was not reachable. No command sent.")
         elif wait:
             self._wait_goto(response, duration)
+        self._is_moving = True
+        if interpolation_mode == "minimum_jerk":
+            self._nb_steps_to_ignore = 10
         return response
 
     def _update_with(self, new_state: HandState) -> None:
