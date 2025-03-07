@@ -3,6 +3,7 @@
 Handles all specific methods to Antennas.
 """
 
+import logging
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -24,7 +25,7 @@ from ..utils.utils import get_grpc_interpolation_mode
 from .goto_based_component import IGoToBasedComponent
 
 
-class Antenna(DynamixelMotor, IGoToBasedComponent):
+class Antenna(IGoToBasedComponent):
     """The Antenna class represents any antenna of the robot's head."""
 
     def __init__(
@@ -47,15 +48,16 @@ class Antenna(DynamixelMotor, IGoToBasedComponent):
             goto_stub: The gRPC stub for controlling goto movements.
             part: The part to which this joint belongs.
         """
-        super().__init__(uid, name, initial_state, grpc_channel)
+        self._logger = logging.getLogger(__name__)
         IGoToBasedComponent.__init__(self, ComponentId(id=uid, name=name), goto_stub)
         self._part = part
         self._error_status: Optional[str] = None
-        self._joints: Dict[str, Any]
+        self._joints: Dict[str, Any] = {}
         if name == "antenna_left":
-            self._joints = {"l_antenna": self}
+            self._name = "l_antenna"
         else:
-            self._joints = {"r_antenna": self}
+            self._name = "r_antenna"
+        self._joints[self._name] = DynamixelMotor(uid, name, initial_state, grpc_channel)
 
     def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
@@ -153,7 +155,7 @@ class Antenna(DynamixelMotor, IGoToBasedComponent):
                 antenna_joint_goal=AntennaJointGoal(
                     id=self._part._part_id,
                     antenna=DynamixelMotor_proto(
-                        id=ComponentId(id=self._id, name=self._name),
+                        id=ComponentId(id=self._joints[self._name]._id, name=self._joints[self._name]._name),
                     ),
                     joint_goal=FloatValue(value=target),
                     duration=FloatValue(value=duration),
@@ -169,6 +171,79 @@ class Antenna(DynamixelMotor, IGoToBasedComponent):
         elif wait:
             self._wait_goto(response, duration)
         return response
+
+    def __repr__(self) -> str:
+        """Clean representation of the Antenna only joint (DynamixelMotor)."""
+        return str(self._joints[self._name].__repr__())
+
+    def turn_on(self) -> None:
+        """Turn on the antenna's motor."""
+        self._joints[self._name].turn_on()
+
+    def turn_off(self) -> None:
+        """Turn off the antenna's motor."""
+        self._joints[self._name].turn_off()
+
+    def is_on(self) -> bool:
+        """Check if the antenna is currently stiff.
+
+        Returns:
+            `True` if the antenna's motor is stiff (not compliant), `False` otherwise.
+        """
+        return bool(self._joints[self._name].is_on())
+
+    @property
+    def present_position(self) -> float:
+        """Get the present position of the joint in degrees."""
+        return float(self._joints[self._name].present_position)
+
+    @property
+    def goal_position(self) -> float:
+        """Get the goal position of the joint in degrees."""
+        return float(self._joints[self._name].goal_position)
+
+    @goal_position.setter
+    def goal_position(self, value: float | int) -> None:
+        """Set the goal position of the joint in degrees.
+
+        The goal position is not send to the joint immediately, it is stored locally until the `send_goal_positions` method
+        is called.
+
+        Args:
+            value: The goal position to set, specified as a float or int.
+
+        Raises:
+            TypeError: If the provided value is not a float or int.
+        """
+        self._joints[self._name].goal_position = value
+
+    def send_goal_positions(self, check_positions: bool = True) -> None:
+        """Send goal positions to the motor.
+
+        If goal positions have been specified, sends them to the motor.
+        Args :
+            check_positions: A boolean indicating whether to check the positions after sending the command.
+                Defaults to True.
+        """
+        self._joints[self._name].send_goal_positions(check_positions)
+
+    def set_speed_limits(self, speed_limit: float | int) -> None:
+        """Set the speed limit as a percentage of the maximum speed the motor.
+
+        Args:
+            speed_limit: The desired speed limit as a percentage (0-100) of the maximum speed. Can be
+                specified as a float or int.
+        """
+        self._joints[self._name].set_speed_limits(speed_limit)
+
+    def _update_with(self, new_state: DynamixelMotorState) -> None:
+        """Update the present and goal positions of the joint with new state values.
+
+        Args:
+            new_state: A dictionary containing the new state values for the joint. The keys should include
+                "present_position" and "goal_position", with corresponding FloatValue objects as values.
+        """
+        self._joints[self._name]._update_with(new_state)
 
     @property
     def audit(self) -> Optional[str]:
