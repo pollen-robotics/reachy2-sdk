@@ -302,11 +302,11 @@ class Hand(Part, IGoToBasedPart):
         wait_for_goto_end: bool = True,
         interpolation_mode: str = "minimum_jerk",
     ) -> GoToId:
-        """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode.
+        """Send the gripper to default open posture with optional parameters for duration, waiting, and interpolation mode.
 
         Args:
-            common_posture: The standard positions to which all joints will be sent.
-                It can be 'default' or 'elbow_90'. Defaults to 'default'.
+            common_posture: The standard posture. It can be 'default' or 'elbow_90'. Defaults to 'default'.
+                Modifying the posture has no effect on the hand.
             duration: The time duration in seconds for the robot to move to the specified posture.
                 Defaults to 2.
             wait: Determines whether the program should wait for the movement to finish before
@@ -315,7 +315,7 @@ class Hand(Part, IGoToBasedPart):
             wait_for_goto_end: Specifies whether commands will be sent to a part immediately or
                 only after all previous commands in the queue have been executed. If set to `False`, the program
                 will cancel all executing moves and queues. Defaults to `True`.
-            interpolation_mode: The type of interpolation used when moving the arm's joints.
+            interpolation_mode: The type of interpolation used when moving the gripper.
                 Can be 'minimum_jerk' or 'linear'. Defaults to 'minimum_jerk'.
 
         Returns:
@@ -324,7 +324,7 @@ class Hand(Part, IGoToBasedPart):
         if not wait_for_goto_end:
             self.cancel_all_goto()
         if self.is_on():
-            return self.goto(0.0, duration, wait, interpolation_mode=interpolation_mode)
+            return self.goto(100.0, duration, wait, percentage=True, interpolation_mode=interpolation_mode)
         else:
             self._logger.warning(f"{self._part_id.name} is off. No command sent.")
         return GoToId(id=-1)
