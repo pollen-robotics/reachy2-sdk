@@ -19,10 +19,12 @@ And you're ready to use Reachy!
 """
 import configparser
 import os
+from importlib.metadata import PackageNotFoundError, version
 from typing import List
 
-import pkg_resources
 import reachy2_sdk_api
+from packaging.requirements import Requirement
+from packaging.version import parse
 
 from .reachy_sdk import ReachySDK  # noqa: F401
 
@@ -48,32 +50,40 @@ def check_reachy2_sdk_api_dependency(requirement: str) -> None:
 
     Also check if the used version of reachy2-sdk-api is higher than the minimal required version.
     """
-    api_requirement = pkg_resources.Requirement.parse(requirement)
+    api_requirement = Requirement(requirement)
+
     try:
         installed_version = reachy2_sdk_api.__version__
     except AttributeError:
-        installed_version = pkg_resources.get_distribution("reachy2-sdk-api").version
+        try:
+            installed_version = version("reachy2-sdk-api")
+        except PackageNotFoundError:
+            raise ImportError("❌ reachy2-sdk-api is NOT installed!")
 
-    if api_requirement.specifier.contains(installed_version):
+    installed_parsed = parse(installed_version)
+
+    if installed_parsed in api_requirement.specifier:
         min_required_version = None
         for spec in api_requirement.specifier:
             if spec.operator in (">=", "=="):
-                min_required_version = spec.version
+                min_required_version = parse(spec.version)
                 break
+
         if min_required_version is None:
             raise ValueError(f"❌ No valid minimum version found in '{api_requirement}'")
 
-        installed_parsed = pkg_resources.parse_version(installed_version)
-        min_parsed = pkg_resources.parse_version(min_required_version)
-        if installed_parsed > min_parsed:
+        if installed_parsed > min_required_version:
             print(
                 f"Installed version of reachy2-sdk-api {installed_version} is higher than"
-                f" the minimal requirements {min_required_version},"
+                f" the minimal requirement {min_required_version},"
                 " a newer version of reachy2-sdk may be available."
             )
     else:
-        dist = pkg_resources.Distribution(project_name=api_requirement.project_name, version=installed_version)
-        raise pkg_resources.VersionConflict(dist, api_requirement)
+        raise ValueError(
+            f"⚠️  Version conflict for reachy2-sdk-api:"
+            f"\n\tInstalled {installed_version},"
+            f"\n\tRequired {api_requirement.specifier}"
+        )
 
 
 def check_dependencies() -> None:
@@ -84,14 +94,16 @@ def check_dependencies() -> None:
             if requirement.startswith("reachy2-sdk-api"):
                 check_reachy2_sdk_api_dependency(requirement)
             else:
-                pkg_resources.require(requirement)
-        except pkg_resources.VersionConflict as e:
-            print(
-                f"⚠️  Version conflict for {e.dist.key}: \n\tInstalled {e.dist.version}, "
-                f" \n\tRequired {requirement.split(e.dist.key)[-1]}"
-            )
-        except pkg_resources.DistributionNotFound as e:
-            print(f"❌ Missing dependency : {e.req.name}")
+                req = Requirement(requirement)
+                installed_version = version(req.name)
+                if parse(installed_version) not in req.specifier:
+                    raise ValueError(
+                        f"⚠️  Version conflict for {req.name}: \n\tInstalled {installed_version}, \n\tRequired {req.specifier}"
+                    )
+        except PackageNotFoundError:
+            print(f"❌ Missing dependency: {requirement}")
+        except ValueError as e:
+            print(e)
 
 
 check_dependencies()
