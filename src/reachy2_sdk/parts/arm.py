@@ -425,8 +425,8 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                     Defaults to False.
             interpolation_space: The space in which the interpolation should be performed. It can
                     be either "joint_space" or "cartesian_space". Defaults to "joint_space".
-            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk"
-                    or "linear". Defaults to "minimum_jerk".
+            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk",
+                    "linear" or "elliptical". Defaults to "minimum_jerk".
             degrees: If True, the joint values in the `target` argument are treated as degrees.
                     Defaults to True.
             q0: An optional list of 7 joint values representing the initial configuration
