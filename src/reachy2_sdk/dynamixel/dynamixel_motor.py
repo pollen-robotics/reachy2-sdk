@@ -100,7 +100,7 @@ class DynamixelMotor:
         Raises:
             TypeError: If the provided value is not a float or int.
         """
-        if isinstance(value, float) | isinstance(value, int):
+        if isinstance(value, float) or isinstance(value, int):
             self._outgoing_goal_position = to_internal_position(value)
         else:
             raise TypeError("goal_position must be a float or int")

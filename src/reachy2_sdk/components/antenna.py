@@ -64,7 +64,7 @@ class Antenna(IGoToBasedComponent):
 
         Args:
             duration: The time in seconds for the movement to be completed.
-            target: The target position, either a list of joint positions or a quaternion.
+            target: The target position, either a float or int.
 
         Raises:
             TypeError: If the target is not a list or a quaternion.
@@ -76,6 +76,8 @@ class Antenna(IGoToBasedComponent):
 
         elif duration == 0:
             raise ValueError("duration cannot be set to 0.")
+        elif duration is not None and duration < 0:
+            raise ValueError("duration cannot be negative.")
 
     def goto_posture(
         self,

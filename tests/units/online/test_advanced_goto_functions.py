@@ -824,7 +824,7 @@ def test_rotate_by_robot_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req8 = reachy_sdk_zeroed.r_arm.rotate_by(50, -20, 70, frame="robot")
 
     with pytest.raises(ValueError):
-        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req8).request.goal_positions)
+        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req8).request.target.joints)
 
 
 @pytest.mark.online
@@ -893,7 +893,7 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req8 = reachy_sdk_zeroed.r_arm.rotate_by(50, -80, 70, frame="gripper")
 
     with pytest.raises(ValueError):
-        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req8).request.goal_positions)
+        reachy_sdk_zeroed.r_arm.forward_kinematics(reachy_sdk_zeroed.get_goto_request(req8).request.target.joints)
 
 
 @pytest.mark.online
