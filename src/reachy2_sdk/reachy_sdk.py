@@ -36,6 +36,7 @@ from .parts.arm import Arm
 from .parts.head import Head
 from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
+from .parts.tripod import Tripod
 from .utils.custom_dict import CustomDict
 from .utils.goto_based_element import process_goto_request
 from .utils.utils import SimplifiedRequest
@@ -105,6 +106,7 @@ class ReachySDK:
         self._cameras: Optional[CameraManager] = None
         self._mobile_base: Optional[MobileBase] = None
         self._info: Optional[ReachyInfo] = None
+        self._tripod: Optional[Tripod] = None
 
         self._update_timestamp: Timestamp = Timestamp(seconds=0)
 
@@ -239,6 +241,17 @@ class ReachySDK:
             self._logger.error("mobile_base does not exist with this configuration")
             return None
         return self._mobile_base
+
+    @property
+    def tripod(self) -> Optional[Tripod]:
+        """Get Reachy's fixed tripod."""
+        if not self._grpc_connected:
+            self._logger.error("Cannot get tripod, not connected to Reachy")
+            return None
+        if self._tripod is None:
+            self._logger.error("tripod does not exist with this configuration")
+            return None
+        return self._tripod
 
     @property
     def joints(self) -> CustomDict[str, OrbitaJoint]:
@@ -406,6 +419,16 @@ class ReachySDK:
             else:
                 self.info._disabled_parts.append("head")
 
+    def _setup_part_tripod(self, initial_state: ReachyState) -> None:
+        """Set up the robot's tripod based on the initial state."""
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
+
+        if self._robot.HasField("tripod"):
+            tripod = Tripod(self._robot.tripod, initial_state.tripod_state, self._grpc_channel)
+            self._tripod = tripod
+
     def _setup_parts(self) -> None:
         """Initialize all parts of the robot.
 
@@ -419,6 +442,7 @@ class ReachySDK:
         self._setup_part_l_arm(initial_state)
         self._setup_part_head(initial_state)
         self._setup_part_mobile_base(initial_state)
+        self._setup_part_tripod(initial_state)
 
     def get_update_timestamp(self) -> int:
         """Returns the timestamp (ns) of the last update.
@@ -451,6 +475,7 @@ class ReachySDK:
                 self._update_part(self._r_arm, state_update.r_arm_state)
                 self._update_part(self._head, state_update.head_state)
                 self._update_part(self._mobile_base, state_update.mobile_base_state)
+                self._update_part(self._tripod, state_update.tripod_state)
 
                 if self._l_arm and self._l_arm.gripper:
                     self._l_arm.gripper._update_with(state_update.l_hand_state)

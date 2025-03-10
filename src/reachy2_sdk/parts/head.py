@@ -422,7 +422,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             joints_request = None
 
         if joints_request is not None:
-            initial_orientation = joints_request.request.goal_positions
+            initial_orientation = joints_request.request.target.joints
 
             # as there is a 10° offset between the joint space
             # and the zero position in cartesian space in Reachy's frame for the yaw joint :

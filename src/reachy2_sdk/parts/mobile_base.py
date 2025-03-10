@@ -357,7 +357,6 @@ class MobileBase(Part, IGoToBasedPart):
         x_goal = base_odom["x"] + (x * np.cos(theta_goal) - y * np.sin(theta_goal))
         y_goal = base_odom["y"] + (x * np.sin(theta_goal) + y * np.cos(theta_goal))
 
-        print(f"x_goal : {x_goal}, y_goal : {y_goal}, theta_goal : {theta_goal}")
         return self.goto(
             x_goal,
             y_goal,
