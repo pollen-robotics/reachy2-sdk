@@ -16,17 +16,29 @@ import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
 from pyquaternion import Quaternion
 from reachy2_sdk_api.arm_pb2 import ArmPosition
-from reachy2_sdk_api.goto_pb2 import GoToInterpolation, InterpolationMode
+from reachy2_sdk_api.goto_pb2 import (
+    ArcDirection,
+    GoToInterpolation,
+    GoToInterpolationSpace,
+    InterpolationMode,
+    InterpolationSpace,
+)
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita2d_pb2 import Pose2d
 
 SimplifiedRequest = namedtuple("SimplifiedRequest", ["part", "request"])
 """Named tuple for easy access to request variables"""
 
-JointsRequest = namedtuple("JointsRequest", ["goal_positions", "duration", "mode"])
+JointsRequest = namedtuple("JointsRequest", ["target", "duration", "mode", "interpolation_space", "elliptical_parameters"])
 """Named tuple for easy access to request variables"""
 
-OdometryRequest = namedtuple("OdometryRequest", ["goal_positions", "timeout", "distance_tolerance", "angle_tolerance"])
+TargetJointsRequest = namedtuple("TargetJointsRequest", ["joints", "pose"])
+"""Named tuple for easy access to target details"""
+
+OdometryRequest = namedtuple("OdometryRequest", ["target", "timeout", "distance_tolerance", "angle_tolerance"])
+"""Named tuple for easy access to request variables"""
+
+EllipticalParameters = namedtuple("EllipticalParameters", ["arc_direction", "secondary_radius"])
 """Named tuple for easy access to request variables"""
 
 
@@ -147,23 +159,53 @@ def get_grpc_interpolation_mode(interpolation_mode: str) -> GoToInterpolation:
 
     Args:
         interpolation_mode: A string representing the type of interpolation to be used. It can be either
-            "minimum_jerk" or "linear".
+            "minimum_jerk", "linear" or "elliptical".
 
     Returns:
         An instance of the GoToInterpolation class with the interpolation type set based on the input
         interpolation_mode string.
 
     Raises:
-        ValueError: If the interpolation_mode is not "minimum_jerk" or "linear".
+        ValueError: If the interpolation_mode is not "minimum_jerk", "linear" or "elliptical".
     """
-    if interpolation_mode not in ["minimum_jerk", "linear"]:
-        raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
+    if interpolation_mode not in ["minimum_jerk", "linear", "elliptical"]:
+        raise ValueError(
+            f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk', 'linear' or 'elliptical'"
+        )
 
     if interpolation_mode == "minimum_jerk":
         interpolation_mode = InterpolationMode.MINIMUM_JERK
-    else:
+    elif interpolation_mode == "linear":
         interpolation_mode = InterpolationMode.LINEAR
+    else:
+        interpolation_mode = InterpolationMode.ELLIPTICAL
     return GoToInterpolation(interpolation_type=interpolation_mode)
+
+
+def get_grpc_interpolation_space(interpolation_space: str) -> GoToInterpolationSpace:
+    """Convert a given interpolation space string to a corresponding GoToInterpolationSpace object.
+
+    Args:
+        interpolation_space: A string representing the interpolation space to be used. It can be either
+            "joint_space" or "cartesian_space".
+
+    Returns:
+        An instance of the GoToInterpolationSpace class with the interpolation type set based on the input
+        interpolation_space string.
+
+    Raises:
+        ValueError: If the interpolation_space is not "joint_space" or "cartesian_space".
+    """
+    if interpolation_space not in ["joint_space", "cartesian_space"]:
+        raise ValueError(
+            f"Interpolation space {interpolation_space} not supported! Should be 'joint_space' or 'cartesian_space'"
+        )
+
+    if interpolation_space == "joint_space":
+        interpolation_space = InterpolationSpace.JOINT_SPACE
+    else:
+        interpolation_space = InterpolationSpace.CARTESIAN_SPACE
+    return GoToInterpolationSpace(interpolation_space=interpolation_space)
 
 
 def get_interpolation_mode(interpolation_mode: InterpolationMode) -> str:
@@ -171,24 +213,132 @@ def get_interpolation_mode(interpolation_mode: InterpolationMode) -> str:
 
     Args:
         interpolation_mode: The interpolation mode given as InterpolationMode. The supported interpolation
-            modes are MINIMUM_JERK and LINEAR.
+            modes are MINIMUM_JERK, LINEAR and ELLIPTICAL.
 
     Returns:
         A string representing the interpolation mode based on the input interpolation_mode. Returns
-        "minimum_jerk" if the mode is InterpolationMode.MINIMUM_JERK, and "linear" if it is
-        InterpolationMode.LINEAR.
+        "minimum_jerk" if the mode is InterpolationMode.MINIMUM_JERK, "linear" if it is
+        InterpolationMode.LINEAR, and "elliptical" if it is InterpolationMode.ELLIPTICAL.
 
     Raises:
-        ValueError: If the interpolation_mode is not InterpolationMode.MINIMUM_JERK or InterpolationMode.LINEAR.
+        ValueError: If the interpolation_mode is not InterpolationMode.MINIMUM_JERK, InterpolationMode.LINEAR
+        or InterpolationMode.ELLIPTICAL.
     """
-    if interpolation_mode not in [InterpolationMode.MINIMUM_JERK, InterpolationMode.LINEAR]:
-        raise ValueError(f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk' or 'linear'")
+    if interpolation_mode not in [InterpolationMode.MINIMUM_JERK, InterpolationMode.LINEAR, InterpolationMode.ELLIPTICAL]:
+        raise ValueError(
+            f"Interpolation mode {interpolation_mode} not supported! Should be 'minimum_jerk', 'linear' or 'elliptical'"
+        )
 
     if interpolation_mode == InterpolationMode.MINIMUM_JERK:
         mode = "minimum_jerk"
-    else:
+    elif interpolation_mode == InterpolationMode.LINEAR:
         mode = "linear"
+    else:
+        mode = "elliptical"
     return mode
+
+
+def get_interpolation_space(interpolation_space: InterpolationSpace) -> str:
+    """Convert an interpolation space enum to a string representation.
+
+    Args:
+        interpolation_space: The interpolation space given as InterpolationSpace. The supported interpolation
+            modes are JOINT_SPACE and CARTESIAN_SPACE.
+
+    Returns:
+        A string representing the interpolation mode based on the input interpolation_space. Returns
+        "joint_space" if the mode is InterpolationSpace.JOINT_SPACE, and "cartesian_space" if it is
+        InterpolationSpace.CARTESIAN_SPACE.
+
+    Raises:
+        ValueError: If the interpolation_space is not InterpolationSpace.JOINT_SPACE or InterpolationSpace.CARTESIAN_SPACE.
+    """
+    if interpolation_space not in [InterpolationSpace.JOINT_SPACE, InterpolationSpace.CARTESIAN_SPACE]:
+        raise ValueError(
+            f"Interpolation space {interpolation_space} not supported! Should be 'joint_space' or 'cartesian_space'"
+        )
+
+    if interpolation_space == InterpolationSpace.CARTESIAN_SPACE:
+        space = "cartesian_space"
+    else:
+        space = "joint_space"
+    return space
+
+
+def get_grpc_arc_direction(arc_direction: str) -> ArcDirection:
+    """Convert a given arc direction string to a corresponding ArcDirection object.
+
+    Args:
+        arc_direction: A string representing the direction of the arc. It can be one of the following options:
+            "above", "below", "front", "back", "right", or "left".
+
+    Returns:
+        An instance of the ArcDirection class with the direction set based on the input arc_direction string.
+
+    Raises:
+        ValueError: If the arc_direction is not one of "above", "below", "front", "back", "right", or "left".
+    """
+    if arc_direction not in ["above", "below", "front", "back", "right", "left"]:
+        raise ValueError(
+            f"Arc direction {arc_direction} not supported! Should be 'above', 'below', 'front', 'back', 'right' or 'left'"
+        )
+
+    if arc_direction == "above":
+        arc_direction = ArcDirection.ABOVE
+    elif arc_direction == "below":
+        arc_direction = ArcDirection.BELOW
+    elif arc_direction == "front":
+        arc_direction = ArcDirection.FRONT
+    elif arc_direction == "back":
+        arc_direction = ArcDirection.BACK
+    elif arc_direction == "right":
+        arc_direction = ArcDirection.RIGHT
+    else:
+        arc_direction = ArcDirection.LEFT
+    return arc_direction
+
+
+def get_arc_direction(arc_direction: ArcDirection) -> str:
+    """Convert an arc direction enum to a string representation.
+
+    Args:
+        arc_direction: The arc direction given as ArcDirection. The supported arc directions are ABOVE, BELOW, FRONT,
+            BACK, RIGHT, and LEFT.
+
+    Returns:
+        A string representing the arc direction based on the input arc_direction. Returns "above" if the direction is
+        ArcDirection.ABOVE, "below" if it is ArcDirection.BELOW, "front" if it is ArcDirection.FRONT, "back" if it is
+        ArcDirection.BACK, "right" if it is ArcDirection.RIGHT, and "left" if it is ArcDirection.LEFT.
+
+    Raises:
+        ValueError: If the arc_direction is not ArcDirection.ABOVE, ArcDirection.BELOW, ArcDirection.FRONT, ArcDirection.BACK,
+        ArcDirection.RIGHT, or ArcDirection.LEFT.
+    """
+    if arc_direction not in [
+        ArcDirection.ABOVE,
+        ArcDirection.BELOW,
+        ArcDirection.FRONT,
+        ArcDirection.BACK,
+        ArcDirection.RIGHT,
+        ArcDirection.LEFT,
+    ]:
+        raise ValueError(
+            f"Arc direction {arc_direction} not supported! Should be 'above', 'below', 'front', 'back', 'right' or 'left'"
+        )
+
+    if arc_direction == ArcDirection.ABOVE:
+        direction = "above"
+    elif arc_direction == ArcDirection.BELOW:
+        direction = "below"
+    elif arc_direction == ArcDirection.FRONT:
+        direction = "front"
+    elif arc_direction == ArcDirection.BACK:
+        direction = "back"
+    elif arc_direction == ArcDirection.RIGHT:
+        direction = "right"
+    else:
+        direction = "left"
+    return direction
 
 
 def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Tuple[Quaternion, npt.NDArray[np.float64]]:

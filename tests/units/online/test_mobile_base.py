@@ -288,9 +288,9 @@ def test_mobile_base_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         assert is_goto_finished(reachy_sdk_zeroed, goto3)
         request3 = reachy_sdk_zeroed.get_goto_request(goto3)
         assert request3.part == "mobile_base"
-        assert np.isclose(request3.request.goal_positions["x"], 0.0, atol=1e-03)
-        assert np.isclose(request3.request.goal_positions["y"], -0.4, atol=1e-03)
-        assert np.isclose(request3.request.goal_positions["theta"], 30, atol=1e-03)
+        assert np.isclose(request3.request.target["x"], 0.0, atol=1e-03)
+        assert np.isclose(request3.request.target["y"], -0.4, atol=1e-03)
+        assert np.isclose(request3.request.target["theta"], 30, atol=1e-03)
         assert np.isclose(request3.request.distance_tolerance, 0.05, atol=1e-03)
         assert np.isclose(request3.request.angle_tolerance, 5, atol=1e-03)
 
@@ -301,9 +301,9 @@ def test_mobile_base_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         assert is_goto_finished(reachy_sdk_zeroed, goto4)
         request4 = reachy_sdk_zeroed.get_goto_request(goto4)
         assert request4.part == "mobile_base"
-        assert np.isclose(request4.request.goal_positions["x"], -0.2, atol=1e-03)
-        assert np.isclose(request4.request.goal_positions["y"], 0.3, atol=1e-03)
-        assert np.isclose(request4.request.goal_positions["theta"], 70, atol=1e-03)
+        assert np.isclose(request4.request.target["x"], -0.2, atol=1e-03)
+        assert np.isclose(request4.request.target["y"], 0.3, atol=1e-03)
+        assert np.isclose(request4.request.target["theta"], 70, atol=1e-03)
         assert np.isclose(request4.request.distance_tolerance, 0.02, atol=1e-03)
         assert np.isclose(request4.request.angle_tolerance, 2, atol=1e-03)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
@@ -314,9 +314,9 @@ def test_mobile_base_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         goto5 = reachy_sdk_zeroed.mobile_base.goto(x=0, y=0.3, theta=np.deg2rad(60), distance_tolerance=0.02, degrees=False)
         request5 = reachy_sdk_zeroed.get_goto_request(goto5)
         assert request5.part == "mobile_base"
-        assert np.isclose(request5.request.goal_positions["x"], 0, atol=1e-03)
-        assert np.isclose(request5.request.goal_positions["y"], 0.3, atol=1e-03)
-        assert np.isclose(request5.request.goal_positions["theta"], 60, atol=1e-03)
+        assert np.isclose(request5.request.target["x"], 0, atol=1e-03)
+        assert np.isclose(request5.request.target["y"], 0.3, atol=1e-03)
+        assert np.isclose(request5.request.target["theta"], 60, atol=1e-03)
         assert np.isclose(request5.request.distance_tolerance, 0.02, atol=1e-03)
         assert np.isclose(request5.request.angle_tolerance, 5, atol=1e-03)
 
@@ -329,9 +329,9 @@ def test_mobile_base_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         )
         request6 = reachy_sdk_zeroed.get_goto_request(goto6)
         assert request6.part == "mobile_base"
-        assert np.isclose(request6.request.goal_positions["x"], 0, atol=1e-03)
-        assert np.isclose(request6.request.goal_positions["y"], 0.3, atol=1e-03)
-        assert np.isclose(request6.request.goal_positions["theta"], 40, atol=1e-03)
+        assert np.isclose(request6.request.target["x"], 0, atol=1e-03)
+        assert np.isclose(request6.request.target["y"], 0.3, atol=1e-03)
+        assert np.isclose(request6.request.target["theta"], 40, atol=1e-03)
         assert np.isclose(request6.request.distance_tolerance, 0.02, atol=1e-03)
         assert np.isclose(request6.request.angle_tolerance, 2, atol=1e-03)
 
@@ -359,9 +359,9 @@ def test_mobile_base_goto_timeout(reachy_sdk_zeroed: ReachySDK) -> None:
 
         request1 = reachy_sdk_zeroed.get_goto_request(goto1)
         assert request1.part == "mobile_base"
-        assert np.isclose(request1.request.goal_positions["x"], 0.8, atol=1e-03)
-        assert np.isclose(request1.request.goal_positions["y"], 0.5, atol=1e-03)
-        assert np.isclose(request1.request.goal_positions["theta"], 80, atol=1e-03)
+        assert np.isclose(request1.request.target["x"], 0.8, atol=1e-03)
+        assert np.isclose(request1.request.target["y"], 0.5, atol=1e-03)
+        assert np.isclose(request1.request.target["theta"], 80, atol=1e-03)
         assert np.isclose(request1.request.timeout, 1, atol=1e-03)
 
         tic = time.time()
@@ -376,9 +376,9 @@ def test_mobile_base_goto_timeout(reachy_sdk_zeroed: ReachySDK) -> None:
 
         request2 = reachy_sdk_zeroed.get_goto_request(goto2)
         assert request1.part == "mobile_base"
-        assert np.isclose(request2.request.goal_positions["x"], 0.0, atol=1e-03)
-        assert np.isclose(request2.request.goal_positions["y"], -0.2, atol=1e-03)
-        assert np.isclose(request2.request.goal_positions["theta"], 0, atol=1e-03)
+        assert np.isclose(request2.request.target["x"], 0.0, atol=1e-03)
+        assert np.isclose(request2.request.target["y"], -0.2, atol=1e-03)
+        assert np.isclose(request2.request.target["theta"], 0, atol=1e-03)
         assert np.isclose(request2.request.timeout, 0.8, atol=1e-03)
 
 
@@ -409,9 +409,9 @@ def test_mobile_base_goto_tolerances(reachy_sdk_zeroed: ReachySDK) -> None:
 
         request1 = reachy_sdk_zeroed.get_goto_request(goto1)
         assert request1.part == "mobile_base"
-        assert np.isclose(request1.request.goal_positions["x"], 0.9, atol=1e-03)
-        assert np.isclose(request1.request.goal_positions["y"], 0.9, atol=1e-03)
-        assert np.isclose(request1.request.goal_positions["theta"], 80, atol=1e-03)
+        assert np.isclose(request1.request.target["x"], 0.9, atol=1e-03)
+        assert np.isclose(request1.request.target["y"], 0.9, atol=1e-03)
+        assert np.isclose(request1.request.target["theta"], 80, atol=1e-03)
         assert np.isclose(request1.request.distance_tolerance, 0.2, atol=1e-03)
         assert np.isclose(request1.request.angle_tolerance, 5, atol=1e-03)
 
@@ -475,9 +475,9 @@ def test_mobile_base_translate_by(reachy_sdk_zeroed: ReachySDK) -> None:
         assert is_goto_finished(reachy_sdk_zeroed, trans0)
         request0 = reachy_sdk_zeroed.get_goto_request(trans0)
         assert request0.part == "mobile_base"
-        assert np.isclose(request0.request.goal_positions["x"], odom["x"] + 0.1, atol=1e-02)
-        assert np.isclose(request0.request.goal_positions["y"], odom["x"] + 0.1, atol=1e-02)
-        assert np.isclose(request0.request.goal_positions["theta"], odom["theta"], atol=1e-02)
+        assert np.isclose(request0.request.target["x"], odom["x"] + 0.1, atol=1e-02)
+        assert np.isclose(request0.request.target["y"], odom["x"] + 0.1, atol=1e-02)
+        assert np.isclose(request0.request.target["theta"], odom["theta"], atol=1e-02)
         assert np.isclose(request0.request.distance_tolerance, 0.05, atol=1e-03)
         assert np.isclose(request0.request.angle_tolerance, 5, atol=1e-03)
 
@@ -490,16 +490,16 @@ def test_mobile_base_translate_by(reachy_sdk_zeroed: ReachySDK) -> None:
         request2 = reachy_sdk_zeroed.get_goto_request(trans2)
 
         assert request1.part == "mobile_base"
-        assert np.isclose(request1.request.goal_positions["x"], 0.9, atol=1e-03)
-        assert np.isclose(request1.request.goal_positions["y"], -0.1, atol=1e-03)
-        assert np.isclose(request1.request.goal_positions["theta"], 0, atol=1e-03)
+        assert np.isclose(request1.request.target["x"], 0.9, atol=1e-03)
+        assert np.isclose(request1.request.target["y"], -0.1, atol=1e-03)
+        assert np.isclose(request1.request.target["theta"], 0, atol=1e-03)
         assert np.isclose(request1.request.distance_tolerance, 0.05, atol=1e-03)
         assert np.isclose(request1.request.angle_tolerance, 2, atol=1e-03)
 
         assert request2.part == "mobile_base"
-        assert np.isclose(request2.request.goal_positions["x"], 1.4, atol=1e-03)
-        assert np.isclose(request2.request.goal_positions["y"], 0.2, atol=1e-03)
-        assert np.isclose(request2.request.goal_positions["theta"], 0, atol=1e-03)
+        assert np.isclose(request2.request.target["x"], 1.4, atol=1e-03)
+        assert np.isclose(request2.request.target["y"], 0.2, atol=1e-03)
+        assert np.isclose(request2.request.target["theta"], 0, atol=1e-03)
         assert np.isclose(request2.request.distance_tolerance, 0.1, atol=1e-03)
         assert np.isclose(request2.request.angle_tolerance, 2, atol=1e-03)
 
@@ -510,9 +510,9 @@ def test_mobile_base_translate_by(reachy_sdk_zeroed: ReachySDK) -> None:
         request3 = reachy_sdk_zeroed.get_goto_request(trans3)
 
         assert request3.part == "mobile_base"
-        assert np.isclose(request3.request.goal_positions["x"], 0.917, atol=1e-03)
-        assert np.isclose(request3.request.goal_positions["y"], 0.521, atol=1e-03)
-        assert np.isclose(request3.request.goal_positions["theta"], 50, atol=1e-03)
+        assert np.isclose(request3.request.target["x"], 0.917, atol=1e-03)
+        assert np.isclose(request3.request.target["y"], 0.521, atol=1e-03)
+        assert np.isclose(request3.request.target["theta"], 50, atol=1e-03)
         assert np.isclose(request3.request.distance_tolerance, 0.05, atol=1e-03)
         assert np.isclose(request3.request.angle_tolerance, 5, atol=1e-03)
         assert np.isclose(request3.request.timeout, 50, atol=1e-03)
@@ -531,9 +531,9 @@ def test_mobile_base_rotate_by(reachy_sdk_zeroed: ReachySDK) -> None:
         assert is_goto_finished(reachy_sdk_zeroed, rot0)
         request0 = reachy_sdk_zeroed.get_goto_request(rot0)
         assert request0.part == "mobile_base"
-        assert np.isclose(request0.request.goal_positions["x"], 0, atol=1e-03)
-        assert np.isclose(request0.request.goal_positions["y"], 0, atol=1e-03)
-        assert np.isclose(request0.request.goal_positions["theta"], 35, atol=1e-03)
+        assert np.isclose(request0.request.target["x"], 0, atol=1e-03)
+        assert np.isclose(request0.request.target["y"], 0, atol=1e-03)
+        assert np.isclose(request0.request.target["theta"], 35, atol=1e-03)
         assert np.isclose(request0.request.distance_tolerance, 0.05, atol=1e-03)
         assert np.isclose(request0.request.angle_tolerance, 5, atol=1e-03)
 
@@ -546,16 +546,16 @@ def test_mobile_base_rotate_by(reachy_sdk_zeroed: ReachySDK) -> None:
         request2 = reachy_sdk_zeroed.get_goto_request(rot2)
 
         assert request1.part == "mobile_base"
-        assert np.isclose(request1.request.goal_positions["x"], 0.1, atol=1e-03)
-        assert np.isclose(request1.request.goal_positions["y"], 0, atol=1e-03)
-        assert np.isclose(request1.request.goal_positions["theta"], 60, atol=1e-03)
+        assert np.isclose(request1.request.target["x"], 0.1, atol=1e-03)
+        assert np.isclose(request1.request.target["y"], 0, atol=1e-03)
+        assert np.isclose(request1.request.target["theta"], 60, atol=1e-03)
         assert np.isclose(request1.request.distance_tolerance, 0.02, atol=1e-03)
         assert np.isclose(request1.request.angle_tolerance, 2, atol=1e-03)
 
         assert request2.part == "mobile_base"
-        assert np.isclose(request2.request.goal_positions["x"], 0.1, atol=1e-03)
-        assert np.isclose(request2.request.goal_positions["y"], 0, atol=1e-03)
-        assert np.isclose(request2.request.goal_positions["theta"], 40, atol=1e-03)
+        assert np.isclose(request2.request.target["x"], 0.1, atol=1e-03)
+        assert np.isclose(request2.request.target["y"], 0, atol=1e-03)
+        assert np.isclose(request2.request.target["theta"], 40, atol=1e-03)
         assert np.isclose(request2.request.distance_tolerance, 0.02, atol=1e-03)
         assert np.isclose(request2.request.angle_tolerance, 3, atol=1e-03)
 
@@ -573,9 +573,9 @@ def test_mobile_base_rotate_by(reachy_sdk_zeroed: ReachySDK) -> None:
         request3 = reachy_sdk_zeroed.get_goto_request(rot3)
 
         assert request3.part == "mobile_base"
-        assert np.isclose(request3.request.goal_positions["x"], odom["x"], atol=1e-03)
-        assert np.isclose(request3.request.goal_positions["y"], odom["y"], atol=1e-03)
-        assert np.isclose(request3.request.goal_positions["theta"], odom["theta"] - 40, atol=1e-03)
+        assert np.isclose(request3.request.target["x"], odom["x"], atol=1e-03)
+        assert np.isclose(request3.request.target["y"], odom["y"], atol=1e-03)
+        assert np.isclose(request3.request.target["theta"], odom["theta"] - 40, atol=1e-03)
         assert np.isclose(request3.request.distance_tolerance, 0.05, atol=1e-03)
         assert np.isclose(request3.request.angle_tolerance, 5, atol=1e-03)
         assert np.isclose(request3.request.timeout, 50, atol=1e-03)
@@ -597,9 +597,9 @@ def test_set_max_xy_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         time.sleep(0.5)
 
         assert request1.part == "mobile_base"
-        assert np.isclose(request1.request.goal_positions["x"], 1.5, atol=1e-03)
-        assert np.isclose(request1.request.goal_positions["y"], 0.2, atol=1e-03)
-        assert np.isclose(request1.request.goal_positions["theta"], 10, atol=1e-03)
+        assert np.isclose(request1.request.target["x"], 1.5, atol=1e-03)
+        assert np.isclose(request1.request.target["y"], 0.2, atol=1e-03)
+        assert np.isclose(request1.request.target["theta"], 10, atol=1e-03)
         assert np.isclose(request1.request.distance_tolerance, 0.05, atol=1e-03)
         assert np.isclose(request1.request.angle_tolerance, 5, atol=1e-03)
 
