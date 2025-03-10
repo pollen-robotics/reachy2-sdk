@@ -80,7 +80,7 @@ def check_reachy2_sdk_api_dependency(requirement: str) -> None:
             )
     else:
         raise ValueError(
-            f"⚠️ Version conflict for reachy2-sdk-api: Installed {installed_version}, Required {api_requirement.specifier}"
+            f"⚠️  Version conflict for reachy2-sdk-api: \n\tInstalled {installed_version}, \n\tRequired {api_requirement.specifier}"
         )
 
 
@@ -96,7 +96,7 @@ def check_dependencies() -> None:
                 installed_version = version(req.name)
                 if parse(installed_version) not in req.specifier:
                     raise ValueError(
-                        f"⚠️ Version conflict for {req.name}: Installed {installed_version}, Required {req.specifier}"
+                        f"⚠️  Version conflict for {req.name}: \n\tInstalled {installed_version}, \n\tRequired {req.specifier}"
                     )
         except PackageNotFoundError:
             print(f"❌ Missing dependency: {requirement}")
