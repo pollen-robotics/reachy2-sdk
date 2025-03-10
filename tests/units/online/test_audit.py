@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 from reachy2_sdk.reachy_sdk import ReachySDK
@@ -25,7 +23,7 @@ def test_audit(reachy_sdk_zeroed: ReachySDK) -> None:
         "elbow": reachy_sdk_zeroed.l_arm.elbow.audit,
         "wrist": reachy_sdk_zeroed.l_arm.wrist.audit,
     }
-    assert reachy_sdk_zeroed.head.audit == {"neck": reachy_sdk_zeroed.head.neck.audit}
+    assert reachy_sdk_zeroed.head.audit == {"neck": reachy_sdk_zeroed.head.neck.audit, "l_antenna": None, "r_antenna": None}
 
     assert reachy_sdk_zeroed.audit["r_arm"] == reachy_sdk_zeroed.r_arm.audit
     assert reachy_sdk_zeroed.audit["l_arm"] == reachy_sdk_zeroed.l_arm.audit

@@ -89,7 +89,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             goto_stub: The gRPC stub for controlling goto movements.
         """
         JointsBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel))
-        IGoToBasedPart.__init__(self, self, goto_stub)
+        IGoToBasedPart.__init__(self, self._part_id, goto_stub)
 
         self._setup_arm(arm_msg, initial_state)
         self._gripper: Optional[Hand] = None

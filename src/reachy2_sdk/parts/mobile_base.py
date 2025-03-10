@@ -69,7 +69,7 @@ class MobileBase(Part, IGoToBasedPart):
         """
         self._logger = logging.getLogger(__name__)
         super().__init__(mb_msg, grpc_channel, MobileBaseUtilityServiceStub(grpc_channel))
-        IGoToBasedPart.__init__(self, self, goto_stub)
+        IGoToBasedPart.__init__(self, self._part_id, goto_stub)
 
         self._mobility_stub = MobileBaseMobilityServiceStub(grpc_channel)
 
