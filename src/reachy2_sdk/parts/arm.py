@@ -141,7 +141,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
-        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel)
+        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel, self._goto_stub)
 
     @property
     def shoulder(self) -> Orbita2d:

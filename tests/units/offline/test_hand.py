@@ -42,7 +42,7 @@ def test_class() -> None:
         compliant=BoolValue(value=compliant),
     )
 
-    hand = Hand(hand_msg=hand_proto, initial_state=hand_state, grpc_channel=grpc_channel)
+    hand = Hand(hand_msg=hand_proto, initial_state=hand_state, grpc_channel=grpc_channel, goto_stub=None)
 
     assert hand.__repr__() != ""
 
@@ -107,4 +107,4 @@ def test_class() -> None:
     for _ in range(10):
         hand._check_hand_movement(0)
 
-    assert hand.is_moving() == False
+    assert hand._is_moving == False
