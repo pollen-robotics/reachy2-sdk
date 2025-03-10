@@ -411,7 +411,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         computing the inverse kinematics solution when the target is in Cartesian space.
 
         Args:
-            target: The target position. It can either be a list of 7 joint values (for joint space)
+            target: The target position. It can either be a list/NumPy array of 7 joint values (for joint space)
                     or a 4x4 NumPy array (for Cartesian space).
             duration: The time in seconds for the movement to be completed. Defaults to 2.
             wait: If True, the function waits until the movement is completed before returning.
@@ -440,7 +440,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
 
-        if isinstance(target, list) and len(target) == 7:
+        if (isinstance(target, list) or isinstance(target, np.ndarray)) and len(target) == 7:
             response = self._goto_joints(target, duration, interpolation_mode, degrees)
         elif isinstance(target, np.ndarray) and target.shape == (4, 4):
             response = self._goto_from_matrix(target, duration, interpolation_mode, q0)
