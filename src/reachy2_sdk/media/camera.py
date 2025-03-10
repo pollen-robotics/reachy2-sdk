@@ -78,7 +78,7 @@ class Camera:
             self._logger.warning("No frame retrieved")
             return None
         np_data = np.frombuffer(frame.data, np.uint8)
-        img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
+        img = cv2.imdecode(np_data, cv2.IMREAD_COLOR).astype(np.uint8)
         return img, frame.timestamp.ToNanoseconds()
 
     def get_compressed_frame(self, view: CameraView = CameraView.LEFT) -> Optional[Tuple[bytes, int]]:
