@@ -8,16 +8,21 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
-from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToId
+import numpy as np
+from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToId, GoToRequest
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 
 from ..utils.utils import (
+    EllipticalParameters,
     JointsRequest,
     OdometryRequest,
     SimplifiedRequest,
+    TargetJointsRequest,
     arm_position_to_list,
     ext_euler_angles_to_list,
+    get_arc_direction,
     get_interpolation_mode,
+    get_interpolation_space,
 )
 from .part import Part
 
@@ -90,46 +95,7 @@ class IGoToBasedPart(ABC):
 
         response = self._goto_stub.GetGoToRequest(goto_id)
 
-        if response.HasField("joints_goal"):
-            if response.joints_goal.HasField("arm_joint_goal"):
-                part = response.joints_goal.arm_joint_goal.id.name
-                mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-                goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
-                duration = response.joints_goal.arm_joint_goal.duration.value
-            elif response.joints_goal.HasField("neck_joint_goal"):
-                part = response.joints_goal.neck_joint_goal.id.name
-                mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-                goal_positions = ext_euler_angles_to_list(
-                    response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
-                )
-                duration = response.joints_goal.neck_joint_goal.duration.value
-
-            joints_request = JointsRequest(
-                goal_positions=goal_positions,
-                duration=duration,
-                mode=mode,
-            )
-
-            full_request = SimplifiedRequest(
-                part=part,
-                request=joints_request,
-            )
-        elif response.HasField("odometry_goal"):
-            part = response.odometry_goal.odometry_goal.id.name
-            odom_goal_positions = {}
-            odom_goal_positions["x"] = response.odometry_goal.odometry_goal.direction.x.value
-            odom_goal_positions["y"] = response.odometry_goal.odometry_goal.direction.y.value
-            odom_goal_positions["theta"] = response.odometry_goal.odometry_goal.direction.theta.value
-            odom_request = OdometryRequest(
-                goal_positions=odom_goal_positions,
-                timeout=response.odometry_goal.timeout.value,
-                distance_tolerance=response.odometry_goal.distance_tolerance.value,
-                angle_tolerance=response.odometry_goal.angle_tolerance.value,
-            )
-            full_request = SimplifiedRequest(
-                part=part,
-                request=odom_request,
-            )
+        full_request = process_goto_request(response)
 
         return full_request
 
@@ -210,3 +176,97 @@ class IGoToBasedPart(ABC):
     ) -> GoToId:
         """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode."""
         pass  # pragma: no cover
+
+
+def process_goto_request(response: GoToRequest) -> Optional[SimplifiedRequest]:
+    """Process the response from a goto request and return a SimplifiedRequest object."""
+    full_request = None
+    if response.HasField("cartesian_goal"):
+        part = response.cartesian_goal.arm_cartesian_goal.id.name
+        mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+        interpolation_space = get_interpolation_space(response.interpolation_space.interpolation_space)
+        duration = response.cartesian_goal.arm_cartesian_goal.duration.value
+        target_pose = np.reshape(response.cartesian_goal.arm_cartesian_goal.goal_pose.data, (4, 4))
+
+        if mode == "elliptical":
+            arc_direction = get_arc_direction(response.elliptical_parameters.arc_direction)
+            secondary_radius = response.elliptical_parameters.secondary_radius.value
+            elliptical_params = EllipticalParameters(arc_direction, secondary_radius)
+        else:
+            elliptical_params = None
+
+        target = TargetJointsRequest(
+            joints=None,
+            pose=target_pose,
+        )
+
+        joints_request = JointsRequest(
+            target=target,
+            duration=duration,
+            mode=mode,
+            interpolation_space=interpolation_space,
+            elliptical_parameters=elliptical_params,
+        )
+
+        full_request = SimplifiedRequest(
+            part=part,
+            request=joints_request,
+        )
+
+    elif response.HasField("joints_goal"):
+        if response.joints_goal.HasField("arm_joint_goal"):
+            part = response.joints_goal.arm_joint_goal.id.name
+            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+            interpolation_space = get_interpolation_space(response.interpolation_space.interpolation_space)
+            duration = response.joints_goal.arm_joint_goal.duration.value
+            target_joints = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
+            elliptical_params = None
+        elif response.joints_goal.HasField("neck_joint_goal"):
+            part = response.joints_goal.neck_joint_goal.id.name
+            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
+            interpolation_space = get_interpolation_space(response.interpolation_space.interpolation_space)
+            target_joints = ext_euler_angles_to_list(
+                response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
+            )
+            duration = response.joints_goal.neck_joint_goal.duration.value
+            elliptical_params = None
+
+        target = TargetJointsRequest(
+            joints=target_joints,
+            pose=None,
+        )
+
+        joints_request = JointsRequest(
+            target=target,
+            duration=duration,
+            mode=mode,
+            interpolation_space=interpolation_space,
+            elliptical_parameters=elliptical_params,
+        )
+
+        full_request = SimplifiedRequest(
+            part=part,
+            request=joints_request,
+        )
+
+    elif response.HasField("odometry_goal"):
+        part = response.odometry_goal.odometry_goal.id.name
+        odom_goal_positions = {}
+        odom_goal_positions["x"] = response.odometry_goal.odometry_goal.direction.x.value
+        odom_goal_positions["y"] = response.odometry_goal.odometry_goal.direction.y.value
+        odom_goal_positions["theta"] = np.rad2deg(response.odometry_goal.odometry_goal.direction.theta.value)
+        odom_request = OdometryRequest(
+            target=odom_goal_positions,
+            timeout=response.odometry_goal.timeout.value,
+            distance_tolerance=response.odometry_goal.distance_tolerance.value,
+            angle_tolerance=np.rad2deg(response.odometry_goal.angle_tolerance.value),
+        )
+        full_request = SimplifiedRequest(
+            part=part,
+            request=odom_request,
+        )
+
+    else:
+        raise ValueError("No valid request found in the response")
+
+    return full_request

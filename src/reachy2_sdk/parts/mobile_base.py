@@ -348,15 +348,15 @@ class MobileBase(Part, IGoToBasedPart):
         angle_tolerance = None
 
         if odom_request is not None:
-            base_odom = odom_request.request.goal_positions
-            angle_tolerance = odom_request.request.angle_tolerance
+            base_odom = odom_request.request.target
+            angle_tolerance = deg2rad(odom_request.request.angle_tolerance)
         else:
             base_odom = self.odometry
-            base_odom["theta"] = deg2rad(base_odom["theta"])
 
-        theta_goal = base_odom["theta"]
+        theta_goal = deg2rad(base_odom["theta"])
         x_goal = base_odom["x"] + (x * np.cos(theta_goal) - y * np.sin(theta_goal))
         y_goal = base_odom["y"] + (x * np.sin(theta_goal) + y * np.cos(theta_goal))
+
         return self.goto(
             x_goal,
             y_goal,
@@ -400,8 +400,7 @@ class MobileBase(Part, IGoToBasedPart):
         distance_tolerance = 0.05
 
         if odom_request is not None:
-            base_odom = odom_request.request.goal_positions
-            base_odom["theta"] = rad2deg(base_odom["theta"])
+            base_odom = odom_request.request.target
             if angle_tolerance is None:
                 angle_tolerance = odom_request.request.angle_tolerance
             distance_tolerance = odom_request.request.distance_tolerance
@@ -565,7 +564,7 @@ class MobileBase(Part, IGoToBasedPart):
             odom_request = None
 
         if odom_request is not None:
-            base_odom = odom_request.request.goal_positions
+            base_odom = odom_request.request.target
             x_offset = abs(target[0] - base_odom["x"])
             y_offset = abs(target[1] - base_odom["y"])
         else:
