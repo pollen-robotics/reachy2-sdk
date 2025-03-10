@@ -80,7 +80,9 @@ def check_reachy2_sdk_api_dependency(requirement: str) -> None:
             )
     else:
         raise ValueError(
-            f"⚠️  Version conflict for reachy2-sdk-api: \n\tInstalled {installed_version}, \n\tRequired {api_requirement.specifier}"
+            f"⚠️  Version conflict for reachy2-sdk-api:"
+            f"\n\tInstalled {installed_version},"
+            f"\n\tRequired {api_requirement.specifier}"
         )
 
 
