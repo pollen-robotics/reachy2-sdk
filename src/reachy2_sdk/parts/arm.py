@@ -34,8 +34,10 @@ from reachy2_sdk_api.goto_pb2 import (
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
+from reachy2_sdk_api.hand_pb2 import HandType
 from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 
+from ..grippers.parallel_gripper import ParallelGripper
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import (
@@ -94,7 +96,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self._setup_arm(arm_msg, initial_state)
         self._gripper: Optional[Hand] = None
 
-        self._actuators: Dict[str, Orbita2d | Orbita3d] = {}
+        self._actuators: Dict[str, Orbita2d | Orbita3d | Hand] = {}
         self._actuators["shoulder"] = self.shoulder
         self._actuators["elbow"] = self.elbow
         self._actuators["wrist"] = self.wrist
@@ -141,7 +143,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
-        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel, self._goto_stub)
+        if hand.type == HandType.PARALLEL_GRIPPER:
+            self._gripper = ParallelGripper(hand, hand_initial_state, self._grpc_channel, self._goto_stub)
+            self._actuators["gripper"] = self._gripper
 
     @property
     def shoulder(self) -> Orbita2d:

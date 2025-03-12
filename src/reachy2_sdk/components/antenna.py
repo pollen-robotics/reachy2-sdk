@@ -176,7 +176,10 @@ class Antenna(IGoToBasedComponent):
 
     def __repr__(self) -> str:
         """Clean representation of the Antenna only joint (DynamixelMotor)."""
-        return str(self._joints[self._name].__repr__())
+        s = "\n\t".join([str(joint) for joint in self._joints.values()])
+        return f"""<Antenna on={self.is_on()} joints=\n\t{
+            s
+        }\n>"""
 
     def turn_on(self) -> None:
         """Turn on the antenna's motor."""
