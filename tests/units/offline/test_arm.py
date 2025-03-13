@@ -9,7 +9,7 @@ from reachy2_sdk_api.arm_pb2 import ArmDescription, ArmState, ArmStatus
 from reachy2_sdk_api.component_pb2 import PIDGains
 from reachy2_sdk_api.error_pb2 import Error
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
-from reachy2_sdk_api.hand_pb2 import HandState
+from reachy2_sdk_api.hand_pb2 import HandState, HandType
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Rotation3d
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2d as Orbita2d_proto
 from reachy2_sdk_api.orbita2d_pb2 import Orbita2dStatus
@@ -233,7 +233,7 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         arm.goto(build_pose_matrix(0.3, -0.4, -0.3), duration=0)
 
-    hand_proto = Hand_proto(part_id=PartId(name="l_hand", id=2))
+    hand_proto = Hand_proto(part_id=PartId(name="l_hand", id=2), type=HandType.PARALLEL_GRIPPER)
     hand_state = HandState(
         opening=FloatValue(value=0.5),
         force=FloatValue(value=0.5),
@@ -245,8 +245,23 @@ def test_class() -> None:
     assert arm.gripper.opening == 50
 
     assert (
-        str(arm)
-        == '<Arm on=False actuators=\n\tshoulder: <Orbita2d on=False joints=\n\t<OrbitaJoint axis_type="pitch" present_position=57.3 goal_position=171.89 >\n\t<OrbitaJoint axis_type="roll" present_position=114.59 goal_position=229.18 >\n>\n\telbow: <Orbita2d on=False joints=\n\t<OrbitaJoint axis_type="pitch" present_position=57.3 goal_position=171.89 >\n\t<OrbitaJoint axis_type="yaw" present_position=114.59 goal_position=229.18 >\n>\n\twrist: <Orbita3d on=False joints=\n\t<OrbitaJoint axis_type="roll" present_position=1432.39 goal_position=1604.28 >\n\t<OrbitaJoint axis_type="pitch" present_position=1489.69 goal_position=1661.58 >\n\t<OrbitaJoint axis_type="yaw" present_position=1546.99 goal_position=1718.87 >\n>\n>'
+        str(arm) == f"<Arm on=False actuators="
+        f"\n\tshoulder: <Orbita2d on=False joints="
+        f'\n\t<OrbitaJoint axis_type="pitch" present_position=57.3 goal_position=171.89 >'
+        f'\n\t<OrbitaJoint axis_type="roll" present_position=114.59 goal_position=229.18 >'
+        f"\n>"
+        f"\n\telbow: <Orbita2d on=False joints="
+        f'\n\t<OrbitaJoint axis_type="pitch" present_position=57.3 goal_position=171.89 >'
+        f'\n\t<OrbitaJoint axis_type="yaw" present_position=114.59 goal_position=229.18 >'
+        f"\n>"
+        f"\n\twrist: <Orbita3d on=False joints="
+        f'\n\t<OrbitaJoint axis_type="roll" present_position=1432.39 goal_position=1604.28 >'
+        f'\n\t<OrbitaJoint axis_type="pitch" present_position=1489.69 goal_position=1661.58 >'
+        f'\n\t<OrbitaJoint axis_type="yaw" present_position=1546.99 goal_position=1718.87 >'
+        f"\n>"
+        f"\n\tgripper: <ParallelGripper on=True joints="
+        f"\n\t<GripperJoint on=True present_position=0.0 goal_position=0.0 >"
+        f"\n>\n>"
     )
 
     present_load2 = Vector3d(x=FloatValue(value=222), y=FloatValue(value=23), z=FloatValue(value=24))
@@ -274,9 +289,9 @@ def test_class() -> None:
     arm_status = ArmStatus(shoulder_status=orbita2d_status, elbow_status=orbita2d_status, wrist_status=orbita3d_status)
     arm._update_audit_status(arm_status)
 
-    assert arm.elbow.audit == "orbita2d error"
-    assert arm.wrist.audit == "orbita3d error"
-    assert arm.shoulder.audit == "orbita2d error"
+    assert arm.elbow.status == "orbita2d error"
+    assert arm.wrist.status == "orbita3d error"
+    assert arm.shoulder.status == "orbita2d error"
 
     assert arm.audit["elbow"] == "orbita2d error"
 

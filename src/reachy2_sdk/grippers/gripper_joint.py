@@ -68,7 +68,7 @@ class GripperJoint:
 
     def __repr__(self) -> str:
         """Clean representation of a GripperJoint."""
-        repr_template = '<GripperJoint on="{is_on}" present_position={present_position} goal_position={goal_position} >'
+        repr_template = "<GripperJoint on={is_on} present_position={present_position} goal_position={goal_position} >"
         return repr_template.format(
             is_on=self.is_on(),
             present_position=round(self.present_position, 2),
@@ -159,14 +159,6 @@ class GripperJoint:
             self._is_moving = False
             self._last_present_positions.clear()
         self._last_present_positions.append(present_position)
-
-    def get_current_opening(self) -> float:
-        """Get the current opening of the hand.
-
-        Returns:
-            The current opening of the hand as a percentage (0-100).
-        """
-        return self.opening
 
     def _update_with(self, new_state: HandState) -> None:
         """Update the hand with a newly received (partial) state from the gRPC server.
