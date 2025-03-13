@@ -174,7 +174,7 @@ class Orbita3d(Orbita):
         if self._outgoing_goal_positions:
             if self.is_off():
                 self._logger.warning(f"{self._name} is off. Command not sent.")
-                return
+                return None
 
             req_pos = {}
             for joint_axis in self._joints.keys():

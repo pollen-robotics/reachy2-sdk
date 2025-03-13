@@ -495,14 +495,15 @@ class Head(JointsBasedPart, IGoToBasedPart):
     def _get_goal_positions_message(self) -> HeadComponentsCommands:
         """Get the Orbita2dsCommand message to send the goal positions to the actuator."""
         commands = {}
-        neck_command = self.neck._get_goal_positions_message()
+        neck_command = self.neck._get_goal_positions_message() if self.neck is not None else None
         if neck_command is not None:
             commands["neck_command"] = neck_command
         return HeadComponentsCommands(**commands)
 
     def _clean_outgoing_goal_positions(self) -> None:
         """Clean the outgoing goal positions."""
-        self.neck._clean_outgoing_goal_positions()
+        if self.neck is not None:
+            self.neck._clean_outgoing_goal_positions()
 
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state from the gRPC server.

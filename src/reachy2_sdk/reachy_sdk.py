@@ -848,10 +848,6 @@ class ReachySDK:
             self._logger.warning("Reachy is not connected!")
             return
 
-        # for part in self.info._enabled_parts.values():
-        #     if issubclass(type(part), JointsBasedPart):
-        #         part.send_goal_positions(check_positions)
-
         commands = {}
         if self.r_arm is not None and self.r_arm.is_on():
             r_arm_command = self.r_arm._get_goal_positions_message()
