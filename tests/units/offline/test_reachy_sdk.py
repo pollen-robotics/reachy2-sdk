@@ -44,7 +44,7 @@ def test_unconnected() -> None:
 
     assert rsdk.cancel_all_goto() is None
     assert rsdk.cancel_goto_by_id(GoToId(id=1)) is None
-    assert rsdk.get_goto_joints_request(GoToId(id=1)) is None
+    assert rsdk.get_goto_request(GoToId(id=1)) is None
 
     assert rsdk.is_goto_finished(GoToId(id=1)) is False
 

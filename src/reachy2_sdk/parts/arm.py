@@ -10,7 +10,6 @@ import grpc
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue
-from pyquaternion import Quaternion
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
 from reachy2_sdk_api.arm_pb2 import (  # ArmLimits,; ArmTemperatures,
     ArmCartesianGoal,
@@ -28,6 +27,7 @@ from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.goto_pb2 import (
     CartesianGoal,
     CustomJointGoal,
+    EllipticalGoToParameters,
     GoToId,
     GoToRequest,
     JointsGoal,
@@ -41,9 +41,9 @@ from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import (
     arm_position_to_list,
-    decompose_matrix,
+    get_grpc_arc_direction,
     get_grpc_interpolation_mode,
-    get_normal_vector,
+    get_grpc_interpolation_space,
     list_to_arm_position,
     matrix_from_euler_angles,
     recompose_matrix,
@@ -90,7 +90,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             goto_stub: The gRPC stub for controlling goto movements.
         """
         JointsBasedPart.__init__(self, arm_msg, grpc_channel, ArmServiceStub(grpc_channel))
-        IGoToBasedPart.__init__(self, self, goto_stub)
+        IGoToBasedPart.__init__(self, self._part_id, goto_stub)
 
         self._setup_arm(arm_msg, initial_state)
         self._gripper: Optional[Hand] = None
@@ -142,7 +142,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
-        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel)
+        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel, self._goto_stub)
 
     @property
     def shoulder(self) -> Orbita2d:
@@ -375,6 +375,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: List[float],
         duration: float = 2,
         wait: bool = False,
+        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
@@ -387,9 +388,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: npt.NDArray[np.float64],
         duration: float = 2,
         wait: bool = False,
+        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
+        arc_direction: str = "above",
+        secondary_radius: Optional[float] = None,
     ) -> GoToId:
         ...  # pragma: no cover
 
@@ -398,9 +402,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         target: Any,
         duration: float = 2,
         wait: bool = False,
+        interpolation_space: str = "joint_space",
         interpolation_mode: str = "minimum_jerk",
         degrees: bool = True,
         q0: Optional[List[float]] = None,
+        arc_direction: str = "above",
+        secondary_radius: Optional[float] = None,
     ) -> GoToId:
         """Move the arm to a specified target position, either in joint space or Cartesian space.
 
@@ -417,12 +424,17 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             duration: The time in seconds for the movement to be completed. Defaults to 2.
             wait: If True, the function waits until the movement is completed before returning.
                     Defaults to False.
-            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk"
-                    or "linear". Defaults to "minimum_jerk".
+            interpolation_space: The space in which the interpolation should be performed. It can
+                    be either "joint_space" or "cartesian_space". Defaults to "joint_space".
+            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk",
+                    "linear" or "elliptical". Defaults to "minimum_jerk".
             degrees: If True, the joint values in the `target` argument are treated as degrees.
                     Defaults to True.
             q0: An optional list of 7 joint values representing the initial configuration
                     for inverse kinematics. Defaults to None.
+            arc_direction: The direction of the arc to be followed during elliptical interpolation.
+                    Can be "above", "below", "front", "back", "left" or "right" . Defaults to "above".
+            secondary_radius: The secondary radius of the ellipse for elliptical interpolation, in meters.
 
         Returns:
             GoToId: The unique GoToId identifier for the movement command.
@@ -435,16 +447,31 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             ValueError: If the `q0` list has a length other than 7.
             ValueError: If the `duration` is set to 0.
         """
-        self._check_goto_parameters(duration, target, q0)
+        self._check_goto_parameters(target, duration, q0)
 
         if self.is_off():
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
 
+        if interpolation_space == "joint_space" and interpolation_mode == "elliptical":
+            self._logger.warning("Elliptical interpolation is not supported in joint space. Switching to linear.")
+            interpolation_mode = "linear"
+        if secondary_radius is not None and secondary_radius > 0.3:
+            self._logger.warning("Interpolation secondary_radius was too large, reduced to 0.3")
+            secondary_radius = 0.3
+
         if isinstance(target, list) and len(target) == 7:
-            response = self._goto_joints(target, duration, interpolation_mode, degrees)
+            response = self._goto_joints(
+                target,
+                duration,
+                interpolation_space,
+                interpolation_mode,
+                degrees,
+            )
         elif isinstance(target, np.ndarray) and target.shape == (4, 4):
-            response = self._goto_from_matrix(target, duration, interpolation_mode, q0)
+            response = self._goto_from_matrix(
+                target, duration, interpolation_space, interpolation_mode, q0, arc_direction, secondary_radius
+            )
 
         if response.id == -1:
             self._logger.error("Target was not reachable. No command sent.")
@@ -453,12 +480,21 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         return response
 
-    def _goto_joints(self, target: List[float], duration: float, interpolation_mode: str, degrees: bool) -> GoToId:
+    def _goto_joints(
+        self,
+        target: List[float],
+        duration: float,
+        interpolation_space: str,
+        interpolation_mode: str,
+        degrees: bool,
+    ) -> GoToId:
         """Handle movement to a specified position in joint space.
 
         Args:
             target: A list of 7 joint positions to move the arm to.
             duration: The time in seconds for the movement to be completed.
+            interpolation_space: The space in which the interpolation should be performed.
+                    Only "joint_space" is supported for joints target.
             interpolation_mode: The interpolation method to be used. Can be "minimum_jerk" or "linear".
             degrees: If True, the joint positions are interpreted as degrees; otherwise, as radians.
 
@@ -468,16 +504,37 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if isinstance(target, np.ndarray):
             target = target.tolist()
         arm_pos = list_to_arm_position(target, degrees)
-        request = GoToRequest(
-            joints_goal=JointsGoal(
+
+        if interpolation_space == "cartesian_space":
+            self._logger.warning(
+                "cartesian_space interpolation is not supported using joints target. Switching to joint_space interpolation."
+            )
+            interpolation_space == "joint_space"
+        if interpolation_mode == "elliptical":
+            self._logger.warning("Elliptical interpolation is not supported in joint space. Switching to linear.")
+            interpolation_mode = "linear"
+
+        req_params = {
+            "joints_goal": JointsGoal(
                 arm_joint_goal=ArmJointGoal(id=self._part_id, joints_goal=arm_pos, duration=FloatValue(value=duration))
             ),
-            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-        )
+            "interpolation_space": get_grpc_interpolation_space(interpolation_space),
+            "interpolation_mode": get_grpc_interpolation_mode(interpolation_mode),
+        }
+
+        request = GoToRequest(**req_params)
+
         return self._goto_stub.GoToJoints(request)
 
     def _goto_from_matrix(
-        self, target: npt.NDArray[np.float64], duration: float, interpolation_mode: str, q0: Optional[List[float]]
+        self,
+        target: npt.NDArray[np.float64],
+        duration: float,
+        interpolation_space: str,
+        interpolation_mode: str,
+        q0: Optional[List[float]],
+        arc_direction: str,
+        secondary_radius: Optional[float],
     ) -> GoToId:
         """Handle movement to a Cartesian target using a 4x4 transformation matrix.
 
@@ -488,8 +545,13 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         Args:
             target: A 4x4 NumPy array representing the Cartesian target pose.
             duration: The time in seconds for the movement to be completed.
-            interpolation_mode: The interpolation method to be used. Can be "minimum_jerk" or "linear".
+            interpolation_space: The space in which the interpolation should be performed. Can be "joint_space"
+                    or "cartesian_space".
+            interpolation_mode: The interpolation method to be used. Can be "minimum_jerk", "linear" or "elliptical".
             q0: An optional list of 7 joint positions representing the initial configuration. Defaults to None.
+            arc_direction: The direction of the arc to be followed during elliptical interpolation. Can be "above",
+                    "below", "front", "back", "left" or "right".
+            secondary_radius: The secondary radius of the ellipse for elliptical interpolation, in meters.
 
         Returns:
             GoToId: A unique identifier for the movement command.
@@ -498,8 +560,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             ValueError: If the length of `q0` is not 7.
         """
         goal_pose = Matrix4x4(data=target.flatten().tolist())
-        request = GoToRequest(
-            cartesian_goal=CartesianGoal(
+
+        req_params = {
+            "cartesian_goal": CartesianGoal(
                 arm_cartesian_goal=ArmCartesianGoal(
                     id=self._part_id,
                     goal_pose=goal_pose,
@@ -507,11 +570,24 @@ class Arm(JointsBasedPart, IGoToBasedPart):
                     q0=list_to_arm_position(q0) if q0 is not None else None,
                 )
             ),
-            interpolation_mode=get_grpc_interpolation_mode(interpolation_mode),
-        )
+            "interpolation_space": get_grpc_interpolation_space(interpolation_space),
+            "interpolation_mode": get_grpc_interpolation_mode(interpolation_mode),
+        }
+
+        if interpolation_mode == "elliptical":
+            ellipse_params = {
+                "arc_direction": get_grpc_arc_direction(arc_direction),
+            }
+            if secondary_radius is not None:
+                ellipse_params["secondary_radius"] = FloatValue(value=secondary_radius)
+            elliptical_params = EllipticalGoToParameters(**ellipse_params)
+            req_params["elliptical_parameters"] = elliptical_params
+
+        request = GoToRequest(**req_params)
+
         return self._goto_stub.GoToCartesian(request)
 
-    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
+    def _check_goto_parameters(self, target: Any, duration: Optional[float] = 0, q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
 
         Args:
@@ -630,7 +706,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         if not wait_for_goto_end:
             self.cancel_all_goto()
         if self.is_on():
-            return self.goto(joints, duration, wait, interpolation_mode)
+            return self.goto(joints, duration, wait, interpolation_mode=interpolation_mode)
         else:
             self._logger.warning(f"{self._part_id.name} is off. No command sent.")
         return GoToId(id=-1)
@@ -728,7 +804,10 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         duration: float = 2,
         wait: bool = False,
         frame: str = "robot",
+        interpolation_space: str = "cartesian_space",
         interpolation_mode: str = "minimum_jerk",
+        arc_direction: str = "above",
+        secondary_radius: Optional[float] = None,
     ) -> GoToId:
         """Create a translation movement for the arm's end effector.
 
@@ -764,17 +843,28 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
+            joints_request = self._get_goto_request(goto)
         else:
             joints_request = None
 
         if joints_request is not None:
-            pose = self.forward_kinematics(joints_request.goal_positions)
+            if joints_request.request.target.joints is not None:
+                pose = self.forward_kinematics(joints_request.request.target.joints)
+            else:
+                pose = joints_request.request.target.pose
         else:
             pose = self.forward_kinematics()
 
         pose = self.get_translation_by(x, y, z, initial_pose=pose, frame=frame)
-        return self.goto(pose, duration=duration, wait=wait, interpolation_mode=interpolation_mode)
+        return self.goto(
+            pose,
+            duration=duration,
+            wait=wait,
+            interpolation_space=interpolation_space,
+            interpolation_mode=interpolation_mode,
+            arc_direction=arc_direction,
+            secondary_radius=secondary_radius,
+        )
 
     def get_rotation_by(
         self,
@@ -881,12 +971,15 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
+            joints_request = self._get_goto_request(goto)
         else:
             joints_request = None
 
         if joints_request is not None:
-            pose = self.forward_kinematics(joints_request.goal_positions)
+            if joints_request.request.target.joints is not None:
+                pose = self.forward_kinematics(joints_request.request.target.joints)
+            else:
+                pose = joints_request.request.target.pose
         else:
             pose = self.forward_kinematics()
 
@@ -904,236 +997,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     #     """Get temperatures of all the part's motors"""
     #     temperatures = self._arm_stub.GetTemperatures(self._part_id)
     #     return temperatures
-
-    def send_cartesian_interpolation(
-        self,
-        target: npt.NDArray[np.float64],
-        duration: float = 2,
-        arc_direction: Optional[str] = None,
-        elliptic_radius: Optional[float] = None,
-        interpolation_frequency: float = 120,
-        precision_distance_xyz: float = 0.003,
-    ) -> None:
-        """Perform Cartesian interpolation and move the arm towards a target pose.
-
-        The function uses linear or elliptical interpolation for translation to reach or get close
-        to the specified target pose.
-
-        Args:
-            target: A 4x4 homogeneous pose matrix representing the desired
-                position and orientation in the Reachy coordinate system, provided as a NumPy array.
-            duration: The expected time in seconds for the arm to reach the target position
-                from its current position. Defaults to 2.
-            arc_direction: The direction for elliptic interpolation when moving
-                the arm towards the target pose. Can be 'above', 'below', 'right', 'left', 'front',
-                or 'back'. If not specified, a linear interpolation is computed.
-            elliptic_radius: The second radius of the computed ellipse for elliptical
-                interpolation. The first radius is the distance between the current pose and the
-                target pose. If not specified, a circular interpolation is used.
-            interpolation_frequency: The number of intermediate points used to interpolate
-                the movement in Cartesian space between the initial and target poses. Defaults to 120.
-            precision_distance_xyz: The maximum allowed distance in meters in the XYZ space between
-                the current end-effector position and the target position. If the end-effector is
-                further than this distance from the target after the movement, the movement is repeated
-                until the precision is met. Defaults to 0.003.
-
-        Raises:
-            TypeError: If the target is not a NumPy matrix.
-            ValueError: If the target shape is not (4, 4).
-            ValueError: If the duration is set to 0.
-        """
-        self.cancel_all_goto()
-        if not isinstance(target, np.ndarray):
-            raise TypeError(f"target should be a NumPy array (got {type(target)} instead)!")
-        if target.shape != (4, 4):
-            raise ValueError("target shape should be (4, 4) (got {target.shape} instead)!")
-        if duration == 0:
-            raise ValueError("duration cannot be set to 0.")
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Commands not sent.")
-            return
-        try:
-            self.inverse_kinematics(target)
-        except ValueError:
-            raise ValueError(f"Target pose: \n{target}\n is not reachable!")
-
-        origin_matrix = self.forward_kinematics()
-        nb_steps = int(duration * interpolation_frequency)
-        time_step = duration / nb_steps
-
-        q1, trans1 = decompose_matrix(origin_matrix)
-        q2, trans2 = decompose_matrix(target)
-
-        if arc_direction is None:
-            self._send_linear_interpolation(trans1, trans2, q1, q2, nb_steps=nb_steps, time_step=time_step)
-
-        else:
-            self._send_elliptical_interpolation(
-                trans1,
-                trans2,
-                q1,
-                q2,
-                arc_direction=arc_direction,
-                secondary_radius=elliptic_radius,
-                nb_steps=nb_steps,
-                time_step=time_step,
-            )
-
-        current_pose = self.forward_kinematics()
-        current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
-        if current_precision_distance_xyz > precision_distance_xyz:
-            request = ArmCartesianGoal(
-                id=self._part_id,
-                goal_pose=Matrix4x4(data=target.flatten().tolist()),
-            )
-            self._stub.SendArmCartesianGoal(request)
-            time.sleep(time_step)
-
-            current_pose = self.forward_kinematics()
-            current_precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - target[:3, 3])
-        self._logger.info(f"l2 xyz distance to goal: {current_precision_distance_xyz}")
-
-    def _send_linear_interpolation(
-        self,
-        origin_trans: npt.NDArray[np.float64],
-        target_trans: npt.NDArray[np.float64],
-        origin_rot: Quaternion,
-        target_rot: Quaternion,
-        nb_steps: int,
-        time_step: float,
-    ) -> None:
-        """Generate linear interpolation between two poses over a specified number of steps.
-
-        The function performs linear interpolation for both translation and rotation between
-        the origin and target poses.
-
-        Args:
-            origin_trans: The original translation vector in 3D space,
-                given as a NumPy array of type `np.float64`, containing the translation components
-                along the x, y, and z axes in meters.
-            target_trans: The target translation vector in 3D space, given
-                as a NumPy array of type `np.float64`, representing the desired final translation in meters.
-            origin_rot: The initial rotation quaternion, used as the starting point for
-                the rotation interpolation.
-            target_rot: The target rotation quaternion for the interpolation.
-            nb_steps: The number of steps or intervals for the interpolation process, determining
-                how many intermediate points will be calculated between the origin and target poses.
-            time_step: The time interval in seconds between each step of the interpolation.
-        """
-        for t in np.linspace(0, 1, nb_steps):
-            # Linear interpolation for translation
-            trans_interpolated = (1 - t) * origin_trans + t * target_trans
-
-            # SLERP for rotation interpolation
-            q_interpolated = Quaternion.slerp(origin_rot, target_rot, t)
-            rot_interpolated = q_interpolated.rotation_matrix
-
-            # Recompose the interpolated matrix
-            interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
-
-            request = ArmCartesianGoal(
-                id=self._part_id,
-                goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
-            )
-            self._stub.SendArmCartesianGoal(request)
-            time.sleep(time_step)
-
-    def _send_elliptical_interpolation(
-        self,
-        origin_trans: npt.NDArray[np.float64],
-        target_trans: npt.NDArray[np.float64],
-        origin_rot: Quaternion,
-        target_rot: Quaternion,
-        arc_direction: str,
-        secondary_radius: Optional[float],
-        nb_steps: int,
-        time_step: float,
-    ) -> None:
-        """Generate elliptical interpolation between two poses for the arm.
-
-        The function performs elliptical interpolation for both translation and rotation from the
-        origin to the target pose.
-
-        Args:
-            origin_trans: The initial translation vector of the arm,
-                given as a NumPy array of type `np.float64`, containing the x, y, and z coordinates.
-            target_trans: The target translation vector that the robot
-                end-effector should reach, provided as a NumPy array of type `np.float64` with the x,
-                y, and z coordinates.
-            origin_rot: The initial orientation (rotation) of the end-effector.
-            target_rot: The target orientation (rotation) that the end-effector should reach.
-            arc_direction: The direction of the elliptical interpolation, which can be 'above',
-                'below', 'right', 'left', 'front', or 'back'.
-            secondary_radius: The radius of the secondary axis of the ellipse. If not
-                provided, it defaults to the primary radius, which is based on the distance between the
-                origin and target poses.
-            nb_steps: The number of steps for the interpolation, determining how many
-                intermediate poses will be generated between the origin and target.
-            time_step: The time interval in seconds between each interpolation step.
-        """
-        vector_target_origin = target_trans - origin_trans
-
-        center = (origin_trans + target_trans) / 2
-        radius = float(np.linalg.norm(vector_target_origin) / 2)
-
-        vector_origin_center = origin_trans - center
-        vector_target_center = target_trans - center
-
-        if np.isclose(radius, 0, atol=1e-03):
-            self._logger.warning(f"{self._part_id.name} is already at the target pose. No command sent.")
-            return
-        if secondary_radius is None:
-            secondary_radius = radius
-        if secondary_radius is not None and secondary_radius > 0.3:
-            self._logger.warning("interpolation elliptic_radius was too large, reduced to 0.3")
-            secondary_radius = 0.3
-
-        normal = get_normal_vector(vector=vector_target_origin, arc_direction=arc_direction)
-
-        if normal is None:
-            self._logger.warning("arc_direction has no solution. Executing linear interpolation instead.")
-            self._send_linear_interpolation(
-                origin_trans=origin_trans,
-                target_trans=target_trans,
-                origin_rot=origin_rot,
-                target_rot=target_rot,
-                nb_steps=nb_steps,
-                time_step=time_step,
-            )
-            return
-
-        cos_angle = np.dot(vector_origin_center, vector_target_center) / (
-            np.linalg.norm(vector_origin_center) * np.linalg.norm(vector_target_center)
-        )
-        angle = np.arccos(np.clip(cos_angle, -1, 1))
-
-        for t in np.linspace(0, 1, nb_steps):
-            # Interpolated angles
-            theta = t * angle
-
-            # Rotation of origin_vector around the circle center in the plan defined by 'normal'
-            q1 = Quaternion(axis=normal, angle=theta)
-            rotation_matrix = q1.rotation_matrix
-
-            # Interpolated point in plan
-            trans_interpolated = np.dot(rotation_matrix, vector_origin_center)
-            # Adjusting the ellipse
-            ellipse_interpolated = trans_interpolated * np.array([1, 1, secondary_radius / radius])
-            trans_interpolated = ellipse_interpolated + center
-
-            # SLERP for the rotation
-            q_interpolated = Quaternion.slerp(origin_rot, target_rot, t)
-            rot_interpolated = q_interpolated.rotation_matrix
-
-            # Recompose the interpolated matrix
-            interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
-
-            request = ArmCartesianGoal(
-                id=self._part_id,
-                goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
-            )
-            self._stub.SendArmCartesianGoal(request)
-            time.sleep(time_step)
 
     def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send goal positions to the gripper and actuators if the parts are on.

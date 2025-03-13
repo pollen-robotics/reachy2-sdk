@@ -53,7 +53,7 @@ class Lidar:
             return None
         np_data = np.frombuffer(compressed_map.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
-        return img  # type: ignore[no-any-return]
+        return img.astype(np.uint8)
 
     @property
     def safety_slowdown_distance(self) -> float:
@@ -144,14 +144,14 @@ class Lidar:
         """
         return self._obstacle_detection_status
 
-    def reset_safety_default_values(self) -> None:
+    def reset_safety_default_distances(self) -> None:
         """Reset default distance values for safety detection.
 
         The reset values include:
         - safety_critical_distance
         - safety_slowdown_distance.
         """
-        self._stub.ResetDefaultValues(self._part._part_id)
+        self._stub.ResetDefaultSafetyDistances(self._part._part_id)
 
     def _update_with(self, new_lidar_state: LidarSafety) -> None:
         """Update lidar information with a new state received from a gRPC server.

@@ -36,13 +36,10 @@ from .parts.arm import Arm
 from .parts.head import Head
 from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
+from .parts.tripod import Tripod
 from .utils.custom_dict import CustomDict
-from .utils.utils import (
-    SimplifiedRequest,
-    arm_position_to_list,
-    ext_euler_angles_to_list,
-    get_interpolation_mode,
-)
+from .utils.goto_based_element import process_goto_request
+from .utils.utils import SimplifiedRequest
 
 GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 """Named tuple for easy access to goto request on full body"""
@@ -109,6 +106,7 @@ class ReachySDK:
         self._cameras: Optional[CameraManager] = None
         self._mobile_base: Optional[MobileBase] = None
         self._info: Optional[ReachyInfo] = None
+        self._tripod: Optional[Tripod] = None
 
         self._update_timestamp: Timestamp = Timestamp(seconds=0)
 
@@ -243,6 +241,17 @@ class ReachySDK:
             self._logger.error("mobile_base does not exist with this configuration")
             return None
         return self._mobile_base
+
+    @property
+    def tripod(self) -> Optional[Tripod]:
+        """Get Reachy's fixed tripod."""
+        if not self._grpc_connected:
+            self._logger.error("Cannot get tripod, not connected to Reachy")
+            return None
+        if self._tripod is None:
+            self._logger.error("tripod does not exist with this configuration")
+            return None
+        return self._tripod
 
     @property
     def joints(self) -> CustomDict[str, OrbitaJoint]:
@@ -391,7 +400,9 @@ class ReachySDK:
             return None
 
         if self._robot.HasField("mobile_base"):
-            self._mobile_base = MobileBase(self._robot.head, initial_state.mobile_base_state, self._grpc_channel)
+            self._mobile_base = MobileBase(
+                self._robot.mobile_base, initial_state.mobile_base_state, self._grpc_channel, self._goto_stub
+            )
             self.info._set_mobile_base(self._mobile_base)
 
     def _setup_part_head(self, initial_state: ReachyState) -> None:
@@ -408,6 +419,16 @@ class ReachySDK:
             else:
                 self.info._disabled_parts.append("head")
 
+    def _setup_part_tripod(self, initial_state: ReachyState) -> None:
+        """Set up the robot's tripod based on the initial state."""
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
+
+        if self._robot.HasField("tripod"):
+            tripod = Tripod(self._robot.tripod, initial_state.tripod_state, self._grpc_channel)
+            self._tripod = tripod
+
     def _setup_parts(self) -> None:
         """Initialize all parts of the robot.
 
@@ -421,6 +442,7 @@ class ReachySDK:
         self._setup_part_l_arm(initial_state)
         self._setup_part_head(initial_state)
         self._setup_part_mobile_base(initial_state)
+        self._setup_part_tripod(initial_state)
 
     def get_update_timestamp(self) -> int:
         """Returns the timestamp (ns) of the last update.
@@ -453,6 +475,7 @@ class ReachySDK:
                 self._update_part(self._r_arm, state_update.r_arm_state)
                 self._update_part(self._head, state_update.head_state)
                 self._update_part(self._mobile_base, state_update.mobile_base_state)
+                self._update_part(self._tripod, state_update.tripod_state)
 
                 if self._l_arm and self._l_arm.gripper:
                     self._l_arm.gripper._update_with(state_update.l_hand_state)
@@ -735,7 +758,7 @@ class ReachySDK:
         )
         return result
 
-    def get_goto_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
+    def get_goto_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
         """Retrieve the details of a goto command based on its GoToId.
 
         Args:
@@ -759,26 +782,10 @@ class ReachySDK:
             raise ValueError("No answer was found for given move, goto_id is -1")
 
         response = self._goto_stub.GetGoToRequest(goto_id)
-        if response.joints_goal.HasField("arm_joint_goal"):
-            part = response.joints_goal.arm_joint_goal.id.name
-            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-            goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
-            duration = response.joints_goal.arm_joint_goal.duration.value
-        elif response.joints_goal.HasField("neck_joint_goal"):
-            part = response.joints_goal.neck_joint_goal.id.name
-            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-            goal_positions = ext_euler_angles_to_list(
-                response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
-            )
-            duration = response.joints_goal.neck_joint_goal.duration.value
 
-        request = SimplifiedRequest(
-            part=part,
-            goal_positions=goal_positions,
-            duration=duration,
-            mode=mode,
-        )
-        return request
+        full_request = process_goto_request(response)
+
+        return full_request
 
     def _get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
         """Retrieve the current state of a goto command.
