@@ -141,15 +141,6 @@ class Hand(Part, IGoToBasedPart):
     @abstractmethod
     def _get_goal_positions_message(self) -> Optional[HandPositionRequest]:
         """Get the HandPositionRequest message to send the goal positions to the actuator."""
-        if self._outgoing_goal_positions is not None:
-            command = HandPositionRequest(
-                id=self._part_id,
-                position=HandPosition(
-                    parallel_gripper=ParallelGripperPosition(position=FloatValue(value=self._outgoing_goal_positions))
-                ),
-            )
-            return command
-        return None
 
     def _clean_outgoing_goal_positions(self) -> None:
         """Clean the outgoing goal positions."""
