@@ -16,14 +16,11 @@ from reachy2_sdk_api.hand_pb2 import (
     Temperatures,
 )
 
-from reachy2_sdk.parts.hand import Hand
-from reachy2_sdk.reachy_sdk import ReachySDK
+from reachy2_sdk.grippers.gripper_joint import GripperJoint
 
 
 @pytest.mark.offline
 def test_class() -> None:
-    grpc_channel = grpc.insecure_channel("dummy:5050")
-
     goal_position_rad = 3
     present_position_rad = 4
     compliant = True
@@ -42,25 +39,18 @@ def test_class() -> None:
         compliant=BoolValue(value=compliant),
     )
 
-    hand = Hand(hand_msg=hand_proto, initial_state=hand_state, grpc_channel=grpc_channel, goto_stub=None)
+    joint = GripperJoint(initial_state=hand_state)
 
-    assert hand.__repr__() != ""
+    assert joint.__repr__() != ""
 
-    assert hand.opening == 20
-    assert hand.get_current_opening() == 20
+    assert joint.opening == 20
 
-    with pytest.raises(ValueError):
-        hand.set_opening(-1)
-
-    with pytest.raises(ValueError):
-        hand.set_opening(101)
-
-    assert hand._goal_position == goal_position_rad
-    assert hand._present_position == present_position_rad
-    assert hand.goal_position == np.rad2deg(goal_position_rad)
-    assert hand.present_position == np.rad2deg(present_position_rad)
-    assert hand.is_on() is False
-    assert hand.is_off() is True
+    assert joint._goal_position == goal_position_rad
+    assert joint._present_position == present_position_rad
+    assert joint.goal_position == np.rad2deg(goal_position_rad)
+    assert joint.present_position == np.rad2deg(present_position_rad)
+    assert joint.is_on() is False
+    assert joint.is_off() is True
 
     goal_position_rad = 5
     present_position_rad = 6
@@ -76,35 +66,20 @@ def test_class() -> None:
         joints_limits=JointsLimits(parallel_gripper=ParallelGripperLimits(limits=JointLimits(max=5, min=6))),
         temperatures=HandTemperatures(parallel_gripper=Temperatures(driver=7, motor=8)),
     )
-    hand._update_with(hand_state)
+    joint._update_with(hand_state)
 
-    assert hand.opening == 70
+    assert joint.opening == 70
 
-    hand._compliant = True
+    joint._compliant = True
 
-    with pytest.raises(RuntimeError):
-        hand.open()
+    assert joint._goal_position == goal_position_rad
+    assert joint._present_position == present_position_rad
+    assert joint.goal_position == np.rad2deg(goal_position_rad)
+    assert joint.present_position == np.rad2deg(present_position_rad)
 
-    with pytest.raises(RuntimeError):
-        hand.close()
-
-    with pytest.raises(RuntimeError):
-        hand.set_opening(50)
-
-    with pytest.raises(TypeError):
-        hand.goal_position = "wrong value"
-
-    assert hand._goal_position == goal_position_rad
-    assert hand._present_position == present_position_rad
-    assert hand.goal_position == np.rad2deg(goal_position_rad)
-    assert hand.present_position == np.rad2deg(present_position_rad)
-
-    hand._set_speed_limits(100)
-    hand.send_goal_positions()
-
-    hand._is_moving = True
+    joint._is_moving = True
 
     for _ in range(10):
-        hand._check_hand_movement(0)
+        joint._check_joint_movement()
 
-    assert hand._is_moving == False
+    assert joint._is_moving == False

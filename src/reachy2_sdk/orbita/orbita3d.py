@@ -172,6 +172,10 @@ class Orbita3d(Orbita):
     def _get_goal_positions_message(self) -> Optional[Orbita3dsCommand]:
         """Get the Orbita2dsCommand message to send the goal positions to the actuator."""
         if self._outgoing_goal_positions:
+            if self.is_off():
+                self._logger.warning(f"{self._name} is off. Command not sent.")
+                return
+
             req_pos = {}
             for joint_axis in self._joints.keys():
                 if joint_axis in self._outgoing_goal_positions:

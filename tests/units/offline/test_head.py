@@ -69,7 +69,15 @@ def test_class() -> None:
     head = Head(head_msg=head_proto, initial_state=head_state, grpc_channel=grpc_channel, goto_stub=None)
 
     assert head.__repr__() != ""
-
+    assert (
+        str(head) == f"<Head on=False actuators=\n"
+        f"\tneck: <Orbita3d on=False joints=\n"
+        f'\t<OrbitaJoint axis_type="roll" present_position=57.3 goal_position=229.18 >\n'
+        f'\t<OrbitaJoint axis_type="pitch" present_position=114.59 goal_position=286.48 >\n'
+        f'\t<OrbitaJoint axis_type="yaw" present_position=171.89 goal_position=343.77 >\n'
+        f">\n"
+        f">"
+    )
     assert not head.neck.is_on()
     assert head.is_off()
     assert not head.is_on()
@@ -213,7 +221,7 @@ def test_class() -> None:
     dynamixel_status = DynamixelMotorStatus(errors=[error])
     head_status = HeadStatus(neck_status=orbita3d_status, l_antenna_status=dynamixel_status, r_antenna_status=dynamixel_status)
     head._update_audit_status(head_status)
-    assert head.neck.audit == "orbita3d error"
+    assert head.neck.status == "orbita3d error"
 
 
 @pytest.mark.offline

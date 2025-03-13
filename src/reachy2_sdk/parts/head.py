@@ -489,9 +489,6 @@ class Head(JointsBasedPart, IGoToBasedPart):
             check_positions: A boolean indicating whether to check the positions after sending the command.
                 Defaults to True.
         """
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
-            return
         for actuator in self._actuators.values():
             actuator.send_goal_positions(check_positions)
 
