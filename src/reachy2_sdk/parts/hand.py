@@ -1,6 +1,6 @@
 """Reachy Hand module.
 
-Handles all specific method to a Hand.
+Handles all specific methods to a Hand.
 """
 
 from abc import abstractmethod
@@ -23,6 +23,7 @@ class Hand(Part, IGoToBasedPart):
     The `Hand` class provides methods to control the gripper of Reachy, including opening and closing
     the hand, setting the goal position, and checking the hand's state. It also manages the hand's
     compliance status (whether it is stiff or free).
+    It is an abstract class that should be subclassed to implement specific behaviors for different grippers.
 
     Attributes:
         opening: The opening of the hand as a percentage (0-100), rounded to two decimal places.
@@ -43,7 +44,6 @@ class Hand(Part, IGoToBasedPart):
 
         Args:
             hand_msg: The Hand_proto object containing the configuration details for the hand.
-            initial_state: The initial state of the hand, represented as a HandState object.
             grpc_channel: The gRPC channel used to communicate with the hand's gRPC service.
             goto_stub: The gRPC stub for controlling goto movements.
         """
@@ -89,7 +89,7 @@ class Hand(Part, IGoToBasedPart):
         """Check if the hand is currently moving.
 
         Returns:
-            `True` if the gripper is moving, `False` otherwise.
+            `True` if any joint of the hand is moving, `False` otherwise.
         """
         goto_playing = self.get_goto_playing()
         if goto_playing.id != -1 and goto_playing.id != self._last_goto_checked:
@@ -128,9 +128,9 @@ class Hand(Part, IGoToBasedPart):
 
     @abstractmethod
     def send_goal_positions(self, check_positions: bool = True) -> None:
-        """Send the goal position to the hand actuator.
+        """Send the goal positions to the hand's joints.
 
-        If any goal position has been specified to the gripper, sends them to the robot.
+        If any goal position has been specified for any of the gripper's joints, sends them to the robot.
         If the hand is off, the command is not sent.
 
         Args :

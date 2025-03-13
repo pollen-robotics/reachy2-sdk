@@ -1,6 +1,6 @@
-"""Reachy Hand module.
+"""Reachy GripperJoint module.
 
-Handles all specific method to a Hand.
+Handles all specific methods to a GripperJoint.
 """
 
 import logging
@@ -8,36 +8,34 @@ from collections import deque
 from typing import Deque, Optional
 
 import numpy as np
-from reachy2_sdk_api.hand_pb2 import HandState, HandStatus
+from reachy2_sdk_api.hand_pb2 import HandState
 
 from ..orbita.utils import to_internal_position, to_position
 
 
 class GripperJoint:
-    """Class for controlling the Reachy's hand.
+    """Class to represent any gripper's joint of the robot.
 
-    The `Hand` class provides methods to control the gripper of Reachy, including opening and closing
-    the hand, setting the goal position, and checking the hand's state. It also manages the hand's
-    compliance status (whether it is stiff or free).
+    The `GripperJoint` class provides methods to get output values of the joint, such as the opening,
+    present position, and goal position. It also allows setting the goal position and checking the
+    joint's movement status.
 
     Attributes:
-        opening: The opening of the hand as a percentage (0-100), rounded to two decimal places.
-        present_position: The current position of the hand in degrees.
-        goal_position: The target goal position of the hand in degrees.
+        opening: The opening of the joint as a percentage (0-100), rounded to two decimal places.
+        present_position: The current position of the joint in degrees.
+        goal_position: The target goal position of the joint in degrees.
     """
 
     def __init__(
         self,
         initial_state: HandState,
     ):
-        """Initialize the DynamixelMotor with its initial state and configuration.
+        """Initialize the GripperJoint with its initial state.
 
-        This sets up the motor by assigning its state based on the provided initial values.
+        This sets up the joint by assigning its state based on the provided initial values.
 
         Args:
-            initial_state: A dictionary containing the initial state of the joint, with
-                each entry representing a specific parameter of the joint (e.g., present position).
-            part: The part to which this motor belongs.
+            initial_state: A HandState containing the initial state of the joint.
         """
         self._logger = logging.getLogger(__name__)
 
@@ -47,23 +45,8 @@ class GripperJoint:
         self._last_present_positions_queue_size = 10
         self._last_present_positions: Deque[float] = deque(maxlen=self._last_present_positions_queue_size)
 
-        self._setup_gripper(initial_state)
-
-    def _setup_gripper(self, initial_state: HandState) -> None:
-        """Set up the hand with the given initial state.
-
-        This method initializes the hand's present position, goal position, opening, and compliance status.
-
-        Args:
-            hand_msg: A Hand_proto object representing the hand's configuration.
-            initial_state: A HandState object representing the initial state of the hand.
-        """
-        self._present_position: float = initial_state.present_position.parallel_gripper.position.value
-        self._goal_position: float = initial_state.goal_position.parallel_gripper.position.value
-        self._opening: float = initial_state.opening.value
-        self._compliant: bool = initial_state.compliant.value
+        self._update_with(initial_state)
         self._last_present_positions.append(self._present_position)
-
         self._outgoing_goal_positions: Optional[float] = None
 
     def __repr__(self) -> str:
@@ -77,34 +60,34 @@ class GripperJoint:
 
     @property
     def opening(self) -> float:
-        """Get the opening of the hand as a percentage.
+        """Get the opening of the joint as a percentage.
 
         Returns:
-            The hand opening as a percentage (0-100), rounded to two decimal places.
+            The joint opening as a percentage (0-100), rounded to two decimal places.
         """
-        return round(self._opening * 100, 2)
+        return float(round(self._opening * 100, 2))
 
     @property
     def present_position(self) -> float:
-        """Get the current position of the hand.
+        """Get the current position of the joint.
 
         Returns:
-            The present position of the hand in degrees.
+            The present position of the joint in degrees.
         """
         return to_position(self._present_position)
 
     @property
     def goal_position(self) -> float:
-        """Get the goal position of the hand.
+        """Get the goal position of the joint.
 
         Returns:
-            The goal position of the hand in degrees.
+            The goal position of the joint in degrees.
         """
         return to_position(self._goal_position)
 
     @goal_position.setter
     def goal_position(self, value: float | int) -> None:
-        """Set the goal position for the hand.
+        """Set the goal position for the joint.
 
         Args:
             value: The goal position to set, specified as a float or int.
@@ -118,39 +101,36 @@ class GripperJoint:
             raise TypeError("goal_position must be a float or int")
 
     def is_on(self) -> bool:
-        """Check if the hand is stiff.
+        """Check if the joint is stiff.
 
         Returns:
-            `True` if the hand is on (not compliant), `False` otherwise.
+            `True` if the joint is on (not compliant), `False` otherwise.
         """
         return not self._compliant
 
     def is_off(self) -> bool:
-        """Check if the hand is compliant.
+        """Check if the joint is compliant.
 
         Returns:
-            `True` if the hand is off (compliant), `False` otherwise.
+            `True` if the joint is off (compliant), `False` otherwise.
         """
-        return self._compliant
+        return bool(self._compliant)
 
     def is_moving(self) -> bool:
-        """Check if the hand is currently moving.
+        """Check if the joint is currently moving.
 
         Returns:
-            `True` if the gripper is moving, `False` otherwise.
+            `True` if the joint is moving, `False` otherwise.
         """
         return self._is_moving
 
     def _check_joint_movement(self) -> None:
-        """Check if the hand is still moving based on the present position.
+        """Check if the joint is still moving based on the present position.
 
         This method updates the movement status by comparing the current position to the last few positions.
-        If the position has not changed significantly, the hand is considered to have stopped moving.
-
-        Args:
-            present_position: The current position of the hand.
+        If the position has not changed significantly, the joint is considered to have stopped moving.
         """
-        present_position = np.deg2rad(self.present_position)
+        present_position = self._present_position
         if (
             len(self._last_present_positions) >= self._last_present_positions_queue_size
             and np.isclose(present_position, self._last_present_positions[-1], np.deg2rad(0.1))
@@ -161,10 +141,10 @@ class GripperJoint:
         self._last_present_positions.append(present_position)
 
     def _update_with(self, new_state: HandState) -> None:
-        """Update the hand with a newly received (partial) state from the gRPC server.
+        """Update the joint with a newly received (partial) state from the gRPC server.
 
         This method updates the present position, goal position, opening, and compliance status.
-        It also checks if the hand is still moving based on the new state.
+        It also checks if the joint is still moving based on the new state.
 
         Args:
             new_state: A HandState object representing the new state of the hand.
@@ -175,21 +155,3 @@ class GripperJoint:
         self._compliant = new_state.compliant.value
         if self._is_moving:
             self._check_joint_movement()
-
-    def _update_audit_status(self, new_status: HandStatus) -> None:
-        """Update the audit status with the new status received from the gRPC server.
-
-        Args:
-            new_status: A HandStatus object representing the new status of the hand.
-        """
-        pass  # pragma: no cover
-
-    @property
-    def status(self) -> Optional[str]:
-        """Get the current audit status of the actuator.
-
-        Returns:
-            The audit status as a string, representing the latest error or status
-            message, or `None` if there is no error.
-        """
-        pass

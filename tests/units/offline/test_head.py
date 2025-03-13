@@ -69,7 +69,15 @@ def test_class() -> None:
     head = Head(head_msg=head_proto, initial_state=head_state, grpc_channel=grpc_channel, goto_stub=None)
 
     assert head.__repr__() != ""
-
+    assert (
+        str(head) == f"<Head on=False actuators=\n"
+        f"\tneck: <Orbita3d on=False joints=\n"
+        f'\t<OrbitaJoint axis_type="roll" present_position=57.3 goal_position=229.18 >\n'
+        f'\t<OrbitaJoint axis_type="pitch" present_position=114.59 goal_position=286.48 >\n'
+        f'\t<OrbitaJoint axis_type="yaw" present_position=171.89 goal_position=343.77 >\n'
+        f">\n"
+        f">"
+    )
     assert not head.neck.is_on()
     assert head.is_off()
     assert not head.is_on()

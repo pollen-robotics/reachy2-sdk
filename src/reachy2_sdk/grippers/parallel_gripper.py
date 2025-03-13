@@ -1,6 +1,6 @@
-"""Reachy Hand module.
+"""Reachy ParallelGripper module.
 
-Handles all specific method to a Hand.
+Handles all specific methods to a ParallelGripper.
 """
 
 from typing import Any, List, Optional
@@ -27,11 +27,11 @@ from .gripper_joint import GripperJoint
 
 
 class ParallelGripper(Hand):
-    """Class for controlling the Reachy's hand.
+    """Class for controlling the Reachy's parallel gripper.
 
-    The `Hand` class provides methods to control the gripper of Reachy, including opening and closing
+    The `ParallelGripper` class provides methods to control the gripper of Reachy, including opening and closing
     the hand, setting the goal position, and checking the hand's state. It also manages the hand's
-    compliance status (whether it is stiff or free).
+    compliance status (whether it is stiff or free). It implements all specific behaviors for the parallel gripper.
 
     Attributes:
         opening: The opening of the hand as a percentage (0-100), rounded to two decimal places.
@@ -46,7 +46,7 @@ class ParallelGripper(Hand):
         grpc_channel: grpc.Channel,
         goto_stub: GoToServiceStub,
     ) -> None:
-        """Initialize the Hand component.
+        """Initialize the ParallelGripper component.
 
         Sets up the necessary attributes and configuration for the hand, including the gRPC
         stub and initial state.
@@ -71,7 +71,7 @@ class ParallelGripper(Hand):
 
     @property
     def opening(self) -> float:
-        """Get the opening of the hand as a percentage.
+        """Get the opening of the parallel gripper only joint as a percentage.
 
         Returns:
             The hand opening as a percentage (0-100), rounded to two decimal places.
@@ -80,7 +80,7 @@ class ParallelGripper(Hand):
 
     @property
     def present_position(self) -> float:
-        """Get the current position of the hand.
+        """Get the current position of the parallel gripper only joint.
 
         Returns:
             The present position of the hand in degrees.
@@ -89,7 +89,7 @@ class ParallelGripper(Hand):
 
     @property
     def goal_position(self) -> float:
-        """Get the goal position of the hand.
+        """Get the goal position of the parallel gripper only joint.
 
         Returns:
             The goal position of the hand in degrees.
@@ -98,7 +98,7 @@ class ParallelGripper(Hand):
 
     @goal_position.setter
     def goal_position(self, value: float | int) -> None:
-        """Set the goal position for the hand.
+        """Set the goal position for the parallel gripper only joint.
 
         Args:
             value: The goal position to set, specified as a float or int.
@@ -113,8 +113,8 @@ class ParallelGripper(Hand):
 
         Args:
             duration: The time in seconds for the movement to be completed.
-            target: The target position, either a list of joint positions or a 4x4 pose matrix.
-            q0: An optional initial joint configuration for inverse kinematics. Defaults to None.
+            target: The target position, either a float or int.
+            q0: An optional initial joint configuration for inverse kinematics (not used for the hand). Defaults to None.
 
         Raises:
             TypeError: If the target is not a float or a int.
@@ -127,7 +127,7 @@ class ParallelGripper(Hand):
             raise ValueError("duration cannot be set to 0.")
 
     def get_current_opening(self) -> float:
-        """Get the current opening of the hand.
+        """Get the current opening of the parallel gripper only joint.
 
         Returns:
             The current opening of the hand as a percentage (0-100).
@@ -135,7 +135,7 @@ class ParallelGripper(Hand):
         return self.opening
 
     def set_opening(self, percentage: float) -> None:
-        """Set the opening value for the hand.
+        """Set the opening value for the parallel gripper only joint.
 
         Args:
             percentage: The desired opening percentage of the hand, ranging from 0 to 100.
@@ -160,7 +160,7 @@ class ParallelGripper(Hand):
         self._joints["finger"]._is_moving = True
 
     def send_goal_positions(self, check_positions: bool = True) -> None:
-        """Send the goal position to the hand actuator.
+        """Send the goal position to the actuator's joints.
 
         If any goal position has been specified to the gripper, sends them to the robot.
         If the hand is off, the command is not sent.
