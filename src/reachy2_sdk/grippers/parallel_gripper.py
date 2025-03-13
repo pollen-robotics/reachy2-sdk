@@ -159,6 +159,20 @@ class ParallelGripper(Hand):
         )
         self._joints["finger"]._is_moving = True
 
+    def _get_goal_positions_message(self) -> Optional[HandPositionRequest]:
+        """Get the HandPositionRequest message to send the goal positions to the actuator."""
+        if self._joints["finger"]._outgoing_goal_positions is not None:
+            command = HandPositionRequest(
+                id=self._part_id,
+                position=HandPosition(
+                    parallel_gripper=ParallelGripperPosition(
+                        position=FloatValue(value=self._joints["finger"]._outgoing_goal_positions)
+                    )
+                ),
+            )
+            return command
+        return None
+
     def send_goal_positions(self, check_positions: bool = True) -> None:
         """Send the goal position to the actuator's joints.
 
