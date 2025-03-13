@@ -193,11 +193,11 @@ class GripperJoint:
         pass  # pragma: no cover
 
     @property
-    def audit(self) -> Optional[str]:
+    def status(self) -> Optional[str]:
         """Get the current audit status of the actuator.
 
         Returns:
             The audit status as a string, representing the latest error or status
             message, or `None` if there is no error.
         """
-        return None
+        pass

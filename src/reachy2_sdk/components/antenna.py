@@ -251,7 +251,7 @@ class Antenna(IGoToBasedComponent):
         self._joints[self._name]._update_with(new_state)
 
     @property
-    def audit(self) -> Optional[str]:
+    def status(self) -> Optional[str]:
         """Get the current audit status of the actuator.
 
         Returns:

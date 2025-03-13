@@ -302,3 +302,13 @@ class ParallelGripper(Hand):
             new_status: A HandStatus object representing the new status of the hand.
         """
         pass  # pragma: no cover
+
+    @property
+    def status(self) -> Optional[str]:
+        """Get the current audit status of the actuator.
+
+        Returns:
+            The audit status as a string, representing the latest error or status
+            message, or `None` if there is no error.
+        """
+        pass

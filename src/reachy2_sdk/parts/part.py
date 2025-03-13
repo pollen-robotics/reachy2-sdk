@@ -158,9 +158,9 @@ class Part(ABC):
         error_dict: Dict[str, str] = {}
         error_detected = False
         for act_name, actuator in self._actuators.items():
-            error_dict[act_name] = actuator.audit
-            if actuator.audit != "Ok":
-                self._logger.warning(f'Error detected on {self._part_id.name}_{act_name}: "{actuator.audit}"')
+            error_dict[act_name] = actuator.status
+            if actuator.status is not None and actuator.status != "Ok":
+                self._logger.warning(f'Error detected on {self._part_id.name}_{act_name}: "{actuator.status}"')
                 error_detected = True
         if not error_detected:
             self._logger.info(f"No error detected on {self._part_id.name}")
