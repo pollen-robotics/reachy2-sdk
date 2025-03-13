@@ -213,7 +213,7 @@ def test_class() -> None:
     dynamixel_status = DynamixelMotorStatus(errors=[error])
     head_status = HeadStatus(neck_status=orbita3d_status, l_antenna_status=dynamixel_status, r_antenna_status=dynamixel_status)
     head._update_audit_status(head_status)
-    assert head.neck.audit == "orbita3d error"
+    assert head.neck.status == "orbita3d error"
 
 
 @pytest.mark.offline

@@ -169,10 +169,10 @@ class ParallelGripper(Hand):
             check_positions: A boolean indicating whether to check the positions after sending the command.
                 Defaults to True.
         """
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
-            return
         if self._joints["finger"]._outgoing_goal_positions is not None:
+            if self.is_off():
+                self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
+                return
             self._stub.SetHandPosition(
                 HandPositionRequest(
                     id=self._part_id,

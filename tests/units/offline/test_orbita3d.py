@@ -184,8 +184,8 @@ def test_class() -> None:
     orbita3d.temperatures["motor_2"] == temperature.motor_1.value
     orbita3d.temperatures["motor_3"] == temperature.motor_3.value
 
-    assert orbita3d.audit is None
+    assert orbita3d.status is None
     error = Error(details="test")
     orbita3d_status = Orbita3dStatus(errors=[error])
     orbita3d._update_audit_status(orbita3d_status)
-    assert orbita3d.audit == "test"
+    assert orbita3d.status == "test"

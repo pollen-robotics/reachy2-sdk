@@ -197,6 +197,14 @@ class Antenna(IGoToBasedComponent):
         """
         return bool(self._joints[self._name].is_on())
 
+    def is_off(self) -> bool:
+        """Check if the antenna is currently stiff.
+
+        Returns:
+            `True` if the antenna's motor is stiff (not compliant), `False` otherwise.
+        """
+        return not bool(self._joints[self._name].is_on())
+
     @property
     def present_position(self) -> float:
         """Get the present position of the joint in degrees."""
@@ -230,7 +238,11 @@ class Antenna(IGoToBasedComponent):
             check_positions: A boolean indicating whether to check the positions after sending the command.
                 Defaults to True.
         """
-        self._joints[self._name].send_goal_positions(check_positions)
+        if self._joints[self._name]._outgoing_goal_position is not None:
+            if self.is_off():
+                self._logger.warning(f"{self._name} is off. Command not sent.")
+                return
+            self._joints[self._name].send_goal_positions(check_positions)
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
         """Set the speed limit as a percentage of the maximum speed the motor.

@@ -233,25 +233,31 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._gripper._turn_off()
         super()._turn_off()
 
-    def is_on(self) -> bool:
+    def is_on(self, check_gripper: bool = True) -> bool:
         """Check if all actuators of the arm are stiff.
 
         Returns:
             `True` if all actuators of the arm are stiff, `False` otherwise.
         """
-        if not super().is_on():
-            return False
-        return True
+        if not check_gripper:
+            for actuator in [self._actuators[act] for act in self._actuators.keys() if act not in ["gripper"]]:
+                if not actuator.is_on():
+                    return False
+            return True
+        return super().is_on()
 
-    def is_off(self) -> bool:
+    def is_off(self, check_gripper: bool = True) -> bool:
         """Check if all actuators of the arm are compliant.
 
         Returns:
             `True` if all actuators of the arm are compliant, `False` otherwise.
         """
-        if not super().is_off():
-            return False
-        return True
+        if not check_gripper:
+            for actuator in [self._actuators[act] for act in self._actuators.keys() if act not in ["gripper"]]:
+                if not actuator.is_off():
+                    return False
+            return True
+        return super().is_off()
 
     def get_current_positions(self, degrees: bool = True) -> List[float]:
         """Return the current joint positions of the arm, either in degrees or radians.
@@ -452,7 +458,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """
         self._check_goto_parameters(target, duration, q0)
 
-        if self.is_off():
+        if self.is_off(check_gripper=False):
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
 
@@ -1010,11 +1016,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             check_positions: A boolean indicating whether to check the positions after sending the command.
                 Defaults to True.
         """
-        if self._gripper is not None:
-            self._gripper.send_goal_positions(check_positions)
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
-            return
         for actuator in self._actuators.values():
             actuator.send_goal_positions(check_positions)
 
