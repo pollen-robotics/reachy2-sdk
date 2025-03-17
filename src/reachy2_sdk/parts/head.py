@@ -73,7 +73,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         self._neck: Optional[Orbita3d] = None
         self._l_antenna: Optional[Antenna] = None
         self._r_antenna: Optional[Antenna] = None
-        self._actuators: Dict[str, Any] = {}
+        self._actuators: Dict[str, Orbita3d | Antenna] = {}
 
         self._setup_head(head_msg, initial_state)
 
@@ -480,30 +480,24 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._logger.warning("Head is off. No command sent.")
         return GoToId(id=-1)
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
-        """Send goal positions to the head's joints.
-
-        If goal positions have been specified for any joint of the head, sends them to the robot.
-
-        Args :
-            check_positions: A boolean indicating whether to check the positions after sending the command.
-                Defaults to True.
-        """
-        for actuator in self._actuators.values():
-            actuator.send_goal_positions(check_positions)
-
     def _get_goal_positions_message(self) -> HeadComponentsCommands:
-        """Get the Orbita2dsCommand message to send the goal positions to the actuator."""
+        """Get the HeadComponentsCommands message to send the goal positions to the actuator."""
         commands = {}
-        neck_command = self.neck._get_goal_positions_message() if self.neck is not None else None
-        if neck_command is not None:
-            commands["neck_command"] = neck_command
+        for actuator_name, actuator in self._actuators.items():
+            actuator_command = actuator._get_goal_positions_message()
+            if actuator_command is not None:
+                commands[f"{actuator_name}_command"] = actuator_command
         return HeadComponentsCommands(**commands)
 
     def _clean_outgoing_goal_positions(self) -> None:
         """Clean the outgoing goal positions."""
-        if self.neck is not None:
-            self.neck._clean_outgoing_goal_positions()
+        for actuator in self._actuators.values():
+            actuator._clean_outgoing_goal_positions()
+
+    def _post_send_goal_positions(self) -> None:
+        """Monitor the joint positions to check if they reach the specified goals."""
+        for actuator in self._actuators.values():
+            actuator._post_send_goal_positions()
 
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state from the gRPC server.

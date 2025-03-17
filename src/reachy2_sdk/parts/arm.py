@@ -1008,37 +1008,31 @@ class Arm(JointsBasedPart, IGoToBasedPart):
     #     temperatures = self._arm_stub.GetTemperatures(self._part_id)
     #     return temperatures
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
-        """Send goal positions to the gripper and actuators if the parts are on.
-
-        The function checks if the gripper and actuators are active before sending the goal positions.
-
-        Args :
-            check_positions: A boolean indicating whether to check the positions after sending the command.
-                Defaults to True.
-        """
-        for actuator in self._actuators.values():
-            actuator.send_goal_positions(check_positions)
-
     def _get_goal_positions_message(self) -> ArmComponentsCommands:
-        """Get the Orbita2dsCommand message to send the goal positions to the actuator."""
+        """Get the ArmComponentsCommands message to send the goal positions to the actuator."""
         commands = {}
-        shoulder_command = self.shoulder._get_goal_positions_message()
-        if shoulder_command is not None:
-            commands["shoulder_command"] = shoulder_command
-        elbow_command = self.elbow._get_goal_positions_message()
-        if elbow_command is not None:
-            commands["elbow_command"] = elbow_command
-        wrist_command = self.wrist._get_goal_positions_message()
-        if wrist_command is not None:
-            commands["wrist_command"] = wrist_command
+        for actuator_name, actuator in self._actuators.items():
+            if actuator_name != "gripper":
+                actuator_command = actuator._get_goal_positions_message()
+                if actuator_command is not None:
+                    commands[f"{actuator_name}_command"] = actuator_command
         return ArmComponentsCommands(**commands)
 
     def _clean_outgoing_goal_positions(self) -> None:
         """Clean the outgoing goal positions."""
-        self.shoulder._clean_outgoing_goal_positions()
-        self.elbow._clean_outgoing_goal_positions()
-        self.wrist._clean_outgoing_goal_positions()
+        for actuator in [self._actuators[act] for act in self._actuators.keys() if act not in ["gripper"]]:
+            actuator._clean_outgoing_goal_positions()
+
+    def _post_send_goal_positions(self) -> None:
+        """Monitor the joint positions to check if they reach the specified goals."""
+        for actuator in [self._actuators[act] for act in self._actuators.keys() if act not in ["gripper"]]:
+            actuator._post_send_goal_positions()
+
+    def send_goal_positions(self, check_positions: bool = True) -> None:
+        super().send_goal_positions(check_positions)
+        if self.gripper is not None:
+            print(f"gripper: {self.gripper._get_goal_positions_message()}")
+            self.gripper.send_goal_positions(check_positions)
 
     def _update_with(self, new_state: ArmState) -> None:
         """Update the arm with a newly received (partial) state from the gRPC server.

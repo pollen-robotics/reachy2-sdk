@@ -22,8 +22,11 @@ from google.protobuf.empty_pb2 import Empty
 from google.protobuf.timestamp_pb2 import Timestamp
 from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
+from reachy2_sdk_api.arm_pb2 import ArmComponentsCommands
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
+from reachy2_sdk_api.hand_pb2 import HandPositionRequest
+from reachy2_sdk_api.head_pb2 import HeadComponentsCommands
 from reachy2_sdk_api.reachy_pb2 import ReachyComponentsCommands, ReachyState
 
 from .config.reachy_info import ReachyInfo
@@ -33,6 +36,7 @@ from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
+from .parts.hand import Hand
 from .parts.head import Head
 from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
@@ -848,46 +852,32 @@ class ReachySDK:
             self._logger.warning("Reachy is not connected!")
             return
 
-        commands = {}
-        if self.r_arm is not None and self.r_arm.is_on():
-            r_arm_command = self.r_arm._get_goal_positions_message()
-            if r_arm_command is not None:
-                commands["r_arm_commands"] = r_arm_command
-                self.r_arm._clean_outgoing_goal_positions()
-        else:
-            self._logger.warning("r_arm is off. Command not sent.")
+        commands: Dict[str, ArmComponentsCommands | HeadComponentsCommands | HandPositionRequest] = {}
+        for part in [self.r_arm, self.l_arm, self.head]:
+            self._add_component_commands(part, commands, check_positions)
 
-        if self.l_arm is not None and self.l_arm.is_on():
-            l_arm_command = self.l_arm._get_goal_positions_message()
-            if l_arm_command is not None:
-                commands["l_arm_commands"] = l_arm_command
-                self.l_arm._clean_outgoing_goal_positions()
-        else:
-            self._logger.warning("l_arm is off. Command not sent.")
-
-        if self.head is not None and self.head.is_on():
-            head_command = self.head._get_goal_positions_message()
-            if head_command is not None:
-                commands["head_commands"] = head_command
-                self.head._clean_outgoing_goal_positions()
-        else:
-            self._logger.warning("head is off. Command not sent.")
-
-        if self.r_arm is not None and self.r_arm.gripper is not None and self.r_arm.gripper.is_on():
-            r_hand_command = self.r_arm.gripper._get_goal_positions_message()
-            if r_hand_command is not None:
-                commands["r_hand_command"] = r_hand_command
-                self.r_arm.gripper._clean_outgoing_goal_positions()
-        else:
-            self._logger.warning("r_hand is off. Command not sent.")
-
-        if self.l_arm is not None and self.l_arm.gripper is not None and self.l_arm.gripper.is_on():
-            l_hand_command = self.l_arm.gripper._get_goal_positions_message()
-            if l_hand_command is not None:
-                commands["l_hand_command"] = l_hand_command
-                self.l_arm.gripper._clean_outgoing_goal_positions()
-        else:
-            self._logger.warning("l_hand is off. Command not sent.")
+        if self.r_arm is not None:
+            self._add_component_commands(self.r_arm.gripper, commands, check_positions)
+        if self.l_arm is not None:
+            self._add_component_commands(self.l_arm.gripper, commands, check_positions)
 
         components_commands = ReachyComponentsCommands(**commands)
         self._stub.SendComponentsCommands(components_commands)
+
+    def _add_component_commands(
+        self,
+        part: JointsBasedPart | Hand | None,
+        commands: Dict[str, HeadComponentsCommands | ArmComponentsCommands | HandPositionRequest],
+        check_positions: bool,
+    ) -> None:
+        """Get the current component commands."""
+        if part is not None:
+            if part.is_off():
+                self._logger.warning(f"{part._part_id.name} is off. Command not sent.")
+                return
+            part_command = part._get_goal_positions_message()
+            if part_command is not None:
+                commands[f"{part._part_id.name}_commands"] = part_command
+                part._clean_outgoing_goal_positions()
+                if check_positions:
+                    part._post_send_goal_positions()
