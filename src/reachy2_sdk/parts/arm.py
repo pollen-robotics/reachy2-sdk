@@ -1029,6 +1029,14 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             actuator._post_send_goal_positions()
 
     def send_goal_positions(self, check_positions: bool = True) -> None:
+        """Send goal positions to the arm's joints, including the gripper.
+
+        If goal positions have been specified for any joint of the part, sends them to the robot.
+
+        Args :
+            check_positions: A boolean indicating whether to check the positions after sending the command.
+                Defaults to True.
+        """
         super().send_goal_positions(check_positions)
         if self.gripper is not None:
             print(f"gripper: {self.gripper._get_goal_positions_message()}")
