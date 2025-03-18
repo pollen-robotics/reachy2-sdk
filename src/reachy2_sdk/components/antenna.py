@@ -4,6 +4,8 @@ Handles all specific methods to Antennas.
 """
 
 import logging
+import time
+from threading import Thread
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -12,6 +14,7 @@ from grpc import Channel
 from reachy2_sdk_api.component_pb2 import ComponentId
 from reachy2_sdk_api.dynamixel_motor_pb2 import DynamixelMotor as DynamixelMotor_proto
 from reachy2_sdk_api.dynamixel_motor_pb2 import (
+    DynamixelMotorsCommand,
     DynamixelMotorState,
     DynamixelMotorStatus,
 )
@@ -52,12 +55,15 @@ class Antenna(IGoToBasedComponent):
         IGoToBasedComponent.__init__(self, ComponentId(id=uid, name=name), goto_stub)
         self._part = part
         self._error_status: Optional[str] = None
-        self._joints: Dict[str, Any] = {}
+        self._joints: Dict[str, DynamixelMotor] = {}
         if name == "antenna_left":
             self._name = "l_antenna"
         else:
             self._name = "r_antenna"
         self._joints[self._name] = DynamixelMotor(uid, name, initial_state, grpc_channel)
+
+        self._thread_check_position: Optional[Thread] = None
+        self._cancel_check = False
 
     def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
@@ -230,7 +236,49 @@ class Antenna(IGoToBasedComponent):
         """
         self._joints[self._name].goal_position = value
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def _get_goal_positions_message(self) -> Optional[DynamixelMotorsCommand]:
+        """Get the Orbita2dsCommand message to send the goal positions to the actuator."""
+        return self._joints[self._name]._get_goal_positions_message()
+
+    def _clean_outgoing_goal_positions(self) -> None:
+        """Clean the outgoing goal positions."""
+        self._joints[self._name]._clean_outgoing_goal_positions()
+
+    def _post_send_goal_positions(self) -> None:
+        """Start a background thread to check the goal positions after sending them.
+
+        This method stops any ongoing position check thread and starts a new thread
+        to monitor the current positions of the joints relative to their last goal positions.
+        """
+        self._cancel_check = True
+        if self._thread_check_position is not None and self._thread_check_position.is_alive():
+            self._thread_check_position.join()
+        self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
+        self._thread_check_position.start()
+
+    def _check_goal_positions(self) -> None:
+        """Monitor the joint positions to check if they reach the specified goals.
+
+        This method checks the current positions of the joints and compares them to
+        the goal positions. If a position is significantly different from the goal after 1 second,
+        a warning is logged indicating that the position may be unreachable.
+        """
+        self._cancel_check = False
+        t1 = time.time()
+        while time.time() - t1 < 1:
+            time.sleep(0.05)
+            if self._cancel_check:
+                # in case of multiple send_goal_positions we'll check the next call
+                return
+
+        # precision is low we are looking for unreachable positions
+        if not np.isclose(self._joints[self._name].present_position, self._joints[self._name].goal_position, atol=1):
+            self._logger.warning(
+                f"Required goal position ({round(self._joints[self._name].goal_position, 2)}) for {self._name} is unreachable."
+                f"\nCurrent position is ({round(self._joints[self._name].present_position, 2)})."
+            )
+
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send goal positions to the motor.
 
         If goal positions have been specified, sends them to the motor.

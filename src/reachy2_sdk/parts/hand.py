@@ -3,13 +3,16 @@
 Handles all specific methods to a Hand.
 """
 
+import time
 from abc import abstractmethod
+from threading import Thread
 from typing import Dict, Optional
 
 import grpc
+import numpy as np
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
-from reachy2_sdk_api.hand_pb2 import HandStatus
+from reachy2_sdk_api.hand_pb2 import HandPositionRequest, HandStatus
 from reachy2_sdk_api.hand_pb2_grpc import HandServiceStub
 
 from ..grippers.gripper_joint import GripperJoint
@@ -53,6 +56,9 @@ class Hand(Part, IGoToBasedPart):
 
         self._last_goto_checked: Optional[int] = None
         self._joints: Dict[str, GripperJoint] = {}
+
+        self._thread_check_position: Optional[Thread] = None
+        self._cancel_check = False
 
     def _set_speed_limits(self, value: int) -> None:
         """Set the speed limits for the hand.
@@ -126,8 +132,7 @@ class Hand(Part, IGoToBasedPart):
         for j in self._joints.values():
             j._is_moving = True
 
-    @abstractmethod
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send the goal positions to the hand's joints.
 
         If any goal position has been specified for any of the gripper's joints, sends them to the robot.
@@ -137,6 +142,57 @@ class Hand(Part, IGoToBasedPart):
             check_positions: A boolean indicating whether to check the positions after sending the command.
                 Defaults to True.
         """
+        command = self._get_goal_positions_message()
+        if command is not None:
+            self._stub.SetHandPosition(command)
+            self._clean_outgoing_goal_positions()
+            if check_positions:
+                self._post_send_goal_positions()
+
+    @abstractmethod
+    def _get_goal_positions_message(self) -> Optional[HandPositionRequest]:
+        """Get the HandPositionRequest message to send the goal positions to the actuator."""
+
+    def _clean_outgoing_goal_positions(self) -> None:
+        """Clean the outgoing goal positions."""
+        for j in self._joints.values():
+            j._outgoing_goal_positions = None
+
+    def _post_send_goal_positions(self) -> None:
+        """Start a background thread to check the goal positions after sending them.
+
+        This method stops any ongoing position check thread and starts a new thread
+        to monitor the current positions of the joints relative to their last goal positions.
+        """
+        self._cancel_check = True
+        if self._thread_check_position is not None and self._thread_check_position.is_alive():
+            self._thread_check_position.join()
+        self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
+        self._thread_check_position.start()
+
+    def _check_goal_positions(self) -> None:
+        """Monitor the joint positions to check if they reach the specified goals.
+
+        This method checks the current positions of the joints and compares them to
+        the goal positions. If a position is significantly different from the goal after 1 second,
+        a warning is logged indicating that the position may be unreachable.
+        """
+        self._cancel_check = False
+        t1 = time.time()
+        while time.time() - t1 < 1:
+            time.sleep(0.05)
+            if self._cancel_check:
+                # in case of multiple send_goal_positions we'll check the next call
+                return
+
+        for joint_name, joint in self._joints.items():
+            # precision is low we are looking for unreachable positions
+            if not np.isclose(joint.present_position, joint.goal_position, atol=1):
+                self._logger.warning(
+                    f"Required goal position ({round(joint.goal_position, 2)}) "
+                    f"for {self._part_id.name}.{joint_name} is unreachable."
+                    f"\nCurrent position is ({round(joint.present_position, 2)})."
+                )
 
     def _update_audit_status(self, new_status: HandStatus) -> None:
         """Update the audit status with the new status received from the gRPC server.

@@ -22,9 +22,12 @@ from google.protobuf.empty_pb2 import Empty
 from google.protobuf.timestamp_pb2 import Timestamp
 from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
+from reachy2_sdk_api.arm_pb2 import ArmComponentsCommands
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
-from reachy2_sdk_api.reachy_pb2 import ReachyState
+from reachy2_sdk_api.hand_pb2 import HandPositionRequest
+from reachy2_sdk_api.head_pb2 import HeadComponentsCommands
+from reachy2_sdk_api.reachy_pb2 import ReachyComponentsCommands, ReachyState
 
 from .config.reachy_info import ReachyInfo
 from .media.audio import Audio
@@ -33,6 +36,7 @@ from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
+from .parts.hand import Hand
 from .parts.head import Head
 from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
@@ -835,7 +839,7 @@ class ReachySDK:
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send the goal positions to the robot.
 
         If goal positions have been specified for any joint of the robot, sends them to the robot.
@@ -848,6 +852,32 @@ class ReachySDK:
             self._logger.warning("Reachy is not connected!")
             return
 
-        for part in self.info._enabled_parts.values():
-            if issubclass(type(part), JointsBasedPart):
-                part.send_goal_positions(check_positions)
+        commands: Dict[str, ArmComponentsCommands | HeadComponentsCommands | HandPositionRequest] = {}
+        for part in [self.r_arm, self.l_arm, self.head]:
+            self._add_component_commands(part, commands, check_positions)
+
+        if self.r_arm is not None:
+            self._add_component_commands(self.r_arm.gripper, commands, check_positions)
+        if self.l_arm is not None:
+            self._add_component_commands(self.l_arm.gripper, commands, check_positions)
+
+        components_commands = ReachyComponentsCommands(**commands)
+        self._stub.SendComponentsCommands(components_commands)
+
+    def _add_component_commands(
+        self,
+        part: JointsBasedPart | Hand | None,
+        commands: Dict[str, HeadComponentsCommands | ArmComponentsCommands | HandPositionRequest],
+        check_positions: bool,
+    ) -> None:
+        """Get the current component commands."""
+        if part is not None:
+            if part.is_off():
+                self._logger.warning(f"{part._part_id.name} is off. Command not sent.")
+                return
+            part_command = part._get_goal_positions_message()
+            if part_command is not None:
+                commands[f"{part._part_id.name}_commands"] = part_command
+                part._clean_outgoing_goal_positions()
+                if check_positions:
+                    part._post_send_goal_positions()

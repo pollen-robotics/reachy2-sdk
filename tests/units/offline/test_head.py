@@ -213,8 +213,6 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         head.goto([20, 30, 10], duration=0)
 
-    head.send_goal_positions()
-
     error = Error(details="orbita3d error")
     orbita3d_status = Orbita3dStatus(errors=[error])
     error = Error(details="dynamixel error")
@@ -320,8 +318,6 @@ def test_class_with_antennas() -> None:
     assert not head.neck.is_on()
     assert head.is_off()
     assert not head.is_on()
-
-    head.send_goal_positions()
 
     assert len(head._actuators) == 3
     assert isinstance(head._actuators, dict)

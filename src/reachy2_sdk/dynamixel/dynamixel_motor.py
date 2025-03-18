@@ -124,15 +124,12 @@ class DynamixelMotor:
         )
         self._stub.SendCommand(command)
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
-        """Send goal positions to the motor.
-
-        If goal positions have been specified, sends them to the motor.
-        Args :
-            check_positions: A boolean indicating whether to check the positions after sending the command.
-                Defaults to True.
-        """
+    def _get_goal_positions_message(self, check_positions: bool = True) -> Optional[DynamixelMotorsCommand]:
+        """Get the DynamixelMotorsCommand message to send the goal positions to the actuator."""
         if self._outgoing_goal_position is not None:
+            if not self.is_on():
+                self._logger.warning(f"{self._name} is off. Command not sent.")
+                return None
             command = DynamixelMotorsCommand(
                 cmd=[
                     DynamixelMotorCommand(
@@ -141,10 +138,26 @@ class DynamixelMotor:
                     )
                 ]
             )
-            self._outgoing_goal_position = None
+            return command
+        return None
+
+    def _clean_outgoing_goal_positions(self) -> None:
+        """Clean the outgoing goal positions."""
+        self._outgoing_goal_position = None
+
+    def send_goal_positions(self, check_positions: bool = False) -> None:
+        """Send goal positions to the motor.
+
+        If goal positions have been specified, sends them to the motor.
+        Args :
+            check_positions: A boolean indicating whether to check the positions after sending the command.
+                Defaults to True.
+        """
+        command = self._get_goal_positions_message()
+        if command is not None:
+            self._clean_outgoing_goal_positions()
             self._stub.SendCommand(command)
             if check_positions:
-                # self._post_send_goal_positions()
                 pass
 
     def set_speed_limits(self, speed_limit: float | int) -> None:
