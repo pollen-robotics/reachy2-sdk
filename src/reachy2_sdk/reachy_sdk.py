@@ -839,7 +839,7 @@ class ReachySDK:
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send the goal positions to the robot.
 
         If goal positions have been specified for any joint of the robot, sends them to the robot.

@@ -174,7 +174,7 @@ class Orbita2d(Orbita):
                 raise AttributeError(f"can't set attribute '{__name}'")
         super().__setattr__(__name, __value)
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send goal positions to the actuator's joints.
 
         If goal positions have been specified for any joint of this actuator, sends them to the actuator.

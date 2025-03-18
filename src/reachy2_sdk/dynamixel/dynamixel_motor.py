@@ -145,7 +145,7 @@ class DynamixelMotor:
         """Clean the outgoing goal positions."""
         self._outgoing_goal_position = None
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send goal positions to the motor.
 
         If goal positions have been specified, sends them to the motor.

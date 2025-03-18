@@ -154,7 +154,7 @@ class Orbita3d(Orbita):
         """Get the yaw joint of the actuator."""
         return self._yaw
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send goal positions to the actuator's joints.
 
         If goal positions have been specified for any joint of this actuator, sends them to the actuator.

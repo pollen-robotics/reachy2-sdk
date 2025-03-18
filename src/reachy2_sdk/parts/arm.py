@@ -1028,7 +1028,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         for actuator in [self._actuators[act] for act in self._actuators.keys() if act not in ["gripper"]]:
             actuator._post_send_goal_positions()
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send goal positions to the arm's joints, including the gripper.
 
         If goal positions have been specified for any joint of the part, sends them to the robot.

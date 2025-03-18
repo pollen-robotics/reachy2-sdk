@@ -132,7 +132,7 @@ class Hand(Part, IGoToBasedPart):
         for j in self._joints.values():
             j._is_moving = True
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send the goal positions to the hand's joints.
 
         If any goal position has been specified for any of the gripper's joints, sends them to the robot.

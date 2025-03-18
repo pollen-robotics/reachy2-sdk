@@ -244,7 +244,7 @@ class Orbita(ABC):
         self._outgoing_goal_positions[axis] = goal_position
 
     @abstractmethod
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send the goal positions to the actuator.
 
         This method is abstract and should be implemented in derived classes to

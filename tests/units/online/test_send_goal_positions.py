@@ -1,11 +1,8 @@
 import time
-from typing import List
+from typing import Dict, List
 
 import numpy as np
-import numpy.typing as npt
 import pytest
-from pyquaternion import Quaternion
-from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToId
 
 from reachy2_sdk.reachy_sdk import ReachySDK
 
@@ -356,3 +353,43 @@ def test_antenna_send_goal_positions(reachy_sdk_zeroed: ReachySDK) -> None:
     time.sleep(0.1)
 
     assert np.isclose(reachy_sdk_zeroed.head.r_antenna.present_position, 37, 1e-03)
+
+
+@pytest.mark.online
+def test_send_goal_positions_loop(reachy_sdk_zeroed: ReachySDK) -> None:
+    freq = 100
+    dt = 1 / freq
+    data: Dict[str, List[float]] = {j_name: [] for j_name in reachy_sdk_zeroed.joints.keys()}
+    data["timestamp"] = []
+
+    reachy_sdk_zeroed.r_arm.goto_posture("elbow_90")
+    reachy_sdk_zeroed.l_arm.goto_posture("elbow_90")
+    reachy_sdk_zeroed.r_arm.gripper.goto(100, percentage=True)
+    reachy_sdk_zeroed.l_arm.gripper.goto(100, percentage=True)
+    reachy_sdk_zeroed.head.goto([20, 30, 20])
+    reachy_sdk_zeroed.head.l_antenna.goto(60)
+    reachy_sdk_zeroed.head.r_antenna.goto(-60)
+    reachy_sdk_zeroed.r_arm.goto_posture("default")
+    reachy_sdk_zeroed.l_arm.goto_posture("default")
+    reachy_sdk_zeroed.r_arm.gripper.goto(0, percentage=True)
+    reachy_sdk_zeroed.l_arm.gripper.goto(0, percentage=True)
+    reachy_sdk_zeroed.head.goto([0, 0, 0])
+    reachy_sdk_zeroed.head.l_antenna.goto(0)
+    last_goto = reachy_sdk_zeroed.head.r_antenna.goto(0)
+
+    t0 = time.time()
+    while not reachy_sdk_zeroed.is_goto_finished(last_goto):
+        data["timestamp"].append(time.time() - t0)
+        for j_name, joint in reachy_sdk_zeroed.joints.items():
+            data[j_name].append(joint.present_position)
+        time.sleep(dt)
+    duration = time.time() - t0
+
+    t0_loop = time.time()
+    for ite in range(len(data["timestamp"])):
+        for j_name, joint in reachy_sdk_zeroed.joints.items():
+            joint.goal_position = data[j_name][ite]
+
+        reachy_sdk_zeroed.send_goal_positions()
+        time.sleep(dt)
+    assert np.isclose(time.time() - t0_loop, duration, 1e-01)

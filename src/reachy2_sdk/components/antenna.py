@@ -278,7 +278,7 @@ class Antenna(IGoToBasedComponent):
                 f"\nCurrent position is ({round(self._joints[self._name].present_position, 2)})."
             )
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send goal positions to the motor.
 
         If goal positions have been specified, sends them to the motor.
