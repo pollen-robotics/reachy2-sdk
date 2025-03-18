@@ -287,9 +287,9 @@ def process_odometry_goal(response: GoToRequest) -> Dict[str, Any]:
     request_dict["distance_tolerance"] = response.odometry_goal.distance_tolerance.value
     request_dict["angle_tolerance"] = np.rad2deg(response.odometry_goal.angle_tolerance.value)
     request_dict["target"] = {
-        "x": response.odometry_goal.direction.x.value,
-        "y": response.odometry_goal.direction.y.value,
-        "theta": np.rad2deg(response.odometry_goal.direction.theta.value),
+        "x": response.odometry_goal.odometry_goal.direction.x.value,
+        "y": response.odometry_goal.odometry_goal.direction.y.value,
+        "theta": np.rad2deg(response.odometry_goal.odometry_goal.direction.theta.value),
     }
     return request_dict
 
