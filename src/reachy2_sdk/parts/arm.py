@@ -34,8 +34,10 @@ from reachy2_sdk_api.goto_pb2 import (
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.hand_pb2 import Hand as HandState
 from reachy2_sdk_api.hand_pb2 import Hand as Hand_proto
+from reachy2_sdk_api.hand_pb2 import HandType
 from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 
+from ..grippers.parallel_gripper import ParallelGripper
 from ..orbita.orbita2d import Orbita2d
 from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import (
@@ -94,7 +96,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         self._setup_arm(arm_msg, initial_state)
         self._gripper: Optional[Hand] = None
 
-        self._actuators: Dict[str, Orbita2d | Orbita3d] = {}
+        self._actuators: Dict[str, Orbita2d | Orbita3d | Hand] = {}
         self._actuators["shoulder"] = self.shoulder
         self._actuators["elbow"] = self.elbow
         self._actuators["wrist"] = self.wrist
@@ -141,7 +143,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         )
 
     def _init_hand(self, hand: Hand_proto, hand_initial_state: HandState) -> None:
-        self._gripper = Hand(hand, hand_initial_state, self._grpc_channel, self._goto_stub)
+        if hand.type == HandType.PARALLEL_GRIPPER:
+            self._gripper = ParallelGripper(hand, hand_initial_state, self._grpc_channel, self._goto_stub)
+            self._actuators["gripper"] = self._gripper
 
     @property
     def shoulder(self) -> Orbita2d:
@@ -229,25 +233,31 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             self._gripper._turn_off()
         super()._turn_off()
 
-    def is_on(self) -> bool:
+    def is_on(self, check_gripper: bool = True) -> bool:
         """Check if all actuators of the arm are stiff.
 
         Returns:
             `True` if all actuators of the arm are stiff, `False` otherwise.
         """
-        if not super().is_on():
-            return False
-        return True
+        if not check_gripper:
+            for actuator in [self._actuators[act] for act in self._actuators.keys() if act not in ["gripper"]]:
+                if not actuator.is_on():
+                    return False
+            return True
+        return super().is_on()
 
-    def is_off(self) -> bool:
+    def is_off(self, check_gripper: bool = True) -> bool:
         """Check if all actuators of the arm are compliant.
 
         Returns:
             `True` if all actuators of the arm are compliant, `False` otherwise.
         """
-        if not super().is_off():
-            return False
-        return True
+        if not check_gripper:
+            for actuator in [self._actuators[act] for act in self._actuators.keys() if act not in ["gripper"]]:
+                if not actuator.is_off():
+                    return False
+            return True
+        return super().is_off()
 
     def get_current_positions(self, degrees: bool = True) -> List[float]:
         """Return the current joint positions of the arm, either in degrees or radians.
@@ -448,7 +458,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """
         self._check_goto_parameters(target, duration, q0)
 
-        if self.is_off():
+        if self.is_off(check_gripper=False):
             self._logger.warning(f"{self._part_id.name} is off. Goto not sent.")
             return GoToId(id=-1)
 
@@ -1006,11 +1016,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             check_positions: A boolean indicating whether to check the positions after sending the command.
                 Defaults to True.
         """
-        if self._gripper is not None:
-            self._gripper.send_goal_positions(check_positions)
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
-            return
         for actuator in self._actuators.values():
             actuator.send_goal_positions(check_positions)
 

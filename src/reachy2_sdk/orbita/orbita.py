@@ -315,7 +315,7 @@ class Orbita(ABC):
             joints._update_with(state[name])
 
     @property
-    def audit(self) -> Optional[str]:
+    def status(self) -> Optional[str]:
         """Get the current audit status of the actuator.
 
         Returns:
