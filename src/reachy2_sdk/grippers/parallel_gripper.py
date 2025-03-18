@@ -173,21 +173,9 @@ class ParallelGripper(Hand):
                     )
                 ),
             )
+            self._joints["finger"]._is_moving = True
             return command
         return None
-
-    def send_goal_positions(self, check_positions: bool = True) -> None:
-        """Send the goal position to the actuator's joints.
-
-        If any goal position has been specified to the gripper, sends them to the robot.
-        If the hand is off, the command is not sent.
-
-        Args :
-            check_positions: A boolean indicating whether to check the positions after sending the command.
-                Defaults to True.
-        """
-        super().send_goal_positions(check_positions)
-        self._joints["finger"]._is_moving = True
 
     def goto_posture(
         self,
