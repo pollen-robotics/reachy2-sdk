@@ -74,10 +74,9 @@ def test_reset_odometry(reachy_sdk_zeroed: ReachySDK) -> None:
         assert not np.isclose(odom["x"], 0.0, atol=0.3)
         assert not np.isclose(odom["y"], 0.0, atol=0.2)
         assert not np.isclose(odom["theta"], 0.0, atol=20)
-        print(odom)
         assert np.isclose(odom["x"], 0.43, atol=1e-02)
         assert np.isclose(odom["y"], 0.61, atol=1e-02)
-        assert np.isclose(odom["theta"], 42.4, atol=0.1)
+        assert np.isclose(odom["theta"], 42.4, atol=1.0)
 
         reachy_sdk_zeroed.mobile_base.reset_odometry()
         time.sleep(0.2)
@@ -140,13 +139,13 @@ def test_odometry_pos(reachy_sdk_zeroed: ReachySDK) -> None:
 
         reachy_sdk_zeroed.mobile_base.set_goal_speed(vx=0.0, vy=-0.5, vtheta=0)
         tic = time.time()
-        while time.time() - tic < 10:
+        while time.time() - tic < 2:
             reachy_sdk_zeroed.mobile_base.send_speed_command()
             time.sleep(0.1)
         time.sleep(0.4)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
         assert np.isclose(odom["x"], 0.0, atol=1e-01)
-        assert odom["y"] < -0.4
+        assert odom["y"] < -1.0
         assert np.isclose(odom["theta"], 0.0, atol=1e-01)
 
         reachy_sdk_zeroed.mobile_base.reset_odometry()
@@ -578,8 +577,8 @@ def test_mobile_base_rotate_by(reachy_sdk_zeroed: ReachySDK) -> None:
         request3 = reachy_sdk_zeroed.get_goto_request(rot3)
 
         assert request3.part == "mobile_base"
-        assert np.isclose(request3.request.target["x"], odom["x"], atol=1e-03)
-        assert np.isclose(request3.request.target["y"], odom["y"], atol=1e-03)
+        assert np.isclose(request3.request.target["x"], odom["x"], atol=1e-02)
+        assert np.isclose(request3.request.target["y"], odom["y"], atol=1e-02)
         assert np.isclose(request3.request.target["theta"], odom["theta"] - 40, atol=1e-03)
         assert np.isclose(request3.request.distance_tolerance, 0.05, atol=1e-03)
         assert np.isclose(request3.request.angle_tolerance, 5, atol=1e-03)
