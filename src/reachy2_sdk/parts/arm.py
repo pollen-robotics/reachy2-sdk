@@ -1039,7 +1039,6 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """
         super().send_goal_positions(check_positions)
         if self.gripper is not None:
-            print(f"gripper: {self.gripper._get_goal_positions_message()}")
             self.gripper.send_goal_positions(check_positions)
 
     def _update_with(self, new_state: ArmState) -> None:
