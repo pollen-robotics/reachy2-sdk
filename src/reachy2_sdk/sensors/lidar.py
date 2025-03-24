@@ -135,7 +135,7 @@ class Lidar:
         )
 
     @property
-    def obstacle_detection_status(self) -> LidarObstacleDetectionStatus:
+    def obstacle_detection_status(self) -> str:
         """Get the status of the lidar obstacle detection.
 
         Returns:
