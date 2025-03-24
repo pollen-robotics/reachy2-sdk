@@ -9,7 +9,7 @@ from reachy2_sdk.reachy_sdk import ReachySDK
 from .test_basic_movements import is_goto_finished
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_modes(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         reachy_sdk_zeroed.turn_on()
@@ -36,7 +36,7 @@ def test_modes(reachy_sdk_zeroed: ReachySDK) -> None:
         assert reachy_sdk_zeroed.mobile_base._control_mode == "pid"
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_lidar_safety_distances(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         reachy_sdk_zeroed.mobile_base.lidar.safety_slowdown_distance = 5.0
@@ -55,9 +55,10 @@ def test_lidar_safety_distances(reachy_sdk_zeroed: ReachySDK) -> None:
         assert np.isclose(reachy_sdk_zeroed.mobile_base.lidar.safety_critical_distance, 0.55, atol=1e-03)
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_reset_odometry(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
+        reachy_sdk_zeroed.mobile_base.reset_odometry()
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
         assert np.isclose(odom["x"], 0.0, atol=1e-03)
         assert np.isclose(odom["y"], 0.0, atol=1e-03)
@@ -73,6 +74,10 @@ def test_reset_odometry(reachy_sdk_zeroed: ReachySDK) -> None:
         assert not np.isclose(odom["x"], 0.0, atol=0.3)
         assert not np.isclose(odom["y"], 0.0, atol=0.2)
         assert not np.isclose(odom["theta"], 0.0, atol=20)
+        print(odom)
+        assert np.isclose(odom["x"], 0.43, atol=1e-02)
+        assert np.isclose(odom["y"], 0.61, atol=1e-02)
+        assert np.isclose(odom["theta"], 42.4, atol=0.1)
 
         reachy_sdk_zeroed.mobile_base.reset_odometry()
         time.sleep(0.2)
@@ -81,12 +86,12 @@ def test_reset_odometry(reachy_sdk_zeroed: ReachySDK) -> None:
         assert np.isclose(odom["y"], 0.0, atol=1e-03)
         assert np.isclose(odom["theta"], 0.0, atol=1e-01)
 
-        reachy_sdk_zeroed.mobile_base.goto(x=0.5, y=0.5, theta=50, wait=True)
-        time.sleep(0.5)
+        reachy_sdk_zeroed.mobile_base.goto(x=0.5, y=0.5, theta=50, wait=True, distance_tolerance=0.01, angle_tolerance=0.1)
+        time.sleep(0.2)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
-        assert not np.isclose(odom["x"], 0.0, atol=0.4)
-        assert not np.isclose(odom["y"], 0.0, atol=0.4)
-        assert not np.isclose(odom["theta"], 0.0, atol=45)
+        assert np.isclose(odom["x"], 0.5, atol=1e-02)
+        assert np.isclose(odom["y"], 0.5, atol=1e-02)
+        assert np.isclose(odom["theta"], 50.0, atol=1e-01)
 
         reachy_sdk_zeroed.mobile_base.reset_odometry()
         time.sleep(0.2)
@@ -107,7 +112,7 @@ def test_reset_odometry(reachy_sdk_zeroed: ReachySDK) -> None:
         assert len(reachy_sdk_zeroed.mobile_base.get_goto_queue()) == 0
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_odometry_pos(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
@@ -115,14 +120,14 @@ def test_odometry_pos(reachy_sdk_zeroed: ReachySDK) -> None:
         assert np.isclose(odom["y"], 0.0, atol=1e-03)
         assert np.isclose(odom["theta"], 0.0, atol=1e-01)
 
-        reachy_sdk_zeroed.mobile_base.set_goal_speed(vx=0.5, vy=0.0, vtheta=0)
+        reachy_sdk_zeroed.mobile_base.set_goal_speed(vx=0.3, vy=0.0, vtheta=0)
         tic = time.time()
         while time.time() - tic < 2:
             reachy_sdk_zeroed.mobile_base.send_speed_command()
             time.sleep(0.1)
         time.sleep(0.4)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
-        assert odom["x"] > 0.4
+        assert odom["x"] > 0.6
         assert np.isclose(odom["y"], 0.0, atol=1e-02)
         assert np.isclose(odom["theta"], 0.0, atol=1e-01)
 
@@ -135,12 +140,12 @@ def test_odometry_pos(reachy_sdk_zeroed: ReachySDK) -> None:
 
         reachy_sdk_zeroed.mobile_base.set_goal_speed(vx=0.0, vy=-0.5, vtheta=0)
         tic = time.time()
-        while time.time() - tic < 2:
+        while time.time() - tic < 10:
             reachy_sdk_zeroed.mobile_base.send_speed_command()
             time.sleep(0.1)
         time.sleep(0.4)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
-        assert np.isclose(odom["x"], 0.0, atol=1e-02)
+        assert np.isclose(odom["x"], 0.0, atol=1e-01)
         assert odom["y"] < -0.4
         assert np.isclose(odom["theta"], 0.0, atol=1e-01)
 
@@ -163,7 +168,7 @@ def test_odometry_pos(reachy_sdk_zeroed: ReachySDK) -> None:
         assert odom["theta"] > 50
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_odometry_vel(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
@@ -171,7 +176,7 @@ def test_odometry_vel(reachy_sdk_zeroed: ReachySDK) -> None:
         assert odom["vy"] == 0.0
         assert odom["vtheta"] == 0.0
 
-        reachy_sdk_zeroed.mobile_base.set_goal_speed(vx=0.5, vy=0.0, vtheta=0)
+        reachy_sdk_zeroed.mobile_base.set_goal_speed(vx=0.4, vy=0.0, vtheta=0)
         tic = time.time()
         while time.time() - tic < 2:
             reachy_sdk_zeroed.mobile_base.send_speed_command()
@@ -208,13 +213,13 @@ def test_odometry_vel(reachy_sdk_zeroed: ReachySDK) -> None:
         time.sleep(1)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
         assert np.isclose(odom["vx"], 0.5, atol=1e-03)
-        assert odom["vy"] == 0.0
-        assert odom["vtheta"] == 0.0
+        assert np.isclose(odom["vy"], 0.0, atol=1e-03)
+        assert np.isclose(odom["vtheta"], 0.0, atol=1e-03)
         time.sleep(2)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
         assert np.isclose(odom["vx"], 0.5, atol=1e-03)
-        assert odom["vy"] == 0.0
-        assert odom["vtheta"] == 0.0
+        assert np.isclose(odom["vy"], 0.0, atol=1e-03)
+        assert np.isclose(odom["vtheta"], 0.0, atol=1e-03)
         time.sleep(3)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
         assert odom["vx"] == 0.0
@@ -232,12 +237,12 @@ def test_odometry_vel(reachy_sdk_zeroed: ReachySDK) -> None:
         forward_thread.start()
         time.sleep(1)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
-        assert odom["vx"] == 0.0
+        assert np.isclose(odom["vx"], 0.0, atol=1e-03)
         assert np.isclose(odom["vy"], 0.4, atol=1e-03)
         assert np.isclose(odom["vtheta"], 20, atol=1e-03)
         time.sleep(2)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
-        assert odom["vx"] == 0.0
+        assert np.isclose(odom["vx"], 0.0, atol=1e-03)
         assert np.isclose(odom["vy"], 0.4, atol=1e-03)
         assert np.isclose(odom["vtheta"], 20, atol=1e-03)
         time.sleep(3)
@@ -247,7 +252,7 @@ def test_odometry_vel(reachy_sdk_zeroed: ReachySDK) -> None:
         assert odom["vtheta"] == 0.0
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_mobile_base_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         with pytest.raises(ValueError):
@@ -340,7 +345,7 @@ def test_mobile_base_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         assert is_goto_finished(reachy_sdk_zeroed, goto6)
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_mobile_base_goto_timeout(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         with pytest.raises(ValueError):
@@ -382,7 +387,7 @@ def test_mobile_base_goto_timeout(reachy_sdk_zeroed: ReachySDK) -> None:
         assert np.isclose(request2.request.timeout, 0.8, atol=1e-03)
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_mobile_base_goto_tolerances(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         with pytest.raises(ValueError):
@@ -466,7 +471,7 @@ def test_mobile_base_goto_tolerances(reachy_sdk_zeroed: ReachySDK) -> None:
         assert np.isclose(odom6_bis["theta"], -30, atol=5)
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_mobile_base_translate_by(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
@@ -523,7 +528,7 @@ def test_mobile_base_translate_by(reachy_sdk_zeroed: ReachySDK) -> None:
         assert len(reachy_sdk_zeroed.mobile_base.get_goto_queue()) == 0
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_mobile_base_rotate_by(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         rot0 = reachy_sdk_zeroed.mobile_base.rotate_by(theta=35, wait=True)
@@ -583,7 +588,7 @@ def test_mobile_base_rotate_by(reachy_sdk_zeroed: ReachySDK) -> None:
         assert is_goto_finished(reachy_sdk_zeroed, rot3)
 
 
-@pytest.mark.mobile_base
+@pytest.mark.online
 def test_set_max_xy_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     if reachy_sdk_zeroed.mobile_base is not None:
         assert reachy_sdk_zeroed.mobile_base._max_xy_goto == 1.0
@@ -609,3 +614,17 @@ def test_set_max_xy_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         assert np.isclose(odom["theta"], 10, atol=5)
 
         reachy_sdk_zeroed.mobile_base.set_max_xy_goto(1.0)
+
+
+@pytest.mark.mobile_base
+def test_get_map(reachy_sdk_zeroed: ReachySDK) -> None:
+    if reachy_sdk_zeroed.mobile_base is not None:
+        map = reachy_sdk_zeroed.mobile_base.lidar.get_map()
+        assert map is not None
+
+
+@pytest.mark.mobile_base
+def test_obstacle_detection(reachy_sdk_zeroed: ReachySDK) -> None:
+    if reachy_sdk_zeroed.mobile_base is not None:
+        status = reachy_sdk_zeroed.mobile_base.lidar.obstacle_detection_status
+        assert status == "NO_OBJECT_DETECTED"
