@@ -13,7 +13,6 @@ import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.mobile_base_lidar_pb2 import (
     LidarObstacleDetectionEnum,
-    LidarObstacleDetectionStatus,
     LidarSafety,
 )
 from reachy2_sdk_api.mobile_base_lidar_pb2_grpc import MobileBaseLidarServiceStub
@@ -49,7 +48,7 @@ class Lidar:
         """
         compressed_map = self._stub.GetLidarMap(self._part._part_id)
         if compressed_map.data == b"":
-            self._logger.error("No lidar map retrieved")
+            self._logger.error("No lidar map retrieved. (Note that the lidar map is not available in FAKE mode)")
             return None
         np_data = np.frombuffer(compressed_map.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
@@ -135,7 +134,7 @@ class Lidar:
         )
 
     @property
-    def obstacle_detection_status(self) -> LidarObstacleDetectionStatus:
+    def obstacle_detection_status(self) -> str:
         """Get the status of the lidar obstacle detection.
 
         Returns:
