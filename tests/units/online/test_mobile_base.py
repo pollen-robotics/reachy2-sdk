@@ -10,11 +10,11 @@ from .test_basic_movements import is_goto_finished
 
 # Note: depending on the test, the expected tolerance can be very strict or depend on the requested tolerance of a goto command.
 
-DEFAULT_DIST_TOL = 0.01 # in meters (sometimes used as m/s)
-DEFAULT_ANGLE_TOL = 1.0 # in degrees (sometimes used as rad/s)
+DEFAULT_DIST_TOL = 0.01  # in meters (sometimes used as m/s)
+DEFAULT_ANGLE_TOL = 1.0  # in degrees (sometimes used as rad/s)
 
-GOTO_DIST_TOL = 0.05 # in meters (default value when no tolerance is provided in goto command)
-GOTO_ANGLE_TOL = 5 # in degrees (default value when no tolerance is provided in goto command)
+GOTO_DIST_TOL = 0.05  # in meters (default value when no tolerance is provided in goto command)
+GOTO_ANGLE_TOL = 5  # in degrees (default value when no tolerance is provided in goto command)
 
 HIGH_PRECISION_TOL = 0.0001
 
@@ -97,7 +97,9 @@ def test_reset_odometry(reachy_sdk_zeroed: ReachySDK) -> None:
 
         dist_tol = 0.01
         angle_tol = 0.1
-        reachy_sdk_zeroed.mobile_base.goto(x=0.5, y=0.5, theta=50, wait=True, distance_tolerance=dist_tol, angle_tolerance=angle_tol)
+        reachy_sdk_zeroed.mobile_base.goto(
+            x=0.5, y=0.5, theta=50, wait=True, distance_tolerance=dist_tol, angle_tolerance=angle_tol
+        )
         time.sleep(0.2)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
         assert np.isclose(odom["x"], 0.5, atol=dist_tol)
@@ -380,7 +382,7 @@ def test_mobile_base_goto_timeout(reachy_sdk_zeroed: ReachySDK) -> None:
         assert not np.isclose(odom["x"], 0.8, atol=GOTO_DIST_TOL)
         assert not np.isclose(odom["y"], 0.5, atol=GOTO_DIST_TOL)
         assert not np.isclose(odom["theta"], 80, atol=GOTO_ANGLE_TOL)
-        time.sleep(0.5) # Giving it some time to get closer
+        time.sleep(0.5)  # Giving it some time to get closer
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
         assert not np.isclose(odom["x"], 0.8, atol=DEFAULT_DIST_TOL)
         assert not np.isclose(odom["y"], 0.5, atol=DEFAULT_DIST_TOL)
@@ -409,6 +411,7 @@ def test_mobile_base_goto_timeout(reachy_sdk_zeroed: ReachySDK) -> None:
         assert np.isclose(request2.request.target["y"], -0.2, atol=DEFAULT_DIST_TOL)
         assert np.isclose(request2.request.target["theta"], 0, atol=DEFAULT_ANGLE_TOL)
         assert np.isclose(request2.request.timeout, 0.8, atol=DEFAULT_DIST_TOL)
+
 
 @pytest.mark.online
 def test_mobile_base_goto_tolerances(reachy_sdk_zeroed: ReachySDK) -> None:
@@ -639,6 +642,7 @@ def test_set_max_xy_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         assert np.isclose(odom["theta"], 10, atol=DEFAULT_DIST_TOL)
 
         reachy_sdk_zeroed.mobile_base.set_max_xy_goto(1.0)
+
 
 @pytest.mark.mobile_base
 def test_get_map(reachy_sdk_zeroed: ReachySDK) -> None:
