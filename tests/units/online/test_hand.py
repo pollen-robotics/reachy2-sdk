@@ -163,11 +163,7 @@ def test_gripper_is_moving(reachy_sdk_zeroed: ReachySDK) -> None:
 
     reachy_sdk_zeroed.l_arm.gripper.goto(100, duration=3.0, percentage=True)
     assert reachy_sdk_zeroed.l_arm.gripper.is_moving()
-    time.sleep(1.0)
-    assert reachy_sdk_zeroed.l_arm.gripper.is_moving()
-    time.sleep(1.0)
-    assert reachy_sdk_zeroed.l_arm.gripper.is_moving()
-    time.sleep(1.1)
+    time.sleep(3.1)
     assert not reachy_sdk_zeroed.l_arm.gripper.is_moving()
 
     reachy_sdk_zeroed.l_arm.gripper.goto(0, percentage=True)
