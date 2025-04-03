@@ -165,12 +165,12 @@ def test_arm_send_goal_positions(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.l_arm.wrist.pitch.goal_position = 8
     reachy_sdk_zeroed.l_arm.gripper.goal_position = 9
     reachy_sdk_zeroed.l_arm.send_goal_positions()
+    assert reachy_sdk_zeroed.l_arm.gripper.is_moving()
     time.sleep(0.1)
 
     assert np.isclose(reachy_sdk_zeroed.l_arm.shoulder.roll.present_position, l_arm_present_positions[1], 1e-03)
     assert np.isclose(reachy_sdk_zeroed.l_arm.wrist.pitch.present_position, 8, 1e-03)
     assert np.isclose(reachy_sdk_zeroed.l_arm.gripper.present_position, 9, 1e-03)
-    assert reachy_sdk_zeroed.l_arm.gripper.is_moving()
 
     reachy_sdk_zeroed.l_arm.gripper.turn_off()
     time.sleep(0.1)
