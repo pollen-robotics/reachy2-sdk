@@ -112,6 +112,7 @@ def test_gripper_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.l_arm.gripper.goto(60)
     reachy_sdk_zeroed.l_arm.gripper.goto(25, percentage=True)
 
+    time.sleep(0.1)
     assert len(reachy_sdk_zeroed.l_arm.gripper.get_goto_queue()) == 2
     reachy_sdk_zeroed.cancel_all_goto()
     assert len(reachy_sdk_zeroed.l_arm.gripper.get_goto_queue()) == 0

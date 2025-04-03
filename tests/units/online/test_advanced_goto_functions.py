@@ -951,5 +951,8 @@ def test_waiting_goto(reachy_sdk_zeroed: ReachySDK) -> None:
 
     while not reachy_sdk_zeroed.is_goto_finished(last_gotoid):
         x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
-        reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.005, wait=True)
+        reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.1, wait=True)
+    # last movement now the arm's goto is finished
+    x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
+    reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.1, wait=True)
     assert np.allclose(reachy_sdk_zeroed.head.get_current_positions(), head_joints, atol=2)
