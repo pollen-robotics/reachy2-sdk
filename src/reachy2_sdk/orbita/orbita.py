@@ -244,7 +244,7 @@ class Orbita(ABC):
         self._outgoing_goal_positions[axis] = goal_position
 
     @abstractmethod
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send the goal positions to the actuator.
 
         This method is abstract and should be implemented in derived classes to
@@ -280,7 +280,7 @@ class Orbita(ABC):
         self._cancel_check = False
         t1 = time.time()
         while time.time() - t1 < 1:
-            time.sleep(0.05)
+            time.sleep(0.0001)
             if self._cancel_check:
                 # in case of multiple send_goal_positions we'll check the next call
                 return
@@ -315,7 +315,7 @@ class Orbita(ABC):
             joints._update_with(state[name])
 
     @property
-    def audit(self) -> Optional[str]:
+    def status(self) -> Optional[str]:
         """Get the current audit status of the actuator.
 
         Returns:

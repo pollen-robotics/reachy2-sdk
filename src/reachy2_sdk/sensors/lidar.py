@@ -13,7 +13,6 @@ import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.mobile_base_lidar_pb2 import (
     LidarObstacleDetectionEnum,
-    LidarObstacleDetectionStatus,
     LidarSafety,
 )
 from reachy2_sdk_api.mobile_base_lidar_pb2_grpc import MobileBaseLidarServiceStub
@@ -49,11 +48,11 @@ class Lidar:
         """
         compressed_map = self._stub.GetLidarMap(self._part._part_id)
         if compressed_map.data == b"":
-            self._logger.error("No lidar map retrieved")
+            self._logger.error("No lidar map retrieved. (Note that the lidar map is not available in FAKE mode)")
             return None
         np_data = np.frombuffer(compressed_map.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
-        return img  # type: ignore[no-any-return]
+        return img.astype(np.uint8)
 
     @property
     def safety_slowdown_distance(self) -> float:
@@ -74,7 +73,9 @@ class Lidar:
         """
         self._stub.SetZuuuSafety(
             LidarSafety(
+                safety_on=BoolValue(value=self.safety_enabled),
                 safety_distance=FloatValue(value=value),
+                critical_distance=FloatValue(value=self.safety_critical_distance),
             )
         )
 
@@ -101,6 +102,8 @@ class Lidar:
         """
         self._stub.SetZuuuSafety(
             LidarSafety(
+                safety_on=BoolValue(value=self.safety_enabled),
+                safety_distance=FloatValue(value=self.safety_slowdown_distance),
                 critical_distance=FloatValue(value=value),
             )
         )
@@ -125,11 +128,13 @@ class Lidar:
         self._stub.SetZuuuSafety(
             LidarSafety(
                 safety_on=BoolValue(value=value),
+                safety_distance=FloatValue(value=self.safety_slowdown_distance),
+                critical_distance=FloatValue(value=self.safety_critical_distance),
             )
         )
 
     @property
-    def obstacle_detection_status(self) -> LidarObstacleDetectionStatus:
+    def obstacle_detection_status(self) -> str:
         """Get the status of the lidar obstacle detection.
 
         Returns:
@@ -138,14 +143,14 @@ class Lidar:
         """
         return self._obstacle_detection_status
 
-    def reset_safety_default_values(self) -> None:
+    def reset_safety_default_distances(self) -> None:
         """Reset default distance values for safety detection.
 
         The reset values include:
         - safety_critical_distance
         - safety_slowdown_distance.
         """
-        self._stub.ResetDefaultValues(self._part._part_id)
+        self._stub.ResetDefaultSafetyDistances(self._part._part_id)
 
     def _update_with(self, new_lidar_state: LidarSafety) -> None:
         """Update lidar information with a new state received from a gRPC server.

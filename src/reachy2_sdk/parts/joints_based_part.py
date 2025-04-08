@@ -8,9 +8,14 @@ from typing import List
 
 import grpc
 from reachy2_sdk_api.arm_pb2 import Arm as Arm_proto
-from reachy2_sdk_api.arm_pb2 import SpeedLimitRequest, TorqueLimitRequest
+from reachy2_sdk_api.arm_pb2 import (
+    ArmComponentsCommands,
+    SpeedLimitRequest,
+    TorqueLimitRequest,
+)
 from reachy2_sdk_api.arm_pb2_grpc import ArmServiceStub
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
+from reachy2_sdk_api.head_pb2 import HeadComponentsCommands
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 
 from ..orbita.orbita_joint import OrbitaJoint
@@ -56,7 +61,10 @@ class JointsBasedPart(Part):
         _joints: CustomDict[str, OrbitaJoint] = CustomDict({})
         for actuator_name, actuator in self._actuators.items():
             for joint in actuator._joints.values():
-                _joints[actuator_name + "." + joint._axis_type] = joint
+                if hasattr(joint, "_axis_type"):
+                    _joints[actuator_name + "." + joint._axis_type] = joint
+                else:
+                    _joints[actuator_name] = joint
         return _joints
 
     @abstractmethod
@@ -68,8 +76,7 @@ class JointsBasedPart(Part):
         """
         pass  # pragma: no cover
 
-    @abstractmethod
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send goal positions to the part's joints.
 
         If goal positions have been specified for any joint of the part, sends them to the robot.
@@ -78,6 +85,27 @@ class JointsBasedPart(Part):
             check_positions: A boolean indicating whether to check the positions after sending the command.
                 Defaults to True.
         """
+        if self.is_off():
+            self._logger.warning(f"{self._part_id.name} is off. Goal positions not sent.")
+            return
+        self._stub.SendComponentsCommands(self._get_goal_positions_message())
+        self._clean_outgoing_goal_positions()
+        if check_positions:
+            self._post_send_goal_positions()
+
+    @abstractmethod
+    def _get_goal_positions_message(self) -> HeadComponentsCommands | ArmComponentsCommands:
+        """Get the message to send the goal positions to the actuator."""
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def _clean_outgoing_goal_positions(self) -> None:
+        """Get the message to send the goal positions to the actuator."""
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def _post_send_goal_positions(self) -> None:
+        """Monitor the joint positions to check if they reach the specified goals."""
         pass  # pragma: no cover
 
     def set_torque_limits(self, torque_limit: int) -> None:

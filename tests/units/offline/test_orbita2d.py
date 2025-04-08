@@ -168,8 +168,8 @@ def test_orbita2d() -> None:
     orbita2d.temperatures["motor_1"] == temperature.motor_1.value
     orbita2d.temperatures["motor_2"] == temperature.motor_1.value
 
-    assert orbita2d.audit is None
+    assert orbita2d.status is None
     error = Error(details="test")
     orbita2d_status = Orbita2dStatus(errors=[error])
     orbita2d._update_audit_status(orbita2d_status)
-    assert orbita2d.audit == "test"
+    assert orbita2d.status == "test"

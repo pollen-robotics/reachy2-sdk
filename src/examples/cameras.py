@@ -4,6 +4,7 @@ import argparse
 import logging
 
 import cv2
+import numpy as np
 
 from reachy2_sdk import ReachySDK
 from reachy2_sdk.media.camera import CameraView
@@ -59,7 +60,8 @@ def display_depth_cam() -> None:
         while True:
             rgb, ts = reachy.cameras.depth.get_frame()
             depth, ts_r = reachy.cameras.depth.get_depth_frame()
-            depth_map_normalized = cv2.normalize(depth, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)  # type: ignore [attr-defined]
+            depth_map_normalized = np.empty_like(depth)
+            cv2.normalize(depth, depth_map_normalized, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
             cv2.imshow("frame", rgb)
             cv2.imshow("depthn", depth_map_normalized)
             cv2.waitKey(1)

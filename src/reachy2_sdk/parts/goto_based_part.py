@@ -3,24 +3,16 @@
 Handles common interface for parts performing movement using goto mechanism.
 """
 
-import logging
-import time
-from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import List
 
-from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToId
+from reachy2_sdk_api.goto_pb2 import GoToAck, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
+from reachy2_sdk_api.part_pb2 import PartId
 
-from ..utils.utils import (
-    SimplifiedRequest,
-    arm_position_to_list,
-    ext_euler_angles_to_list,
-    get_interpolation_mode,
-)
-from .part import Part
+from ..utils.goto_based_element import IGoToBasedElement
 
 
-class IGoToBasedPart(ABC):
+class IGoToBasedPart(IGoToBasedElement):
     """Interface for parts of Reachy that use goto functions.
 
     The `IGoToBasedPart` class defines a common interface for handling goto-based movements. It is
@@ -30,7 +22,7 @@ class IGoToBasedPart(ABC):
 
     def __init__(
         self,
-        part: Part,
+        part: PartId,
         goto_stub: GoToServiceStub,
     ) -> None:
         """Initialize the IGoToBasedPart interface.
@@ -43,18 +35,16 @@ class IGoToBasedPart(ABC):
             part: The robot part that uses this interface, such as an Arm or Head.
             goto_stub: The gRPC stub used to send goto commands to the robot part.
         """
-        self.part = part
-        self._goto_stub = goto_stub
-        self._logger_goto = logging.getLogger(__name__)  # not using self._logger to avoid name conflict in multiple inheritance
+        super().__init__(part, goto_stub)
 
     def get_goto_playing(self) -> GoToId:
         """Return the GoToId of the currently playing goto movement on a specific part."""
-        response = self._goto_stub.GetPartGoToPlaying(self.part._part_id)
+        response = self._goto_stub.GetPartGoToPlaying(self._element_id)
         return response
 
     def get_goto_queue(self) -> List[GoToId]:
         """Return a list of all GoToIds waiting to be played on a specific part."""
-        response = self._goto_stub.GetPartGoToQueue(self.part._part_id)
+        response = self._goto_stub.GetPartGoToQueue(self._element_id)
         return [goal_id for goal_id in response.goto_ids]
 
     def cancel_all_goto(self) -> GoToAck:
@@ -63,107 +53,5 @@ class IGoToBasedPart(ABC):
         Returns:
             A GoToAck acknowledging the cancellation of all goto commands.
         """
-        response = self._goto_stub.CancelPartAllGoTo(self.part._part_id)
+        response = self._goto_stub.CancelPartAllGoTo(self._element_id)
         return response
-
-    def _get_goto_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
-        """Return the part affected, joint goal positions, duration, and mode for the given GoToId.
-
-        The part can be 'r_arm', 'l_arm', or 'head'.
-
-        Args:
-            goto_id: The ID of the goto command for which to retrieve the details.
-
-        Returns:
-            A SimplifiedRequest object containing the part, goal_positions, duration, and mode for the
-            corresponding GoToId. The goal_positions are returned as a list in degrees.
-        """
-        response = self._goto_stub.GetGoToRequest(goto_id)
-        if response.joints_goal.HasField("arm_joint_goal"):
-            part = response.joints_goal.arm_joint_goal.id.name
-            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-            goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
-            duration = response.joints_goal.arm_joint_goal.duration.value
-        elif response.joints_goal.HasField("neck_joint_goal"):
-            part = response.joints_goal.neck_joint_goal.id.name
-            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-            goal_positions = ext_euler_angles_to_list(
-                response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
-            )
-            duration = response.joints_goal.neck_joint_goal.duration.value
-
-        request = SimplifiedRequest(
-            part=part,
-            goal_positions=goal_positions,
-            duration=duration,
-            mode=mode,
-        )
-        return request
-
-    def _is_goto_finished(self, id: GoToId) -> bool:
-        """Check if the goto movement has been completed or cancelled.
-
-        Returns:
-           `True` if the goto has been played or cancelled, `False` otherwise.
-        """
-        state = self._goto_stub.GetGoToState(id)
-        result = bool(
-            state.goal_status == GoalStatus.STATUS_ABORTED
-            or state.goal_status == GoalStatus.STATUS_CANCELED
-            or state.goal_status == GoalStatus.STATUS_SUCCEEDED
-        )
-        return result
-
-    def _wait_goto(self, id: GoToId, duration: float) -> None:
-        """Wait for a goto to finish. timeout is in seconds."""
-        t0 = time.time()
-        self._logger_goto.info(f"Waiting for movement with {id}.")
-
-        id_playing = self.get_goto_playing()
-        while id_playing.id == -1:
-            time.sleep(0.005)
-            id_playing = self.get_goto_playing()
-
-            # manage an id_playing staying at -1
-            if time.time() - t0 > duration:
-                self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
-                return
-
-        info_gotos = [self._get_goto_joints_request(id)]
-        ids_queue = self.get_goto_queue()
-        for goto_id in ids_queue:
-            info_gotos.append(self._get_goto_joints_request(goto_id))
-
-        timeout = 1  # adding one more sec
-        for igoto in info_gotos:
-            if igoto is not None:
-                timeout += igoto.duration
-
-        self._logger_goto.debug(f"timeout is set to {timeout}")
-
-        t_start = time.time()  # timeout for others
-        while not self._is_goto_finished(id):
-            time.sleep(0.1)
-
-            if time.time() - t_start > timeout:
-                self._logger_goto.warning(f"Waiting time for movement with {id} is timeout.")
-                return
-
-        self._logger_goto.info(f"Movement with {id} finished.")
-
-    @abstractmethod
-    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
-        """Check the validity of the parameters for a goto movement."""
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def goto_posture(
-        self,
-        common_posture: str = "default",
-        duration: float = 2,
-        wait: bool = False,
-        wait_for_goto_end: bool = True,
-        interpolation_mode: str = "minimum_jerk",
-    ) -> GoToId:
-        """Send all joints to standard positions with optional parameters for duration, waiting, and interpolation mode."""
-        pass  # pragma: no cover

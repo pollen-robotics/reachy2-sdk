@@ -3,7 +3,7 @@
 Handles all specific methods to a Head.
 """
 
-from typing import Any, List, Optional, overload
+from typing import Any, Dict, List, Optional, overload
 
 import grpc
 import numpy as np
@@ -20,6 +20,7 @@ from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
 from reachy2_sdk_api.head_pb2 import CustomNeckJoints
 from reachy2_sdk_api.head_pb2 import Head as Head_proto
 from reachy2_sdk_api.head_pb2 import (
+    HeadComponentsCommands,
     HeadState,
     HeadStatus,
     NeckCartesianGoal,
@@ -30,6 +31,7 @@ from reachy2_sdk_api.head_pb2 import (
 from reachy2_sdk_api.head_pb2_grpc import HeadServiceStub
 from reachy2_sdk_api.kinematics_pb2 import ExtEulerAngles, Point, Quaternion, Rotation3d
 
+from ..components.antenna import Antenna
 from ..orbita.orbita3d import Orbita3d
 from ..utils.utils import get_grpc_interpolation_mode, quaternion_from_euler_angles
 from .goto_based_part import IGoToBasedPart
@@ -66,12 +68,14 @@ class Head(JointsBasedPart, IGoToBasedPart):
             goto_stub: The GoToServiceStub used to handle goto-based movements for the head.
         """
         JointsBasedPart.__init__(self, head_msg, grpc_channel, HeadServiceStub(grpc_channel))
-        IGoToBasedPart.__init__(self, self, goto_stub)
+        IGoToBasedPart.__init__(self, self._part_id, goto_stub)
+
+        self._neck: Optional[Orbita3d] = None
+        self._l_antenna: Optional[Antenna] = None
+        self._r_antenna: Optional[Antenna] = None
+        self._actuators: Dict[str, Orbita3d | Antenna] = {}
 
         self._setup_head(head_msg, initial_state)
-        self._actuators = {
-            "neck": self.neck,
-        }
 
     def _setup_head(self, head: Head_proto, initial_state: HeadState) -> None:
         """Set up the head with its actuators.
@@ -83,14 +87,36 @@ class Head(JointsBasedPart, IGoToBasedPart):
             initial_state: A HeadState object representing the initial state of the head's actuators.
         """
         description = head.description
-        self._neck = Orbita3d(
-            uid=description.neck.id.id,
-            name=description.neck.id.name,
-            initial_state=initial_state.neck_state,
-            grpc_channel=self._grpc_channel,
-            part=self,
-            joints_position_order=[NeckJoints.ROLL, NeckJoints.PITCH, NeckJoints.YAW],
-        )
+        if description.HasField("neck"):
+            self._neck = Orbita3d(
+                uid=description.neck.id.id,
+                name=description.neck.id.name,
+                initial_state=initial_state.neck_state,
+                grpc_channel=self._grpc_channel,
+                part=self,
+                joints_position_order=[NeckJoints.ROLL, NeckJoints.PITCH, NeckJoints.YAW],
+            )
+            self._actuators["neck"] = self._neck
+        if description.HasField("l_antenna"):
+            self._l_antenna = Antenna(
+                uid=description.l_antenna.id.id,
+                name=description.l_antenna.id.name,
+                initial_state=initial_state.l_antenna_state,
+                grpc_channel=self._grpc_channel,
+                goto_stub=self._goto_stub,
+                part=self,
+            )
+            self._actuators["l_antenna"] = self._l_antenna
+        if description.HasField("r_antenna"):
+            self._r_antenna = Antenna(
+                uid=description.r_antenna.id.id,
+                name=description.r_antenna.id.name,
+                initial_state=initial_state.r_antenna_state,
+                grpc_channel=self._grpc_channel,
+                goto_stub=self._goto_stub,
+                part=self,
+            )
+            self._actuators["r_antenna"] = self._r_antenna
 
     def __repr__(self) -> str:
         """Clean representation of an Head."""
@@ -100,9 +126,19 @@ class Head(JointsBasedPart, IGoToBasedPart):
         }\n>"""
 
     @property
-    def neck(self) -> Orbita3d:
+    def neck(self) -> Optional[Orbita3d]:
         """Get the neck actuator of the head."""
         return self._neck
+
+    @property
+    def l_antenna(self) -> Optional[Antenna]:
+        """Get the left antenna actuator of the head."""
+        return self._l_antenna
+
+    @property
+    def r_antenna(self) -> Optional[Antenna]:
+        """Get the right antenna actuator of the head."""
+        return self._r_antenna
 
     def get_current_orientation(self) -> pyQuat:
         """Get the current orientation of the head.
@@ -119,6 +155,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
         Returns:
             A list of the current neck joint positions in the order [roll, pitch, yaw].
         """
+        if self.neck is None:
+            return []
         roll = self.neck._joints["roll"].present_position
         pitch = self.neck._joints["pitch"].present_position
         yaw = self.neck._joints["yaw"].present_position
@@ -161,14 +199,16 @@ class Head(JointsBasedPart, IGoToBasedPart):
         This method moves the neck either to a given roll-pitch-yaw (RPY) position or to a quaternion orientation.
 
         Args:
-            target (Any): The desired orientation for the neck. Can either be:
+            target: The desired orientation for the neck. Can either be:
                 - A list of three floats [roll, pitch, yaw] representing the RPY orientation (in degrees if `degrees=True`).
                 - A pyQuat object representing a quaternion.
-            duration (float, optional): Time in seconds for the movement. Defaults to 2.0.
-            wait (bool, optional): Whether to wait for the movement to complete before returning. Defaults to False.
-            interpolation_mode (str, optional): The type of interpolation to be used for the movement.
-                                                Can be "minimum_jerk" or other modes. Defaults to "minimum_jerk".
-            degrees (bool, optional): Specifies if the RPY values in `target` are in degrees. Defaults to True.
+            duration: The time in seconds for the movement to be completed. Defaults to 2.
+            wait: If True, the function waits until the movement is completed before returning.
+                    Defaults to False.
+            interpolation_mode: The interpolation method to be used. It can be either "minimum_jerk"
+                    or "linear". Defaults to "minimum_jerk".
+            degrees: If True, the RPY values in the `target` argument are treated as degrees.
+                    Defaults to True.
 
         Raises:
             TypeError : If the input type for `target` is invalid
@@ -177,11 +217,11 @@ class Head(JointsBasedPart, IGoToBasedPart):
         Returns:
             GoToId: The unique identifier for the movement command.
         """
-        if not self.neck.is_on():
+        if self.neck is not None and not self.neck.is_on():
             self._logger.warning("head.neck is off. No command sent.")
             return GoToId(id=-1)
 
-        self._check_goto_parameters(duration, target)
+        self._check_goto_parameters(target, duration)
 
         if isinstance(target, list):
             if degrees:
@@ -220,7 +260,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             self._wait_goto(response, duration)
         return response
 
-    def _check_goto_parameters(self, duration: float, target: Any, q0: Optional[List[float]] = None) -> None:
+    def _check_goto_parameters(self, target: Any, duration: Optional[float], q0: Optional[List[float]] = None) -> None:
         """Check the validity of the parameters for the `goto` method.
 
         Args:
@@ -314,7 +354,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
         """
         if duration == 0:
             raise ValueError("duration cannot be set to 0.")
-        if self.neck.is_off():
+        if self.neck is not None and self.neck.is_off():
             self._logger.warning("head.neck is off. No command sent.")
             return GoToId(id=-1)
 
@@ -378,12 +418,12 @@ class Head(JointsBasedPart, IGoToBasedPart):
             goto = self.get_goto_playing()
 
         if goto.id != -1:
-            joints_request = self._get_goto_joints_request(goto)
+            joints_request = self._get_goto_request(goto)
         else:
             joints_request = None
 
         if joints_request is not None:
-            initial_orientation = joints_request.goal_positions
+            initial_orientation = joints_request.request.target.joints
 
             # as there is a 10° offset between the joint space
             # and the zero position in cartesian space in Reachy's frame for the yaw joint :
@@ -427,32 +467,37 @@ class Head(JointsBasedPart, IGoToBasedPart):
 
         Returns:
             The unique GoToId associated with the movement command.
-
-        Raises:
-            ValueError: If the neck is off and the command cannot be sent.
         """
         if not wait_for_goto_end:
             self.cancel_all_goto()
-        if self.neck.is_on():
+        if self.l_antenna is not None and self.l_antenna.is_on():
+            self.l_antenna.goto_posture(common_posture, duration, wait, wait_for_goto_end, interpolation_mode)
+        if self.r_antenna is not None and self.r_antenna.is_on():
+            self.r_antenna.goto_posture(common_posture, duration, wait, wait_for_goto_end, interpolation_mode)
+        if self.neck is not None and self.neck.is_on():
             return self.goto([0, -10, 0], duration, wait, interpolation_mode)
         else:
             self._logger.warning("Head is off. No command sent.")
         return GoToId(id=-1)
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
-        """Send goal positions to the head's joints.
+    def _get_goal_positions_message(self) -> HeadComponentsCommands:
+        """Get the HeadComponentsCommands message to send the goal positions to the actuator."""
+        commands = {}
+        for actuator_name, actuator in self._actuators.items():
+            actuator_command = actuator._get_goal_positions_message()
+            if actuator_command is not None:
+                commands[f"{actuator_name}_command"] = actuator_command
+        return HeadComponentsCommands(**commands)
 
-        If goal positions have been specified for any joint of the head, sends them to the robot.
-
-        Args :
-            check_positions: A boolean indicating whether to check the positions after sending the command.
-                Defaults to True.
-        """
-        if self.is_off():
-            self._logger.warning(f"{self._part_id.name} is off. Command not sent.")
-            return
+    def _clean_outgoing_goal_positions(self) -> None:
+        """Clean the outgoing goal positions."""
         for actuator in self._actuators.values():
-            actuator.send_goal_positions(check_positions)
+            actuator._clean_outgoing_goal_positions()
+
+    def _post_send_goal_positions(self) -> None:
+        """Monitor the joint positions to check if they reach the specified goals."""
+        for actuator in self._actuators.values():
+            actuator._post_send_goal_positions()
 
     def _update_with(self, new_state: HeadState) -> None:
         """Update the head with a newly received (partial) state from the gRPC server.
@@ -460,7 +505,8 @@ class Head(JointsBasedPart, IGoToBasedPart):
         Args:
             new_state: A HeadState object representing the new state of the head's actuators.
         """
-        self.neck._update_with(new_state.neck_state)
+        for actuator_name, actuator in self._actuators.items():
+            actuator._update_with(getattr(new_state, f"{actuator_name}_state"))
 
     def _update_audit_status(self, new_status: HeadStatus) -> None:
         """Update the audit status of the neck with the new status from the gRPC server.
@@ -468,4 +514,5 @@ class Head(JointsBasedPart, IGoToBasedPart):
         Args:
             new_status: A HeadStatus object representing the new status of the neck.
         """
-        self.neck._update_audit_status(new_status.neck_status)
+        for actuator_name, actuator in self._actuators.items():
+            actuator._update_audit_status(getattr(new_status, f"{actuator_name}_status"))
