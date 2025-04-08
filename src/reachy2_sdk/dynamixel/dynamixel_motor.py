@@ -62,7 +62,7 @@ class DynamixelMotor:
         )
 
     def turn_on(self) -> bool:
-        """Turn on the motor. Returns 'True' if it succeede
+        """Turn on the motor. Returns 'True' if it succeeded.
 
         Returns:
             `True` if the motor is stiff (not compliant), `False` otherwise.

@@ -180,7 +180,8 @@ class Orbita(ABC):
         """Turn on all motors of the actuator.
 
         Returns:
-            `True` if successful, `False` otherwise."""
+            `True` if successful, `False` otherwise.
+        """
         self._set_compliant(False)
         time.sleep(0.1)
         return self.is_on()
@@ -189,7 +190,8 @@ class Orbita(ABC):
         """Turn off all motors of the actuator.
 
         Returns:
-            `True` if successful, `False` otherwise."""
+            `True` if successful, `False` otherwise.
+        """
         self._set_compliant(True)
         time.sleep(0.1)
         return self.is_off()

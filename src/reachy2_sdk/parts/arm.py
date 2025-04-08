@@ -179,6 +179,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """Turn on all motors of the part, making all arm motors stiff.
 
         If a gripper is present, it will also be turned on.
+
         Returns:
             'True' if all motors are on, 'False' otherwise.
         """
@@ -193,6 +194,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """Turn off all motors of the part, making all arm motors compliant.
 
         If a gripper is present, it will also be turned off.
+
         Returns:
             'True' if all motors are off, 'False' otherwise.
         """
@@ -208,6 +210,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
 
         This function decreases the torque limit in steps until the motors are turned off.
         It then restores the torque limit to its original value.
+
         Returns:
             'True' if all motors are off, 'False' otherwise.
         """
@@ -233,6 +236,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """Turn on all motors of the part.
 
         This will make all arm motors stiff. If a gripper is present, it will also be turned on.
+
         Returns:
             'True' if all motors are on, 'False' otherwise.
         """
@@ -247,7 +251,9 @@ class Arm(JointsBasedPart, IGoToBasedPart):
         """Turn off all motors of the part.
 
         This will make all arm motors compliant. If a gripper is present, it will also be turned off.
-        Returns 'True' if all motors are off, 'False' otherwise.
+
+        Returns:
+            True' if all motors are off, 'False' otherwise.
         """
         if self._gripper:
             self._gripper._turn_off()

@@ -561,6 +561,7 @@ class ReachySDK:
 
     def turn_off(self) -> bool:
         """Turn all motors of enabled parts off.
+
         All enabled parts' motors will then be compliant.
 
         Returns:
