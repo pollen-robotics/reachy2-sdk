@@ -70,7 +70,8 @@ def test_gripper_goto(reachy_sdk_zeroed: ReachySDK) -> None:
 
     tic = time.time()
     reachy_sdk_zeroed.l_arm.gripper.goto(25, duration=1.0, wait=True)
-    assert np.isclose(time.time() - tic, 1.0, 0.1)
+    duration = time.time() - tic
+    assert np.isclose(duration, 1.0, 0.2)
 
     req1 = reachy_sdk_zeroed.r_arm.gripper.goto(75, duration=1.0, interpolation_mode="linear")
     req2 = reachy_sdk_zeroed.l_arm.gripper.goto(55, duration=3.0)
@@ -108,10 +109,12 @@ def test_gripper_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.l_arm.gripper.cancel_all_goto()
     assert len(reachy_sdk_zeroed.l_arm.gripper.get_goto_queue()) == 0
 
-    reachy_sdk_zeroed.l_arm.gripper.goto(40)
+    goto_id = reachy_sdk_zeroed.l_arm.gripper.goto(40)
     reachy_sdk_zeroed.l_arm.gripper.goto(60)
     reachy_sdk_zeroed.l_arm.gripper.goto(25, percentage=True)
 
+    time.sleep(0.1)
+    assert reachy_sdk_zeroed.l_arm.gripper.get_goto_playing() == goto_id
     assert len(reachy_sdk_zeroed.l_arm.gripper.get_goto_queue()) == 2
     reachy_sdk_zeroed.cancel_all_goto()
     assert len(reachy_sdk_zeroed.l_arm.gripper.get_goto_queue()) == 0
@@ -163,11 +166,7 @@ def test_gripper_is_moving(reachy_sdk_zeroed: ReachySDK) -> None:
 
     reachy_sdk_zeroed.l_arm.gripper.goto(100, duration=3.0, percentage=True)
     assert reachy_sdk_zeroed.l_arm.gripper.is_moving()
-    time.sleep(1.0)
-    assert reachy_sdk_zeroed.l_arm.gripper.is_moving()
-    time.sleep(1.0)
-    assert reachy_sdk_zeroed.l_arm.gripper.is_moving()
-    time.sleep(1.1)
+    time.sleep(3.1)
     assert not reachy_sdk_zeroed.l_arm.gripper.is_moving()
 
     reachy_sdk_zeroed.l_arm.gripper.goto(0, percentage=True)

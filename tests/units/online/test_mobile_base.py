@@ -598,7 +598,7 @@ def test_mobile_base_rotate_by(reachy_sdk_zeroed: ReachySDK) -> None:
         assert len(reachy_sdk_zeroed.mobile_base.get_goto_queue()) == 0
 
         reachy_sdk_zeroed.mobile_base.goto(x=0.2, y=0.2, theta=50, wait=True)
-        time.sleep(0.1)
+        time.sleep(0.3)
         odom = reachy_sdk_zeroed.mobile_base.get_current_odometry()
         rot3 = reachy_sdk_zeroed.mobile_base.rotate_by(theta=np.deg2rad(-40), degrees=False, timeout=50, wait=True)
         time.sleep(0.1)

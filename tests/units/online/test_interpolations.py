@@ -238,6 +238,7 @@ def test_goto_cartesian_interpolation_elliptical_radius(reachy_sdk_zeroed: Reach
     inter_poses = []
     while not reachy_sdk_zeroed.is_goto_finished(B_gotoid):
         inter_poses.append(reachy_sdk_zeroed.r_arm.forward_kinematics())
+    time.sleep(0.1)
     B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(B_forward, B, atol=1e-02)
     min_z = zA
@@ -268,6 +269,7 @@ def test_goto_cartesian_interpolation_elliptical_radius(reachy_sdk_zeroed: Reach
     inter_poses = []
     while not reachy_sdk_zeroed.is_goto_finished(B_gotoid):
         inter_poses.append(reachy_sdk_zeroed.r_arm.forward_kinematics())
+    time.sleep(0.1)
     B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(B_forward, B, atol=1e-02)
     max_z = zA
@@ -302,6 +304,7 @@ def test_goto_cartesian_interpolation_elliptical_radius(reachy_sdk_zeroed: Reach
     inter_poses = []
     while not reachy_sdk_zeroed.is_goto_finished(B_gotoid):
         inter_poses.append(reachy_sdk_zeroed.r_arm.forward_kinematics())
+    time.sleep(0.1)
     B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(B_forward, B, atol=1e-02)
     max_x = xA
@@ -332,6 +335,7 @@ def test_goto_cartesian_interpolation_elliptical_radius(reachy_sdk_zeroed: Reach
     inter_poses = []
     while not reachy_sdk_zeroed.is_goto_finished(B_gotoid):
         inter_poses.append(reachy_sdk_zeroed.r_arm.forward_kinematics())
+    time.sleep(0.1)
     B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(B_forward, B, atol=1e-02)
     min_x = xA
@@ -371,6 +375,7 @@ def test_goto_cartesian_interpolation_elliptical_radius(reachy_sdk_zeroed: Reach
     inter_poses = []
     while not reachy_sdk_zeroed.is_goto_finished(B_gotoid):
         inter_poses.append(reachy_sdk_zeroed.r_arm.forward_kinematics())
+    time.sleep(0.1)
     B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(B_forward, B, atol=1e-02)
     min_y = yA
@@ -401,6 +406,7 @@ def test_goto_cartesian_interpolation_elliptical_radius(reachy_sdk_zeroed: Reach
     inter_poses = []
     while not reachy_sdk_zeroed.is_goto_finished(B_gotoid):
         inter_poses.append(reachy_sdk_zeroed.r_arm.forward_kinematics())
+    time.sleep(0.1)
     B_forward = reachy_sdk_zeroed.r_arm.forward_kinematics()
     assert np.allclose(B_forward, B, atol=1e-02)
     max_y = yA
