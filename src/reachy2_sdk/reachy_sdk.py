@@ -546,15 +546,15 @@ class ReachySDK:
         if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn off Reachy, not connected.")
             return False
-        for part in self.info._enabled_parts.values():
-            part._turn_off()
-        if self._mobile_base is not None:
-            self._mobile_base._turn_off()
-        time.sleep(0.5)
-
         if not self.is_off():
             parts_on, parts_off = self._check_parts_state()
-            self._logger.warning(f"Failed to turn off Reachy : {parts_on} are still on.")
+            for part in parts_on:
+                part._turn_off()
+            time.sleep(0.5)
+
+            if not self.is_off():
+                parts_on, parts_off = self._check_parts_state()
+                self._logger.warning(f"Failed to turn off Reachy : {parts_on} are still on.")
 
         return self.is_off()
 
@@ -573,16 +573,16 @@ class ReachySDK:
         duration = 3
         arms_list = []
 
-        if hasattr(self, "_mobile_base") and self._mobile_base is not None:
-            self._mobile_base._turn_off()
-        for part in self.info._enabled_parts.values():
-            if "arm" in part._part_id.name:
-                part.set_torque_limits(torque_limit_low)
-                part.set_speed_limits(speed_limit_high)
-                part.goto_posture(duration=duration, wait_for_goto_end=False)
-                arms_list.append(part)
-            else:
-                part._turn_off()
+        if not self.is_off():
+            parts_on, parts_off = self._check_parts_state()
+            for part in parts_on:
+                if "arm" in part._part_id.name:
+                    part.set_torque_limits(torque_limit_low)
+                    part.set_speed_limits(speed_limit_high)
+                    part.goto_posture(duration=duration, wait_for_goto_end=False)
+                    arms_list.append(part)
+                else:
+                    part._turn_off()
 
         countingTime = 0
         while countingTime < duration:
@@ -613,18 +613,8 @@ class ReachySDK:
         if not self.info:
             self._logger.warning("Reachy is not connected!")
             return False
-
-        for part in self.info._enabled_parts.values():
-            if not part.is_on():
-                return False
-        if self._mobile_base is not None and self._mobile_base.is_off():
-            return False
-        if self._l_arm and self._l_arm.gripper and self._l_arm.gripper.is_off():
-            return False
-        if self._r_arm and self._r_arm.gripper and self._r_arm.gripper.is_off():
-            return False
-
-        return True
+        _, parts_off = self._check_parts_state()
+        return len(parts_off) == 0
 
     def is_off(self) -> bool:
         """Check if all actuators of Reachy parts are off (compliant).
@@ -636,16 +626,8 @@ class ReachySDK:
             self._logger.warning("Reachy is not connected!")
             return True
 
-        for part in self.info._enabled_parts.values():
-            if part.is_on():
-                return False
-        if self._mobile_base is not None and self._mobile_base.is_on():
-            return False
-        if self._l_arm and self._l_arm.gripper and self._l_arm.gripper.is_on():
-            return False
-        if self._r_arm and self._r_arm.gripper and self._r_arm.gripper.is_on():
-            return False
-        return True
+        parts_on, _ = self._check_parts_state()
+        return len(parts_on) == 0
 
     def _check_parts_state(self) -> Tuple[list[Any], list[Any]]:
         """Check the state of all parts of the robot.
