@@ -61,13 +61,23 @@ class DynamixelMotor:
             goal_position=round(self.goal_position, 2),
         )
 
-    def turn_on(self) -> None:
-        """Turn on the motor."""
-        self._set_compliant(False)
+    def turn_on(self) -> bool:
+        """Turn on the motor. Returns 'True' if it succeede
 
-    def turn_off(self) -> None:
-        """Turn off the motor."""
+        Returns:
+            `True` if the motor is stiff (not compliant), `False` otherwise.
+        """
+        self._set_compliant(False)
+        return self.is_on()
+
+    def turn_off(self) -> bool:
+        """Turn off the motor.
+
+        Returns:
+            `True` if the motor is compliant (not stiff), `False` otherwise.
+        """
         self._set_compliant(True)
+        return not self.is_on()
 
     def is_on(self) -> bool:
         """Check if the dynamixel motor is currently stiff.

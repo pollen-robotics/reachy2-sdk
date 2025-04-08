@@ -561,8 +561,10 @@ class ReachySDK:
 
     def turn_off(self) -> bool:
         """Turn all motors of enabled parts off.
-
         All enabled parts' motors will then be compliant.
+
+        Returns:
+            `True` if successful, `False` otherwise.
         """
         if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn off Reachy, not connected.")
@@ -583,6 +585,9 @@ class ReachySDK:
         """Turn all motors of robot parts off.
 
         Arm torques are reduced during 3 seconds, then all parts' motors will be compliant.
+
+        Returns:
+            `True` if successful, `False` otherwise.
         """
         if not self._grpc_connected or not self.info:
             self._logger.warning("Cannot turn off Reachy, not connected.")

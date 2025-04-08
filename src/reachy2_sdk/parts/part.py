@@ -63,6 +63,8 @@ class Part(ABC):
 
         This method sets the speed limits to a low value, turns on all motors of the part, and then restores the speed limits
         to maximum. It waits for a brief period to ensure the operation is complete.
+        Returns:
+            'True' if all motors are on, 'False' otherwise.
         """
         self._set_speed_limits(1)
         time.sleep(0.05)
@@ -76,11 +78,16 @@ class Part(ABC):
         """Turn off the part.
 
         This method turns off all motors of the part and waits for a brief period to ensure the operation is complete.
+        Returns:
+            'True' if all motors are off, 'False' otherwise.
         """
         return self._turn_off()
 
     def _turn_on(self) -> bool:
-        """Send a command to turn on immediately the part."""
+        """Send a command to turn on immediately the part.
+        It retries the operation a maximum number of times if the part does not turn on immediately.
+        Returns:
+            'True' if all motors are on, 'False' otherwise."""
         max_iter = 10
         ite = 0
         while not self.is_on() and ite < max_iter:
@@ -94,7 +101,10 @@ class Part(ABC):
         return True
 
     def _turn_off(self) -> bool:
-        """Send a command to turn off immediately the part."""
+        """Send a command to turn off immediately the part.
+        It retries the operation a maximum number of times if the part does not turn off immediately.
+        Returns:
+            'True' if all motors are off, 'False' otherwise."""
         max_iter = 10
         ite = 0
         while not self.is_off() and ite < max_iter:
