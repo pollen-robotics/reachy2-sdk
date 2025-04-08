@@ -1,25 +1,35 @@
 """Reachy Camera Manager module.
 
-Initialize the two teleop and SR cameras if they are available.
-
+Initialize the head and torso cameras if they are available.
 """
-import atexit
+
 import logging
-import threading
 from typing import Optional
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from reachy2_sdk_api.video_pb2_grpc import VideoServiceStub
 
-from .camera import Camera, CameraType, SRCamera
+from .camera import Camera, CameraType, DepthCamera
 
 
 class CameraManager:
-    """CameraManager class provide the available cameras."""
+    """CameraManager class manages the available cameras on the robot.
+
+    Provides access to the robot's cameras, including teleoperation and depth cameras.
+    It handles the initialization of cameras and offers methods to retrieve camera objects for use.
+    """
 
     def __init__(self, host: str, port: int) -> None:
-        """Set up camera manager module"""
+        """Set up the camera manager module.
+
+        This initializes the gRPC channel for communicating with the camera service,
+        sets up logging, and prepares the available cameras.
+
+        Args:
+            host: The host address for the gRPC service.
+            port: The port number for the gRPC service.
+        """
         self._logger = logging.getLogger(__name__)
         self._grpc_video_channel = grpc.insecure_channel(f"{host}:{port}")
         self._host = host
@@ -27,75 +37,69 @@ class CameraManager:
         self._video_stub = VideoServiceStub(self._grpc_video_channel)
 
         self._teleop: Optional[Camera] = None
-        self._SR: Optional[SRCamera] = None
-
-        self._init_thread = threading.Thread(target=self._setup_cameras)
-        self._init_thread.start()
-        # SDK Server count the number of clients to release the cameras if there is no one left
-        self._cleaned = False
-        atexit.register(self._cleanup)
+        self._depth: Optional[DepthCamera] = None
+        self._setup_cameras()
 
     def __repr__(self) -> str:
         """Clean representation of a reachy cameras."""
-        s = "\n\t".join([str(cam) for cam in [self._SR, self._teleop] if cam is not None])
+        s = "\n\t".join([str(cam) for cam in [self._depth, self._teleop] if cam is not None])
         return f"""<CameraManager intialized_cameras=\n\t{s}\n>"""
 
     def _setup_cameras(self) -> None:
-        """Thread initializing cameras"""
-        cams = self._video_stub.InitAllCameras(Empty())
-        if len(cams.camera_info) == 0:
-            self._logger.warning("Cameras not initialized.")
+        """Initialize cameras based on availability.
+
+        This method retrieves the available cameras and sets
+        up the teleop and depth cameras if they are found.
+        """
+        cams = self._video_stub.GetAvailableCameras(Empty())
+        self._teleop = None
+        self._depth = None
+        if len(cams.camera_feat) == 0:
+            self._logger.warning("There is no available camera.")
         else:
-            self._logger.debug(cams.camera_info)
-            for c in cams.camera_info:
+            self._logger.debug(cams.camera_feat)
+            for c in cams.camera_feat:
                 if c.name == CameraType.TELEOP.value:
                     self._logger.debug("Teleop Camera initialized.")
                     self._teleop = Camera(c, self._video_stub)
-                elif c.name == CameraType.SR.value:
-                    self._logger.debug("SR Camera initialized.")
-                    self._SR = SRCamera(c, self._video_stub)
+                elif c.name == CameraType.DEPTH.value:
+                    self._logger.debug("Depth Camera initialized.")
+                    self._depth = DepthCamera(c, self._video_stub)
                 else:
                     self._logger.error(f"Camera {c.name} not defined")
 
-    def _cleanup(self) -> None:
-        """Let the server know that the cameras are not longer used by this client"""
-        if not self._cleaned:
-            self.wait_end_of_initialization()
-            try:
-                self._video_stub.GoodBye(Empty())
-            except grpc.RpcError as rpc_error:
-                if rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
-                    self._logger.warning("Video module disconnected")
-                else:
-                    self._logger.error(rpc_error)
-            self._cleaned = True
+    def initialize_cameras(self) -> None:
+        """Manually re-initialize cameras.
 
-    def wait_end_of_initialization(self) -> None:
-        if self._init_thread.is_alive():
-            self._logger.info("waiting for camera to be initialized")
-            self._init_thread.join()
+        This method can be used to reinitialize the camera setup if changes occur
+        or new cameras are connected.
+        """
+        self._setup_cameras()
 
     @property
     def teleop(self) -> Optional[Camera]:
-        """Get Teleop camera"""
-        self.wait_end_of_initialization()
+        """Retrieve the teleop camera.
 
+        Returns:
+            The teleop Camera object if it is initialized; otherwise, logs an error
+            and returns None.
+        """
         if self._teleop is None:
-            self._logger.error(
-                "Teleop camera is not initialized. Please check that the reachy2-webrtc service is stopped "
-                f"(see http://{self._host}:8000)."
-            )
+            self._logger.error("Teleop camera is not initialized.")
             return None
 
         return self._teleop
 
     @property
-    def SR(self) -> Optional[SRCamera]:
-        """Get SR Camera"""
-        self.wait_end_of_initialization()
+    def depth(self) -> Optional[DepthCamera]:
+        """Retrieve the depth camera.
 
-        if self._SR is None:
-            self._logger.error("SR camera is not initialized.")
+        Returns:
+            The DepthCamera object if it is initialized; otherwise, logs an error
+            and returns None.
+        """
+        if self._depth is None:
+            self._logger.error("Depth camera is not initialized.")
             return None
 
-        return self._SR
+        return self._depth

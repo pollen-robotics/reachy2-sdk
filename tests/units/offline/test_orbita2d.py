@@ -2,6 +2,8 @@ import grpc
 import pytest
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import PIDGains
+from reachy2_sdk_api.error_pb2 import Error
+from reachy2_sdk_api.orbita2d_pb2 import Orbita2dStatus
 
 from reachy2_sdk.orbita.orbita2d import (
     Axis,
@@ -16,7 +18,7 @@ from reachy2_sdk.orbita.utils import to_position
 
 
 @pytest.mark.offline
-def test_class() -> None:
+def test_orbita2d() -> None:
     grpc_channel = grpc.insecure_channel("dummy:5050")
     compliance = BoolValue(value=True)
     present_position = Pose2d(axis_1=FloatValue(value=1), axis_2=FloatValue(value=2))
@@ -42,7 +44,14 @@ def test_class() -> None:
         torque_limit=torque_limit,
     )
     orbita2d = Orbita2d(
-        uid=0, name="unit_test", axis1=Axis.PITCH, axis2=Axis.ROLL, initial_state=orbita2d_state, grpc_channel=grpc_channel
+        uid=0,
+        name="unit_test",
+        axis1=Axis.PITCH,
+        axis2=Axis.ROLL,
+        initial_state=orbita2d_state,
+        grpc_channel=grpc_channel,
+        part=None,
+        joints_position_order=[0, 1],
     )
 
     assert orbita2d.__repr__() != ""
@@ -57,7 +66,7 @@ def test_class() -> None:
     with pytest.raises(AttributeError):
         orbita2d.yaw
 
-    pid_set = orbita2d.get_pid()
+    pid_set = orbita2d.get_pids()
     assert pid_set["motor_1"][0] == pid.motor_1.p.value
     assert pid_set["motor_1"][1] == pid.motor_1.i.value
     assert pid_set["motor_1"][2] == pid.motor_1.d.value
@@ -66,44 +75,40 @@ def test_class() -> None:
     assert pid_set["motor_2"][1] == pid.motor_2.i.value
     assert pid_set["motor_2"][2] == pid.motor_2.d.value
 
-    torques_set = orbita2d.get_torque_limit()
-    assert torques_set["motor_1"] == torque_limit.motor_1.value
-    assert torques_set["motor_2"] == torque_limit.motor_2.value
+    torques_set = orbita2d.get_torque_limits()
+    assert torques_set["motor_1"] == torque_limit.motor_1.value * 100
+    assert torques_set["motor_2"] == torque_limit.motor_2.value * 100
 
-    speed_set = orbita2d.get_speed_limit()
-    assert speed_set["motor_1"] == to_position(speed_limit.motor_1.value)
-    assert speed_set["motor_2"] == to_position(speed_limit.motor_2.value)
+    speed_set = orbita2d.get_speed_limits()
+    assert speed_set["motor_1"] == speed_limit.motor_1.value * 100
+    assert speed_set["motor_2"] == speed_limit.motor_2.value * 100
 
     orbita2d.temperatures["motor_1"] == temperature.motor_1.value
     orbita2d.temperatures["motor_2"] == temperature.motor_1.value
 
-    # with pytest.raises(ValueError):
-    #     orbita2d.set_speed_limit("wrong value")
+    with pytest.raises(TypeError):
+        orbita2d.set_speed_limits("wrong value")
 
-    # with pytest.raises(ValueError):
-    #     orbita2d.set_torque_limit("wrong value")
+    with pytest.raises(ValueError):
+        orbita2d.set_speed_limits(120)
+
+    with pytest.raises(ValueError):
+        orbita2d.set_speed_limits(-10)
+
+    with pytest.raises(TypeError):
+        orbita2d.set_torque_limits("wrong value")
+
+    with pytest.raises(ValueError):
+        orbita2d.set_torque_limits(120)
+
+    with pytest.raises(ValueError):
+        orbita2d.set_torque_limits(-10)
 
     # with pytest.raises(ValueError):
     #     orbita2d.set_pid("wrong value")
 
     # with pytest.raises(ValueError):
     #     orbita2d.set_pid(("1", 2, 3))
-
-    pid_msg = orbita2d._build_grpc_cmd_msg("pid")
-    assert isinstance(pid_msg, PID2d)
-    assert pid.motor_1.p.value == pid_msg.motor_1.p.value
-    assert pid.motor_1.i.value == pid_msg.motor_1.i.value
-    assert pid.motor_1.d.value == pid_msg.motor_1.d.value
-
-    assert pid.motor_2.p.value == pid_msg.motor_2.p.value
-    assert pid.motor_2.i.value == pid_msg.motor_2.i.value
-    assert pid.motor_2.d.value == pid_msg.motor_2.d.value
-
-    float_msg = orbita2d._build_grpc_cmd_msg("speed_limit")
-    assert isinstance(float_msg, Float2d)
-
-    assert float_msg.motor_1.value == speed_limit.motor_1.value
-    assert float_msg.motor_2.value == speed_limit.motor_2.value
 
     # simulated update
 
@@ -140,23 +145,31 @@ def test_class() -> None:
     assert orbita2d.pitch.goal_position == to_position(goal_position.axis_1.value)
     assert orbita2d.pitch.present_position == to_position(present_position.axis_1.value)
 
-    # pid not changed. testing against old values
-    pid_set = orbita2d.get_pid()
-    assert pid_set["motor_1"][0] == pid.motor_1.p.value
-    assert pid_set["motor_1"][1] == pid.motor_1.i.value
-    assert pid_set["motor_1"][2] == pid.motor_1.d.value
+    with pytest.raises(TypeError):
+        orbita2d.roll.goal_position = "wrong value"
 
-    assert pid_set["motor_2"][0] == pid.motor_2.p.value
-    assert pid_set["motor_2"][1] == pid.motor_2.i.value
-    assert pid_set["motor_2"][2] == pid.motor_2.d.value
+    pid_set = orbita2d.get_pids()
+    assert pid_set["motor_1"][0] == pid_new.motor_1.p.value
+    assert pid_set["motor_1"][1] == pid_new.motor_1.i.value
+    assert pid_set["motor_1"][2] == pid_new.motor_1.d.value
 
-    torques_set = orbita2d.get_torque_limit()
-    assert torques_set["motor_1"] == torque_limit.motor_1.value
-    assert torques_set["motor_2"] == torque_limit.motor_2.value
+    assert pid_set["motor_2"][0] == pid_new.motor_2.p.value
+    assert pid_set["motor_2"][1] == pid_new.motor_2.i.value
+    assert pid_set["motor_2"][2] == pid_new.motor_2.d.value
 
-    speed_set = orbita2d.get_speed_limit()
-    assert speed_set["motor_1"] == to_position(speed_limit.motor_1.value)
-    assert speed_set["motor_2"] == to_position(speed_limit.motor_2.value)
+    torques_set = orbita2d.get_torque_limits()
+    assert torques_set["motor_1"] == torque_limit.motor_1.value * 100
+    assert torques_set["motor_2"] == torque_limit.motor_2.value * 100
+
+    speed_set = orbita2d.get_speed_limits()
+    assert speed_set["motor_1"] == speed_limit.motor_1.value * 100
+    assert speed_set["motor_2"] == speed_limit.motor_2.value * 100
 
     orbita2d.temperatures["motor_1"] == temperature.motor_1.value
     orbita2d.temperatures["motor_2"] == temperature.motor_1.value
+
+    assert orbita2d.status is None
+    error = Error(details="test")
+    orbita2d_status = Orbita2dStatus(errors=[error])
+    orbita2d._update_audit_status(orbita2d_status)
+    assert orbita2d.status == "test"

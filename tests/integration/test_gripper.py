@@ -1,9 +1,4 @@
 import time
-from math import e
-
-import numpy as np
-import numpy.typing as npt
-from reachy2_sdk_api.goto_pb2 import GoalStatus
 
 from reachy2_sdk import ReachySDK
 
@@ -14,22 +9,28 @@ def main_test() -> None:
     reachy = ReachySDK(host="localhost")
     try:
         time.sleep(1.0)
-        if reachy.grpc_status == "disconnected":
+        if not reachy.is_connected():
             print("Failed to connect to Reachy, exiting...")
             return
 
         print("connected")
         reachy.turn_on()
-        while True:
-            print("plop")
-            print(reachy)
+        time.sleep(0.5)
+        for i in range(5):
+            print("Close grippers")
             reachy.r_arm.gripper.close()
             reachy.l_arm.gripper.close()
-            print(reachy.l_arm.gripper.opening)
-            time.sleep(1.0)
+            time.sleep(0.5)
+            print(f"l_gripper opening: {reachy.l_arm.gripper.opening}")
+            print(f"r_gripper opening: {reachy.r_arm.gripper.opening}")
+            time.sleep(0.5)
+            print("Open grippers")
             reachy.r_arm.gripper.open()
             reachy.l_arm.gripper.open()
-            time.sleep(1.0)
+            time.sleep(0.5)
+            print(f"l_gripper opening: {reachy.l_arm.gripper.opening}")
+            print(f"r_gripper opening: {reachy.r_arm.gripper.opening}")
+            time.sleep(0.5)
 
     except Exception as e:
         print(f"Exception: {e}")
@@ -39,7 +40,4 @@ def main_test() -> None:
 
 
 if __name__ == "__main__":
-    # head_test()
     main_test()
-    # deco_test()
-    # multi_test()

@@ -1,10 +1,12 @@
+"""Example of setting Reachy to zero pose using Reachy SDK."""
+
 import logging
 import time
 
 from reachy2_sdk import ReachySDK
 
 if __name__ == "__main__":
-    print("Reachy SDK example: set to zero pose")
+    print("Reachy SDK example: set to default posture")
 
     # display messages from SDK
     logging.basicConfig(level=logging.INFO)
@@ -26,8 +28,8 @@ if __name__ == "__main__":
 
     time.sleep(0.2)
 
-    print("Set to zero pose...")
-    reachy.set_pose("zero")
+    print("Set to default posture...")
+    reachy.goto_posture("default")
 
     time.sleep(1)
 

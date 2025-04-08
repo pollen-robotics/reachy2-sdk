@@ -1,0 +1,15 @@
+{
+    "black-formatter.importStrategy": "fromEnvironment",
+    "isort.check": true,
+    "isort.importStrategy": "fromEnvironment",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
+    "mypy-type-checker.importStrategy": "fromEnvironment",
+    "flake8.importStrategy": "fromEnvironment"
+}

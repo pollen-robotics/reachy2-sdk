@@ -1,19 +1,37 @@
+"""Example script to display live frames from the teleoperation and depth cameras."""
+
+import argparse
 import logging
 
 import cv2
+import numpy as np
 
 from reachy2_sdk import ReachySDK
 from reachy2_sdk.media.camera import CameraView
 
 
 def display_teleop_cam() -> None:
+    """Display live frames from the teleoperation camera.
+
+    This function retrieves and displays frames from the left and right
+    views of the teleoperation camera. The function terminates
+    upon a keyboard interrupt.
+
+    Raises:
+        SystemExit: If the teleop camera is not available.
+    """
     if reachy.cameras.teleop is None:
         exit("There is no teleop camera.")
 
+    print(f"Left camera parameters {reachy.cameras.teleop.get_parameters(CameraView.LEFT)}")
+    print(f"Left camera extrinsic parameters {reachy.cameras.teleop.get_extrinsics(CameraView.LEFT)}")
+    # print(reachy.cameras.teleop.get_parameters(CameraView.RIGHT))
+
     try:
-        while reachy.cameras.teleop.capture():
-            frame = reachy.cameras.teleop.get_frame(CameraView.LEFT)
-            frame_r = reachy.cameras.teleop.get_frame(CameraView.RIGHT)
+        while True:
+            frame, ts = reachy.cameras.teleop.get_frame(CameraView.LEFT)
+            frame_r, ts_r = reachy.cameras.teleop.get_frame(CameraView.RIGHT)
+            print(f"timestamps secs: left {ts} - right {ts_r}")
             cv2.imshow("left", frame)
             cv2.imshow("right", frame_r)
             cv2.waitKey(1)
@@ -22,16 +40,30 @@ def display_teleop_cam() -> None:
         logging.info("User Interrupt")
 
 
-def display_SR_cam() -> None:
-    if reachy.cameras.SR is None:
-        exit("There is no SR camera.")
+def display_depth_cam() -> None:
+    """Display live frames from the depth camera.
+
+    This function retrieves and displays RGB and depth frames from the depth camera.
+    It normalizes the depth map for visualization and shows the RGB frame and normalized depth
+    frame side by side. The function exits upon a keyboard interrupt.
+
+    Raises:
+        SystemExit: If the depth camera is not available.
+    """
+    if reachy.cameras.depth is None:
+        exit("There is no depth camera.")
+
+    print(f"Depth camera parameters {reachy.cameras.depth.get_parameters()}")
+    print(f"Depth camera extrinsic parameters {reachy.cameras.depth.get_extrinsics()}")
 
     try:
-        while reachy.cameras.SR.capture():
-            cv2.imshow("sr_depthNode_left", reachy.cameras.SR.get_depth_frame(CameraView.LEFT))
-            cv2.imshow("sr_depthNode_right", reachy.cameras.SR.get_depth_frame(CameraView.RIGHT))
-            cv2.imshow("depth", reachy.cameras.SR.get_depthmap())
-            cv2.imshow("disparity", reachy.cameras.SR.get_disparity())
+        while True:
+            rgb, ts = reachy.cameras.depth.get_frame()
+            depth, ts_r = reachy.cameras.depth.get_depth_frame()
+            depth_map_normalized = np.empty_like(depth)
+            cv2.normalize(depth, depth_map_normalized, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+            cv2.imshow("frame", rgb)
+            cv2.imshow("depthn", depth_map_normalized)
             cv2.waitKey(1)
 
     except KeyboardInterrupt:
@@ -40,10 +72,24 @@ def display_SR_cam() -> None:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+
+    argParser = argparse.ArgumentParser(description="SDK camera example")
+    argParser.add_argument(
+        "mode",
+        type=str,
+        choices=["teleop", "depth"],
+    )
+    args = argParser.parse_args()
+
     reachy = ReachySDK(host="localhost")
 
     if not reachy.is_connected:
         exit("Reachy is not connected.")
 
-    display_teleop_cam()
-    # display_SR_cam()
+    if reachy.cameras is None:
+        exit("There is no connected camera.")
+
+    if args.mode == "teleop":
+        display_teleop_cam()
+    elif args.mode == "depth":
+        display_depth_cam()

@@ -16,6 +16,7 @@ from reachy2_sdk_api.hand_pb2 import (
     Temperatures,
 )
 
+from reachy2_sdk.grippers.parallel_gripper import ParallelGripper
 from reachy2_sdk.parts.hand import Hand
 from reachy2_sdk.reachy_sdk import ReachySDK
 
@@ -26,25 +27,28 @@ def test_class() -> None:
 
     goal_position_rad = 3
     present_position_rad = 4
-    compliant = True
+    compliant = False
 
     hand_proto = Hand_proto()
     hand_state = HandState(
         opening=FloatValue(value=0.2),
         force=FloatValue(value=2),
         holding_object=BoolValue(value=True),
-        goal_position=HandPosition(parallel_gripper=ParallelGripperPosition(position=goal_position_rad)),
-        present_position=HandPosition(parallel_gripper=ParallelGripperPosition(position=present_position_rad)),
+        goal_position=HandPosition(parallel_gripper=ParallelGripperPosition(position=FloatValue(value=goal_position_rad))),
+        present_position=HandPosition(
+            parallel_gripper=ParallelGripperPosition(position=FloatValue(value=present_position_rad))
+        ),
         joints_limits=JointsLimits(parallel_gripper=ParallelGripperLimits(limits=JointLimits(max=5, min=6))),
         temperatures=HandTemperatures(parallel_gripper=Temperatures(driver=7, motor=8)),
         compliant=BoolValue(value=compliant),
     )
 
-    hand = Hand(hand_msg=hand_proto, initial_state=hand_state, grpc_channel=grpc_channel)
+    hand = ParallelGripper(hand_msg=hand_proto, initial_state=hand_state, grpc_channel=grpc_channel, goto_stub=None)
 
     assert hand.__repr__() != ""
 
     assert hand.opening == 20
+    assert hand.get_current_opening() == 20
 
     with pytest.raises(ValueError):
         hand.set_opening(-1)
@@ -52,27 +56,33 @@ def test_class() -> None:
     with pytest.raises(ValueError):
         hand.set_opening(101)
 
-    assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
-    assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
-    assert hand.is_on() is False
+    assert hand.goal_position == np.rad2deg(goal_position_rad)
+    assert hand.present_position == np.rad2deg(present_position_rad)
+    assert hand.is_on() is True
+    assert hand.is_off() is False
 
     goal_position_rad = 5
     present_position_rad = 6
+    compliant = True
 
     hand_state = HandState(
         opening=FloatValue(value=0.7),
         force=FloatValue(value=3),
         holding_object=BoolValue(value=False),
-        goal_position=HandPosition(parallel_gripper=ParallelGripperPosition(position=goal_position_rad)),
-        present_position=HandPosition(parallel_gripper=ParallelGripperPosition(position=present_position_rad)),
+        goal_position=HandPosition(parallel_gripper=ParallelGripperPosition(position=FloatValue(value=goal_position_rad))),
+        present_position=HandPosition(
+            parallel_gripper=ParallelGripperPosition(position=FloatValue(value=present_position_rad))
+        ),
         joints_limits=JointsLimits(parallel_gripper=ParallelGripperLimits(limits=JointLimits(max=5, min=6))),
         temperatures=HandTemperatures(parallel_gripper=Temperatures(driver=7, motor=8)),
+        compliant=BoolValue(value=compliant),
     )
     hand._update_with(hand_state)
 
     assert hand.opening == 70
 
-    hand._compliant = True
+    assert hand.is_off() is True
+    assert hand.is_on() is False
 
     with pytest.raises(RuntimeError):
         hand.open()
@@ -83,6 +93,11 @@ def test_class() -> None:
     with pytest.raises(RuntimeError):
         hand.set_opening(50)
 
-    # Todo values are in deg or rad?
-    # assert hand._goal_position == round(np.rad2deg(goal_position_rad), 1)
-    # assert hand._present_position == round(np.rad2deg(present_position_rad), 1)
+    with pytest.raises(TypeError):
+        hand.goal_position = "wrong value"
+
+    assert hand.goal_position == np.rad2deg(goal_position_rad)
+    assert hand.present_position == np.rad2deg(present_position_rad)
+
+    hand._set_speed_limits(100)
+    hand.send_goal_positions()

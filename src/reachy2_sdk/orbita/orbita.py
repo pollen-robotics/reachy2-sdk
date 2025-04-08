@@ -1,66 +1,93 @@
-import asyncio
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple
+"""Reachy Orbita module.
 
+Handles all specific methods commmon to all Orbita2d and Orbita3d.
+"""
+
+import logging
+import time
+from abc import ABC, abstractmethod
+from threading import Thread
+from typing import Any, Dict, Optional, Tuple
+
+import numpy as np
 from google.protobuf.wrappers_pb2 import BoolValue, FloatValue
 from reachy2_sdk_api.component_pb2 import ComponentId
-from reachy2_sdk_api.orbita2d_pb2 import Float2d, Orbita2dState, PID2d, Pose2d
+from reachy2_sdk_api.orbita2d_pb2 import (
+    Orbita2dCommand,
+    Orbita2dsCommand,
+    Orbita2dState,
+    Orbita2dStatus,
+)
 from reachy2_sdk_api.orbita2d_pb2_grpc import Orbita2dServiceStub
-from reachy2_sdk_api.orbita3d_pb2 import Float3d, Orbita3dState
+from reachy2_sdk_api.orbita3d_pb2 import Orbita3dState, Orbita3dStatus
 from reachy2_sdk_api.orbita3d_pb2_grpc import Orbita3dServiceStub
 
-from ..motors.register import Register
+from ..parts.part import Part
+from .orbita_axis import OrbitaAxis
 from .orbita_motor import OrbitaMotor
-
-# from .utils import to_internal_position
 
 
 class Orbita(ABC):
-    """The Orbita class is an abstract class to represent any Orbita actuator and its registers, joints, motors and axis.
+    """The Orbita class is an abstract class to represent any Orbita actuator.
 
     The Orbita class is used to store the up-to-date state of the actuator, especially:
-        - its compliancy
-        - its joints state
-        - its motors state
-        - its axis state
+    - its compliancy
+    - its joints state
+    - its motors state
+    - its axis state
 
-    The only register available at the actuator is the compliancy RW register.
-    You can set the compliance on/off (boolean).
-
-    You can access registers of the motors from the actuators with function that act on all the actuator's motors.
-    Lower registers which can be read/write at actuator level:
-    - speed limit (in degree per second, for all motors of the actuator)
-    - torque limit (in %, for all motors of the actuator)
-    - pid (for all motors of the actuator)
-    Lower registers that are read-only but acessible at actuator level:
-    - temperatures (temperatures of all motors of the actuator)
+    And apply speed, torque, pid and compliancy to all motors of the actuator.
 
     This class is meant to be derived by Orbita2d and Orbita3d
     """
 
-    _compliant = Register(readonly=False, type=BoolValue, label="compliant")
+    def __init__(self, uid: int, name: str, orbita_type: str, stub: Orbita2dServiceStub | Orbita3dServiceStub, part: Part):
+        """Initialize the Orbita actuator with its common attributes.
 
-    def __init__(
-        self,
-        uid: int,
-        name: str,
-        orbita_type: str,
-        stub: Orbita2dServiceStub | Orbita3dServiceStub,
-    ):
-        """Initialize the common attributes."""
+        Args:
+            uid: The unique identifier for the actuator.
+            name: The name of the actuator.
+            orbita_type: Specifies the type of Orbita, either "2d" or "3d".
+            stub: The gRPC stub used for communicating with the actuator, which can be an
+                instance of either `Orbita2dServiceStub` or `Orbita3dServiceStub`.
+            part: The parent part to which the Orbita belongs, used for referencing the
+                part's attributes.
+        """
+        self._logger = logging.getLogger(__name__)
         self._name = name
         self._id = uid
         self._orbita_type = orbita_type
         self._stub = stub
+        self._part = part
 
-        self._state: Dict[str, bool] = {}
-        self._register_needing_sync: List[str] = []
+        self._compliant: bool
+
         self._joints: Dict[str, Any] = {}
+        self._axis_name_by_joint: Dict[Any, str] = {}
         self._motors: Dict[str, OrbitaMotor] = {}
+        self._outgoing_goal_positions: Dict[str, float] = {}
+        self._axis: Dict[str, OrbitaAxis] = {}
+
+        self._error_status: Optional[str] = None
+
+        self._thread_check_position: Optional[Thread] = None
+        self._cancel_check = False
 
     @abstractmethod
-    def _create_init_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
-        pass
+    def _create_dict_state(self, initial_state: Orbita2dState | Orbita3dState) -> Dict[str, Dict[str, FloatValue]]:
+        """Create a dictionary representation of the joint states.
+
+        This method must be implemented by subclasses to create the dict state of the Orbita.
+
+        Args:
+            initial_state: The initial state of the Orbita, provided as an instance of
+                `Orbita2dState` or `Orbita3dState`.
+
+        Returns:
+            A dictionary where each key corresponds to a joint attribute, and each value
+            is another dictionary of state information with string keys and `FloatValue` values.
+        """
+        pass  # pragma: no cover
 
     def __repr__(self) -> str:
         """Clean representation of an Orbita."""
@@ -69,18 +96,43 @@ class Orbita(ABC):
             s
         }\n>"""
 
-    # def set_speed_limit(self, speed_limit: float) -> None:
-    #     """Set a speed_limit on all motors of the actuator"""
-    #     if not isinstance(speed_limit, float | int):
-    #         raise ValueError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
-    #     speed_limit = to_internal_position(speed_limit)
-    #     self._set_motors_fields("speed_limit", speed_limit)
+    @abstractmethod
+    def set_speed_limits(self, speed_limit: float | int) -> None:
+        """Set the speed limits for the Orbita actuator.
 
-    # def set_torque_limit(self, torque_limit: float) -> None:
-    #     """Set a torque_limit on all motors of the actuator"""
-    #     if not isinstance(torque_limit, float | int):
-    #         raise ValueError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
-    #     self._set_motors_fields("torque_limit", torque_limit)
+        This method defines the maximum speed for the joints, specified as a percentage
+        of the maximum speed capability.
+
+        Args:
+            speed_limit: The desired speed limit as a percentage (0-100).
+
+        Raises:
+            TypeError: If the provided speed_limit is not a float or int.
+            ValueError: If the provided speed_limit is outside the range [0, 100].
+        """
+        if not isinstance(speed_limit, float | int):
+            raise TypeError(f"Expected one of: float, int for speed_limit, got {type(speed_limit).__name__}")
+        if not (0 <= speed_limit <= 100):
+            raise ValueError(f"speed_limit must be in [0, 100], got {speed_limit}.")
+
+    @abstractmethod
+    def set_torque_limits(self, torque_limit: float | int) -> None:
+        """Set the torque limits for the Orbita actuator.
+
+        This method defines the maximum torque for the joints, specified as a percentage
+        of the maximum torque capability.
+
+        Args:
+            torque_limit: The desired torque limit as a percentage (0-100).
+
+        Raises:
+            TypeError: If the provided torque_limit is not a float or int.
+            ValueError: If the provided torque_limit is outside the range [0, 100].
+        """
+        if not isinstance(torque_limit, float | int):
+            raise TypeError(f"Expected one of: float, int for torque_limit, got {type(torque_limit).__name__}")
+        if not (0 <= torque_limit <= 100):
+            raise ValueError(f"torque_limit must be in [0, 100], got {torque_limit}.")
 
     # def set_pid(self, pid: Tuple[float, float, float]) -> None:
     #     """Set a pid value on all motors of the actuator"""
@@ -91,122 +143,192 @@ class Orbita(ABC):
     #     else:
     #         raise ValueError("pid should be of type Tuple[float, float, float]")
 
-    def get_speed_limit(self) -> Dict[str, float]:
-        """Get speed_limit of all motors of the actuator"""
+    def get_speed_limits(self) -> Dict[str, float]:
+        """Get the speed limits for all motors of the actuator.
+
+        The speed limits are expressed as percentages of the maximum speed for each motor.
+
+        Returns:
+            A dictionary where each key is the motor name and the value is the speed limit
+            percentage (0-100) for that motor. Motor names are of format "motor_{n}".
+        """
         return {motor_name: m.speed_limit for motor_name, m in self._motors.items()}
 
-    def get_torque_limit(self) -> Dict[str, float]:
-        """Get torque_limit of all motors of the actuator"""
+    def get_torque_limits(self) -> Dict[str, float]:
+        """Get the torque limits for all motors of the actuator.
+
+        The torque limits are expressed as percentages of the maximum torque for each motor.
+
+        Returns:
+            A dictionary where each key is the motor name and the value is the torque limit
+            percentage (0-100) for that motor. Motor names are of format "motor_{n}".
+        """
         return {motor_name: m.torque_limit for motor_name, m in self._motors.items()}
 
-    def get_pid(self) -> Dict[str, Tuple[float, float, float]]:
-        """Get pid of all motors of the actuator"""
+    def get_pids(self) -> Dict[str, Tuple[float, float, float]]:
+        """Get the PID values for all motors of the actuator.
+
+        Each motor's PID controller parameters (Proportional, Integral, Derivative) are returned.
+
+        Returns:
+            A dictionary where each key is the motor name and the value is a tuple containing
+            the PID values (P, I, D) for that motor. Motor names are of format "motor_{n}".
+        """
         return {motor_name: m.pid for motor_name, m in self._motors.items()}
 
     def turn_on(self) -> None:
-        """Turn all motors of the orbita2d on.
-        All orbita2d's motors will then be stiff.
-        """
-        self._compliant = False
+        """Turn on all motors of the actuator."""
+        self._set_compliant(False)
 
     def turn_off(self) -> None:
-        """Turn all motors of the orbita2d on.
-        All orbita2d's motors will then be stiff.
-        """
-        self._compliant = True
+        """Turn off all motors of the actuator."""
+        self._set_compliant(True)
 
-    def is_on(self) -> Any:
-        """Get compliancy of the actuator"""
+    def is_on(self) -> bool:
+        """Check if the actuator is currently stiff.
+
+        Returns:
+            `True` if the actuator is stiff (not compliant), `False` otherwise.
+        """
         return not self._compliant
 
+    def is_off(self) -> bool:
+        """Check if the actuator is currently compliant.
+
+        Returns:
+            `True` if the actuator is compliant (not stiff), `False` otherwise.
+        """
+        return self._compliant
+
     @property
-    def temperatures(self) -> Dict[str, Register]:
-        """Get temperatures of all the motors of the actuator"""
+    def temperatures(self) -> Dict[str, float]:
+        """Get the current temperatures of all the motors in the actuator.
+
+        Returns:
+            A dictionary where each key is the motor name and the value is the
+            current temperature of the motor in degrees Celsius. Motor names are of format "motor_{n}".
+        """
         return {motor_name: m.temperature for motor_name, m in self._motors.items()}
 
-    def __setattr__(self, __name: str, __value: Any) -> None:
-        """Set the value of the register."""
-        if __name == "_compliant":
-            if not isinstance(__value, bool):
-                raise ValueError(f"Expected bool for compliant value, got {type(__value).__name__}")
-            self._state["compliant"] = __value
+    def _set_compliant(self, compliant: bool) -> None:
+        """Set the compliance mode of the actuator's motors.
 
-            async def set_in_loop() -> None:
-                self._register_needing_sync.append("compliant")
-                self._need_sync.set()
+        Compliance mode determines whether the motors are stiff or compliant.
 
-            fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
-            fut.result()
-
-        else:
-            super().__setattr__(__name, __value)
-
-    # def _set_motors_fields(self, field: str, value: float) -> None:
-    #     """Set the value of the register for all motors of the actuator.
-
-    #     It is used to set pid, speed_limit and torque_limit.
-    #     """
-    #     for m in self._motors.values():
-    #         m._tmp_fields[field] = value
-
-    #     self._update_loop(field)
-
-    def _setup_sync_loop(self) -> None:
-        """Set up the async synchronisation loop.
-
-        The setup is done separately, as the async Event should be created in the same EventLoop than it will be used.
-
-        The _need_sync Event is used to inform the robot that some data need to be pushed to the real robot.
-        The _register_needing_sync stores a list of the register that need to be synced.
+        Args:
+            compliant: A boolean value indicating whether to set the motors to
+                compliant (`True`) or stiff (`False`).
         """
-        self._need_sync = asyncio.Event()
-        self._loop = asyncio.get_running_loop()
+        command = Orbita2dsCommand(
+            cmd=[
+                Orbita2dCommand(
+                    id=ComponentId(id=self._id),
+                    compliant=BoolValue(value=compliant),
+                )
+            ]
+        )
+        self._stub.SendCommand(command)
 
-    def _update_loop(self, field: str) -> None:
-        """Update the registers that need to be synced.
+    def _set_outgoing_goal_position(self, axis_name: str, goal_position: float) -> None:
+        """Set the goal position for a specified axis.
 
-        Set a threading event to inform the stream command thread that some data need to be pushed
-        to the robot.
+        This method sets the target position for an axis, preparing it to be sent as a goal position.
+
+        Args:
+            axis_name: The name of the axis for which to set the goal position. Could be "roll", "pitch", "yaw" for Orbita3d
+                or "axis_1", "axis_2" for Orbita2d.
+            goal_position: The desired goal position converted in radians for the specified axis.
         """
-
-        async def set_in_loop() -> None:
-            self._register_needing_sync.append(field)
-            self._need_sync.set()
-
-        fut = asyncio.run_coroutine_threadsafe(set_in_loop(), self._loop)
-        fut.result()
+        joint = getattr(self, axis_name)
+        axis = self._axis_name_by_joint[joint]
+        self._outgoing_goal_positions[axis] = goal_position
 
     @abstractmethod
-    def _build_grpc_cmd_msg_actuator(self, field: str) -> Float2d | Float3d:
-        pass
+    def send_goal_positions(self, check_positions: bool = False) -> None:
+        """Send the goal positions to the actuator.
 
-    @abstractmethod
-    def _build_grpc_cmd_msg(self, field: str) -> Pose2d | PID2d | Float2d | Float3d:
-        pass
+        This method is abstract and should be implemented in derived classes to
+        send the specified goal positions to the actuator's joints.
 
-    def _make_command(self) -> Dict[str, Any]:
-        """Create a gRPC command from the registers that need to be synced."""
-        values = {
-            "id": ComponentId(id=self._id),
-        }
+        Args:
+            check_positions: A boolean value indicating whether to check the positions of the joints
+                after sending the goal positions. If `True`, a background thread is started to monitor
+                the joint positions relative to their last goal positions.
+                Default is `True`.
+        """
+        pass  # pragma: no cover
 
-        set_reg_to_update = set(self._register_needing_sync)
-        for reg in set_reg_to_update:
-            if reg == "compliant":
-                values["compliant"] = BoolValue(value=self._state["compliant"])
-            else:
-                values[reg] = self._build_grpc_cmd_msg_actuator(reg)
+    def _post_send_goal_positions(self) -> None:
+        """Start a background thread to check the goal positions after sending them.
 
-        set_reg_to_update = set()
-        for obj in list(self._joints.values()) + list(self._motors.values()):
-            set_reg_to_update = set_reg_to_update.union(set(obj._register_needing_sync))
-        for reg in set_reg_to_update:
-            values[reg] = self._build_grpc_cmd_msg(reg)
+        This method stops any ongoing position check thread and starts a new thread
+        to monitor the current positions of the joints relative to their last goal positions.
+        """
+        self._cancel_check = True
+        if self._thread_check_position is not None and self._thread_check_position.is_alive():
+            self._thread_check_position.join()
+        self._thread_check_position = Thread(target=self._check_goal_positions, daemon=True)
+        self._thread_check_position.start()
 
-        return values
+    def _check_goal_positions(self) -> None:
+        """Monitor the joint positions to check if they reach the specified goals.
 
-    def _reset_registers(self) -> None:
-        self._register_needing_sync.clear()
-        for obj in list(self._motors.values()):
-            obj._register_needing_sync.clear()
-        self._need_sync.clear()
+        This method checks the current positions of the joints and compares them to
+        the goal positions. If a position is significantly different from the goal after 1 second,
+        a warning is logged indicating that the position may be unreachable.
+        """
+        self._cancel_check = False
+        t1 = time.time()
+        while time.time() - t1 < 1:
+            time.sleep(0.0001)
+            if self._cancel_check:
+                # in case of multiple send_goal_positions we'll check the next call
+                return
+
+        for joint, orbitajoint in self._joints.items():
+            # precision is low we are looking for unreachable positions
+            if not np.isclose(orbitajoint.present_position, orbitajoint.goal_position, atol=1):
+                self._logger.warning(
+                    f"Required goal position ({round(orbitajoint.goal_position, 2)}) for {self._name}.{joint} is unreachable."
+                    f"\nCurrent position is ({round(orbitajoint.present_position, 2)})."
+                )
+
+    def _update_with(self, new_state: Orbita2dState | Orbita3dState) -> None:
+        """Update the actuator's state with new data.
+
+        This method updates the internal state of the motors, axes, and joints based on
+        the new state data received.
+
+        Args:
+            new_state: The new state of the actuator, either as an Orbita2dState or
+                Orbita3dState object.
+        """
+        state: Dict[str, Dict[str, FloatValue]] = self._create_dict_state(new_state)
+
+        for name, motor in self._motors.items():
+            motor._update_with(state[name])
+
+        for name, axis in self._axis.items():
+            axis._update_with(state[name])
+
+        for name, joints in self._joints.items():
+            joints._update_with(state[name])
+
+    @property
+    def status(self) -> Optional[str]:
+        """Get the current audit status of the actuator.
+
+        Returns:
+            The audit status as a string, representing the latest error or status
+            message, or `None` if there is no error.
+        """
+        return self._error_status
+
+    def _update_audit_status(self, new_status: Orbita2dStatus | Orbita3dStatus) -> None:
+        """Update the audit status based on the new status data.
+
+        Args:
+            new_status: The new status data, either as an Orbita2dStatus or
+                Orbita3dStatus object, containing error details.
+        """
+        self._error_status = new_status.errors[0].details

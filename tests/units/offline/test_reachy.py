@@ -6,6 +6,7 @@ from reachy2_sdk_api.reachy_pb2 import Reachy
 from reachy2_sdk_api.reachy_pb2 import ReachyInfo as ReachyInfo_proto
 
 from reachy2_sdk.config.reachy_info import ReachyInfo
+from reachy2_sdk.parts.mobile_base import MobileBase as MobileBasePart
 
 
 @pytest.mark.offline
@@ -13,7 +14,10 @@ def test_ReachyInfo() -> None:
     serial_number = "Reachy-12345"
     version_hard = "1.1"
     version_soft = "1.2"
-    robot_info = ReachyInfo_proto(serial_number=serial_number, version_hard=version_hard, version_soft=version_soft)
+    api_version = "1.0.17"
+    robot_info = ReachyInfo_proto(
+        serial_number=serial_number, version_hard=version_hard, version_soft=version_soft, api_version=api_version
+    )
     reachy = Reachy(info=robot_info)
 
     ri = ReachyInfo(reachy)
@@ -21,7 +25,14 @@ def test_ReachyInfo() -> None:
     assert ri.robot_serial_number == serial_number
     assert ri.hardware_version == version_hard
     assert ri.core_software_version == version_soft
+    assert ri._robot_api_version == api_version
     assert ri.battery_voltage == 30.0
+    assert ri.mode == "NONE"
+
+    assert (
+        str(ri)
+        == f'<ReachyInfo mode="NONE" \n robot_serial_number="{serial_number}" \n hardware_version="{version_hard}" \n core_software_version="{version_soft}" \n robot_api_version="{api_version}" \n battery_voltage=30.0 >'
+    )
 
 
 @pytest.mark.offline
