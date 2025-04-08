@@ -266,7 +266,7 @@ class Antenna(IGoToBasedComponent):
         self._cancel_check = False
         t1 = time.time()
         while time.time() - t1 < 1:
-            time.sleep(0.05)
+            time.sleep(0.0001)
             if self._cancel_check:
                 # in case of multiple send_goal_positions we'll check the next call
                 return
