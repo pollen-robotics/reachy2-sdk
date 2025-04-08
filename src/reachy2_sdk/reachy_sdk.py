@@ -298,35 +298,6 @@ class ReachySDK:
         return self._grpc_connected
 
     @property
-    def _grpc_status(self) -> str:
-        """Get the current connection status of the robot's gRPC server.
-
-        Returns:
-            "connected" if connected, "disconnected" otherwise.
-        """
-        if self._grpc_connected:
-            return "connected"
-        else:
-            return "disconnected"
-
-    @_grpc_status.setter
-    def _grpc_status(self, status: str) -> None:
-        """Set the connection status of the robot's gRPC server.
-
-        Args:
-            status: The connection status to set, must be either "connected" or "disconnected".
-
-        Raises:
-            ValueError: If the status is not "connected" or "disconnected".
-        """
-        if status == "connected":
-            self._grpc_connected = True
-        elif status == "disconnected":
-            self._grpc_connected = False
-        else:
-            raise ValueError("_grpc_status can only be set to 'connected' or 'disconnected'")
-
-    @property
     def cameras(self) -> Optional[CameraManager]:
         """Get the camera manager if available and connected."""
         if not self._grpc_connected:
