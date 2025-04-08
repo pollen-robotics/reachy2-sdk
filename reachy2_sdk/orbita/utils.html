@@ -71,14 +71,14 @@
 
                         <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="sd">&quot;&quot;&quot;This module defines the utils class functions for Orbita.&quot;&quot;&quot;</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span> <span class="nn">google.protobuf.wrappers_pb2</span> <span class="kn">import</span> <span class="n">BoolValue</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">,</span> <span class="n">UInt32Value</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span> <span class="nn">reachy2_sdk_api.component_pb2</span> <span class="kn">import</span> <span class="n">PIDGains</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">google.protobuf.wrappers_pb2</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoolValue</span><span class="p">,</span> <span class="n">FloatValue</span><span class="p">,</span> <span class="n">UInt32Value</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">reachy2_sdk_api.component_pb2</span><span class="w"> </span><span class="kn">import</span> <span class="n">PIDGains</span>
 </span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
 </span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="k">def</span> <span class="nf">to_position</span><span class="p">(</span><span class="n">internal_pos</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_position</span><span class="p">(</span><span class="n">internal_pos</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 </span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert an internal angular value in radians to a value in degrees.</span>
 </span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>
 </span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">    Args:</span>
@@ -90,7 +90,7 @@
 </span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">internal_pos</span><span class="p">))</span>
 </span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>
 </span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="k">def</span> <span class="nf">to_internal_position</span><span class="p">(</span><span class="n">pos</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_internal_position</span><span class="p">(</span><span class="n">pos</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 </span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert an angular value in degrees to a value in radians.</span>
 </span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>
 </span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">    The server expects values in radians, so conversion is necessary.</span>
@@ -110,7 +110,7 @@
 </span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Excepted one of: int, float, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
 </span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="k">def</span> <span class="nf">unwrapped_pid_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="k">def</span><span class="w"> </span><span class="nf">unwrapped_pid_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 </span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Unwrap the internal PID value from a gRPC protobuf object to a Python value.</span>
 </span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>
 </span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">    Args:</span>
@@ -122,7 +122,7 @@
 </span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>    <span class="k">return</span> <span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">i</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 </span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>
 </span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="k">def</span> <span class="nf">wrapped_proto_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="k">def</span><span class="w"> </span><span class="nf">wrapped_proto_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 </span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap a simple Python value to the corresponding gRPC protobuf type.</span>
 </span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>
 </span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">    Args:</span>
@@ -138,12 +138,12 @@
 </span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a>        <span class="k">return</span> <span class="n">BoolValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
 </span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
 </span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>        <span class="k">return</span> <span class="n">FloatValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">UInt32Value</span><span class="p">):</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
 </span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>        <span class="k">return</span> <span class="n">UInt32Value</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
 </span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>    <span class="k">return</span> <span class="n">value</span>
 </span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>
 </span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="k">def</span> <span class="nf">wrapped_pid_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="k">def</span><span class="w"> </span><span class="nf">wrapped_pid_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 </span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap a simple Python value to the corresponding gRPC protobuf type.</span>
 </span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>
 </span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="sd">    Args:</span>
@@ -175,7 +175,7 @@
 
     </div>
     <a class="headerlink" href="#to_position"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="to_position-11"><a href="#to_position-11"><span class="linenos">11</span></a><span class="k">def</span> <span class="nf">to_position</span><span class="p">(</span><span class="n">internal_pos</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="to_position-11"><a href="#to_position-11"><span class="linenos">11</span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_position</span><span class="p">(</span><span class="n">internal_pos</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 </span><span id="to_position-12"><a href="#to_position-12"><span class="linenos">12</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert an internal angular value in radians to a value in degrees.</span>
 </span><span id="to_position-13"><a href="#to_position-13"><span class="linenos">13</span></a>
 </span><span id="to_position-14"><a href="#to_position-14"><span class="linenos">14</span></a><span class="sd">    Args:</span>
@@ -216,7 +216,7 @@
 
     </div>
     <a class="headerlink" href="#to_internal_position"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="to_internal_position-23"><a href="#to_internal_position-23"><span class="linenos">23</span></a><span class="k">def</span> <span class="nf">to_internal_position</span><span class="p">(</span><span class="n">pos</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="to_internal_position-23"><a href="#to_internal_position-23"><span class="linenos">23</span></a><span class="k">def</span><span class="w"> </span><span class="nf">to_internal_position</span><span class="p">(</span><span class="n">pos</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 </span><span id="to_internal_position-24"><a href="#to_internal_position-24"><span class="linenos">24</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert an angular value in degrees to a value in radians.</span>
 </span><span id="to_internal_position-25"><a href="#to_internal_position-25"><span class="linenos">25</span></a>
 </span><span id="to_internal_position-26"><a href="#to_internal_position-26"><span class="linenos">26</span></a><span class="sd">    The server expects values in radians, so conversion is necessary.</span>
@@ -273,7 +273,7 @@
 
     </div>
     <a class="headerlink" href="#unwrapped_pid_value"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="unwrapped_pid_value-43"><a href="#unwrapped_pid_value-43"><span class="linenos">43</span></a><span class="k">def</span> <span class="nf">unwrapped_pid_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="unwrapped_pid_value-43"><a href="#unwrapped_pid_value-43"><span class="linenos">43</span></a><span class="k">def</span><span class="w"> </span><span class="nf">unwrapped_pid_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 </span><span id="unwrapped_pid_value-44"><a href="#unwrapped_pid_value-44"><span class="linenos">44</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Unwrap the internal PID value from a gRPC protobuf object to a Python value.</span>
 </span><span id="unwrapped_pid_value-45"><a href="#unwrapped_pid_value-45"><span class="linenos">45</span></a>
 </span><span id="unwrapped_pid_value-46"><a href="#unwrapped_pid_value-46"><span class="linenos">46</span></a><span class="sd">    Args:</span>
@@ -314,7 +314,7 @@
 
     </div>
     <a class="headerlink" href="#wrapped_proto_value"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="wrapped_proto_value-55"><a href="#wrapped_proto_value-55"><span class="linenos">55</span></a><span class="k">def</span> <span class="nf">wrapped_proto_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="wrapped_proto_value-55"><a href="#wrapped_proto_value-55"><span class="linenos">55</span></a><span class="k">def</span><span class="w"> </span><span class="nf">wrapped_proto_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 </span><span id="wrapped_proto_value-56"><a href="#wrapped_proto_value-56"><span class="linenos">56</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap a simple Python value to the corresponding gRPC protobuf type.</span>
 </span><span id="wrapped_proto_value-57"><a href="#wrapped_proto_value-57"><span class="linenos">57</span></a>
 </span><span id="wrapped_proto_value-58"><a href="#wrapped_proto_value-58"><span class="linenos">58</span></a><span class="sd">    Args:</span>
@@ -330,7 +330,7 @@
 </span><span id="wrapped_proto_value-68"><a href="#wrapped_proto_value-68"><span class="linenos">68</span></a>        <span class="k">return</span> <span class="n">BoolValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
 </span><span id="wrapped_proto_value-69"><a href="#wrapped_proto_value-69"><span class="linenos">69</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
 </span><span id="wrapped_proto_value-70"><a href="#wrapped_proto_value-70"><span class="linenos">70</span></a>        <span class="k">return</span> <span class="n">FloatValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
-</span><span id="wrapped_proto_value-71"><a href="#wrapped_proto_value-71"><span class="linenos">71</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">UInt32Value</span><span class="p">):</span>
+</span><span id="wrapped_proto_value-71"><a href="#wrapped_proto_value-71"><span class="linenos">71</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
 </span><span id="wrapped_proto_value-72"><a href="#wrapped_proto_value-72"><span class="linenos">72</span></a>        <span class="k">return</span> <span class="n">UInt32Value</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
 </span><span id="wrapped_proto_value-73"><a href="#wrapped_proto_value-73"><span class="linenos">73</span></a>    <span class="k">return</span> <span class="n">value</span>
 </span></pre></div>
@@ -370,7 +370,7 @@
 
     </div>
     <a class="headerlink" href="#wrapped_pid_value"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="wrapped_pid_value-76"><a href="#wrapped_pid_value-76"><span class="linenos">76</span></a><span class="k">def</span> <span class="nf">wrapped_pid_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="wrapped_pid_value-76"><a href="#wrapped_pid_value-76"><span class="linenos">76</span></a><span class="k">def</span><span class="w"> </span><span class="nf">wrapped_pid_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 </span><span id="wrapped_pid_value-77"><a href="#wrapped_pid_value-77"><span class="linenos">77</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap a simple Python value to the corresponding gRPC protobuf type.</span>
 </span><span id="wrapped_pid_value-78"><a href="#wrapped_pid_value-78"><span class="linenos">78</span></a>
 </span><span id="wrapped_pid_value-79"><a href="#wrapped_pid_value-79"><span class="linenos">79</span></a><span class="sd">    Args:</span>
