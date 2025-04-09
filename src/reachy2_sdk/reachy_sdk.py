@@ -68,7 +68,7 @@ class ReachySDK:
     _instances_by_host: Dict[str, "ReachySDK"] = {}
     _last_executing_instance = None
 
-    def __new__(cls: Type[ReachySDK], host: str) -> ReachySDK:
+    def __new__(cls: Type[ReachySDK], host: str, fake_only: bool = False) -> ReachySDK:
         """Ensure that only one instance of ReachySDK is created for each host."""
         # check that the host is not already connected to another instance
         if host in cls._instances_by_host:
@@ -87,6 +87,7 @@ class ReachySDK:
     def __init__(
         self,
         host: str,
+        fake_only: bool = False,
         sdk_port: int = 50051,
         audio_port: int = 50063,
         video_port: int = 50065,
@@ -95,6 +96,7 @@ class ReachySDK:
 
         Args:
             host: The IP address or hostname of the robot.
+            fake_only: If `True`, only connect to the robot if it is a fake one. Default to `False`.
             sdk_port: The gRPC port for the SDK. Default is 50051.
             audio_port: The gRPC port for audio services. Default is 50063.
             video_port: The gRPC port for video services. Default is 50065.
@@ -127,10 +129,14 @@ class ReachySDK:
         self._mode: Optional[str] = None
         self._inactivity_timer: Optional[threading.Timer] = None
 
-        self.connect()
+        self.connect(fake_only)
 
-    def connect(self) -> None:
-        """Connects the SDK to the robot."""
+    def connect(self, fake_only: bool) -> None:
+        """Connects the SDK to the robot.
+
+        Args:
+            fake_only: If `True`, only connect to the robot if it is a fake one.
+        """
         if self._grpc_connected:
             self._logger.warning("Already connected to Reachy.")
             self._print_mode_type()
@@ -143,12 +149,13 @@ class ReachySDK:
             self._get_info()
             self._mode = str(ReachyCoreMode.keys()[self._info._mode]) if self._info else None
 
-            # ask for user confirmation if the robot is physical
-            if self._mode == "REAL":
-                if not self._confirm_connection():
-                    self._logger.warning("Connection to Reachy aborted.")
-                    self.disconnect()
-                    return
+            if fake_only and self._mode == "REAL":
+                self._logger.warning(
+                    "The IP address corresponds to a real robot, while the fake_only parameter is set to True.\n"
+                    "Connection to Reachy aborted."
+                )
+                self.disconnect()
+                return
 
         except ConnectionError:
             self._logger.error(
@@ -474,59 +481,6 @@ class ReachySDK:
         self._setup_part_head(initial_state)
         self._setup_part_mobile_base(initial_state)
         self._setup_part_tripod(initial_state)
-
-    def _confirm_connection(self) -> bool:
-        """Ask the user to confirm the connection to a physical Reachy."""
-        response = input("⚠️  You are about to connect to a PHYSICAL Reachy.\n Do you want to continue (y/n)?").strip().lower()
-        if response in ["", "y", "yes"]:
-            return True
-        else:
-            return False
-
-    def _print_mode_type(self) -> None:
-        """Print a warning for users, on the mode of Reachy."""
-        # check if the last executing instance is the current one to avoid printing warning on a different instance
-        if ReachySDK._last_executing_instance != self:
-            return
-
-        if self._grpc_connected:
-            mode = self._mode
-            if mode == "REAL":
-                warning_str = "\n ⚠️  Be careful, you're controlling the PHYSICAL Reachy"
-            else:
-                warning_str = " you're controlling the virtual Reachy"
-            self._logger.warning(f"This Reachy is in {mode} mode :{warning_str}.\n")
-
-    def _check_inactivity_from_user(self, timeout: float = 60.0) -> None:
-        """Check inactivity from the user, by catching the functions called by them.
-
-        If that exceeds the timeout, print the mode type for the user to have a reminder.
-        Default timeout is 60 seconds.
-        """
-        if self._inactivity_timer:
-            self._inactivity_timer.cancel()
-        self._inactivity_timer = threading.Timer(timeout, self._print_mode_type)
-        self._inactivity_timer.start()
-
-    def __getattribute__(self, name: str) -> Any:
-        """Intercepts method calls to track user interactions, ignoring private/internal methods."""
-        if name.startswith("_") or not self._grpc_connected:
-            return super().__getattribute__(name)
-        else:
-            ReachySDK._last_executing_instance = self
-
-        if self._mode == "REAL":
-            self._check_inactivity_from_user()
-
-        return super().__getattribute__(name)
-
-    def _confirm_connection(self) -> bool:
-        """Ask the user to confirm the connection to a physical Reachy."""
-        response = input("⚠️  You are about to connect to a PHYSICAL Reachy.\n Do you want to continue (y/n)?").strip().lower()
-        if response in ["", "y", "yes"]:
-            return True
-        else:
-            return False
 
     def _print_mode_type(self) -> None:
         """Print a warning for users, on the mode of Reachy."""
