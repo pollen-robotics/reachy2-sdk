@@ -22,26 +22,32 @@ from google.protobuf.empty_pb2 import Empty
 from google.protobuf.timestamp_pb2 import Timestamp
 from grpc._channel import _InactiveRpcError
 from reachy2_sdk_api import reachy_pb2, reachy_pb2_grpc
+from reachy2_sdk_api.arm_pb2 import ArmComponentsCommands
 from reachy2_sdk_api.goto_pb2 import GoalStatus, GoToAck, GoToGoalStatus, GoToId
 from reachy2_sdk_api.goto_pb2_grpc import GoToServiceStub
-from reachy2_sdk_api.reachy_pb2 import ReachyCoreMode, ReachyState
+from reachy2_sdk_api.hand_pb2 import HandPositionRequest
+from reachy2_sdk_api.head_pb2 import HeadComponentsCommands
+from reachy2_sdk_api.reachy_pb2 import (
+    ReachyComponentsCommands,
+    ReachyCoreMode,
+    ReachyState,
+)
 
 from .config.reachy_info import ReachyInfo
+from .media.audio import Audio
 from .media.camera_manager import CameraManager
 from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
 from .parts.arm import Arm
+from .parts.hand import Hand
 from .parts.head import Head
 from .parts.joints_based_part import JointsBasedPart
 from .parts.mobile_base import MobileBase
+from .parts.tripod import Tripod
 from .utils.custom_dict import CustomDict
-from .utils.utils import (
-    SimplifiedRequest,
-    arm_position_to_list,
-    ext_euler_angles_to_list,
-    get_interpolation_mode,
-)
+from .utils.goto_based_element import process_goto_request
+from .utils.utils import SimplifiedRequest
 
 GoToHomeId = namedtuple("GoToHomeId", ["head", "r_arm", "l_arm"])
 """Named tuple for easy access to goto request on full body"""
@@ -114,6 +120,7 @@ class ReachySDK:
         self._cameras: Optional[CameraManager] = None
         self._mobile_base: Optional[MobileBase] = None
         self._info: Optional[ReachyInfo] = None
+        self._tripod: Optional[Tripod] = None
 
         self._update_timestamp: Timestamp = Timestamp(seconds=0)
 
@@ -152,8 +159,7 @@ class ReachySDK:
             return
 
         self._setup_parts()
-
-        # self._setup_audio()
+        self._setup_audio()
         self._cameras = self._setup_video()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
@@ -268,6 +274,17 @@ class ReachySDK:
         return self._mobile_base
 
     @property
+    def tripod(self) -> Optional[Tripod]:
+        """Get Reachy's fixed tripod."""
+        if not self._grpc_connected:
+            self._logger.error("Cannot get tripod, not connected to Reachy")
+            return None
+        if self._tripod is None:
+            self._logger.error("tripod does not exist with this configuration")
+            return None
+        return self._tripod
+
+    @property
     def joints(self) -> CustomDict[str, OrbitaJoint]:
         """Return a dictionary of all joints of the robot.
 
@@ -359,15 +376,8 @@ class ReachySDK:
         self._grpc_connected = True
 
     def _setup_audio(self) -> None:
-        """Set up the audio server for the robot.
-
-        Attempts to connect to the audio server and initializes the audio-related components.
-        """
-        # try:
-        #     self.audio = Audio(self._host, self._audio_port)
-        # except Exception:
-        #     self._logger.error("Failed to connect to audio server. ReachySDK.audio will not be available.")
-        pass
+        """Initializes the audio grpc client."""
+        self.audio = Audio(self._host, self._audio_port)
 
     def _setup_video(self) -> Optional[CameraManager]:
         """Set up the video server for the robot.
@@ -421,7 +431,9 @@ class ReachySDK:
             return None
 
         if self._robot.HasField("mobile_base"):
-            self._mobile_base = MobileBase(self._robot.head, initial_state.mobile_base_state, self._grpc_channel)
+            self._mobile_base = MobileBase(
+                self._robot.mobile_base, initial_state.mobile_base_state, self._grpc_channel, self._goto_stub
+            )
             self.info._set_mobile_base(self._mobile_base)
 
     def _setup_part_head(self, initial_state: ReachyState) -> None:
@@ -438,6 +450,16 @@ class ReachySDK:
             else:
                 self.info._disabled_parts.append("head")
 
+    def _setup_part_tripod(self, initial_state: ReachyState) -> None:
+        """Set up the robot's tripod based on the initial state."""
+        if not self.info:
+            self._logger.warning("Reachy is not connected")
+            return None
+
+        if self._robot.HasField("tripod"):
+            tripod = Tripod(self._robot.tripod, initial_state.tripod_state, self._grpc_channel)
+            self._tripod = tripod
+
     def _setup_parts(self) -> None:
         """Initialize all parts of the robot.
 
@@ -451,6 +473,52 @@ class ReachySDK:
         self._setup_part_l_arm(initial_state)
         self._setup_part_head(initial_state)
         self._setup_part_mobile_base(initial_state)
+        self._setup_part_tripod(initial_state)
+
+    def _confirm_connection(self) -> bool:
+        """Ask the user to confirm the connection to a physical Reachy."""
+        response = input("⚠️  You are about to connect to a PHYSICAL Reachy.\n Do you want to continue (y/n)?").strip().lower()
+        if response in ["", "y", "yes"]:
+            return True
+        else:
+            return False
+
+    def _print_mode_type(self) -> None:
+        """Print a warning for users, on the mode of Reachy."""
+        # check if the last executing instance is the current one to avoid printing warning on a different instance
+        if ReachySDK._last_executing_instance != self:
+            return
+
+        if self._grpc_connected:
+            mode = self._mode
+            if mode == "REAL":
+                warning_str = "\n ⚠️  Be careful, you're controlling the PHYSICAL Reachy"
+            else:
+                warning_str = " you're controlling the virtual Reachy"
+            self._logger.warning(f"This Reachy is in {mode} mode :{warning_str}.\n")
+
+    def _check_inactivity_from_user(self, timeout: float = 60.0) -> None:
+        """Check inactivity from the user, by catching the functions called by them.
+
+        If that exceeds the timeout, print the mode type for the user to have a reminder.
+        Default timeout is 60 seconds.
+        """
+        if self._inactivity_timer:
+            self._inactivity_timer.cancel()
+        self._inactivity_timer = threading.Timer(timeout, self._print_mode_type)
+        self._inactivity_timer.start()
+
+    def __getattribute__(self, name: str) -> Any:
+        """Intercepts method calls to track user interactions, ignoring private/internal methods."""
+        if name.startswith("_") or not self._grpc_connected:
+            return super().__getattribute__(name)
+        else:
+            ReachySDK._last_executing_instance = self
+
+        if self._mode == "REAL":
+            self._check_inactivity_from_user()
+
+        return super().__getattribute__(name)
 
     def _confirm_connection(self) -> bool:
         """Ask the user to confirm the connection to a physical Reachy."""
@@ -528,6 +596,7 @@ class ReachySDK:
                 self._update_part(self._r_arm, state_update.r_arm_state)
                 self._update_part(self._head, state_update.head_state)
                 self._update_part(self._mobile_base, state_update.mobile_base_state)
+                self._update_part(self._tripod, state_update.tripod_state)
 
                 if self._l_arm and self._l_arm.gripper:
                     self._l_arm.gripper._update_with(state_update.l_hand_state)
@@ -810,7 +879,7 @@ class ReachySDK:
         )
         return result
 
-    def get_goto_joints_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
+    def get_goto_request(self, goto_id: GoToId) -> Optional[SimplifiedRequest]:
         """Retrieve the details of a goto command based on its GoToId.
 
         Args:
@@ -834,26 +903,10 @@ class ReachySDK:
             raise ValueError("No answer was found for given move, goto_id is -1")
 
         response = self._goto_stub.GetGoToRequest(goto_id)
-        if response.joints_goal.HasField("arm_joint_goal"):
-            part = response.joints_goal.arm_joint_goal.id.name
-            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-            goal_positions = arm_position_to_list(response.joints_goal.arm_joint_goal.joints_goal, degrees=True)
-            duration = response.joints_goal.arm_joint_goal.duration.value
-        elif response.joints_goal.HasField("neck_joint_goal"):
-            part = response.joints_goal.neck_joint_goal.id.name
-            mode = get_interpolation_mode(response.interpolation_mode.interpolation_type)
-            goal_positions = ext_euler_angles_to_list(
-                response.joints_goal.neck_joint_goal.joints_goal.rotation.rpy, degrees=True
-            )
-            duration = response.joints_goal.neck_joint_goal.duration.value
 
-        request = SimplifiedRequest(
-            part=part,
-            goal_positions=goal_positions,
-            duration=duration,
-            mode=mode,
-        )
-        return request
+        full_request = process_goto_request(response)
+
+        return full_request
 
     def _get_goto_state(self, goto_id: GoToId) -> GoToGoalStatus:
         """Retrieve the current state of a goto command.
@@ -903,7 +956,7 @@ class ReachySDK:
         response = self._goto_stub.CancelAllGoTo(Empty())
         return response
 
-    def send_goal_positions(self, check_positions: bool = True) -> None:
+    def send_goal_positions(self, check_positions: bool = False) -> None:
         """Send the goal positions to the robot.
 
         If goal positions have been specified for any joint of the robot, sends them to the robot.
@@ -916,6 +969,32 @@ class ReachySDK:
             self._logger.warning("Reachy is not connected!")
             return
 
-        for part in self.info._enabled_parts.values():
-            if issubclass(type(part), JointsBasedPart):
-                part.send_goal_positions(check_positions)
+        commands: Dict[str, ArmComponentsCommands | HeadComponentsCommands | HandPositionRequest] = {}
+        for part in [self.r_arm, self.l_arm, self.head]:
+            self._add_component_commands(part, commands, check_positions)
+
+        if self.r_arm is not None:
+            self._add_component_commands(self.r_arm.gripper, commands, check_positions)
+        if self.l_arm is not None:
+            self._add_component_commands(self.l_arm.gripper, commands, check_positions)
+
+        components_commands = ReachyComponentsCommands(**commands)
+        self._stub.SendComponentsCommands(components_commands)
+
+    def _add_component_commands(
+        self,
+        part: JointsBasedPart | Hand | None,
+        commands: Dict[str, HeadComponentsCommands | ArmComponentsCommands | HandPositionRequest],
+        check_positions: bool,
+    ) -> None:
+        """Get the current component commands."""
+        if part is not None:
+            if part.is_off():
+                self._logger.warning(f"{part._part_id.name} is off. Command not sent.")
+                return
+            part_command = part._get_goal_positions_message()
+            if part_command is not None:
+                commands[f"{part._part_id.name}_commands"] = part_command
+                part._clean_outgoing_goal_positions()
+                if check_positions:
+                    part._post_send_goal_positions()

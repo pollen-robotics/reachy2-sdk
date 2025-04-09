@@ -93,6 +93,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
 
+    time.sleep(0.01)
     q1 = reachy_sdk_zeroed.head.get_current_orientation()
     assert np.isclose(Quaternion.distance(q0, q1), 0, atol=1e-04)
 
@@ -102,6 +103,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
 
+    time.sleep(0.01)
     q3 = reachy_sdk_zeroed.head.get_current_orientation()
     assert np.isclose(Quaternion.distance(q2, q3), 0, atol=1e-04)
 
@@ -111,6 +113,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
 
+    time.sleep(0.01)
     q5 = reachy_sdk_zeroed.head.get_current_orientation()
     assert np.isclose(Quaternion.distance(q4, q5), 0, atol=1e-04)
 
@@ -120,6 +123,7 @@ def test_head_movements(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, id):
         time.sleep(0.1)
 
+    time.sleep(0.01)
     q7 = reachy_sdk_zeroed.head.get_current_orientation()
     assert np.isclose(Quaternion.distance(q6, q7), 0, atol=1e-04)
 

@@ -3,8 +3,10 @@
 This module provides main informations about the robot.
 """
 
+import logging
 from typing import Any, Dict, List, Optional
 
+import reachy2_sdk_api
 from reachy2_sdk_api.reachy_pb2 import Reachy, ReachyCoreMode
 
 from ..parts.mobile_base import MobileBase
@@ -27,10 +29,21 @@ class ReachyInfo:
         Args:
             reachy: The Reachy robot object, which provides the robot's info and configuration details.
         """
+        self._logger = logging.getLogger(__name__)
         self._robot_serial_number: str = reachy.info.serial_number
 
         self._hardware_version: str = reachy.info.version_hard
         self._core_software_version: str = reachy.info.version_soft
+
+        try:
+            self._robot_api_version: Optional[str] = reachy.info.api_version if reachy.info.api_version else None
+            self._check_api_compatibility()
+        except AttributeError:
+            self._robot_api_version = None
+            self._logger.warning(
+                "Your local API version is below the required version for reachy2_sdk."
+                "\nPlease update the reachy2_sdk_api package to ensure compatibility."
+            )
 
         self._enabled_parts: Dict[str, Any] = {}
         self._disabled_parts: List[str] = []
@@ -39,6 +52,37 @@ class ReachyInfo:
         self._mode: ReachyCoreMode = reachy.info.core_mode
 
         self._set_config(reachy)
+
+    def _check_api_compatibility(self) -> None:
+        """Check the compatibility of the API versions between the robot and the SDK."""
+        if self._robot_api_version is None:
+            self._logger.warning(
+                "The robot's API version is below your local API version."
+                "\nSome features may not work properly."
+                "\nPlease update the reachy2_core image on the robot to ensure compatibility."
+                " or downgrade your local reachy2_sdk package."
+            )
+        elif reachy2_sdk_api.__version__ != self._robot_api_version:
+            local_version = reachy2_sdk_api.__version__.split(".")
+            robot_version = self._robot_api_version.split(".")
+            for local, remote in zip(local_version, robot_version):
+                if int(local) > int(remote):
+                    self._logger.warning(
+                        f"Local API version ({reachy2_sdk_api.__version__}) is different"
+                        f" from the robot's API version ({self._robot_api_version})."
+                        f"\nSome features may not work properly."
+                        f"\nPlease update the reachy2_core image on the robot to ensure compatibility,"
+                        f" or downgrade your local reachy2_sdk package."
+                    )
+                    break
+                elif int(local) < int(remote):
+                    self._logger.warning(
+                        f"Local API version ({reachy2_sdk_api.__version__}) is different"
+                        f" from the robot's API version ({self._robot_api_version})."
+                        f"\nSome features may not work properly."
+                        f"\nPlease update your local reachy2_sdk package to ensure compatibility."
+                    )
+                    break
 
     def _set_config(self, msg: Reachy) -> None:
         """Determine the robot's configuration.
@@ -79,6 +123,7 @@ class ReachyInfo:
             ' robot_serial_number="{serial_number}" \n'
             ' hardware_version="{hardware_version}" \n'
             ' core_software_version="{software_version}" \n'
+            ' robot_api_version="{api_version}" \n'
             " battery_voltage={battery_voltage} >"
         )
         return repr_template.format(
@@ -86,6 +131,7 @@ class ReachyInfo:
             serial_number=self.robot_serial_number,
             hardware_version=self.hardware_version,
             software_version=self.core_software_version,
+            api_version=self._robot_api_version,
             battery_voltage=self.battery_voltage,
         )
 
