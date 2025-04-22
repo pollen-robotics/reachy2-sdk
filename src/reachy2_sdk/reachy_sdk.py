@@ -126,7 +126,7 @@ class ReachySDK:
 
         self._update_timestamp: Timestamp = Timestamp(seconds=0)
 
-        self._mode: Optional[str] = None
+        self._mode: Optional[ReachyCoreMode] = None
         self._inactivity_timer: Optional[threading.Timer] = None
 
         self.connect(fake_only)
@@ -147,7 +147,7 @@ class ReachySDK:
 
         try:
             self._get_info()
-            self._mode = str(ReachyCoreMode.keys()[self._info._mode]) if self._info else None
+            self._mode = self.info.mode if self.info else None
 
             if fake_only and self._mode == "REAL":
                 self._logger.warning(
@@ -491,10 +491,8 @@ class ReachySDK:
         if self._grpc_connected:
             mode = self._mode
             if mode == "REAL":
-                warning_str = "\n ⚠️  Be careful, you're controlling the PHYSICAL Reachy"
-            else:
-                warning_str = " you're controlling the virtual Reachy"
-            self._logger.warning(f"This Reachy is in {mode} mode :{warning_str}.\n")
+                self._logger.warning(f"This Reachy is in {mode} mode :\n" +
+                                     "⚠️  Be careful, you're controlling the PHYSICAL Reachy.\n")
 
     def _check_inactivity_from_user(self, timeout: float = 60.0) -> None:
         """Check inactivity from the user, by catching the functions called by them.
