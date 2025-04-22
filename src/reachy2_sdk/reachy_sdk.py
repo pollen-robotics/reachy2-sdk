@@ -491,8 +491,9 @@ class ReachySDK:
         if self._grpc_connected:
             mode = self._mode
             if mode == "REAL":
-                self._logger.warning(f"This Reachy is in {mode} mode :\n" +
-                                     "⚠️  Be careful, you're controlling the PHYSICAL Reachy.\n")
+                self._logger.warning(
+                    f"This Reachy is in {mode} mode :\n" + "⚠️  Be careful, you're controlling the PHYSICAL Reachy.\n"
+                )
 
     def _check_inactivity_from_user(self, timeout: float = 60.0) -> None:
         """Check inactivity from the user, by catching the functions called by them.
