@@ -183,7 +183,7 @@ class Orbita(ABC):
             `True` if successful, `False` otherwise.
         """
         self._set_compliant(False)
-        time.sleep(0.1)
+        time.sleep(0.12)
         return self.is_on()
 
     def turn_off(self) -> bool:
@@ -193,7 +193,7 @@ class Orbita(ABC):
             `True` if successful, `False` otherwise.
         """
         self._set_compliant(True)
-        time.sleep(0.1)
+        time.sleep(0.12)
         return self.is_off()
 
     def is_on(self) -> bool:

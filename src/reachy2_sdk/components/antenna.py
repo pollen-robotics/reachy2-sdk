@@ -194,7 +194,7 @@ class Antenna(IGoToBasedComponent):
             `True` if it succeeded. 'False' otherwise.
         """
         self._joints[self._name].turn_on()
-        time.sleep(0.1)
+        time.sleep(0.12)
         return self.is_on()
 
     def turn_off(self) -> bool:
@@ -204,7 +204,7 @@ class Antenna(IGoToBasedComponent):
             `True` if it succeeded. 'False' otherwise.
         """
         self._joints[self._name].turn_off()
-        time.sleep(0.1)
+        time.sleep(0.12)
         return self.is_off()
 
     def is_on(self) -> bool:
