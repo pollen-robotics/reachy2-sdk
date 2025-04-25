@@ -57,6 +57,37 @@ def test_on_off(reachy_sdk_zeroed: ReachySDK) -> None:
 
 
 @pytest.mark.online
+def test_actuators_on_off(reachy_sdk_zeroed: ReachySDK) -> None:
+    assert reachy_sdk_zeroed.turn_off()
+
+    for part in [
+        reachy_sdk_zeroed.l_arm,
+        reachy_sdk_zeroed.r_arm,
+        reachy_sdk_zeroed.head,
+        reachy_sdk_zeroed.mobile_base,
+        reachy_sdk_zeroed.l_arm.gripper,
+        reachy_sdk_zeroed.r_arm.gripper,
+    ]:
+        assert part.turn_on()
+        assert part.is_on()
+        assert part.turn_off()
+        assert part.is_off()
+
+    for part in [
+        reachy_sdk_zeroed.head.l_antenna,
+        reachy_sdk_zeroed.head.r_antenna,
+        reachy_sdk_zeroed.l_arm.elbow,
+        reachy_sdk_zeroed.r_arm.wrist,
+    ]:
+        assert part.turn_on()
+        assert part.is_on()
+        assert part.turn_off()
+        assert part.is_off()
+
+    assert reachy_sdk_zeroed.turn_on()
+
+
+@pytest.mark.online
 def test_torque_limits(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.r_arm.set_torque_limits(90)
     time.sleep(0.2)

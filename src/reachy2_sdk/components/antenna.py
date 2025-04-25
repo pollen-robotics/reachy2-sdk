@@ -187,13 +187,25 @@ class Antenna(IGoToBasedComponent):
             s
         }\n>"""
 
-    def turn_on(self) -> None:
-        """Turn on the antenna's motor."""
-        self._joints[self._name].turn_on()
+    def turn_on(self) -> bool:
+        """Turn on the antenna's motor.
 
-    def turn_off(self) -> None:
-        """Turn off the antenna's motor."""
+        Returns:
+            `True` if it succeeded. 'False' otherwise.
+        """
+        self._joints[self._name].turn_on()
+        time.sleep(0.12)
+        return self.is_on()
+
+    def turn_off(self) -> bool:
+        """Turn off the antenna's motor.
+
+        Returns:
+            `True` if it succeeded. 'False' otherwise.
+        """
         self._joints[self._name].turn_off()
+        time.sleep(0.12)
+        return self.is_off()
 
     def is_on(self) -> bool:
         """Check if the antenna is currently stiff.

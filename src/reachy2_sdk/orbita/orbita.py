@@ -176,13 +176,25 @@ class Orbita(ABC):
         """
         return {motor_name: m.pid for motor_name, m in self._motors.items()}
 
-    def turn_on(self) -> None:
-        """Turn on all motors of the actuator."""
-        self._set_compliant(False)
+    def turn_on(self) -> bool:
+        """Turn on all motors of the actuator.
 
-    def turn_off(self) -> None:
-        """Turn off all motors of the actuator."""
+        Returns:
+            `True` if successful, `False` otherwise.
+        """
+        self._set_compliant(False)
+        time.sleep(0.12)
+        return self.is_on()
+
+    def turn_off(self) -> bool:
+        """Turn off all motors of the actuator.
+
+        Returns:
+            `True` if successful, `False` otherwise.
+        """
         self._set_compliant(True)
+        time.sleep(0.12)
+        return self.is_off()
 
     def is_on(self) -> bool:
         """Check if the actuator is currently stiff.
