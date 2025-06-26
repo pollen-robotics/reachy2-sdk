@@ -131,7 +131,7 @@ class ReachySDK:
 
         self.connect(fake_only)
 
-    def connect(self, fake_only: bool) -> None:
+    def connect(self, fake_only: bool = False) -> None:
         """Connects the SDK to the robot.
 
         Args:
