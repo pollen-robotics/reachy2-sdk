@@ -832,6 +832,7 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose[2, 3] += z
         elif frame == "gripper":
             pose = translate_in_self(initial_pose, [x, y, z])
+
         return pose
 
     def translate_by(
@@ -952,12 +953,12 @@ class Arm(JointsBasedPart, IGoToBasedPart):
             pose_rotation = np.eye(4)
             pose_rotation[:3, :3] = pose.copy()[:3, :3]
             pose_translation = pose.copy()[:3, 3]
-            pose_rotation = rotation @ pose_rotation
-            pose = recompose_matrix(pose_rotation[:3, :3], pose_translation)
+            pose_rotation = (rotation @ pose_rotation).astype(np.float64)
+            pose = recompose_matrix(pose_rotation[:3, :3], pose_translation).astype(np.float64)
         elif frame == "gripper":
-            pose = rotate_in_self(initial_pose, [roll, pitch, yaw], degrees=degrees)
+            pose = rotate_in_self(initial_pose, [roll, pitch, yaw], degrees=degrees).astype(np.float64)
 
-        return pose
+        return pose.astype(np.float64)
 
     def rotate_by(
         self,

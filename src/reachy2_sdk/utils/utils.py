@@ -9,7 +9,7 @@ This module contains various useful functions especially:
 """
 
 from collections import namedtuple
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -42,7 +42,7 @@ EllipticalParameters = namedtuple("EllipticalParameters", ["arc_direction", "sec
 """Named tuple for easy access to request variables"""
 
 
-def convert_to_radians(angles_list: List[float]) -> Any:
+def convert_to_radians(angles_list: List[float]) -> List[float]:
     """Convert a list of angles from degrees to radians.
 
     Args:
@@ -54,10 +54,11 @@ def convert_to_radians(angles_list: List[float]) -> Any:
     a = np.array(angles_list)
     a = np.deg2rad(a)
 
-    return a.tolist()
+    result: List[float] = a.tolist()
+    return result
 
 
-def convert_to_degrees(angles_list: List[float]) -> Any:
+def convert_to_degrees(angles_list: List[float]) -> List[float]:
     """Convert a list of angles from radians to degrees.
 
     Args:
@@ -69,7 +70,8 @@ def convert_to_degrees(angles_list: List[float]) -> Any:
     a = np.array(angles_list)
     a = np.rad2deg(a)
 
-    return a.tolist()
+    result: List[float] = a.tolist()
+    return result
 
 
 def list_to_arm_position(positions: List[float], degrees: bool = True) -> ArmPosition:
@@ -491,14 +493,13 @@ def rotate_in_self(frame: npt.NDArray[np.float64], rotation: List[float], degree
     """
     new_frame = frame.copy()
 
-    toOrigin = np.eye(4)
+    toOrigin = np.eye(4, dtype=np.float64)
     toOrigin[:3, :3] = new_frame[:3, :3]
     toOrigin[:3, 3] = new_frame[:3, 3]
-    toOrigin = np.linalg.inv(toOrigin)
 
-    new_frame = toOrigin @ new_frame
-    new_frame = get_pose_matrix([0.0, 0.0, 0.0], rotation, degrees=degrees) @ new_frame
     new_frame = np.linalg.inv(toOrigin) @ new_frame
+    new_frame = get_pose_matrix([0.0, 0.0, 0.0], rotation, degrees=degrees) @ new_frame
+    new_frame = toOrigin @ new_frame
 
     return new_frame
 
@@ -518,11 +519,10 @@ def translate_in_self(frame: npt.NDArray[np.float64], translation: List[float]) 
     toOrigin = np.eye(4)
     toOrigin[:3, :3] = new_frame[:3, :3]
     toOrigin[:3, 3] = new_frame[:3, 3]
-    toOrigin = np.linalg.inv(toOrigin)
 
-    new_frame = toOrigin @ new_frame
-    new_frame = get_pose_matrix(translation, [0, 0, 0]) @ new_frame
     new_frame = np.linalg.inv(toOrigin) @ new_frame
+    new_frame = get_pose_matrix(translation, [0, 0, 0]) @ new_frame
+    new_frame = toOrigin @ new_frame
 
     return new_frame
 
@@ -601,4 +601,4 @@ def get_normal_vector(vector: npt.NDArray[np.float64], arc_direction: str) -> Op
         return None
 
     normal = normal / np.linalg.norm(normal)
-    return normal
+    return normal.astype(np.float64)
