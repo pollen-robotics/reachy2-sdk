@@ -484,11 +484,15 @@ class MobileBase(Part, IGoToBasedPart):
         for vel, value in {"x_vel": self._x_vel_goal, "y_vel": self._y_vel_goal}.items():
             if abs(value) > self._max_xy_vel:
                 self._x_vel_goal = self._max_xy_vel * np.sign(value)
-                self._logger.warning(f"{vel} value {value} m/s exceeds the allowed limit. Setting {vel} to the maximum of {self._max_xy_vel} m/s.")
+                self._logger.warning(
+                    f"{vel} value {value} m/s exceeds the allowed limit. Setting maximum of {self._max_xy_vel} m/s."
+                )
 
         if abs(self._rot_vel_goal) > self._max_rot_vel:
             self._rot_vel_goal = self._max_rot_vel * np.sign(self._rot_vel_goal)
-            self._logger.warning(f"rot_vel value {value} m/s exceeds the allowed limit. Setting rot_vel to the maximum of {self._max_rot_vel} m/s.")
+            self._logger.warning(
+                f"rot_vel value {value} m/s exceeds the allowed limit. Setting maximum of {self._max_rot_vel} m/s."
+            )
 
         if self._drive_mode != "cmd_vel":
             self._set_drive_mode("cmd_vel")
