@@ -63,7 +63,9 @@ class Camera:
         self._cam_info = cam_info
         self._video_stub = video_stub
 
-    def get_frame(self, view: CameraView = CameraView.LEFT, size: Optional[Tuple[int]] = None) -> Optional[Tuple[npt.NDArray[np.uint8], int]]:
+    def get_frame(
+        self, view: CameraView = CameraView.LEFT, size: Optional[Tuple[int]] = None
+    ) -> Optional[Tuple[npt.NDArray[np.uint8], int]]:
         """Retrieve an RGB frame from the camera.
 
         Args:
