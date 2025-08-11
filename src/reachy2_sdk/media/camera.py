@@ -63,7 +63,7 @@ class Camera:
         self._cam_info = cam_info
         self._video_stub = video_stub
 
-    def get_frame(self, view: CameraView = CameraView.LEFT) -> Optional[Tuple[npt.NDArray[np.uint8], int]]:
+    def get_frame(self, view: CameraView = CameraView.LEFT, size: Optional[Tuple[int]] = None) -> Optional[Tuple[npt.NDArray[np.uint8], int]]:
         """Retrieve an RGB frame from the camera.
 
         Args:
@@ -79,6 +79,19 @@ class Camera:
             return None
         np_data = np.frombuffer(frame.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR).astype(np.uint8)
+
+        if size is not None:
+            if len(size) != 2:
+                self._logger.error("Size must be a tuple of (width, height)")
+                return None
+            if size[0] <= 0 or size[1] <= 0:
+                self._logger.error("Size dimensions must be positive integers")
+                return None
+            if type(size[0]) is not int or type(size[1]) is not int:
+                self._logger.error("Size dimensions must be integers")
+                return None
+            img = cv2.resize(img, size, interpolation=cv2.INTER_AREA)
+
         return img, frame.timestamp.ToNanoseconds()
 
     def get_compressed_frame(self, view: CameraView = CameraView.LEFT) -> Optional[Tuple[bytes, int]]:
