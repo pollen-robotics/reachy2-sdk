@@ -145,9 +145,9 @@ class MobileBase(Part, IGoToBasedPart):
         """
         response = self._mobility_stub.GetLastDirection(self._part_id)
         cmd_vel = {
-            "x": round(response.x.value, 3),
-            "y": round(response.y.value, 3),
-            "theta": round(rad2deg(response.theta.value), 3),
+            "vx": round(response.x.value, 3),
+            "vy": round(response.y.value, 3),
+            "vtheta": round(rad2deg(response.theta.value), 3),
         }
         return cmd_vel
 
