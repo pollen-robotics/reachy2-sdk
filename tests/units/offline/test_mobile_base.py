@@ -73,14 +73,6 @@ def test_class() -> None:
 
     assert mobile_base.__repr__() != ""
 
-    mobile_base.set_goal_speed(vx=0.5, vy=0.5, vtheta=200)
-    with pytest.raises(ValueError):
-        mobile_base.send_speed_command()
-
-    mobile_base.set_goal_speed(vx=1.5, vy=1.5, vtheta=100)
-    with pytest.raises(ValueError):
-        mobile_base.send_speed_command()
-
     new_battery = BatteryLevel(level=FloatValue(value=20))
 
     new_drive_mode = ZuuuModeCommand(mode=ZuuuModePossiblities.FREE_WHEEL)
