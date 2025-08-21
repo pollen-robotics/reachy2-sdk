@@ -66,7 +66,7 @@ class ReachySDK:
     """
 
     _instances_by_host: Dict[str, "ReachySDK"] = {}
-    _last_executing_instance = None
+    _last_executing_instance: Optional[ReachySDK] = None
 
     def __new__(cls: Type[ReachySDK], host: str, fake_only: bool = False) -> ReachySDK:
         """Ensure that only one instance of ReachySDK is created for each host."""
