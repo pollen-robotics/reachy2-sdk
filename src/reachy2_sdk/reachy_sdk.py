@@ -207,6 +207,10 @@ class ReachySDK:
         self._mobile_base = None
         self._mode = None
 
+        if self._cameras:
+            self._cameras.disconnect()
+            self._cameras = None
+
         self._logger.info("Disconnected from Reachy.")
 
     def __repr__(self) -> str:

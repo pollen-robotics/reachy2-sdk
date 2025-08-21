@@ -103,3 +103,12 @@ class CameraManager:
             return None
 
         return self._depth
+
+    def disconnect(self) -> None:
+        """Disconnect the gRPC channel.
+
+        This method closes the gRPC channel to the video service.
+        """
+        self._grpc_video_channel.close()
+        self._grpc_video_channel = None
+        self._logger.debug("gRPC channel disconnected.")
