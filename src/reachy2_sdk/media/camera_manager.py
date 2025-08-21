@@ -43,7 +43,7 @@ class CameraManager:
     def __repr__(self) -> str:
         """Clean representation of a reachy cameras."""
         s = "\n\t".join([str(cam) for cam in [self._depth, self._teleop] if cam is not None])
-        return f"""<CameraManager intialized_cameras=\n\t{s}\n>"""
+        return f"""<CameraManager initialized_cameras=\n\t{s}\n>"""
 
     def _setup_cameras(self) -> None:
         """Initialize cameras based on availability.
