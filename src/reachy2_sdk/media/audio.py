@@ -173,3 +173,12 @@ class Audio:
         This method stops the audio recording on the robot.
         """
         self._audio_stub.StopRecording(Empty())
+
+    def disconnect(self) -> None:
+        """Disconnect the audio service.
+
+        This method closes the gRPC channel to the audio service.
+        """
+        self._grpc_audio_channel.close()
+        self._grpc_audio_channel = None
+        self._logger.debug("Disconnected from audio service.")

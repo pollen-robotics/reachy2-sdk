@@ -166,7 +166,7 @@ class ReachySDK:
             return
 
         self._setup_parts()
-        self._setup_audio()
+        self.audio = self._setup_audio()
         self._cameras = self._setup_video()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
@@ -207,6 +207,9 @@ class ReachySDK:
         self._mobile_base = None
         self._mode = None
 
+        if self.audio:
+            self.audio.disconnect()
+            self.audio = None
         if self._cameras:
             self._cameras.disconnect()
             self._cameras = None
@@ -357,9 +360,14 @@ class ReachySDK:
         self._info = ReachyInfo(self._robot)
         self._grpc_connected = True
 
-    def _setup_audio(self) -> None:
+    def _setup_audio(self) -> Optional[Audio]:
         """Initializes the audio grpc client."""
-        self.audio = Audio(self._host, self._audio_port)
+        try:
+            return Audio(self._host, self._audio_port)
+
+        except Exception as e:
+            self._logger.error(f"Failed to connect to audio server with error: {e}.\nReachySDK.audio will not be available.")
+            return None
 
     def _setup_video(self) -> Optional[CameraManager]:
         """Set up the video server for the robot.
