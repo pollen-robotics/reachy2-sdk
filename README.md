@@ -57,7 +57,7 @@ pydocstyle src/ --convention google --count
 
 ## Unit tests
 
-To ensure everything is functioning correctly, run the unit tests. There are two groups of tests: offline and online. Offline tests check internal functions using mock objects. Online tests require a connection to a simulated robot (e.g., in rviz), and the virtual robot should exhibit movement during these tests.
+To ensure everything is functioning correctly, run the unit tests. There are two main groups of tests: offline and online. Offline tests check internal functions using mock objects. Online tests require a connection to a simulated robot (e.g., in rviz), and the virtual robot should exhibit movement during these tests.
 
 To execute the tests, use pytest with an optional category:
 
@@ -73,6 +73,22 @@ Camera tests have their own marks because it requires the cameras to be plugged 
 
 ```console
 $ pytest -m cameras
+```
+
+### Audio tests
+
+Audio tests have their own marks.
+
+```console
+$ pytest -m audio
+```
+
+### Mobile_base tests
+
+Mobile base tests have their own marks as it used to be not supported in Rviz. The tests are based on the Gazebo simulation, so the robot must be launched in Gazebo mode when executing the tests.
+
+```console
+$ pytest -m mobile_base
 ```
 
 ## Logs
