@@ -167,6 +167,6 @@ class ReachyInfo:
     def mode(self) -> str:
         """Returns the robot's core mode.
 
-        Can be either "FAKE", "REAL" or "GAZEBO".
+        Can be either "FAKE", "REAL", "GAZEBO" or "MUJOCO".
         """
         return str(ReachyCoreMode.keys()[self._mode])
