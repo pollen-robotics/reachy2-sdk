@@ -52,6 +52,12 @@ class Lidar:
             return None
         np_data = np.frombuffer(compressed_map.data, np.uint8)
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
+
+        # Handle the case where cv2.imdecode returns None
+        if img is None:
+            self._logger.error("Failed to decode lidar map data")
+            return None
+
         return img.astype(np.uint8)
 
     @property

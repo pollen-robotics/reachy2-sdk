@@ -80,7 +80,14 @@ class Camera:
             self._logger.warning("No frame retrieved")
             return None
         np_data = np.frombuffer(frame.data, np.uint8)
-        img = cv2.imdecode(np_data, cv2.IMREAD_COLOR).astype(np.uint8)
+        decoded_img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
+
+        # Handle case where cv2.imdecode fails to decode the image buffer
+        if decoded_img is None:
+            self._logger.warning("Failed to decode frame")
+            return None
+
+        img = decoded_img.astype(np.uint8)
 
         if size is not None:
             if len(size) != 2:
