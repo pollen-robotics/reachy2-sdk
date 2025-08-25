@@ -40,3 +40,31 @@ def test_audio(reachy_sdk: ReachySDK) -> None:
 def test_recording(reachy_sdk: ReachySDK) -> None:
     file = "badextension.mp4"
     assert not reachy_sdk.audio.record_audio(file, duration_secs=2.0)
+
+
+@pytest.mark.audio
+def test_disconnect(reachy_sdk: ReachySDK) -> None:
+    reachy_sdk.audio.disconnect()
+    assert reachy_sdk._grpc_connected
+    assert not reachy_sdk.audio._grpc_connected
+    assert not reachy_sdk.audio.play_audio_file("test.mp3")
+    assert not reachy_sdk.audio.stop_playing()
+    assert not reachy_sdk.audio.record_audio("test.mp3", duration_secs=2.0)
+    assert not reachy_sdk.audio.get_audio_files()
+    assert not reachy_sdk.audio.remove_audio_file("test.mp3")
+
+    reachy_sdk.audio.connect()
+    assert reachy_sdk.audio._grpc_connected
+
+    reachy_sdk.disconnect()
+    assert not reachy_sdk._grpc_connected
+    assert not reachy_sdk.audio._grpc_connected
+    assert reachy_sdk.audio
+
+    reachy_sdk.audio.connect()
+    assert reachy_sdk.audio._grpc_connected
+    assert not reachy_sdk._grpc_connected
+
+    reachy_sdk.connect()
+    assert reachy_sdk._grpc_connected
+    assert reachy_sdk.audio._grpc_connected

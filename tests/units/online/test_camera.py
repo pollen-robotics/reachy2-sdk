@@ -94,3 +94,30 @@ def test_depth_camera(reachy_sdk: ReachySDK) -> None:
     assert len(K) == 9
     assert len(R) == 9
     assert len(P) == 12
+
+
+@pytest.mark.cameras
+def test_disconnect(reachy_sdk: ReachySDK) -> None:
+    reachy_sdk.disconnect()
+    assert reachy_sdk.cameras.depth is None
+    assert reachy_sdk.cameras.teleop is None
+    assert not reachy_sdk._grpc_connected
+    assert not reachy_sdk.cameras._grpc_connected
+
+    reachy_sdk.connect()
+    assert reachy_sdk.cameras.depth is not None
+    assert reachy_sdk.cameras.teleop is not None
+    assert reachy_sdk._grpc_connected
+    assert reachy_sdk.cameras._grpc_connected
+
+    reachy_sdk.cameras.disconnect()
+    assert reachy_sdk.cameras.depth is None
+    assert reachy_sdk.cameras.teleop is None
+    assert reachy_sdk._grpc_connected
+    assert not reachy_sdk.cameras._grpc_connected
+
+    reachy_sdk.cameras.connect()
+    assert reachy_sdk.cameras.depth is not None
+    assert reachy_sdk.cameras.teleop is not None
+    assert reachy_sdk._grpc_connected
+    assert reachy_sdk.cameras._grpc_connected
