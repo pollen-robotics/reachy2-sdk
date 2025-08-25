@@ -209,10 +209,8 @@ class ReachySDK:
 
         if self.audio:
             self.audio.disconnect()
-            self.audio = None
         if self._cameras:
             self._cameras.disconnect()
-            self._cameras = None
 
         self._logger.info("Disconnected from Reachy.")
 
