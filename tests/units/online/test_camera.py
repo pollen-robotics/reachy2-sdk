@@ -97,7 +97,7 @@ def test_depth_camera(reachy_sdk: ReachySDK) -> None:
 
 
 @pytest.mark.cameras
-def test_disconnect(reachy_sdk: ReachySDK) -> None:
+def test_connect_disconnect(reachy_sdk: ReachySDK) -> None:
     reachy_sdk.disconnect()
     assert reachy_sdk.cameras.depth is None
     assert reachy_sdk.cameras.teleop is None

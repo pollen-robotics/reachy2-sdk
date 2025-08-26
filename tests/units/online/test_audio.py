@@ -43,7 +43,7 @@ def test_recording(reachy_sdk: ReachySDK) -> None:
 
 
 @pytest.mark.audio
-def test_disconnect(reachy_sdk: ReachySDK) -> None:
+def test_connect_disconnect(reachy_sdk: ReachySDK) -> None:
     reachy_sdk.audio.disconnect()
     assert reachy_sdk._grpc_connected
     assert not reachy_sdk.audio._grpc_connected
