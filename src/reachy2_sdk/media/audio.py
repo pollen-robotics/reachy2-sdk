@@ -31,10 +31,24 @@ class Audio:
             port: The port number for the gRPC service.
         """
         self._logger = logging.getLogger(__name__)
-        self._grpc_audio_channel = grpc.insecure_channel(f"{host}:{port}")
+        self._grpc_connected = False
         self._host = host
+        self._port = port
+        self.connect()
 
-        self._audio_stub = AudioServiceStub(self._grpc_audio_channel)
+    def connect(self) -> None:
+        """Connect to the audio service.
+
+        This method establishes a gRPC channel to the audio service.
+        """
+        try:
+            self._grpc_audio_channel = grpc.insecure_channel(f"{self._host}:{self._port}")
+            self._audio_stub = AudioServiceStub(self._grpc_audio_channel)
+            self._grpc_connected = True
+            self._logger.debug("Audio gRPC channel established.")
+        except Exception as e:
+            self._grpc_connected = False
+            raise ConnectionError(f"Failed to connect to audio service: {e}")
 
     def _validate_extension(self, path: str, valid_extensions: List[str]) -> bool:
         """Validate the file type and return the file name if valid.
@@ -56,6 +70,10 @@ class Audio:
         Args:
             path: The path to the audio file to upload.
         """
+        if not self._grpc_connected:
+            self._logger.error("Not connected to the audio service.")
+            return False
+
         if not self._validate_extension(path, [".wav", ".ogg", ".mp3"]):
             self._logger.error("Invalid file type. Supported file types are .wav, .ogg, .mp3")
             return False
@@ -91,6 +109,10 @@ class Audio:
             name: The name of the audio file to download.
             path: The folder to save the downloaded audio file.
         """
+        if not self._grpc_connected:
+            self._logger.error("Not connected to the audio service.")
+            return False
+
         response_iterator = self._audio_stub.DownloadAudioFile(AudioFile(path=name))
 
         file_name = None
@@ -115,6 +137,10 @@ class Audio:
 
         This method retrieves the list of audio files stored on the robot.
         """
+        if not self._grpc_connected:
+            self._logger.error("Not connected to the audio service.")
+            return []
+
         files = self._audio_stub.GetAudioFiles(request=Empty())
 
         return [file.path for file in files.files]
@@ -127,6 +153,10 @@ class Audio:
         Args:
             name: The name of the audio file to remove.
         """
+        if not self._grpc_connected:
+            self._logger.error("Not connected to the audio service.")
+            return False
+
         response = self._audio_stub.RemoveAudioFile(request=AudioFile(path=name))
         if response.success.value:
             return True
@@ -142,6 +172,10 @@ class Audio:
         Args:
             name: The name of the audio file to play.
         """
+        if not self._grpc_connected:
+            self._logger.error("Not connected to the audio service.")
+            return
+
         self._audio_stub.PlayAudioFile(request=AudioFile(path=name))
 
     def stop_playing(self) -> None:
@@ -149,6 +183,10 @@ class Audio:
 
         This method stops the audio that is currently playing on the robot.
         """
+        if not self._grpc_connected:
+            self._logger.error("Not connected to the audio service.")
+            return
+
         self._audio_stub.StopPlaying(Empty())
 
     def record_audio(self, name: str, duration_secs: float) -> bool:
@@ -160,6 +198,10 @@ class Audio:
             name: name of the audio file. The extension defines the encoding. Ony ogg is supported.
             duration_secs: duration of the recording in seconds.
         """
+        if not self._grpc_connected:
+            self._logger.error("Not connected to the audio service.")
+            return False
+
         if not self._validate_extension(name, [".ogg"]):
             self._logger.error("Invalid file type. Supported file type is .ogg")
             return False
@@ -172,4 +214,19 @@ class Audio:
 
         This method stops the audio recording on the robot.
         """
+        if not self._grpc_connected:
+            self._logger.error("Not connected to the audio service.")
+            return
+
         self._audio_stub.StopRecording(Empty())
+
+    def disconnect(self) -> None:
+        """Disconnect the audio service.
+
+        This method closes the gRPC channel to the audio service.
+        """
+        if self._grpc_connected:
+            self._grpc_audio_channel.close()
+            self._grpc_audio_channel = None
+            self._grpc_connected = False
+            self._logger.debug("Audio gRPC channel closed.")

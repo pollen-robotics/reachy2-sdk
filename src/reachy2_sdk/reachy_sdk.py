@@ -66,7 +66,7 @@ class ReachySDK:
     """
 
     _instances_by_host: Dict[str, "ReachySDK"] = {}
-    _last_executing_instance = None
+    _last_executing_instance: Optional[ReachySDK] = None
 
     def __new__(cls: Type[ReachySDK], host: str, fake_only: bool = False) -> ReachySDK:
         """Ensure that only one instance of ReachySDK is created for each host."""
@@ -166,7 +166,7 @@ class ReachySDK:
             return
 
         self._setup_parts()
-        self._setup_audio()
+        self.audio = self._setup_audio()
         self._cameras = self._setup_video()
 
         self._sync_thread = threading.Thread(target=self._start_sync_in_bg)
@@ -206,6 +206,11 @@ class ReachySDK:
         self._l_arm = None
         self._mobile_base = None
         self._mode = None
+
+        if self.audio:
+            self.audio.disconnect()
+        if self._cameras:
+            self._cameras.disconnect()
 
         self._logger.info("Disconnected from Reachy.")
 
@@ -334,9 +339,6 @@ class ReachySDK:
     @property
     def cameras(self) -> Optional[CameraManager]:
         """Get the camera manager if available and connected."""
-        if not self._grpc_connected:
-            self._logger.error("Cannot get cameras, not connected to Reachy")
-            return None
         return self._cameras
 
     def _get_info(self) -> None:
@@ -353,9 +355,14 @@ class ReachySDK:
         self._info = ReachyInfo(self._robot)
         self._grpc_connected = True
 
-    def _setup_audio(self) -> None:
+    def _setup_audio(self) -> Optional[Audio]:
         """Initializes the audio grpc client."""
-        self.audio = Audio(self._host, self._audio_port)
+        try:
+            return Audio(self._host, self._audio_port)
+
+        except Exception as e:
+            self._logger.error(f"Failed to connect to audio server with error: {e}.\nReachySDK.audio will not be available.")
+            return None
 
     def _setup_video(self) -> Optional[CameraManager]:
         """Set up the video server for the robot.
@@ -475,6 +482,7 @@ class ReachySDK:
         if self._inactivity_timer:
             self._inactivity_timer.cancel()
         self._inactivity_timer = threading.Timer(timeout, self._print_mode_type)
+        self._inactivity_timer.daemon = True
         self._inactivity_timer.start()
 
     def __getattribute__(self, name: str) -> Any:

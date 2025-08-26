@@ -31,14 +31,30 @@ class CameraManager:
             port: The port number for the gRPC service.
         """
         self._logger = logging.getLogger(__name__)
-        self._grpc_video_channel = grpc.insecure_channel(f"{host}:{port}")
-        self._host = host
 
-        self._video_stub = VideoServiceStub(self._grpc_video_channel)
+        self._host = host
+        self._port = port
+        self._grpc_connected = False
 
         self._teleop: Optional[Camera] = None
         self._depth: Optional[DepthCamera] = None
-        self._setup_cameras()
+
+        self.connect()
+
+    def connect(self) -> None:
+        """Connect to the video service.
+
+        This method establishes a gRPC channel to the video service.
+        """
+        try:
+            self._grpc_video_channel = grpc.insecure_channel(f"{self._host}:{self._port}")
+            self._video_stub = VideoServiceStub(self._grpc_video_channel)
+            self._grpc_connected = True
+            self._setup_cameras()
+            self._logger.debug("Video gRPC channel established.")
+        except Exception as e:
+            self._grpc_connected = False
+            raise ConnectionError(f"Failed to connect to video service: {e}")
 
     def __repr__(self) -> str:
         """Clean representation of a reachy cameras."""
@@ -51,6 +67,9 @@ class CameraManager:
         This method retrieves the available cameras and sets
         up the teleop and depth cameras if they are found.
         """
+        if not self._grpc_connected:
+            self._logger.error("Not connected to the video service.")
+            return
         cams = self._video_stub.GetAvailableCameras(Empty())
         self._teleop = None
         self._depth = None
@@ -103,3 +122,16 @@ class CameraManager:
             return None
 
         return self._depth
+
+    def disconnect(self) -> None:
+        """Disconnect the gRPC channel.
+
+        This method closes the gRPC channel to the video service.
+        """
+        if self._grpc_connected:
+            self._grpc_video_channel.close()
+            self._grpc_video_channel = None
+            self._grpc_connected = False
+            self._teleop = None
+            self._depth = None
+            self._logger.debug("Video gRPC channel closed.")
