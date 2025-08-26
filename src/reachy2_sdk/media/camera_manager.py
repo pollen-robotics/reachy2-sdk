@@ -36,11 +36,10 @@ class CameraManager:
         self._port = port
         self._grpc_connected = False
 
-        self.connect()
-
         self._teleop: Optional[Camera] = None
         self._depth: Optional[DepthCamera] = None
-        self._setup_cameras()
+
+        self.connect()
 
     def connect(self) -> None:
         """Connect to the video service.
@@ -51,6 +50,7 @@ class CameraManager:
             self._grpc_video_channel = grpc.insecure_channel(f"{self._host}:{self._port}")
             self._video_stub = VideoServiceStub(self._grpc_video_channel)
             self._grpc_connected = True
+            self._setup_cameras()
             self._logger.debug("Video gRPC channel established.")
         except Exception as e:
             self._grpc_connected = False
