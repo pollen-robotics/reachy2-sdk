@@ -339,9 +339,6 @@ class ReachySDK:
     @property
     def cameras(self) -> Optional[CameraManager]:
         """Get the camera manager if available and connected."""
-        if not self._grpc_connected:
-            self._logger.error("Cannot get cameras, not connected to Reachy")
-            return None
         return self._cameras
 
     def _get_info(self) -> None:
