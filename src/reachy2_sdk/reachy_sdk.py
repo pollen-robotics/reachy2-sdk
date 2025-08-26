@@ -482,6 +482,7 @@ class ReachySDK:
         if self._inactivity_timer:
             self._inactivity_timer.cancel()
         self._inactivity_timer = threading.Timer(timeout, self._print_mode_type)
+        self._inactivity_timer.daemon = True
         self._inactivity_timer.start()
 
     def __getattribute__(self, name: str) -> Any:
