@@ -36,6 +36,7 @@ from reachy2_sdk_api.reachy_pb2 import (
 from .config.reachy_info import ReachyInfo
 from .media.audio import Audio
 from .media.camera_manager import CameraManager
+from .mujoco.mujoco import Mujoco
 from .orbita.orbita2d import Orbita2d
 from .orbita.orbita3d import Orbita3d
 from .orbita.orbita_joint import OrbitaJoint
@@ -123,6 +124,8 @@ class ReachySDK:
         self._mobile_base: Optional[MobileBase] = None
         self._info: Optional[ReachyInfo] = None
         self._tripod: Optional[Tripod] = None
+        self._mujoco: Optional[Mujoco] = None
+        self._logger.info("mujoco module initialized")
 
         self._update_timestamp: Timestamp = Timestamp(seconds=0)
 
@@ -130,6 +133,7 @@ class ReachySDK:
         self._inactivity_timer: Optional[threading.Timer] = None
 
         self.connect(fake_only)
+        self._logger.info("ReachySDK initialized.")
 
     def connect(self, fake_only: bool = False) -> None:
         """Connects the SDK to the robot.
@@ -183,6 +187,9 @@ class ReachySDK:
 
         if self._mode == "REAL":
             self._check_inactivity_from_user()
+
+        if self._mode == "MUJOCO":
+            self._mujoco = Mujoco(self._grpc_channel)
 
     def disconnect(self, lost_connection: bool = False) -> None:
         """Disconnect the SDK from the robot's server.
