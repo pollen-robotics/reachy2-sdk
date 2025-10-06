@@ -24,7 +24,7 @@ class Mujoco:
         """Initialize the ReachyMujoco instance with robot details.
 
         Args:
-            reachy: The Reachy robot object, which provides the robot's info and configuration details.
+            grpc_channel: The gRPC channel to communicate with the MuJoCo service.
         """
         self._logger = logging.getLogger(__name__)
         self._mujoco_stub = MujocoServiceStub(grpc_channel)
@@ -53,6 +53,7 @@ class Mujoco:
 
         Args:
             object_name: The name of the object whose pose is to be retrieved.
+
         Returns:
             A 4x4 numpy array representing the pose of the specified object.
         """
@@ -74,6 +75,7 @@ class Mujoco:
 
         Args:
             object_name: The name of the object whose relative pose is to be retrieved.
+
         Returns:
             A 4x4 numpy array representing the pose of the specified object relative to Reachy's torso
         """
