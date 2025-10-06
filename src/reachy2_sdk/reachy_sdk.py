@@ -124,7 +124,7 @@ class ReachySDK:
         self._mobile_base: Optional[MobileBase] = None
         self._info: Optional[ReachyInfo] = None
         self._tripod: Optional[Tripod] = None
-        self._mujoco: Optional[Mujoco] = None
+        self.mujoco: Optional[Mujoco] = None
         self._logger.info("mujoco module initialized")
 
         self._update_timestamp: Timestamp = Timestamp(seconds=0)
@@ -189,7 +189,7 @@ class ReachySDK:
             self._check_inactivity_from_user()
 
         if self._mode == "MUJOCO":
-            self._mujoco = Mujoco(self._grpc_channel)
+            self.mujoco = Mujoco(self._grpc_channel)
 
     def disconnect(self, lost_connection: bool = False) -> None:
         """Disconnect the SDK from the robot's server.
