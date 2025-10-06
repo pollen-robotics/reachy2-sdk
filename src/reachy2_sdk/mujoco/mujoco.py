@@ -83,8 +83,8 @@ class Mujoco:
             if reachy_pose is None or obj_pose is None:
                 raise ValueError("Could not compute relative pose.")
 
-            reachy_pose_inv: npt.NDArray[np.float32] = np.linalg.inv(reachy_pose)  # type: ignore
-            obj_pose_relative: npt.NDArray[np.float32] = np.dot(obj_pose, reachy_pose_inv)  # type: ignore
+            reachy_pose_inv: npt.NDArray[np.float32] = np.linalg.inv(reachy_pose)
+            obj_pose_relative: npt.NDArray[np.float32] = np.dot(obj_pose, reachy_pose_inv)
             return obj_pose_relative
 
         except Exception as e:
