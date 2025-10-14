@@ -602,3 +602,53 @@ def get_normal_vector(vector: npt.NDArray[np.float64], arc_direction: str) -> Op
 
     normal = normal / np.linalg.norm(normal)
     return normal.astype(np.float64)
+
+
+def create_goal_pose_from_rotations(
+    goal_position: npt.NDArray[np.float64], euler_angles: Optional[dict[str, int]] = None, degrees: bool = True
+) -> npt.NDArray[np.float64]:
+    """Build a 4x4 goal pose matrix from a position and successive intrinsic Euler rotations, in the order specified.
+
+    Args:
+        goal_position: A 3-element array representing the desired position [x, y, z].
+        euler_angles: An optional dictionary containing Euler angles with keys 'x', 'y', and/or 'z'.
+            Each rotation is applied in the current (updated) frame.
+                Example: {"x": 45, "y": 30, "z": 15} means:
+                1. Rotate around X by 45° in the initial frame.
+                2. Rotate around Y by 30° in the new frame after X rotation.
+                3. Rotate around Z by 15° in the new frame after X and Y rotations.
+                The angles are in degrees. If not provided, the rotation will be an identity matrix.
+        degrees: Specifies whether the input angles are in degrees or radians. Defaults to `True`.
+
+    Returns:
+        A 4x4 homogeneous transformation matrix representing the goal pose.
+    """
+    combined_rotation = np.eye(3)
+
+    if euler_angles is not None:
+        for axis, angle in euler_angles.items():
+            if degrees:
+                angle = np.deg2rad(angle)
+
+            if axis == "x":
+                rotation_matrix = np.array(
+                    [[1, 0, 0], [0, np.cos(angle), -np.sin(angle)], [0, np.sin(angle), np.cos(angle)]],
+                    dtype=np.float64,
+                )
+            elif axis == "y":
+                rotation_matrix = np.array(
+                    [[np.cos(angle), 0, np.sin(angle)], [0, 1, 0], [-np.sin(angle), 0, np.cos(angle)]],
+                    dtype=np.float64,
+                )
+            elif axis == "z":
+                rotation_matrix = np.array(
+                    [[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]],
+                    dtype=np.float64,
+                )
+            else:
+                raise ValueError(f"Axis '{axis}' not supported! Should be one of: 'x', 'y' or 'z'")
+            combined_rotation = combined_rotation @ rotation_matrix
+
+    goal_pose = recompose_matrix(combined_rotation, goal_position)
+
+    return goal_pose
