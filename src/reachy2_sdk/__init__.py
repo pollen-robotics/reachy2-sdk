@@ -28,7 +28,7 @@ from packaging.version import parse
 
 from .reachy_sdk import ReachySDK  # noqa: F401
 
-__version__ = "1.0.14"
+__version__ = "1.0.15"
 
 
 def get_dependencies_from_setup_cfg() -> List[str]:

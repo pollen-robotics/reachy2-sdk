@@ -12,24 +12,28 @@ import numpy.typing as npt
 from google.protobuf.empty_pb2 import Empty
 from reachy2_sdk_api.mujoco_pb2_grpc import MujocoServiceStub
 
+from reachy2_sdk import ReachySDK
 from reachy2_sdk.utils.utils import invert_affine_transformation_matrix
 
 
-class Mujoco:
+class ReachyMujoco:
     """The ReachyMujoco class provides access to the MuJoCo simulation data.
 
     The ReachyMujoco class allows users to retrieve the poses of objects in the MuJoCo simulation environment.
     It interacts with the MujocoServiceStub to fetch the relevant data.
     """
 
-    def __init__(self, grpc_channel: grpc.Channel) -> None:
+    def __init__(self, reachy: ReachySDK) -> None:
         """Initialize the ReachyMujoco instance with robot details.
 
         Args:
             grpc_channel: The gRPC channel to communicate with the MuJoCo service.
         """
+        if reachy._mode != "MUJOCO":
+            raise ValueError(f"You are in {reachy._mode} mode, not MUJOCO.")
+        self._reachy = reachy
         self._logger = logging.getLogger(__name__)
-        self._mujoco_stub = MujocoServiceStub(grpc_channel)
+        self._mujoco_stub = MujocoServiceStub(reachy._grpc_channel)
 
     def get_objects_poses(self) -> Dict[str, npt.NDArray[np.float32]]:
         """Retrieve the poses of objects in the MuJoCo simulation.
