@@ -6,7 +6,6 @@ This module provides access to objects poses in the MuJoCo scenes.
 import logging
 from typing import Dict, List, Optional
 
-import grpc
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.empty_pb2 import Empty
@@ -16,21 +15,21 @@ from reachy2_sdk import ReachySDK
 from reachy2_sdk.utils.utils import invert_affine_transformation_matrix
 
 
-class ReachyMujoco:
-    """The ReachyMujoco class provides access to the MuJoCo simulation data.
+class MujocoSceneDescription:
+    """The MujocoSceneDescription class provides access to the MuJoCo simulation data.
 
-    The ReachyMujoco class allows users to retrieve the poses of objects in the MuJoCo simulation environment.
+    The MujocoSceneDescription class allows users to retrieve the poses of objects in the MuJoCo simulation environment.
     It interacts with the MujocoServiceStub to fetch the relevant data.
     """
 
     def __init__(self, reachy: ReachySDK) -> None:
-        """Initialize the ReachyMujoco instance with robot details.
+        """Initialize the MujocoSceneDescription instance with robot details.
 
         Args:
-            grpc_channel: The gRPC channel to communicate with the MuJoCo service.
+            reachy: An instance of the ReachySDK class representing the robot.
         """
         if reachy._mode != "MUJOCO":
-            raise ValueError(f"You are in {reachy._mode} mode, not MUJOCO.")
+            raise ValueError(f"Reachy is in {reachy._mode} mode, not MUJOCO.")
         self._reachy = reachy
         self._logger = logging.getLogger(__name__)
         self._mujoco_stub = MujocoServiceStub(reachy._grpc_channel)
