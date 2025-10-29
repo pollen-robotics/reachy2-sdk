@@ -1,0 +1,185 @@
+name: Add Release to Notion
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  create-notion-row:
+    runs-on: ubuntu-latest
+    outputs:
+      page_id: ${{ steps.notion.outputs.PAGE_ID }}
+    steps:
+      - name: jq install
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - id: notion
+        name: Create or update Notion page
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_API_TOKEN }}
+          DATABASE_ID: ${{ secrets.NOTION_DB_SDK_ID }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+          PUBLISHED_AT: ${{ github.event.release.published_at }}
+          BODY: ${{ github.event.release.body }}
+        run: |
+          set -euo pipefail
+
+          QUERY_PAYLOAD=$(jq -n --arg tag "$TAG_NAME" '{filter:{property:"Version Tag", title:{equals:$tag}}}')
+          QUERY_RESULT=$(curl -s -X POST "https://api.notion.com/v1/databases/$DATABASE_ID/query" \
+            -H "Authorization: Bearer $NOTION_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "Notion-Version: 2022-06-28" \
+            --data "$QUERY_PAYLOAD")
+          PAGE_ID=$(echo "$QUERY_RESULT" | jq -r '.results[0].id // empty')
+
+          PROPS=$(jq -n \
+            --arg tag "$TAG_NAME" \
+            --arg date "$PUBLISHED_AT" \
+            '{
+              "Version Tag": { "title": [ { "text": { "content": $tag } } ] },
+              "Release date": { "date": { "start": $date } }
+            }')
+
+          make_children() {
+            jq -n --arg body "${BODY:-}" '
+              def chunks(s; n): [ range(0; (( (s|length) + (n-1) ) / n)) | s[. * n : ((. + 1) * n)] ];
+              if ($body|length) == 0 or $body == "null" then [] else
+                ([{"object":"block","type":"heading_2","heading_2":{"rich_text":[{"type":"text","text":{"content":"Changelog"}}]}}]
+                + (chunks($body; 1800) | map({"object":"block","type":"paragraph","paragraph":{"rich_text":[{"type":"text","text":{"content":.}}]}})))
+              end
+            '
+          }
+          CHILDREN=$(make_children)
+
+          if [ -n "$PAGE_ID" ]; then
+            echo "Existing page found for $TAG_NAME, update properties."
+            UPDATE_PAYLOAD=$(jq -n --argjson props "$PROPS" '{properties:$props}')
+            curl -s -X PATCH "https://api.notion.com/v1/pages/$PAGE_ID" \
+              -H "Authorization: Bearer $NOTION_TOKEN" \
+              -H "Content-Type: application/json" \
+              -H "Notion-Version: 2022-06-28" \
+              --data "$UPDATE_PAYLOAD" >/dev/null
+          else
+            echo "No page found for $TAG_NAME, create one."
+            CREATE_PAYLOAD=$(jq -n \
+              --arg db "$DATABASE_ID" \
+              --argjson props "$PROPS" \
+              --argjson children "$CHILDREN" \
+              '{
+                parent:{database_id:$db},
+                properties:$props,
+                children:$children,
+                icon:{ "type":"emoji", "emoji":"✅" }
+              }')
+            CREATE_RESULT=$(curl -s -X POST "https://api.notion.com/v1/pages" \
+              -H "Authorization: Bearer $NOTION_TOKEN" \
+              -H "Content-Type: application/json" \
+              -H "Notion-Version: 2022-06-28" \
+              --data "$CREATE_PAYLOAD")
+            PAGE_ID=$(echo "$CREATE_RESULT" | jq -r '.id')
+          fi
+
+          echo "PAGE_ID=$PAGE_ID" >> "$GITHUB_OUTPUT"
+          echo "Sync Release to Notion OK."
+  
+  set-sdk-api-version:
+    name: Set reachy2-sdk-api min/max required version
+    runs-on: ubuntu-latest
+    needs: create-notion-row
+    env:
+      PAGE_ID: ${{ needs.create-notion-row.outputs.page_id }}
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      TAG_NAME: ${{ github.event.release.tag_name }}
+
+    steps:
+      - name: Checkout at release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG_NAME }}
+          fetch-depth: 0
+
+      - name: Parse reachy2-sdk-api constraints from setup.cfg
+        id: parse_constraints
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="setup.cfg"
+          [ -f "$FILE" ] || { echo "::error::Not found: $FILE"; exit 1; }
+
+          python - << 'PY' | tee -a "$GITHUB_OUTPUT"
+          import configparser, re, sys
+
+          cfg = configparser.ConfigParser()
+          cfg.read("setup.cfg")
+          ir = cfg.get("options", "install_requires", fallback="")
+          lines = [l.strip() for l in ir.splitlines() if l.strip() and not l.strip().startswith("#")]
+
+          target = None
+          for l in lines:
+              if l.startswith("reachy2-sdk-api"):
+                  target = l
+                  break
+
+          if not target:
+              print("::error::reachy2-sdk-api not found in [options].install_requires", file=sys.stderr)
+              sys.exit(1)
+
+          spec = target[len("reachy2-sdk-api"):].strip()
+          if spec.startswith((">","<","=","!","~")) is False and " " in target:
+              spec = target.split(None, 1)[1].strip()
+
+          min_v = ""
+          max_v = ""
+
+          for part in re.split(r"\s*,\s*", spec):
+              m = re.match(r"(>=|>|<=|<|==|!=|~=)\s*([0-9]+(?:\.[0-9]+)*)", part)
+              if not m:
+                  continue
+              op, ver = m.groups()
+              if op == ">=":
+                  min_v = ver
+              elif op == "<":
+                  max_v = ver
+
+          print(f"SDK_API_MIN={min_v}")
+          print(f"SDK_API_MAX={max_v}")
+          PY
+
+      - name: Update Notion properties for required reachy2-sdk-api versions
+        if: ${{ env.PAGE_ID != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIN='${{ steps.parse_constraints.outputs.SDK_API_MIN }}'
+          MAX='${{ steps.parse_constraints.outputs.SDK_API_MAX }}'
+
+          if [ -z "$MIN" ] && [ -z "$MAX" ]; then
+            echo "::error::No constraint >= ou < found for reachy2-sdk-api in setup.cfg"
+            exit 1
+          fi
+
+          PROPS='{}'
+          if [ -n "$MIN" ]; then
+            PROPS=$(jq -n --arg v "$MIN" \
+              '{ "reachy2-sdk-api (minimum version)": { "select": { "name": $v } } }')
+          fi
+
+          if [ -n "$MAX" ]; then
+            MAXOBJ=$(jq -n --arg v "$MAX" \
+              '{ "reachy2-sdk-api (maximum version)": { "select": { "name": $v } } }')
+            PROPS=$(jq -n --argjson a "$PROPS" --argjson b "$MAXOBJ" '$a + $b')
+          fi
+
+          PAYLOAD=$(jq -n --argjson props "$PROPS" '{properties: $props}')
+
+          curl -s -X PATCH "https://api.notion.com/v1/pages/${PAGE_ID}" \
+            -H "Authorization: Bearer ${NOTION_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -H "Notion-Version: 2022-06-28" \
+            --data "$PAYLOAD" >/dev/null
+
+          echo "Updated Notion:"
+          [ -n "$MIN" ] && echo "  reachy2-sdk-api (minimum version) = ${MIN}"
+          [ -n "$MAX" ] && echo "  reachy2-sdk-api (maximum version) = ${MAX}"
