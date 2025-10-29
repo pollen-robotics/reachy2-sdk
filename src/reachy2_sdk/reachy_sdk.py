@@ -130,6 +130,7 @@ class ReachySDK:
         self._inactivity_timer: Optional[threading.Timer] = None
 
         self.connect(fake_only)
+        self._logger.info("ReachySDK initialized.")
 
     def connect(self, fake_only: bool = False) -> None:
         """Connects the SDK to the robot.
