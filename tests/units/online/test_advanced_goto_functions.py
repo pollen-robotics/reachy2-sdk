@@ -345,7 +345,11 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_goto_state(req_h).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_goto_state(req_r).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_goto_state(req_l).goal_status == GoalStatus.STATUS_SUCCEEDED
-    assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_current_orientation(), zero_head), 0, atol=1e-04)
+    assert np.isclose(
+        Quaternion.distance(reachy_sdk_zeroed.head.get_current_orientation(), zero_head),
+        0,
+        atol=1e-04,
+    )
     assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_positions(), zero_r_arm, atol=1e-03)
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), zero_l_arm, atol=1e-03)
 
@@ -390,7 +394,11 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_goto_state(req_h2).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_goto_state(req_r2).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_goto_state(req_l2).goal_status == GoalStatus.STATUS_SUCCEEDED
-    assert np.isclose(Quaternion.distance(reachy_sdk_zeroed.head.get_current_orientation(), zero_head), 0, atol=1e-04)
+    assert np.isclose(
+        Quaternion.distance(reachy_sdk_zeroed.head.get_current_orientation(), zero_head),
+        0,
+        atol=1e-04,
+    )
     assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_positions(), zero_r_arm, atol=1e-03)
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), zero_l_arm, atol=1e-03)
 
@@ -430,7 +438,9 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
     assert reachy_sdk_zeroed._get_goto_state(req_r3).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert reachy_sdk_zeroed._get_goto_state(req_l3).goal_status == GoalStatus.STATUS_SUCCEEDED
     assert np.isclose(
-        Quaternion.distance(reachy_sdk_zeroed.head.get_current_orientation(), zero_head), 0, atol=1e-04
+        Quaternion.distance(reachy_sdk_zeroed.head.get_current_orientation(), zero_head),
+        0,
+        atol=1e-04,
     )  # why not 1e-04 here?
     assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_positions(), elbow_90_r_arm, atol=1e-03)
     assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), elbow_90_l_arm, atol=1e-03)
@@ -456,7 +466,12 @@ def test_reachy_goto_posture(reachy_sdk_zeroed: ReachySDK) -> None:
 def test_wait_move(reachy_sdk_zeroed: ReachySDK) -> None:
     tic = time.time()
     reachy_sdk_zeroed.head.goto([30, 0, 0], duration=4)
-    reachy_sdk_zeroed.l_arm.goto([10, 10, 15, -20, 15, -15, -10], duration=3, wait=True, interpolation_mode="linear")
+    reachy_sdk_zeroed.l_arm.goto(
+        [10, 10, 15, -20, 15, -15, -10],
+        duration=3,
+        wait=True,
+        interpolation_mode="linear",
+    )
     elapsed_time = time.time() - tic
     assert np.isclose(elapsed_time, 3.0, 1e-01)
 
@@ -543,7 +558,11 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req1):
         time.sleep(0.1)
 
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_positions(), [0, 0, 0, -90, 0, 0, 0], atol=1e-01)
+    assert np.allclose(
+        reachy_sdk_zeroed.r_arm.get_current_positions(),
+        [0, 0, 0, -90, 0, 0, 0],
+        atol=1e-01,
+    )
 
     req2 = reachy_sdk_zeroed.r_arm.elbow.pitch.goto(0, duration=1)
     time.sleep(0.5)
@@ -551,7 +570,11 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req2):
         time.sleep(0.1)
 
-    assert np.allclose(reachy_sdk_zeroed.r_arm.get_current_positions(), [0, 0, 0, 0, 0, 0, 0], atol=1e-01)
+    assert np.allclose(
+        reachy_sdk_zeroed.r_arm.get_current_positions(),
+        [0, 0, 0, 0, 0, 0, 0],
+        atol=1e-01,
+    )
 
     req3 = reachy_sdk_zeroed.l_arm.shoulder.pitch.goto(-10, duration=1)
     req4 = reachy_sdk_zeroed.l_arm.elbow.yaw.goto(20, duration=1)
@@ -562,7 +585,11 @@ def test_single_joint_goto(reachy_sdk_zeroed: ReachySDK) -> None:
     while not is_goto_finished(reachy_sdk_zeroed, req5):
         time.sleep(0.1)
 
-    assert np.allclose(reachy_sdk_zeroed.l_arm.get_current_positions(), [-10, 0, 20, 0, 0, 15, 0], atol=1e-01)
+    assert np.allclose(
+        reachy_sdk_zeroed.l_arm.get_current_positions(),
+        [-10, 0, 20, 0, 0, 15, 0],
+        atol=1e-01,
+    )
 
     req6 = reachy_sdk_zeroed.head.neck.roll.goto(15, duration=1)
     req7 = reachy_sdk_zeroed.head.neck.yaw.goto(10, duration=1)
@@ -757,7 +784,8 @@ def test_translate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
     req8 = reachy_sdk_zeroed.r_arm.translate_by(0, -0.3, -0.3, frame="gripper", wait=True)
 
     assert not np.allclose(
-        reachy_sdk_zeroed.get_goto_request(req8).request.target.pose, reachy_sdk_zeroed.r_arm.forward_kinematics()
+        reachy_sdk_zeroed.get_goto_request(req8).request.target.pose,
+        reachy_sdk_zeroed.r_arm.forward_kinematics(),
     )
 
 
@@ -899,34 +927,43 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
 @pytest.mark.online
 def test_head_rotation(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.head.goto([0, 0, 90], duration=1, wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [0, 0, 90], atol=5)
+    assert np.allclose(current_orientation, [0, 0, 90], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(roll=30, duration=1, frame="head", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [0, 30, 90], atol=5)
+    assert np.allclose(current_orientation, [0, 30, 90], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(roll=-30, duration=1, frame="head", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [0, 0, 90], atol=5)
+    assert np.allclose(current_orientation, [0, 0, 90], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(roll=30, duration=1, frame="robot", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [30, 0, 90], atol=5)
+    assert np.allclose(current_orientation, [29.507, 1.313, 94.981], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(roll=-30, duration=1, frame="robot", wait=True)
+    time.sleep(0.05)
     reachy_sdk_zeroed.head.rotate_by(pitch=30, duration=1, frame="head", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [-30, 0, 90], atol=5)
+    assert np.allclose(current_orientation, [-30, 0, 90], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(pitch=-30, duration=1, frame="head", wait=True)
+    time.sleep(0.05)
     reachy_sdk_zeroed.head.rotate_by(pitch=30, duration=1, frame="robot", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [0, 30, 90], atol=5)
+    assert np.allclose(current_orientation, [0.000, 30.000, 89.998], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(yaw=30, duration=1, frame="head", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [0, 30, 120], atol=5)
+    assert np.allclose(current_orientation, [0, 30, 120], atol=1e-03)
 
     with pytest.raises(ValueError):
         reachy_sdk_zeroed.head.rotate_by(roll=30, frame="head", duration=0)
@@ -940,19 +977,31 @@ def test_head_rotation(reachy_sdk_zeroed: ReachySDK) -> None:
 
 @pytest.mark.online
 def test_waiting_goto(reachy_sdk_zeroed: ReachySDK) -> None:
+    def look_at_current_position() -> None:
+        # sleep before reading to avoid outdated buffer
+        # TODO implement unbeffered read
+        time.sleep(0.05)
+        x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
+        reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.1, wait=True)
+        assert reachy_sdk_zeroed.head.get_goto_playing().id == -1
+        assert reachy_sdk_zeroed.head.get_goto_queue() == []
+
     reachy_sdk_zeroed.goto_posture("elbow_90", duration=0.5, wait=True)
-    x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
-    reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=1, wait=True)
+    look_at_current_position()
+    time.sleep(0.05)
     head_joints = reachy_sdk_zeroed.head.get_current_positions()
-    reachy_sdk_zeroed.l_arm.translate_by(x=0.2, y=0.0, z=0.1, duration=0.5, wait=False)
+    first_gotoid = reachy_sdk_zeroed.l_arm.translate_by(x=0.2, y=0.0, z=0.1, duration=0.5, wait=False)
     reachy_sdk_zeroed.l_arm.translate_by(x=-0.2, y=0.0, z=-0.1, duration=0.5, wait=False)
     reachy_sdk_zeroed.l_arm.translate_by(x=0.2, y=0.0, z=0.1, duration=0.5, wait=False)
     last_gotoid = reachy_sdk_zeroed.l_arm.translate_by(x=-0.2, y=0.0, z=-0.1, duration=0.5, wait=False)
+    assert reachy_sdk_zeroed.l_arm.get_goto_playing().id == first_gotoid.id
+    assert len(reachy_sdk_zeroed.l_arm.get_goto_queue()) == 3
 
     while not reachy_sdk_zeroed.is_goto_finished(last_gotoid):
-        x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
-        reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.1, wait=True)
-    # last movement now the arm's goto is finished
-    x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
-    reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.1, wait=True)
-    assert np.allclose(reachy_sdk_zeroed.head.get_current_positions(), head_joints, atol=2)
+        look_at_current_position()
+
+    # one last look after the movement is finished
+    look_at_current_position()
+    time.sleep(0.05)
+
+    assert np.allclose(reachy_sdk_zeroed.head.get_current_positions(), head_joints, atol=1e-03)
