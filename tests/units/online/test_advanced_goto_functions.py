@@ -927,34 +927,43 @@ def test_rotate_by_gripper_frame(reachy_sdk_zeroed: ReachySDK) -> None:
 @pytest.mark.online
 def test_head_rotation(reachy_sdk_zeroed: ReachySDK) -> None:
     reachy_sdk_zeroed.head.goto([0, 0, 90], duration=1, wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [0, 0, 90], atol=5)
+    assert np.allclose(current_orientation, [0, 0, 90], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(roll=30, duration=1, frame="head", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [0, 30, 90], atol=5)
+    assert np.allclose(current_orientation, [0, 30, 90], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(roll=-30, duration=1, frame="head", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [0, 0, 90], atol=5)
+    assert np.allclose(current_orientation, [0, 0, 90], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(roll=30, duration=1, frame="robot", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [30, 0, 90], atol=5)
+    assert np.allclose(current_orientation, [29.507, 1.313, 94.981], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(roll=-30, duration=1, frame="robot", wait=True)
+    time.sleep(0.05)
     reachy_sdk_zeroed.head.rotate_by(pitch=30, duration=1, frame="head", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [-30, 0, 90], atol=5)
+    assert np.allclose(current_orientation, [-30, 0, 90], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(pitch=-30, duration=1, frame="head", wait=True)
+    time.sleep(0.05)
     reachy_sdk_zeroed.head.rotate_by(pitch=30, duration=1, frame="robot", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [0, 30, 90], atol=5)
+    assert np.allclose(current_orientation, [0.000, 30.000, 89.998], atol=1e-03)
 
     reachy_sdk_zeroed.head.rotate_by(yaw=30, duration=1, frame="head", wait=True)
+    time.sleep(0.05)
     current_orientation = reachy_sdk_zeroed.head.get_current_positions()
-    assert np.allclose(current_orientation, [0, 30, 120], atol=5)
+    assert np.allclose(current_orientation, [0, 30, 120], atol=1e-03)
 
     with pytest.raises(ValueError):
         reachy_sdk_zeroed.head.rotate_by(roll=30, frame="head", duration=0)
