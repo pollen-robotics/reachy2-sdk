@@ -973,20 +973,26 @@ def test_waiting_goto(reachy_sdk_zeroed: ReachySDK) -> None:
         # TODO implement unbeffered read
         time.sleep(0.05)
         x, y, z = reachy_sdk_zeroed.l_arm.forward_kinematics()[:3, 3]
-        reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.5, wait=True)
-        return x, y, z
+        reachy_sdk_zeroed.head.look_at(x=x, y=y, z=z, duration=0.1, wait=True)
+        assert reachy_sdk_zeroed.head.get_goto_playing().id == -1
+        assert reachy_sdk_zeroed.head.get_goto_queue() == []
 
     reachy_sdk_zeroed.goto_posture("elbow_90", duration=0.5, wait=True)
     look_at_current_position()
+    time.sleep(0.05)
     head_joints = reachy_sdk_zeroed.head.get_current_positions()
-    reachy_sdk_zeroed.l_arm.translate_by(x=0.2, y=0.0, z=0.1, duration=0.5, wait=False)
+    first_gotoid = reachy_sdk_zeroed.l_arm.translate_by(x=0.2, y=0.0, z=0.1, duration=0.5, wait=False)
     reachy_sdk_zeroed.l_arm.translate_by(x=-0.2, y=0.0, z=-0.1, duration=0.5, wait=False)
     reachy_sdk_zeroed.l_arm.translate_by(x=0.2, y=0.0, z=0.1, duration=0.5, wait=False)
     last_gotoid = reachy_sdk_zeroed.l_arm.translate_by(x=-0.2, y=0.0, z=-0.1, duration=0.5, wait=False)
+    assert reachy_sdk_zeroed.l_arm.get_goto_playing().id == first_gotoid.id
+    assert len(reachy_sdk_zeroed.l_arm.get_goto_queue()) == 3
 
     while not reachy_sdk_zeroed.is_goto_finished(last_gotoid):
         look_at_current_position()
+
     # one last look after the movement is finished
     look_at_current_position()
+    time.sleep(0.05)
 
-    assert np.allclose(reachy_sdk_zeroed.head.get_current_positions(), head_joints, atol=2)
+    assert np.allclose(reachy_sdk_zeroed.head.get_current_positions(), head_joints, atol=1e-03)
