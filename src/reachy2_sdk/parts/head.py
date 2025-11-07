@@ -426,7 +426,7 @@ class Head(JointsBasedPart, IGoToBasedPart):
             initial_orientation = joints_request.request.target.joints
 
             # as there is a 10° offset between the joint space
-            # and the zero position in cartesian space in Reachy's frame for the yaw joint :
+            # and the zero position in cartesian space in Reachy's frame for the pitch joint :
             initial_orientation[1] += 10
             initial_quaternion = quaternion_from_euler_angles(
                 initial_orientation[0], initial_orientation[1], initial_orientation[2], degrees=True
