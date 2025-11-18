@@ -78,16 +78,16 @@ class ReachySDK:
     ) -> ReachySDK:
         """Ensure that only one instance of ReachySDK is created for each host."""
         # check that the host is not already connected to another instance
-        if host in cls._instances_by_host:
-            instance = cls._instances_by_host[host]
-            if instance._grpc_connected:
-                return instance
-            else:
-                del instance
+        # if host in cls._instances_by_host:
+        #     instance = cls._instances_by_host[host]
+        #     if instance._grpc_connected:
+        #         return instance
+        #     else:
+        #         del instance
 
         # Create a new instance and add it to the dict
         instance = super().__new__(cls)
-        cls._instances_by_host[host] = instance
+        # cls._instances_by_host[host] = instance
 
         return instance
 
