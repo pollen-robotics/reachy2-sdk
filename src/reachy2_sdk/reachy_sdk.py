@@ -68,7 +68,14 @@ class ReachySDK:
     _instances_by_host: Dict[str, "ReachySDK"] = {}
     _last_executing_instance: Optional[ReachySDK] = None
 
-    def __new__(cls: Type[ReachySDK], host: str, fake_only: bool = False) -> ReachySDK:
+    def __new__(
+        cls: Type[ReachySDK],
+        host: str,
+        fake_only: bool = False,
+        sdk_port: int = 50051,
+        audio_port: int = 50063,
+        video_port: int = 50065,
+    ) -> ReachySDK:
         """Ensure that only one instance of ReachySDK is created for each host."""
         # check that the host is not already connected to another instance
         if host in cls._instances_by_host:
